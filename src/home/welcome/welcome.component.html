@@ -1,0 +1,42 @@
+<!-- Logo Section (centered and rounded) -->
+
+
+<!-- Navbar -->
+<nav class="navbar navbar-expand-lg navbar-light bg- primary">
+  <div class="container-fluid">
+
+    <div class="navbar-header">
+      
+        <a  class="navbar-brand" [routerLink]="['/welcome']">
+          <img 
+            src="./assets/images/logos/dark-logo.jpg" 
+            alt="logo" 
+            class="rounded-circle"
+            style="width: 100px; height: 60px; object-fit: cover;" 
+          />
+        </a>
+      
+    
+    </div>
+
+    <ul class="nav navbar-nav ms-auto">
+      <li class="nav-item">
+        <a class="nav-link btn btn-outline-primary me-2" routerLink="/auth/register">
+          <i class="bi bi-person-plus"></i> Sign Up
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link btn btn-primary text-white" routerLink="/auth/login">
+          <i class="bi bi-box-arrow-in-right"></i> Login
+        </a>
+      </li>
+    </ul>
+
+  </div>
+</nav>
+
+<!-- Welcome Text -->
+<div class="container mt-4 text-center">
+  <h3>Welcome to {{ title }}</h3>
+  <p>This will be the last page of this project.</p>
+</div>

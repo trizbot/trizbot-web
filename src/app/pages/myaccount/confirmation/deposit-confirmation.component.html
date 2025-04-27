@@ -1,0 +1,76 @@
+<mat-card class="theme-card shadow-lg p-4 rounded-xl">
+  <mat-card-header class="border-b pb-2 mb-3">
+    <mat-card-title class="text-2xl font-semibold text-primary">
+      Payment Confirmation
+    </mat-card-title>
+  </mat-card-header>
+
+  <mat-card-content class="space-y-4">
+
+    
+
+    <!-- Wallet Info -->
+    <div>
+      <label class="block text-sm font-medium text-gray-500">Wallet Address ({{ network }}):</label>
+      <div class="flex items-center gap-2 bg-gray-100 p-2 rounded-md">
+        <span class="text-blue-700 text-sm truncate">{{ pay_address }}</span>
+        <button mat-icon-button (click)="copyToClipboard(pay_address)" matTooltip="Copy Address">
+          <mat-icon>content_copy</mat-icon>
+        </button>
+      </div>
+    </div>
+
+
+    <!-- Payment Status -->
+    <div>
+      <label class="block text-sm font-medium text-gray-600 mb-1">Payment Status:</label>
+      <span
+        [ngClass]="{
+          'text-yellow-600 font-semibold': payment_status === 'Waiting',
+          'text-green-600 font-semibold': payment_status === 'success',
+          'text-warning-600 font-semibold': payment_status === 'partially_paid',
+          'text-secondary-600 font-semibold': payment_status === 'sending',
+          'text-green-700 font-semibold': payment_status === 'finished',
+          'text-red-900 font-semibold': payment_status === 'failed',
+          'text-red-300 font-semibold': payment_status === 'expired',
+          'text-info-600 font-semibold': payment_status === 'confirming',
+          'text-blue-600 font-semibold': payment_status === 'pending'
+        }">
+        {{ payment_status | titlecase }}
+      </span>
+    </div>
+    
+    
+    <!-- Amounts -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div>
+        <label class="block text-sm text-gray-500">Price Amount</label>
+        <p class="font-medium text-base">{{ price_amount }} {{ price_currency }}</p>
+      </div>
+      <div>
+        <label class="block text-sm text-gray-500">Amount to Pay</label>
+        <p class="font-medium text-base">{{ pay_amount }} {{ pay_currency }}</p>
+      </div>
+    </div>
+
+    <!-- Expiration Time -->
+    <div *ngIf="expiration_estimate_date">
+      <label class="block text-sm text-gray-500">Expires On</label>
+      <p class="text-sm text-gray-700">{{ expiration_estimate_date | date:'medium' }}</p>
+    </div>
+
+    <!-- Countdown Timer -->
+    <div  class="timer bg-red-50 border border-red-200 p-3 rounded-md">
+      <p class="text-red-700 font-medium">
+        ⏳ Time Remaining: {{ displayTime }}
+      </p>
+    </div>
+
+   
+
+    <!-- Error Message -->
+    <div *ngIf="errorMessage" class="text-red-600 font-semibold text-sm">
+      {{ errorMessage }}
+    </div>
+  </mat-card-content>
+</mat-card>

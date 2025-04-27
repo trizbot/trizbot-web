@@ -1,0 +1,10 @@
+<div class="flex">
+  <label class="mr-3" for="filter"
+    ><i class="mr-1 text-xl text-gray-500 bi-funnel"></i>{{ label() }}</label
+  >
+  <select name="filter" id="filter" (change)="onSelect($event)">
+    @for (opt of options(); track $index) {
+    <option [value]="opt.value">{{ opt.name }}</option>
+    }
+  </select>
+</div>

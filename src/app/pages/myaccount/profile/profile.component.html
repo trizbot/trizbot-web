@@ -1,0 +1,163 @@
+<!-- Update Profile -->
+<mat-card class="cardWithShadow theme-card">
+  <mat-card-header>
+    <mat-card-title class="m-b-0">Update Profile</mat-card-title>
+  </mat-card-header>
+  <mat-card-content class="b-t-1">
+    <form class="mt-3" (ngSubmit)="onCreateProfile()" #profileForm="ngForm">
+      <div class="row">
+        <!-- Phone Number -->
+        <div class="col-lg-6">
+          <mat-label class="f-w-600 m-b-8 d-block">Phone Number *</mat-label>
+          <mat-form-field appearance="outline" class="w-100">
+            <input
+              matInput
+              type="tel"
+              placeholder="Enter Phone Number"
+              name="phoneNumber"
+              required
+              [(ngModel)]="profileData.phoneNumber" />
+          </mat-form-field>
+        </div>
+
+        <!-- Residential Address -->
+        <div class="col-lg-6">
+          <mat-label class="f-w-600 m-b-8 d-block">Residential Address *</mat-label>
+          <mat-form-field appearance="outline" class="w-100">
+            <textarea
+              matInput
+              placeholder="Enter Residential Address"
+              name="address"
+              required
+              rows="3"
+              [(ngModel)]="profileData.address">
+            </textarea>
+          </mat-form-field>
+        </div>
+      </div>
+
+      <!-- Submit Button -->
+      <div class="m-t-6">
+        <button
+          mat-flat-button
+          color="primary"
+          class="w-50 py-2 fw-bold"
+          type="submit"
+          [disabled]="loading || !profileForm.form.valid">
+          <ng-container *ngIf="loading">
+            <img src="./assets/images/loading.gif" alt="Loading..." style="width: 26px; height: 26px;" />
+          </ng-container>
+          <span *ngIf="!loading">Create</span>
+        </button>
+      </div>
+
+      <!-- Error Message -->
+      <div *ngIf="errorMessage" class="alert alert-danger mt-2">
+        <b>{{ errorMessage }}</b>
+      </div>
+    </form>
+  </mat-card-content>
+</mat-card>
+
+<!-- Set Transaction Pin -->
+<mat-card class="cardWithShadow theme-card" *ngIf="isNormalEntityType">
+  <mat-card-header>
+    <mat-card-title class="m-b-0">Set Transaction Pin</mat-card-title>
+  </mat-card-header>
+  <mat-card-content class="b-t-1">
+    <form class="mt-3" (ngSubmit)="onCreateTransactionPin()" #transactionPinForm="ngForm">
+      <div class="row">
+        <!-- Transaction Pin -->
+        <div class="col-lg-6">
+          <mat-label class="f-w-600 m-b-8 d-block">Transaction Pin *</mat-label>
+          <mat-form-field appearance="outline" class="w-100">
+            <input maxlength ="4"
+              matInput
+              type="password"
+              placeholder="Enter Transaction Pin"
+              name="transactionPin"
+              required
+              [(ngModel)]="pinData.transactionPin" />
+          </mat-form-field>
+        </div>
+      </div>
+
+      <!-- Submit Button -->
+      <div class="m-t-6">
+        <button
+          mat-flat-button
+          color="primary"
+          class="w-50 py-2 fw-bold"
+          type="submit"
+          [disabled]="loadingPin || !transactionPinForm.form.valid">
+          <ng-container *ngIf="loadingPin">
+            <img src="./assets/images/loading.gif" alt="Loading..." style="width: 26px; height: 26px;" />
+          </ng-container>
+          <span *ngIf="!loadingPin">Save</span>
+        </button>
+      </div>
+
+      <!-- Error Message -->
+      <div *ngIf="errorPinMessage" class="alert alert-danger mt-2">
+        <b>{{ errorPinMessage }}</b>
+      </div>
+    </form>
+  </mat-card-content>
+</mat-card>
+
+
+
+
+
+
+
+
+<!-- upload avater-->
+<mat-card class="cardWithShadow theme-card">
+  <mat-card-header>
+    <mat-card-title class="m-b-0">Upload profile Avatar</mat-card-title>
+  </mat-card-header>
+  <mat-card-content class="b-t-1">
+    <form class="mt-3" (ngSubmit)="onCreateUploadAvatar()" #AvatarForm="ngForm">
+      <div class="row">
+        <!-- Transaction Pin -->
+        <div class="col-lg-6">
+        
+          <ngx-dropzone (change)="onSelect($event)">
+            <ngx-dropzone-label>Select Profile Avatar</ngx-dropzone-label>
+            <ngx-dropzone-preview *ngFor="let f of files"[removable]="true" (removed)="onRemove(f)" >
+
+                <ngx-dropzone-label>{{f.name}} {{f.type}}</ngx-dropzone-label>
+            </ngx-dropzone-preview>
+
+        </ngx-dropzone>
+
+        </div>
+      </div>
+
+      <!-- Submit Button -->
+      <div class="m-t-6">
+        <button
+          mat-flat-button
+          color="primary"
+          class="w-50 py-2 fw-bold"
+          type="submit"
+          [disabled]="loadingAvatar || !AvatarForm.form.valid">
+          <ng-container *ngIf="loadingAvatar">
+            <img src="./assets/images/loading.gif" alt="Loading..." style="width: 26px; height: 26px;" />
+          </ng-container>
+          <span *ngIf="!loadingAvatar">Upload</span>
+        </button>
+      </div>
+
+      <!-- Error Message -->
+      <div *ngIf="errorAvatarMessage" class="alert alert-danger mt-2">
+        <b>{{ errorAvatarMessage }}</b>
+      </div>
+    </form>
+  </mat-card-content>
+</mat-card>
+
+
+
+

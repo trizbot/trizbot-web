@@ -1,0 +1,47 @@
+<div class="blank-layout-container d-flex justify-content-center align-items-center bg-light min-vh-100">
+  <div class="position-relative row w-100 h-100 justify-content-center align-items-center">
+    <div class="col-lg-4 col-md-6 col-sm-10">
+      <mat-card class="p-4 shadow rounded-3">
+        <mat-card-content>
+
+          <!-- Logo -->
+          <div class="text-center mb-4">
+            <a [routerLink]="['/welcome']">
+              <img src="./assets/images/logos/dark-logo.jpg" alt="logo" style="width: 100px;" />
+            </a>
+          </div>
+
+          <!-- Form -->
+          <form class="mt-3" (submit)="onForgot()">
+
+            <!-- Username -->
+            <!-- <mat-label class="mb-2 fw-semibold text-muted">Email Address</mat-label> -->
+            <mat-form-field appearance="outline" class="w-100 mb-3" color="primary">
+              <input matInput placeholder="Enter your email" name="email" [(ngModel)]="forgotData.email" />
+            </mat-form-field>
+
+
+            <!-- Checkbox and Forgot Password -->
+            <div class="d-flex align-items-center justify-content-between mb-3">
+              
+              <a [routerLink]="['/auth/login']" class="text-primary text-decoration-none fw-semibold">I remember ?</a>
+           
+            </div>
+          <br>  
+            
+       
+          
+            
+<button mat-flat-button color="primary" class="w-100 py-2 fw-bold" type="submit"> <b *ngIf="loading"><img src="./assets/images/loading.gif" alt="Loading..." style="width: 26px; height: 26px;" /></b>forgot</button>
+          </form>
+
+          <br>
+<div *ngIf="errorMessage" class="alert alert-danger">
+  <b>{{ errorMessage }}</b>
+</div>
+       
+        </mat-card-content>
+      </mat-card>
+    </div>
+  </div>
+</div>

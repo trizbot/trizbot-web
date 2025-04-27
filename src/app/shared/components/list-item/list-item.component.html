@@ -1,0 +1,34 @@
+<div class="p-3">
+  <div class="flex-col">
+    <h2 class="mb-2 flex items-center">
+      @if (iconName()) {<i
+        [class]="'mr-1 text-xl text-gray-500 bi-' + iconName()"
+      ></i
+      >}
+      {{ title() }}
+    </h2>
+    <div class="flex">
+      @switch (dataType()) { @case ('number') {
+      <p class="font-semibold mb-2">
+        {{ subtitle() | number : "1.0-0" }}
+      </p>
+      } @case ('amount') {
+      <p class="font-semibold mb-2">₦ {{ subtitle() | number : "1.2-2" }}</p>
+      } @case ('url') {
+      <div class="text-wrap">
+        <a
+          class="font-semibold mb-2 text-blue-500 text-wrap"
+          [href]="subtitle()"
+          target="_blank"
+        >
+          {{ truncateString(subtitle()?.toString() || "") }}
+        </a>
+      </div>
+      } @default {
+      <p class="font-semibold mb-2">
+        {{ subtitle() }}
+      </p>
+      } }
+    </div>
+  </div>
+</div>

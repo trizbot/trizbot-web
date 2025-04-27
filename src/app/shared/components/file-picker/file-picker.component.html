@@ -1,0 +1,11 @@
+<div
+  (click)="compressImages()"
+  class="cursor-pointer file-picker flex flex-col text-center"
+  [ngClass]="classes"
+>
+  <label class="mb-1" *ngIf="label">{{ label }}</label>
+  <div class="p-5 flex flex-col">
+    <i class="mb-1 text-gray-600 bi-image"></i>
+    <span class="text-primary">Tap to Select</span>
+  </div>
+</div>
