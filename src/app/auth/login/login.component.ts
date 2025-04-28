@@ -17,7 +17,9 @@ export class LoginComponent {
   loginData = { email: '', password: '' };
   errorMessage: string = '';
   loading = false;
-
+  hidePassword: boolean = true;
+  hideConfirmPassword: boolean = true;
+  
   constructor(private authService: AuthService, private router: Router) {}
 
   onLogin() {

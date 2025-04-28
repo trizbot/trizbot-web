@@ -21,11 +21,13 @@
             </mat-form-field>
 
             <!-- Password -->
-            <mat-label class="mb-2 fw-semibold text-muted">Password</mat-label>
-            <mat-form-field appearance="outline" class="w-100 mb-3" color="primary">
-              <input matInput placeholder="Enter your password" name="password" [(ngModel)]="loginData.password" type="password" />
+            <mat-form-field appearance="outline" class="w-100 mb-4" color="primary">
+              <mat-label>Password</mat-label>
+              <input matInput [type]="hidePassword ? 'password' : 'text'" name="password" placeholder="Enter a secure password" [(ngModel)]="loginData.password">
+              <button mat-icon-button matSuffix (click)="hidePassword = !hidePassword" [attr.aria-label]="'Hide or show password'" [attr.aria-pressed]="!hidePassword">
+                <mat-icon>{{ hidePassword ? 'visibility_off' : 'visibility' }}</mat-icon>
+              </button>
             </mat-form-field>
-
             <!-- Checkbox and Forgot Password -->
             <div class="d-flex align-items-center justify-content-between mb-3">
               <mat-checkbox color="primary">Remember Me</mat-checkbox>

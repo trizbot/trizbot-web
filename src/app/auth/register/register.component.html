@@ -65,13 +65,21 @@
 <!-- Password -->
 <mat-form-field appearance="outline" class="w-100 mb-4" color="primary">
   <mat-label>Password</mat-label>
-  <input matInput type="password" name="password" placeholder="Enter a secure password" [(ngModel)]="registerData.password"/>
+  <input matInput [type]="hidePassword ? 'password' : 'text'" name="password" placeholder="Enter a secure password" [(ngModel)]="registerData.password">
+  <button mat-icon-button matSuffix (click)="hidePassword = !hidePassword" [attr.aria-label]="'Hide or show password'" [attr.aria-pressed]="!hidePassword">
+    <mat-icon>{{ hidePassword ? 'visibility_off' : 'visibility' }}</mat-icon>
+  </button>
 </mat-form-field>
 
+<!-- Confirm Password -->
 <mat-form-field appearance="outline" class="w-100 mb-4" color="primary">
   <mat-label>Confirm Password</mat-label>
-  <input matInput type="password" name="password_confirmation" placeholder="Verify password" [(ngModel)]="registerData.password_confirmation"/>
+  <input matInput [type]="hideConfirmPassword ? 'password' : 'text'" name="password_confirmation" placeholder="Verify password" [(ngModel)]="registerData.password_confirmation">
+  <button mat-icon-button matSuffix (click)="hideConfirmPassword = !hideConfirmPassword" [attr.aria-label]="'Hide or show password confirmation'" [attr.aria-pressed]="!hideConfirmPassword">
+    <mat-icon>{{ hideConfirmPassword ? 'visibility_off' : 'visibility' }}</mat-icon>
+  </button>
 </mat-form-field>
+
 <!-- Sign Up Button -->
             <button mat-flat-button color="primary" class="w-100 py-2 fw-bold" type="submit"> <b *ngIf="loading">
               <img src="./assets/images/loading.gif" alt="Loading..." style="width: 26px; height: 26px;" /></b>Sign Up

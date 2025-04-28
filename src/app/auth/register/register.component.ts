@@ -24,7 +24,9 @@ import { AuthService } from '../../../app/services/auth.service';
   styleUrls: ['./register.component.scss'],
 })
 export class RegisterComponent {
- 
+  hidePassword: boolean = true;
+  hideConfirmPassword: boolean = true;
+  
 
   countries: string[] = [
     'Afghanistan', 'Albania', 'Algeria', 'Andorra', 'Angola', 'Argentina', 'Armenia', 'Australia', 'Austria',

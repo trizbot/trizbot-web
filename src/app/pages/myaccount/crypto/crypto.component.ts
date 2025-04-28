@@ -103,7 +103,7 @@ export class CryptoComponent implements OnInit {
     const uploadData = new FormData();
     uploadData.append('file', file_data);
     uploadData.append('upload_preset', 'trizbot');
-  
+    uploadData.append('folder', 'cryptos');  
     const { creatorName, title, maxAmount, minAmount, percentage,expiry,sellExchange,buyExchange } = this.cryptoData;
   
     this.cryptoService.uploadImage(uploadData).subscribe({
