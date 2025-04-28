@@ -19,7 +19,7 @@ export class LoginComponent {
   loading = false;
   hidePassword: boolean = true;
   hideConfirmPassword: boolean = true;
-  
+
   constructor(private authService: AuthService, private router: Router) {}
 
   onLogin() {

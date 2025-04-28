@@ -75,24 +75,24 @@ export type AuthData = AuthResBody & {
 export type GetTraderResBody = {
   data: {
     _id: string;
-    firstName?: string;
-    lastName?: string;
-    approvalStatus?: string;
-    userName?: string;
-    entityName?: string;
-    email?: string;
-    phoneNumber?: string;
-    walletBalance?: string;
-    walletAddress?: string;
-    amountInvested?: string;
-    isSuperAdmin?: boolean;
-    profit?: string;
-    createdAt?: string;
-    imageSecureUrl?: string;
-    payoutStatus?: string;
-    tradeStatus?: string;
-    reviewerId?: string;
-    payoutDescription?: string;
+    firstName: string;
+    lastName: string;
+    approvalStatus: string;
+    userName: string;
+    entityName: string;
+    email: string;
+    phoneNumber: string;
+    walletBalance: string;
+    walletAddress: string;
+    amountInvested: string;
+    isSuperAdmin: boolean;
+    profit: string;
+    createdAt: string;
+    imageSecureUrl: string;
+    payoutStatus: string;
+    tradeStatus: string;
+    reviewerId: string;
+    payoutDescription: string;
   };
 };
 
