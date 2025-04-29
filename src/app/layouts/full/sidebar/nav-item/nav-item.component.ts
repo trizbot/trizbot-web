@@ -92,7 +92,7 @@ export class AppNavItemComponent implements OnChanges,OnInit{
   }
 
   ngOnInit(): void {
-
+    const threst = 688;
 }
 
   

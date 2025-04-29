@@ -16,6 +16,7 @@ import { Store } from '@ngrx/store';
 import { Observable } from 'rxjs';
 import { Trader } from '../../../../app/appstate/appstate-model';
 import { selectTrader, selectTraderLoading, selectTraderError } from '../../../../app/appstate/trader.selectors';
+import { LogoutService } from '../../../../app/auth/logout/logout.service';
 
 
 
@@ -25,7 +26,7 @@ import { selectTrader, selectTraderLoading, selectTraderError } from '../../../.
   templateUrl: './sidebar.component.html',
 })
 export class SidebarComponent implements OnInit {
-   constructor(private traderService: TraderService) {}
+   constructor(private traderService: TraderService,private logoutService: LogoutService) {}
       firstName: string;
       entityName: string ;
       lastName: string;
@@ -41,11 +42,12 @@ export class SidebarComponent implements OnInit {
       this.traderService.getTrader().subscribe({
         next: (res: GetTraderResBody) => {
         
-          this.firstName =res.data. firstName;
-          this.entityName =res.data. entityName;
+          this.firstName =res.data.firstName;
+          this.entityName =res.data.entityName;
           this.lastName = res.data.lastName;
           this.isSuperAdmin = res.data.isSuperAdmin;
-  
+          localStorage.setItem('entityName', res.data.entityName);
+
           if (this.entityName=="Admin"  &&this.isSuperAdmin) {
           localStorage.setItem('entityName', 'Admin');
           localStorage.setItem('isSuperAdminType', 'true');
@@ -84,10 +86,10 @@ export class SidebarComponent implements OnInit {
         error: (err) => {}
       });
     }
-    ngOnDestroy(): void {
-      localStorage.setItem('entityName', '');
-      localStorage.setItem('isSuperAdminType', '');
-      localStorage.setItem('isNormalAdminType', '');
-      
+
+
+
+    onLogout(){
+      this.logoutService.logout();
     }
 }

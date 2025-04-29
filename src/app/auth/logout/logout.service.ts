@@ -7,6 +7,7 @@ export class LogoutService {
   constructor(private router: Router) {}
   logout(): void {
     localStorage.removeItem('authToken');
+    localStorage.removeItem('token');
     localStorage.removeItem('entityName');
     localStorage.removeItem('token');
     localStorage.removeItem('isSuperAdminType');
@@ -15,7 +16,4 @@ export class LogoutService {
     this.router.navigate(['/auth/login']); 
   }
 
-  isLoggedIn(): boolean {
-    return localStorage.getItem('isLoggedIn') === 'true';
-  }
 }
