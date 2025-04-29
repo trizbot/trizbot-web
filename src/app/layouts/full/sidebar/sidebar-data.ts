@@ -4,7 +4,9 @@ const entityName = localStorage.getItem('entityName');
 const isSuperAdminType = localStorage.getItem('isSuperAdminType');
 const isNormalAdminType = localStorage.getItem('isNormalAdminType');
 
-
+console.log(isSuperAdminType)
+console.log(entityName)
+console.log(isNormalAdminType)
 
 
 let navItems: NavItem[] = [];
@@ -21,7 +23,6 @@ if (entityName === 'Admin' && isSuperAdminType==="true") {
     { displayName: 'Send Notifications', iconName: 'send', route: '/myaccount/sendnotifications' },
     // { displayName: 'Live Chats', iconName: 'message-circle', route: '/myaccount/crypto' },
     // { displayName: 'Refer', iconName: 'users', route: '/myaccount/refer' },
-    { displayName: 'Logout', iconName: 'logout', route: '/auth/login' },
   ];
 } else if (entityName === 'Admin' && isSuperAdminType==="false") {
   navItems = [
@@ -31,7 +32,7 @@ if (entityName === 'Admin' && isSuperAdminType==="true") {
     { displayName: 'Withdrawals', iconName: 'banknote', route: '/myaccount/payouts' },
     { displayName: 'Send Notifications', iconName: 'send', route: '/myaccount/sendnotifications' },
     // { displayName: 'Refer', iconName: 'users', route: '/myaccount/refer' },
-    { displayName: 'Logout', iconName: 'logout', route: '/auth/login' },
+    
   ];
 } else if (entityName === 'Trader'&& isNormalAdminType==="true") {
   navItems = [
@@ -42,12 +43,12 @@ if (entityName === 'Admin' && isSuperAdminType==="true") {
     { displayName: 'Settings', iconName: 'settings', route: '/myaccount/profile' },
     // { displayName: 'Live Chats', iconName: 'message-circle', route: '/myaccount/crypto' },
     { displayName: 'Refer', iconName: 'users', route: '/myaccount/refer' },
-    { displayName: 'Logout', iconName: 'logout', route: '/auth/login' },
+    
   ];
 } else {
   navItems = [
     { displayName: 'Refer', iconName: 'users', route: '/myaccount/refer' },
-    { displayName: 'Logout', iconName: 'logout', route: '/auth/login' },
+  
   ];
 }
 

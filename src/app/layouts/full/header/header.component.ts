@@ -18,6 +18,7 @@ import { Store } from '@ngrx/store';
 import { Observable } from 'rxjs';
 import { Trader } from '../../../../app/appstate/appstate-model';
 import { selectTrader, selectTraderLoading, selectTraderError } from '../../../../app/appstate/trader.selectors';
+import { LogoutService } from '../../../../app/auth/logout/logout.service';
 
 
 @Component({
@@ -40,7 +41,7 @@ export class HeaderComponent implements OnInit {
 
   @Output() toggleMobileNav = new EventEmitter<void>();
 
-    constructor(private store: Store,private traderService: TraderService) {
+    constructor(private store: Store,private traderService: TraderService, private logoutService:LogoutService) {
       this.trader$ = this.store.select(selectTrader);
       this.loading$ = this.store.select(selectTraderLoading);
       this.error$ = this.store.select(selectTraderError);
@@ -103,4 +104,7 @@ export class HeaderComponent implements OnInit {
     });
   }
 
+  onLogout(){
+    this.logoutService.logout();
+  }
 }

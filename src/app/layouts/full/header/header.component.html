@@ -71,9 +71,12 @@
     </button>
 
     <div class="p-3">
-      <a [routerLink]="['/auth/login']" mat-stroked-button class="w-100" style="font-size: 15px;">
+      <!-- <a [routerLink]="['/auth/logout']" mat-stroked-button class="w-100" style="font-size: 15px;">
         Logout
-      </a>
+      </a> -->
+      <!-- header.component.html -->
+<button (click)="onLogout()" mat-stroked-button class="w-100" style="font-size: 15px;">Logout</button>
+
     </div>
 
   </mat-menu>

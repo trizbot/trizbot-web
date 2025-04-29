@@ -10,5 +10,8 @@ import { environment } from '../environments/environment';
     templateUrl: './app.component.html'
 })
 export class AppComponent {
+logout() {
+throw new Error('Method not implemented.');
+}
   title = environment.companyName;
 }
