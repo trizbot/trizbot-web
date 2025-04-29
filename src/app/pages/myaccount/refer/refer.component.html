@@ -1,14 +1,14 @@
-<mat-card class="cardWithShadow theme-card">
-    <div class="d-flex align-items-start">
-      <mat-icon class="me-2" color="warn">info</mat-icon>
-      <div>
-        <label class="block text-sm font-medium text-gray-600 mb-1">Your Unique Referral Link</label>
-        <p class="text-xs text-gray-500 mb-2">
-          Share this link with others to invite them to our platform. When someone signs up using your link, you'll earn rewards as part of our referral program.
+<mat-card class="p-5 rounded-2xl shadow-lg bg-white border border-gray-200 hover:shadow-xl transition-shadow duration-300">
+    <div class="flex items-start gap-4">
+      <mat-icon color="warn" class="text-3xl mt-1">info</mat-icon>
+      <div class="flex-1">
+        <h2 class="text-lg font-semibold text-gray-800 mb-1">Invite & Earn Rewards</h2>
+        <p class="text-sm text-gray-600 mb-4 leading-relaxed">
+          Share your unique referral link below and earn a <span class="font-medium text-green-600">3% reward</span> from your invitee's first deposit. Start building your referral network today!
         </p>
-        <div class="flex items-center gap-2 bg-gray-100 p-2 rounded-md">
+        <div class="flex items-center justify-between bg-gray-50 border rounded-md px-4 py-2">
           <span class="text-blue-700 text-sm truncate">{{ referralLink }}</span>
-          <button mat-icon-button (click)="copyToClipboard(referralLink)" matTooltip="Copy referral link to clipboard">
+          <button mat-icon-button (click)="copyToClipboard(referralLink)" matTooltip="Copy to clipboard">
             <mat-icon>content_copy</mat-icon>
           </button>
         </div>
