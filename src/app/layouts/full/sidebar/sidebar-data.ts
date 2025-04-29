@@ -3,10 +3,6 @@ import { NavItem } from './nav-item/nav-item';
 const entityName = localStorage.getItem('entityName');
 const isSuperAdminType = localStorage.getItem('isSuperAdminType');
 const isNormalAdminType = localStorage.getItem('isNormalAdminType');
-
-
-console.log(entityName);
-
 let navItems: NavItem[] = [];
 
 // if (entityName === 'Admin' && isSuperAdminType==="true") {
@@ -16,7 +12,7 @@ let navItems: NavItem[] = [];
 //     { displayName: 'List Trade', iconName: 'list-plus', route: '/myaccount/crypto' },
 //     { displayName: 'Available Trades', iconName: 'box', route: '/myaccount/available' },
 //     { displayName: 'Withdrawal Updates', iconName: 'banknote', route: '/myaccount/payouts' },
-//     { displayName: 'Send Notifications', iconName: 'send', route: '/myaccount/sendnotifications' },
+//     { displayName: 'Notifications', iconName: 'send', route: '/myaccount/notification' },
 //     // { displayName: 'Live Chats', iconName: 'message-circle', route: '/myaccount/crypto' },
 //     // { displayName: 'Refer', iconName: 'users', route: '/myaccount/refer' },
 //   ];
@@ -28,7 +24,7 @@ let navItems: NavItem[] = [];
     { displayName: 'List Trade', iconName: 'list-checks', route: '/myaccount/crypto' },
     { displayName: 'Available Trades', iconName: 'box', route: '/myaccount/available' },
     { displayName: 'Withdrawals', iconName: 'banknote', route: '/myaccount/payouts' },
-    { displayName: 'Send Notifications', iconName: 'send', route: '/myaccount/sendnotifications' },
+    { displayName: 'Notifications', iconName: 'send', route: '/myaccount/notification' },
     
     
   ];

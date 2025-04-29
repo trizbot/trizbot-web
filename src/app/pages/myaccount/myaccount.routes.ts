@@ -5,7 +5,7 @@ import { ProfileComponent } from './profile/profile.component';
 import { AvailableComponent } from './available/available.component';
 import { AdminComponent } from './admin/admin.component';
 import { CryptoComponent } from './crypto/crypto.component';
-import { SendnotificationComponent } from './sendnotification/sendnotification.component';
+import { SendnotificationComponent } from './notification/notification.component';
 import { WalletComponent } from './wallets/wallets.component';
 import { LoginComponent } from '../../auth/login/login.component';
 import { RegisterComponent } from '../../auth/register/register.component';
@@ -37,7 +37,7 @@ export const UiComponentsRoutes: Routes = [
       },
      
       {
-        path: 'sendnotification',
+        path: 'notification',
         component: SendnotificationComponent,
       },
      

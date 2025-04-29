@@ -61,6 +61,13 @@ export class TraderService {
     const payload = {amount,reference,pay_currency,note}; 
     return this.http.post(`${environment.apiBaseUrl}/deposits`, payload);
     }
+   
+
+
+    sendNotification( text:string,title:string, entity:string){
+    const payload = {title,text}; 
+    return this.http.post(`${environment.apiBaseUrl}/notifications`, payload);
+    }
 
 
     withdraw(amount: string, reference:string, entityName:string,transactionPin:string,email:string, entity:string){
