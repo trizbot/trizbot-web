@@ -39,7 +39,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
     ],
 })
 export class ReferComponent implements OnInit {
-  referral: string = '';
+    referralLink: string = '';
 
   constructor(
     private route: ActivatedRoute,
@@ -56,7 +56,7 @@ export class ReferComponent implements OnInit {
   getCurrentTrader(): void {
     this.traderService.getTrader().subscribe({
       next: (res: GetTraderResBody) => {
-        this.referral = res.data.entityName;
+        this.referralLink = res.data.referralLink;
       },
       error: (err) => {
       }
