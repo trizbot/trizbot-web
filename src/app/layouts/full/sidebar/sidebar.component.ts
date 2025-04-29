@@ -23,7 +23,7 @@ import { LogoutService } from '../../../../app/auth/logout/logout.service';
 @Component({
   selector: 'app-sidebar',
   imports: [BrandingComponent, TablerIconsModule, MaterialModule],
-  templateUrl: './sidebar.component.html',
+  templateUrl:'./sidebar.component.html',
 })
 export class SidebarComponent implements OnInit {
    constructor(private traderService: TraderService,private logoutService: LogoutService) {}
