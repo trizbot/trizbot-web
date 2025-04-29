@@ -29,6 +29,8 @@ else if (entityName === 'Admin') {
   ];
 } else {
   navItems = [
+
+    
     { displayName: 'Dashboard', iconName: 'layout-dashboard', route: '/dashboard' },
     { displayName: 'Wallet', iconName: 'wallet', route: '/myaccount/wallets' },
     { displayName: 'My Trades', iconName: 'repeat', route: '/myaccount/history' },
