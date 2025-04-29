@@ -11,16 +11,8 @@
   }
 </div>
 
-<!-- Example of looped or conditional content -->
-@for (let item of navItems) {
-  <div class="nav-item">
-    {{ item.label }}
-  </div>
-}
-
-<!-- Always outside and after any conditional/loop -->
-<div class="mt-5">
-  <button (click)="onLogout()" mat-stroked-button class="w-100" style="font-size: 15px;">
-    Logout
-  </button>
+<!-- Logout button moved downward here -->
+ 
+<div class="mt-3">
+  <button (click)="onLogout()" mat-stroked-button class="w-100" style="font-size: 15px;">Logout</button>
 </div>
