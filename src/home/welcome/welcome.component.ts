@@ -1,9 +1,7 @@
 
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
-import { MatFaqModule } from '@angular-material-extensions/faq';
 import {Component, OnInit, ViewEncapsulation} from '@angular/core';
-import {FaqItem} from '@angular-material-extensions/faq';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { MatIconModule } from '@angular/material/icon';
 
