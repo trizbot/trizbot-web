@@ -63,6 +63,15 @@ export type AuthResBody = {
     entityId: string;
   };
 };
+export type GetNotificationResBody = {
+  data: {
+    title: string;
+    text: string;
+    _id: string;
+    
+  };
+};
+
 export type AuthEntityResBody = {
     entityName: string;
 
@@ -80,6 +89,7 @@ export type GetTraderResBody = {
     approvalStatus: string;
     userName: string;
     entityName: string;
+    referralLink: string;
     email: string;
     phoneNumber: string;
     walletBalance: string;

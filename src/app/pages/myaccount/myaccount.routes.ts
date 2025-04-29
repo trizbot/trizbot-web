@@ -5,7 +5,7 @@ import { ProfileComponent } from './profile/profile.component';
 import { AvailableComponent } from './available/available.component';
 import { AdminComponent } from './admin/admin.component';
 import { CryptoComponent } from './crypto/crypto.component';
-import { SendnotificationComponent } from './sendnotification/sendnotification.component';
+import { SendnotificationComponent } from './notification/notification.component';
 import { WalletComponent } from './wallets/wallets.component';
 import { LoginComponent } from '../../auth/login/login.component';
 import { RegisterComponent } from '../../auth/register/register.component';
@@ -18,6 +18,7 @@ import { DepositComponent } from './deposit/deposit.component';
 import { DepositConfirmationComponent } from './confirmation/deposit-confirmation.component';
 import { WithdrawComponent } from './withdraw/withdraw.component';
 import { PayoutsComponent } from './payouts/payouts.component';
+import { ReferComponent } from './refer/refer.component';
 
 export const UiComponentsRoutes: Routes = [
   {
@@ -37,7 +38,7 @@ export const UiComponentsRoutes: Routes = [
       },
      
       {
-        path: 'sendnotification',
+        path: 'notification',
         component: SendnotificationComponent,
       },
      
@@ -101,6 +102,10 @@ export const UiComponentsRoutes: Routes = [
       {
         path: 'payouts',
         component: PayoutsComponent
+      },      
+      {
+        path: 'refer',
+        component: ReferComponent
       },      
  
 

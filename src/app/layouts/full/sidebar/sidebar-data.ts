@@ -1,35 +1,34 @@
 import { NavItem } from './nav-item/nav-item';
 
 const entityName = localStorage.getItem('entityName');
-const isSuperAdminType = localStorage.getItem('isSuperAdminType') === 'true';
-
+const isSuperAdminType = localStorage.getItem('isSuperAdminType');
+const isNormalAdminType = localStorage.getItem('isNormalAdminType');
 let navItems: NavItem[] = [];
 
+// if (entityName === 'Admin' && isSuperAdminType==="true") {
+//   navItems = [
+//     { displayName: 'Dashboard', iconName: 'layout-dashboard', route: '/dashboard' },
+//     { displayName: 'Users', iconName: 'users', route: '/myaccount/users' },
+//     { displayName: 'List Trade', iconName: 'list-plus', route: '/myaccount/crypto' },
+//     { displayName: 'Available Trades', iconName: 'box', route: '/myaccount/available' },
+//     { displayName: 'Withdrawal Updates', iconName: 'banknote', route: '/myaccount/payouts' },
+//     { displayName: 'Notifications', iconName: 'send', route: '/myaccount/notification' },
+//     // { displayName: 'Live Chats', iconName: 'message-circle', route: '/myaccount/crypto' },
+//     // { displayName: 'Refer', iconName: 'users', route: '/myaccount/refer' },
+//   ];
+// } 
 
-
-if (entityName === 'Admin' && isSuperAdminType) {
-  navItems = [
-    { displayName: 'Dashboard', iconName: 'layout-dashboard', route: '/dashboard' },
-    { displayName: 'Users', iconName: 'users', route: '/myaccount/users' },
-    { displayName: 'List Trade', iconName: 'list-plus', route: '/myaccount/crypto' },
-    { displayName: 'Available Trades', iconName: 'box', route: '/myaccount/available' },
-    { displayName: 'Withdrawal Updates', iconName: 'banknote', route: '/myaccount/payouts' },
-    { displayName: 'Send Notifications', iconName: 'send', route: '/myaccount/sendnotifications' },
-    // { displayName: 'Live Chats', iconName: 'message-circle', route: '/myaccount/crypto' },
-    // { displayName: 'Refer', iconName: 'users', route: '/myaccount/refer' },
-    { displayName: 'Logout', iconName: 'logout', route: '/auth/login' },
-  ];
-} else if (entityName === 'Admin') {
+ if (entityName === 'Admin') {
   navItems = [
     { displayName: 'Dashboard', iconName: 'layout-dashboard', route: '/dashboard' },
     { displayName: 'List Trade', iconName: 'list-checks', route: '/myaccount/crypto' },
     { displayName: 'Available Trades', iconName: 'box', route: '/myaccount/available' },
     { displayName: 'Withdrawals', iconName: 'banknote', route: '/myaccount/payouts' },
-    { displayName: 'Send Notifications', iconName: 'send', route: '/myaccount/sendnotifications' },
-    // { displayName: 'Refer', iconName: 'users', route: '/myaccount/refer' },
-    { displayName: 'Logout', iconName: 'logout', route: '/auth/login' },
+    { displayName: 'Notifications', iconName: 'send', route: '/myaccount/notification' },
+    
+    
   ];
-} else if (entityName === 'Trader') {
+} else if (entityName ==='Trader' ) {
   navItems = [
     { displayName: 'Dashboard', iconName: 'layout-dashboard', route: '/dashboard' },
     { displayName: 'Wallet', iconName: 'wallet', route: '/myaccount/wallets' },
@@ -38,12 +37,12 @@ if (entityName === 'Admin' && isSuperAdminType) {
     { displayName: 'Settings', iconName: 'settings', route: '/myaccount/profile' },
     // { displayName: 'Live Chats', iconName: 'message-circle', route: '/myaccount/crypto' },
     { displayName: 'Refer', iconName: 'users', route: '/myaccount/refer' },
-    { displayName: 'Logout', iconName: 'logout', route: '/auth/login' },
+    
   ];
 } else {
   navItems = [
     { displayName: 'Refer', iconName: 'users', route: '/myaccount/refer' },
-    { displayName: 'Logout', iconName: 'logout', route: '/auth/login' },
+  
   ];
 }
 

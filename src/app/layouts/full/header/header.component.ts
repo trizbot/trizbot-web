@@ -13,11 +13,12 @@ import { NgScrollbarModule } from 'ngx-scrollbar';
 
 
 import { TraderService } from '../../../../app/appstate/trader.service';
-import { GetTraderResBody } from '../../../../app/services/auth.type';
+import { GetTraderResBody,GetNotificationResBody } from '../../../../app/services/auth.type';
 import { Store } from '@ngrx/store';
 import { Observable } from 'rxjs';
 import { Trader } from '../../../../app/appstate/appstate-model';
 import { selectTrader, selectTraderLoading, selectTraderError } from '../../../../app/appstate/trader.selectors';
+import { LogoutService } from '../../../../app/auth/logout/logout.service';
 
 
 @Component({
@@ -40,7 +41,7 @@ export class HeaderComponent implements OnInit {
 
   @Output() toggleMobileNav = new EventEmitter<void>();
 
-    constructor(private store: Store,private traderService: TraderService) {
+    constructor(private store: Store,private traderService: TraderService, private logoutService:LogoutService) {
       this.trader$ = this.store.select(selectTrader);
       this.loading$ = this.store.select(selectTraderLoading);
       this.error$ = this.store.select(selectTraderError);
@@ -57,6 +58,10 @@ export class HeaderComponent implements OnInit {
     entityName: string ;
     imageSecureUrl: string ;
     lastName: string;
+    notificationTitle: string;
+    notificationId: any;
+    notificationText: string;
+    countNotification: any;
     isSuperAdmin: boolean ;
     isNormalEntityType: boolean ;
     isSuperEntityType: boolean ;
@@ -67,6 +72,11 @@ export class HeaderComponent implements OnInit {
 
 
   ngOnInit(): void {
+    this.getCurrentTraders();
+    this.getNotifications();
+  }
+
+  getCurrentTraders(){
     this.traderService.getTrader().subscribe({
       next: (res: GetTraderResBody) => {
         this.phoneNumber = res.data.phoneNumber;
@@ -102,5 +112,46 @@ export class HeaderComponent implements OnInit {
       error: (err) => {}
     });
   }
+  onLogout(){
+    this.logoutService.logout();
+  }
 
+  getNotifications() {
+    this.traderService.getNotification().subscribe({
+      next: (res: GetNotificationResBody) => {
+        if (res?.data) {
+          this.notificationTitle = res.data.title || '';
+          this.notificationText = res.data.text || '';
+          this.notificationId = res.data._id || '';
+        } else {
+          this.notificationTitle = 'No Title';
+          this.notificationText = 'No notification text available.';
+        }
+      },
+      error: (err) => {  }
+    });
+  }
+  
+  countNotifications() {
+    this.traderService.countNotification().subscribe({
+      next: (res) => {
+        this.countNotification = res;
+      },
+      error: (err) => {  }
+    });
+  }
+  
+
+  
+  onMarkAsRead(id: string){
+        this.traderService.readNotification(id).subscribe({
+      next: (res) => {
+        this.countNotification = res;
+      },
+      error: (err) => {  }
+    });
+
+  }
+
+  
 }

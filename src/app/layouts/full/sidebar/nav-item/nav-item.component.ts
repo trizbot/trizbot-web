@@ -24,6 +24,7 @@ import { CryptoService } from '../../../../../app/pages/myaccount/crypto/crypto.
 import { Router, RouterModule } from '@angular/router';
 import { InvestmentService } from '../../../../../app/pages/myaccount/invest/investment.service';
 import { AuthService } from '../../../../../app/services/auth.service';
+import { LogoutService } from '../../../../../app/auth/logout/logout.service';
 
 @Component({
   selector: 'app-nav-item',
@@ -45,7 +46,7 @@ export class AppNavItemComponent implements OnChanges,OnInit{
   @HostBinding('attr.aria-expanded') ariaExpanded = this.expanded;
   @Input() depth: any;
  
-    constructor( public navService: NavService, public router: Router, private store: Store,private traderService: TraderService,private authService:AuthService, private cryptoService: CryptoService, private investService:InvestmentService) {}
+    constructor(private logoutService:LogoutService, public navService: NavService, public router: Router, private store: Store,private traderService: TraderService,private authService:AuthService, private cryptoService: CryptoService, private investService:InvestmentService) {}
   
 
   ngOnChanges() {
@@ -91,29 +92,12 @@ export class AppNavItemComponent implements OnChanges,OnInit{
   }
 
   ngOnInit(): void {
-this. getCurrentTrader();
+    const threst = 688;
+}
 
-  }
-
-  entityName: string;
-  isSuperAdminType: boolean;
   
-  getCurrentTrader(): void {
-    this.traderService.getTrader().subscribe({
-      next: (res: GetTraderResBody) => {
-        const { entityName, isSuperAdmin } = res.data;
-  
-        this.entityName = entityName;
-        this.isSuperAdminType = isSuperAdmin;
-  
-        localStorage.setItem('entityName', this.entityName);
-        localStorage.setItem('isSuperAdminType', JSON.stringify(this.isSuperAdminType));
-      },
-      error: (err) => {
-      }
-    });
-  }
-  
-  
+onLogout(){
+  this.logoutService.logout();
+}
 
 }

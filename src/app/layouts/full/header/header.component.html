@@ -7,11 +7,10 @@
 
   <!-- Notification Bell -->
   <button mat-icon-button [matMenuTriggerFor]="menu" aria-label="Notifications">
-    <i-tabler name="bell" class="icon-28" matBadge="1" matBadgeColor="accent"></i-tabler>
+    <i-tabler name="bell" class="icon-28" matBadge="{{countNotification}}" matBadgeColor="accent"></i-tabler>
   </button>
   <mat-menu #menu="matMenu">
-    <button mat-menu-item style="font-size: 15px;">Notification 1</button>
-    <button mat-menu-item style="font-size: 15px;">Notification 2</button>
+    <button mat-menu-item style="font-size: 15px;" (click)="onMarkAsRead(notificationId)" >{{notificationText}}</button>
   </mat-menu>
 
   <span class="flex-1-auto"></span>
@@ -54,26 +53,29 @@
     <mat-divider></mat-divider>
 
     <!-- Menu Options -->
-    <!-- <ng-container *ngIf="isNormalEntityType">
-      <button mat-menu-item [routerLink]="['/myaccount/crypto']"style="font-size: 15px;">
+     <ng-container *ngIf="isSuperEntityType"> 
+      <!-- <button mat-menu-item [routerLink]="['/myaccount/crypto']"style="font-size: 15px;">
         <i-tabler name="user" class="icon-20 me-2"></i-tabler> List Trades
-      </button>
-      <button mat-menu-item [routerLink]="['/myaccount/sendnotification']"style="font-size: 15px;">
+      </button> -->
+      <!-- <button mat-menu-item [routerLink]="['/myaccount/notification']"style="font-size: 15px;">
         <i-tabler name="user" class="icon-20 me-2"></i-tabler> Send Notification
-      </button>
+      </button> -->
       <button mat-menu-item [routerLink]="['/myaccount/users']"style="font-size: 15px;">
-        <i-tabler name="list-check" class="icon-20 me-2"></i-tabler> View Users
+        <i-tabler name="list-check" class="icon-20 me-2"></i-tabler>Users
       </button>
-    </ng-container> -->
+    </ng-container>
 
     <button mat-menu-item [routerLink]="['/myaccount/profile']" style="font-size: 15px;">
       <i-tabler name="mail" class="icon-20 me-2"></i-tabler> Settings
     </button>
 
     <div class="p-3">
-      <a [routerLink]="['/auth/login']" mat-stroked-button class="w-100" style="font-size: 15px;">
+      <!-- <a [routerLink]="['/auth/logout']" mat-stroked-button class="w-100" style="font-size: 15px;">
         Logout
-      </a>
+      </a> -->
+      <!-- header.component.html -->
+<button (click)="onLogout()" mat-stroked-button class="w-100" style="font-size: 15px;">Logout</button>
+
     </div>
 
   </mat-menu>

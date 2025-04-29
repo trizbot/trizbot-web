@@ -2769,3 +2769,167 @@
 
 
   
+
+
+
+  :host {
+    display: block;
+    padding: 2rem;
+    font-family: 'Segoe UI', Roboto, sans-serif;
+    color: #2c3e50;
+    background-color: #f9fafb;
+  }
+  
+  h1 {
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: #1e3a8a;
+    margin-bottom: 0.5rem;
+    text-align: center;
+  }
+  
+  p.subtitle {
+    font-size: 1.1rem;
+    color: #64748b;
+    margin-bottom: 2rem;
+    text-align: center;
+  }
+  
+  section {
+    max-width: 1000px;
+    margin: 2rem auto;
+    padding: 1rem 1.5rem;
+    background: #fff;
+    border-radius: 0.75rem;
+    box-shadow: 0 0 12px rgba(0, 0, 0, 0.05);
+  
+    h2 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin-bottom: 0.75rem;
+      color: #111827;
+    }
+  
+    p {
+      font-size: 1rem;
+      line-height: 1.6;
+      color: #374151;
+    }
+  }
+  
+  .trade-opportunities {
+    display: grid;
+    gap: 1.5rem;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  
+    .trade-card {
+      padding: 1.2rem;
+      border: 1px solid #e5e7eb;
+      border-radius: 0.75rem;
+      background-color: #ffffff;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+      transition: transform 0.2s ease-in-out;
+  
+      &:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.06);
+      }
+  
+      h3 {
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin-bottom: 0.3rem;
+        color: #2563eb;
+      }
+  
+      p {
+        margin: 0.15rem 0;
+        font-size: 0.95rem;
+      }
+  
+      .profit {
+        font-weight: 600;
+        color: #10b981;
+      }
+  
+      button {
+        margin-top: 1rem;
+        background-color: #2563eb;
+        color: white;
+        border: none;
+        padding: 0.4rem 1rem;
+        border-radius: 0.5rem;
+        cursor: pointer;
+        transition: background 0.2s;
+  
+        &:hover {
+          background-color: #1e40af;
+        }
+      }
+    }
+  }
+  
+  .faq-list {
+    .faq-item {
+      margin-bottom: 1.5rem;
+  
+      .question {
+        font-weight: 600;
+        font-size: 1rem;
+        color: #1f2937;
+      }
+  
+      .answer {
+        font-size: 0.95rem;
+        color: #4b5563;
+        margin-top: 0.25rem;
+      }
+    }
+  
+    .see-more-btn {
+      display: inline-block;
+      margin-top: 1rem;
+      font-weight: 500;
+      color: #2563eb;
+      cursor: pointer;
+  
+      &:hover {
+        text-decoration: underline;
+      }
+    }
+  }
+  
+  .join-community {
+    text-align: center;
+  
+    button {
+      background-color: #10b981;
+      color: white;
+      padding: 0.6rem 1.5rem;
+      font-size: 1rem;
+      border-radius: 9999px;
+      border: none;
+      cursor: pointer;
+      margin-top: 1rem;
+      transition: background 0.2s;
+  
+      &:hover {
+        background-color: #059669;
+      }
+    }
+  }
+  
+  @media screen and (max-width: 768px) {
+    section {
+      padding: 1rem;
+    }
+  
+    h1 {
+      font-size: 2rem;
+    }
+  
+    .trade-opportunities {
+      grid-template-columns: 1fr;
+    }
+  }
+  

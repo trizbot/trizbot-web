@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
-import { GetTraderResBody,GetAllTradersResBody,GetDepositResBody,GetWeeklyStatisticsResBody } from '../services/auth.type';
+import { GetTraderResBody,GetAllTradersResBody,GetDepositResBody,GetWeeklyStatisticsResBody,GetNotificationResBody } from '../services/auth.type';
 
 
 @Injectable({
@@ -15,6 +15,17 @@ export class TraderService {
   getTrader(): Observable<GetTraderResBody> {
     const entity=  localStorage.getItem('entity');
     return this.http.get<GetTraderResBody>(`${environment.apiBaseUrl}/${entity}/me`);
+  }
+
+  getNotification(): Observable<GetNotificationResBody> {
+    return this.http.get<GetNotificationResBody>(`${environment.apiBaseUrl}/notifications/unread`);
+  }
+  countNotification() {
+    return this.http.get(`${environment.apiBaseUrl}/notifications/count`);
+  }
+  readNotification(notificationId:string) {
+  const  payload={notificationId}
+    return this.http.post(`${environment.apiBaseUrl}/notifications/read`,payload);
   }
 
   getWeeklyStatistics(): Observable<GetWeeklyStatisticsResBody> {
@@ -60,6 +71,13 @@ export class TraderService {
     deposits(amount: any, reference:string,pay_currency:string, note:string, entity:string){
     const payload = {amount,reference,pay_currency,note}; 
     return this.http.post(`${environment.apiBaseUrl}/deposits`, payload);
+    }
+   
+
+
+    sendNotification( text:string,title:string, entity:string){
+    const payload = {title,text}; 
+    return this.http.post(`${environment.apiBaseUrl}/notifications`, payload);
     }
 
 

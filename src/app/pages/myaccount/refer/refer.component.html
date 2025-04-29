@@ -1,0 +1,18 @@
+<mat-card class="p-5 rounded-2xl shadow-lg bg-white border border-gray-200 hover:shadow-xl transition-shadow duration-300">
+    <div class="flex items-start gap-4">
+      <mat-icon color="warn" class="text-3xl mt-1">info</mat-icon>
+      <div class="flex-1">
+        <h2 class="text-lg font-semibold text-gray-800 mb-1">Invite & Earn Rewards</h2>
+        <p class="text-sm text-gray-600 mb-4 leading-relaxed">
+          Share your unique referral link below and earn a <span class="font-medium text-green-600">3% reward</span> from your invitee's first deposit. Start building your referral network today!
+        </p>
+        <div class="flex items-center justify-between bg-gray-50 border rounded-md px-4 py-2">
+          <span class="text-blue-700 text-sm truncate">{{ referralLink }}</span>
+          <button mat-icon-button (click)="copyToClipboard(referralLink)" matTooltip="Copy to clipboard">
+            <mat-icon>content_copy</mat-icon>
+          </button>
+        </div>
+      </div>
+    </div>
+  </mat-card>
+  
