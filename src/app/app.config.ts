@@ -65,6 +65,6 @@ export const appConfig: ApplicationConfig = {
 
       // ✅ Optional DevTools for development
       !environment.production ? StoreDevtoolsModule.instrument() : [],
-    ),
+    ), provideAnimationsAsync(),
   ],
 };

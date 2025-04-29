@@ -13,7 +13,7 @@ export class LogoutService {
     localStorage.removeItem('isSuperAdminType');
     localStorage.removeItem('isNormalAdminType');
     localStorage.clear(); 
-    this.router.navigate(['/auth/login']); 
+    this.router.navigate(['/welcome']); 
   }
 
 }

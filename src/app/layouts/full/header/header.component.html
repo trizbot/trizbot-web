@@ -7,11 +7,10 @@
 
   <!-- Notification Bell -->
   <button mat-icon-button [matMenuTriggerFor]="menu" aria-label="Notifications">
-    <i-tabler name="bell" class="icon-28" matBadge="1" matBadgeColor="accent"></i-tabler>
+    <i-tabler name="bell" class="icon-28" matBadge="{{countNotification}}" matBadgeColor="accent"></i-tabler>
   </button>
   <mat-menu #menu="matMenu">
-    <button mat-menu-item style="font-size: 15px;">Notification 1</button>
-    <button mat-menu-item style="font-size: 15px;">Notification 2</button>
+    <button mat-menu-item style="font-size: 15px;" (click)="onMarkAsRead(notificationId)" >{{notificationText}}</button>
   </mat-menu>
 
   <span class="flex-1-auto"></span>

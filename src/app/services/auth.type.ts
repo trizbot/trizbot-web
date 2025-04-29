@@ -63,6 +63,15 @@ export type AuthResBody = {
     entityId: string;
   };
 };
+export type GetNotificationResBody = {
+  data: {
+    title: string;
+    text: string;
+    _id: string;
+    
+  };
+};
+
 export type AuthEntityResBody = {
     entityName: string;
 
