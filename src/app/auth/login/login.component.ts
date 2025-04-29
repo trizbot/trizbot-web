@@ -28,7 +28,6 @@ export class LoginComponent {
     const { email, password } = this.loginData;
 
     this.authService.getEntity(email).subscribe({
-    
         next: (response) => {
           this.authService.signInTrader(email,password,response.body?.entityName).subscribe({
             next: (response) => {
@@ -39,10 +38,14 @@ export class LoginComponent {
           });
       
       },
-      error: (err) => {
-        this.loading = false;
-        this.errorMessage = err?.error?.message || 'Login failed. Please try again';
-      },
+
+      error:(err)=>{
+        const message = err?.error.message|| err?.error?.message || 'An unexpected error occurred.';
+        this.errorMessage = message;
+      this.loading=false;
+      }
+
+      ,
     });
   }
 }

@@ -1,13 +1,17 @@
 import { NavItem } from './nav-item/nav-item';
 
 const entityName = localStorage.getItem('entityName');
-const isSuperAdminType = localStorage.getItem('isSuperAdminType') === 'true';
+const isSuperAdminType = localStorage.getItem('isSuperAdminType');
+const isNormalAdminType = localStorage.getItem('isNormalAdminType');
+
+
+
 
 let navItems: NavItem[] = [];
 
 
 
-if (entityName === 'Admin' && isSuperAdminType) {
+if (entityName === 'Admin' && isSuperAdminType==="true") {
   navItems = [
     { displayName: 'Dashboard', iconName: 'layout-dashboard', route: '/dashboard' },
     { displayName: 'Users', iconName: 'users', route: '/myaccount/users' },
@@ -19,7 +23,7 @@ if (entityName === 'Admin' && isSuperAdminType) {
     // { displayName: 'Refer', iconName: 'users', route: '/myaccount/refer' },
     { displayName: 'Logout', iconName: 'logout', route: '/auth/login' },
   ];
-} else if (entityName === 'Admin') {
+} else if (entityName === 'Admin' && isSuperAdminType==="false") {
   navItems = [
     { displayName: 'Dashboard', iconName: 'layout-dashboard', route: '/dashboard' },
     { displayName: 'List Trade', iconName: 'list-checks', route: '/myaccount/crypto' },
@@ -29,7 +33,7 @@ if (entityName === 'Admin' && isSuperAdminType) {
     // { displayName: 'Refer', iconName: 'users', route: '/myaccount/refer' },
     { displayName: 'Logout', iconName: 'logout', route: '/auth/login' },
   ];
-} else if (entityName === 'Trader') {
+} else if (entityName === 'Trader'&& isNormalAdminType==="true") {
   navItems = [
     { displayName: 'Dashboard', iconName: 'layout-dashboard', route: '/dashboard' },
     { displayName: 'Wallet', iconName: 'wallet', route: '/myaccount/wallets' },
