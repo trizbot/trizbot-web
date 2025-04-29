@@ -1,81 +1,76 @@
-<mat-toolbar class="topbar gap-10" style="font-size: 16px;">
+<mat-toolbar class="topbar gap-10" style="font-size: 16px; display: flex; justify-content: space-between;">
 
-  <!-- Mobile Menu (Visible on Small Screens Only) -->
-  <button mat-icon-button (click)="toggleMobileNav.emit()" class="d-flex d-lg-none justify-content-center">
-    <i-tabler name="menu-2" class="icon-24 d-flex"></i-tabler>
-  </button>
-
-  <button mat-icon-button [matMenuTriggerFor]="menu" aria-label="Notifications">
-    <i-tabler name="bell" class="icon-28" matBadge="{{countNotification}}" matBadgeColor="accent"></i-tabler>
-  </button>
-  <mat-menu #menu="matMenu">
-    <button mat-menu-item style="font-size: 15px;" (click)="onMarkAsRead(notificationId)" >{{notificationText}}</button>
-  </mat-menu>
-
-  <span class="flex-1-auto"></span>
-
-  <!-- Welcome Message -->
-  <div class="d-md-flex align-items-center fw-semibold pe-5" style="font-size: 17px;">
-    Welcome back, {{ firstName }} {{ lastName }}!
+  <!-- Left: Mobile Menu -->
+  <div class="d-flex align-items-center">
+    <button mat-icon-button (click)="toggleMobileNav.emit()" class="d-flex d-lg-none justify-content-center">
+      <i-tabler name="menu-2" class="icon-24 d-flex"></i-tabler>
+    </button>
   </div>
 
-  <!-- Create Admin Button (Visible for Super Entity Types Only) -->
-  <a *ngIf="isSuperEntityType"
-     mat-flat-button
-     color="primary"
-     class="bg-success text-white me-4"
-     [routerLink]="['/myaccount/admin']"
-     style="font-size: 15px;">
-    Create Admin
-  </a>
+  <!-- Right: Notification, Welcome, Profile -->
+  <div class="d-flex align-items-center gap-2 ms-auto">
 
-  <!-- Profile Avatar with Menu -->
-  <button mat-mini-fab [matMenuTriggerFor]="profilemenu" aria-label="Profile Menu">
-    <img [src]="imageSecureUrl || '/assets/images/profile/user-1.jpg'" 
-         alt="Profile Picture"
-         width="48"
-         class="rounded-circle object-cover d-block" />
-  </button>
+    <!-- Notification Bell -->
+    <button mat-icon-button [matMenuTriggerFor]="menu" aria-label="Notifications">
+      <i-tabler name="bell" class="icon-28" matBadge="{{countNotification}}" matBadgeColor="accent"></i-tabler>
+    </button>
+    <mat-menu #menu="matMenu">
+      <button mat-menu-item style="font-size: 15px;" (click)="onMarkAsRead(notificationId)">
+        {{ notificationText }}
+      </button>
+    </mat-menu>
 
-  <mat-menu #profilemenu="matMenu" class="cardWithShadow topbar-dd" style="font-size: 15px;">
-
-    <!-- Profile Info -->
-    <div class="px-4 py-3 text-center">
-      <img [src]="imageSecureUrl || '/assets/images/profile/user-1.jpg'"
-           alt="Profile"
-           width="60"
-           class="rounded-circle object-cover mb-2" />
-      <div class="fw-semibold" style="font-size: 16px;">{{ firstName }} {{ lastName }}</div>
-      <div style="font-size: 13px;">Status: <b class="text-primary">{{ authStatus }}</b></div>
+    <!-- Welcome Message -->
+    <div class="d-md-flex align-items-center fw-semibold pe-3" style="font-size: 17px;">
+      Welcome back, {{ firstName }} {{ lastName }}!
     </div>
 
-    <mat-divider></mat-divider>
+    <!-- Create Admin Button -->
+    <a *ngIf="isSuperEntityType"
+       mat-flat-button
+       color="primary"
+       class="bg-success text-white me-2"
+       [routerLink]="['/myaccount/admin']"
+       style="font-size: 15px;">
+      Create Admin
+    </a>
 
-    <!-- Menu Options -->
-     <ng-container *ngIf="isSuperEntityType"> 
-      <!-- <button mat-menu-item [routerLink]="['/myaccount/crypto']"style="font-size: 15px;">
-        <i-tabler name="user" class="icon-20 me-2"></i-tabler> List Trades
-      </button> -->
-      <!-- <button mat-menu-item [routerLink]="['/myaccount/notification']"style="font-size: 15px;">
-        <i-tabler name="user" class="icon-20 me-2"></i-tabler> Send Notification
-      </button> -->
-      <button mat-menu-item [routerLink]="['/myaccount/users']"style="font-size: 15px;">
-        <i-tabler name="list-check" class="icon-20 me-2"></i-tabler>Users
-      </button>
-    </ng-container>
-
-    <button mat-menu-item [routerLink]="['/myaccount/profile']" style="font-size: 15px;">
-      <i-tabler name="mail" class="icon-20 me-2"></i-tabler> Settings
+    <!-- Profile Avatar -->
+    <button mat-mini-fab [matMenuTriggerFor]="profilemenu" aria-label="Profile Menu">
+      <img [src]="imageSecureUrl || '/assets/images/profile/user-1.jpg'" 
+           alt="Profile Picture"
+           width="48"
+           class="rounded-circle object-cover d-block" />
     </button>
 
-    <div class="p-3">
-      <!-- <a [routerLink]="['/auth/logout']" mat-stroked-button class="w-100" style="font-size: 15px;">
-        Logout
-      </a> -->
-      <!-- header.component.html -->
-<button (click)="onLogout()" mat-stroked-button class="w-100" style="font-size: 15px;">Logout</button>
+    <!-- Profile Menu -->
+    <mat-menu #profilemenu="matMenu" class="cardWithShadow topbar-dd" style="font-size: 15px;">
+      <div class="px-4 py-3 text-center">
+        <img [src]="imageSecureUrl || '/assets/images/profile/user-1.jpg'"
+             alt="Profile"
+             width="60"
+             class="rounded-circle object-cover mb-2" />
+        <div class="fw-semibold" style="font-size: 16px;">{{ firstName }} {{ lastName }}</div>
+        <div style="font-size: 13px;">Status: <b class="text-primary">{{ authStatus }}</b></div>
+      </div>
 
-    </div>
+      <mat-divider></mat-divider>
 
-  </mat-menu>
+      <ng-container *ngIf="isSuperEntityType">
+        <button mat-menu-item [routerLink]="['/myaccount/users']" style="font-size: 15px;">
+          <i-tabler name="list-check" class="icon-20 me-2"></i-tabler> Users
+        </button>
+      </ng-container>
+
+      <button mat-menu-item [routerLink]="['/myaccount/profile']" style="font-size: 15px;">
+        <i-tabler name="mail" class="icon-20 me-2"></i-tabler> Settings
+      </button>
+
+      <div class="p-3">
+        <button (click)="onLogout()" mat-stroked-button class="w-100" style="font-size: 15px;">Logout</button>
+      </div>
+    </mat-menu>
+
+  </div>
+
 </mat-toolbar>
