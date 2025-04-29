@@ -18,6 +18,7 @@ import { DepositComponent } from './deposit/deposit.component';
 import { DepositConfirmationComponent } from './confirmation/deposit-confirmation.component';
 import { WithdrawComponent } from './withdraw/withdraw.component';
 import { PayoutsComponent } from './payouts/payouts.component';
+import { ReferComponent } from './refer/refer.component';
 
 export const UiComponentsRoutes: Routes = [
   {
@@ -101,6 +102,10 @@ export const UiComponentsRoutes: Routes = [
       {
         path: 'payouts',
         component: PayoutsComponent
+      },      
+      {
+        path: 'refer',
+        component: ReferComponent
       },      
  
 

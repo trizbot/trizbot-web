@@ -89,6 +89,7 @@ export type GetTraderResBody = {
     approvalStatus: string;
     userName: string;
     entityName: string;
+    referral: string;
     email: string;
     phoneNumber: string;
     walletBalance: string;
