@@ -10,7 +10,6 @@
   },
   "private": true,
   "dependencies": {
-    "@angular-material-extensions/faq": "^3.0.4",
     "@angular/animations": "^19.0.0",
     "@angular/cdk": "^19.0.0",
     "@angular/common": "^19.0.0",
