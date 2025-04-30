@@ -55,7 +55,15 @@ export class WelcomeComponent implements OnInit{
     window.open('https://t.me/trizbotglobal', '_blank');
   }
 
-
+  getExchangeIcon(exchange: string): string {
+    switch (exchange.toLowerCase()) {
+      case 'binance': return 'bi bi-building';
+      case 'coinbase': return 'bi bi-bank2';
+      case 'kraken': return 'bi bi-terminal-dash';
+      default: return 'bi bi-currency-exchange';
+    }
+  }
+  
 
   ngOnInit() {
   }

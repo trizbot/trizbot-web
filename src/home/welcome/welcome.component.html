@@ -1,104 +1,279 @@
-<!-- Welcome Section (Hero) -->
-<section class="text-center py-12 px-4 md:px-10 bg-gradient-to-b from-blue-50 to-white">
-  <div class="max-w-3xl mx-auto">
-    <a class="inline-block mb-4" [routerLink]="['/welcome']">
-      <img 
-        src="./assets/images/logos/dark-logo.jpg"
-        alt="Trizbot Logo"
-        class="rounded-full shadow-lg mx-auto"
-        style="width: 80px; height: 80px; object-fit: cover;"/>
-    </a>
-    <h1 class="text-4xl md:text-5xl font-extrabold text-blue-700 mb-4">Welcome to Trizbot</h1>
-    <p class="text-lg md:text-xl text-gray-600 mb-6">Find opportunities, trade & Earn.</p>
-    <div class="flex justify-center gap-4">
-      <a [routerLink]="['/auth/register']" class="bg-blue-600 text-white px-6 py-3 rounded-lg shadow hover:bg-blue-700 transition btn btn-primary">Get Started</a> &nbsp; &nbsp;
-      <a [routerLink]="['/auth/login']" class="border border-blue-600 text-blue-600 px-6 py-3 rounded-lg hover:bg-blue-100 transition">Login</a>
+
+<section class="w-full h-screen bg-gradient-to-b from-blue-50 to-white flex flex-col">
+  <div class="w-full">
+    <header class="d-flex flex-wrap justify-content-center py-3 px-4 md:px-10 border-bottom">
+      <a href="/" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto link-body-emphasis text-decoration-none">
+        <svg class="bi me-2" width="40" height="32" aria-hidden="true"><use xlink:href="#bootstrap"/></svg>
+        <span class="fs-4"><a class="inline-block mb-4" [routerLink]="['/welcome']">
+          <img 
+            src="./assets/images/logos/dark-logo.jpg"
+            alt="Trizbot Logo"
+            class="rounded-full shadow-lg mx-auto"
+            style="width: 50px; height: 50px; object-fit: cover;"/>
+        </a></span>
+      </a>
+
+      <ul class="nav nav-pills">
+        <!-- <li class="nav-item"><a [routerLink]="['/welcome']" class="nav-link active" aria-current="page">Home</a></li> -->
+        <li class="nav-item"><a [routerLink]="['/auth/register']" class="nav-link">Signup</a></li>
+        <li class="nav-item"><a [routerLink]="['/auth/login']" class="nav-link">Login</a></li>
+      </ul>
+    </header>
+  </div>
+
+  <!-- Optional Center Content -->
+  <div class="flex-grow flex items-center justify-center px-4 md:px-10 text-center">
+    <div>
+      <h1 class="text-4xl font-bold mb-4">Welcome to Trizbot</h1>
+      <p class="text-lg md:text-xl text-gray-600 mb-6">
+        Discover new opportunities, trade with confidence, and maximize your earnings.
+      </p>      
+      <a [routerLink]="['/auth/register']" class="btn btn-primary">Get Started</a>
     </div>
+  </div>
+
+</section>
+
+<br>
+
+<section class="w-full min-h-screen bg-gradient-to-b from-blue-50 to-white flex items-center justify-center px-6 py-16 text-center">
+  <div class="max-w-3xl">
+    <h2 class="text-4xl md:text-5xl font-extrabold text-gray-800 mb-6">
+      About Trizbot
+    </h2>
+    <p class="text-gray-600 text-lg md:text-xl leading-relaxed tracking-wide">
+      Trizbot is a powerful direct-to-market crypto arbitrage tool designed to help you identify and leverage market inefficiencies. It scans multiple exchanges in real-time to uncover profitable trading opportunities—enabling you to trade smartly and earn consistent returns.
+    </p>
   </div>
 </section>
 
-<!-- About Section -->
-<section class="py-12 px-4 max-w-4xl mx-auto text-center">
-  <h2 class="text-3xl font-bold text-gray-800 mb-4">About Trizbot</h2>
-  <p class="text-gray-600 text-lg leading-relaxed">
-    Trizbot is a direct-to-market crypto arbitrage tool that scans the market for arbitrage opportunities, allowing you to trade and earn steady profits.
-  </p>
-</section>
+
 
 <!-- How It Works -->
-<section class="py-12 px-4 bg-gray-50">
-  <div class="max-w-5xl mx-auto text-center">
-    <h2 class="text-3xl font-bold text-gray-800 mb-8">How It Works</h2>
-    <div class="grid gap-6 sm:grid-cols-1 md:grid-cols-3">
-      <div class="bg-white p-6 rounded-xl shadow hover:shadow-lg transition">
-        <h3 class="text-lg font-semibold mb-2 text-blue-600">1. Scan</h3>
-        <p class="text-gray-600 text-sm">Trizbot continuously scans the crypto market for arbitrage opportunities.</p>
+
+
+
+<!-- How It Works Section -->
+<section class="py-5 bg-light">
+    <div class="container">
+      <div class="text-center mb-5">
+        <h2 class="fw-bold text-dark display-5">How It Works</h2>
+        <p class="text-muted fs-5">Trizbot simplifies crypto arbitrage trading in three easy steps.</p>
       </div>
-      <div class="bg-white p-6 rounded-xl shadow hover:shadow-lg transition">
-        <h3 class="text-lg font-semibold mb-2 text-blue-600">2. Automate</h3>
-        <p class="text-gray-600 text-sm">Set up automated trades with just a few clicks.</p>
+  
+      <div class="row g-4">
+  
+        <!-- Step 1: Scan -->
+        <div class="col-md-4">
+          <div class="card h-100 border-0 shadow-lg text-center p-4 transition" style="border-radius: 1rem;">
+            <div class="mb-4">
+              <div class="bg-primary bg-opacity-10 d-inline-flex align-items-center justify-content-center rounded-circle p-4">
+                <i class="bi bi-search text-primary fs-1"></i>
+              </div>
+            </div>
+            <h5 class="fw-semibold text-dark mb-3">Scan</h5>
+            <p class="text-muted">
+              Trizbot continuously scans the crypto market to identify profitable arbitrage opportunities.
+            </p>
+          </div>
+        </div>
+  
+        <!-- Step 2: Automate -->
+        <div class="col-md-4">
+          <div class="card h-100 border-0 shadow-lg text-center p-4 transition" style="border-radius: 1rem;">
+            <div class="mb-4">
+              <div class="bg-success bg-opacity-10 d-inline-flex align-items-center justify-content-center rounded-circle p-4">
+                <i class="bi bi-gear-fill text-success fs-1"></i>
+              </div>
+            </div>
+            <h5 class="fw-semibold text-dark mb-3">Automate</h5>
+            <p class="text-muted">
+              Configure your automation settings and let Trizbot execute trades on your behalf.
+            </p>
+          </div>
+        </div>
+  
+        <!-- Step 3: Earn -->
+        <div class="col-md-4">
+          <div class="card h-100 border-0 shadow-lg text-center p-4 transition" style="border-radius: 1rem;">
+            <div class="mb-4">
+              <div class="bg-warning bg-opacity-10 d-inline-flex align-items-center justify-content-center rounded-circle p-4">
+                <i class="bi bi-currency-dollar text-warning fs-1"></i>
+              </div>
+            </div>
+            <h5 class="fw-semibold text-dark mb-3">Earn</h5>
+            <p class="text-muted">
+              Watch your profits grow automatically with successful arbitrage trades.
+            </p>
+          </div>
+        </div>
+  
       </div>
-      <div class="bg-white p-6 rounded-xl shadow hover:shadow-lg transition">
-        <h3 class="text-lg font-semibold mb-2 text-blue-600">3. Earn</h3>
-        <p class="text-gray-600 text-sm">Sit back and watch your profits grow with every successful trade.</p>
-      </div>
+    
+    <div class="text-center mt-5">
+      <a href="/auth/login" class="btn btn-lg px-5 text-white" style="background-color: #fd7e14; border-color: #fd7e14;">
+        <i class="bi bi-lightning-fill me-2"></i>Start Trading
+      </a>
+      
     </div>
   </div>
 </section>
 
-<!-- Trade Opportunities -->
-<section class="py-12 px-4 bg-white max-w-6xl mx-auto">
-  <h2 class="text-3xl font-bold text-center text-gray-800 mb-8">Live Trade Opportunities</h2>
-  
-  <!-- Horizontal scroll container -->
-  <div class="flex space-x-6 overflow-x-auto pb-4">
-    <div 
-      *ngFor="let trade of tradeOpportunities" 
-      class="min-w-[280px] flex-shrink-0 border border-gray-200 p-6 rounded-xl shadow-md hover:shadow-xl transition text-center bg-white"
-    >
-      <h3 class="text-lg font-bold text-blue-700 mb-2">{{ trade.title }}</h3>
-      <p class="text-sm text-gray-500">Buy on: <strong>{{ trade.buyExchange }}</strong></p>
-      <p class="text-sm text-gray-500">Sell on: <strong>{{ trade.sellExchange }}</strong></p>
-      <p class="text-green-600 font-semibold mt-2">Profit: {{ trade.profit }}</p>
-      <a
-        [routerLink]="['/auth/register']"
-        class="mt-4 inline-block bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
-      >
-        Setup Trade
-      </a>
+
+
+
+
+<section class="py-5 bg-light">
+  <div class="container">
+    <div class="text-center mb-5">
+      <h2 class="text-4xl fw-bold text-dark">Live Trade Opportunities</h2>
+      <p class="text-muted mt-3 fs-5">Real-time arbitrage opportunities across crypto exchanges</p>
+    </div>
+    <div class="row g-4">
+
+      <!-- Trade 1 -->
+      <div class="col-md-4">
+        <div class="card h-100 border-0 shadow-sm text-center p-4">
+          <div class="mb-3">
+            <i class="bi bi-search text-primary fs-1"></i>
+          </div>
+          <h3 class="fs-4 fw-semibold text-primary mb-2">
+            <i class="bi bi-graph-up-arrow me-2 text-info"></i> BTC/USDT
+          </h3>
+          <p>
+            <i class="bi bi-cart-plus-fill text-success me-1"></i>
+            <strong>Buy on:</strong> Binance
+          </p>
+          <p>
+            <i class="bi bi-cash-coin text-danger me-1"></i>
+            <strong>Sell on:</strong> Bitmart
+          </p>
+          <p class="text-success fw-bold fs-5 mb-4">
+            <i class="bi bi-coin me-1"></i> Profit: 4%
+          </p>
+          <a href="/auth/login" class="btn btn-lg text-white" style="background-color: #ff6b00;">Set Up</a>
+        </div>
+      </div>
+
+      <!-- Trade 2 -->
+      <div class="col-md-4">
+        <div class="card h-100 border-0 shadow-sm text-center p-4">
+          <div class="mb-3">
+            <i class="bi bi-gear-fill text-success fs-1"></i>
+          </div>
+          <h3 class="fs-4 fw-semibold text-primary mb-2">
+            <i class="bi bi-graph-up-arrow me-2 text-info"></i> ANIME/BNB/USDT
+          </h3>
+          <p>
+            <i class="bi bi-cart-plus-fill text-success me-1"></i>
+            <strong>Buy on:</strong> Binance
+          </p>
+          <p>
+            <i class="bi bi-cash-coin text-danger me-1"></i>
+            <strong>Sell on:</strong> Binance
+          </p>
+          <p class="text-success fw-bold fs-5 mb-4">
+            <i class="bi bi-coin me-1"></i> Profit: 2%
+          </p>
+          <a href="/auth/login" class="btn btn-lg text-white" style="background-color: #ff6b00;">Set Up</a>
+        </div>
+      </div>
+
+      <!-- Trade 3 -->
+      <div class="col-md-4">
+        <div class="card h-100 border-0 shadow-sm text-center p-4">
+          <div class="mb-3">
+            <i class="bi bi-currency-dollar text-warning fs-1"></i>
+          </div>
+          <h3 class="fs-4 fw-semibold text-primary mb-2">
+            <i class="bi bi-graph-up-arrow me-2 text-info"></i> COMP/BTC
+          </h3>
+          <p>
+            <i class="bi bi-cart-plus-fill text-success me-1"></i>
+            <strong>Buy on:</strong> Binance
+          </p>
+          <p>
+            <i class="bi bi-cash-coin text-danger me-1"></i>
+            <strong>Sell on:</strong> Bybit
+          </p>
+          <p class="text-success fw-bold fs-5 mb-4">
+            <i class="bi bi-coin me-1"></i> Profit: 2.5%
+          </p>
+          <a href="/auth/login" class="btn btn-lg text-white" style="background-color: #ff6b00;">Set Up</a>
+        </div>
+      </div>
+
     </div>
   </div>
 </section>
+
+
+
+
+
 
 <!-- FAQs Section -->
 <section class="py-12 px-4 bg-gray-50 max-w-5xl mx-auto">
-  <h2 class="text-3xl font-bold text-gray-800 mb-6 text-center">FAQs</h2>
-  <mat-accordion>
-    <mat-expansion-panel *ngFor="let faq of list">
-      <mat-expansion-panel-header>
-        <mat-panel-title>{{ faq.question }}</mat-panel-title>
+  <h2 class="text-3xl md:text-4xl font-bold text-gray-800 mb-8 text-center">
+    Frequently Asked Questions
+  </h2>
+
+  <mat-accordion class="rounded-xl overflow-hidden shadow-sm">
+    <mat-expansion-panel *ngFor="let faq of list" class="bg-white mb-2 rounded-lg">
+      <mat-expansion-panel-header class="text-lg font-medium text-gray-700 hover:text-blue-600">
+        <mat-panel-title>
+          {{ faq.question }}
+        </mat-panel-title>
       </mat-expansion-panel-header>
-      <p>{{ faq.answer }}</p>
+      <div class="px-4 pb-4 text-gray-600">
+        <p>{{ faq.answer }}</p>
+      </div>
     </mat-expansion-panel>
   </mat-accordion>
-  <div class="text-center mt-6">
+
+  <div class="text-center mt-8">
     <button
       (click)="goToFaq()"
-      class="text-blue-600 underline font-medium hover:text-blue-800"
+      class="inline-block px-6 py-2 text-blue-600 font-semibold underline hover:text-blue-800 transition"
     >
       See More FAQs →
     </button>
   </div>
 </section>
 
+
 <!-- Join Community -->
-<section class="py-12 px-4 bg-blue-600 text-center text-white">
-  <h2 class="text-2xl font-bold mb-4">Join Our Growing Crypto Community</h2>
-  <p class="mb-6 text-sm md:text-base">Connect with thousands of other traders and stay updated on the latest market movements.</p>
+<section class="py-16 px-6 bg-blue-600 text-center">
+  <h2 class="text-3xl md:text-4xl font-extrabold mb-4">
+    Join Our Growing Crypto Community
+  </h2>
+  <p class="mb-8 text-base md:text-lg max-w-xl mx-auto">
+    Connect with thousands of other traders and stay updated on the latest market movements.
+  </p>
   <button
-    (click)="joinTelegram()"
-    class="bg-white text-blue-600 px-6 py-3 rounded-full font-medium hover:bg-gray-100 transition"
+    (click)="joinTelegram()"  style="background-color: #ff6b00;"
+    class="btn btn-lg text-blue-600 hover:text-blue-700 px-8 py-3 rounded-full font-semibold shadow-md hover:bg-gray-100 transition duration-300"
   >
     Join Telegram
   </button>
 </section>
+
+
+
+
+<div class="container">
+  <footer class="d-flex flex-wrap justify-content-between align-items-center py-3 my-4 border-top">
+    <div class="col-md-4 d-flex align-items-center">
+      <a href="/" class="mb-3 me-2 mb-md-0 text-body-secondary text-decoration-none lh-1" aria-label="Bootstrap">
+        <svg class="bi" width="30" height="24" aria-hidden="true"><use xlink:href="#bootstrap"/></svg>
+      </a>
+      <span class="mb-3 mb-md-0 text-body-secondary text-center">&copy; 2025 Company, Inc</span>
+    </div>
+
+    <ul class="nav col-md-4 justify-content-end list-unstyled d-flex">
+      <li class="ms-3"><a class="text-body-secondary" href="#" aria-label="Instagram"><svg class="bi" width="24" height="24" aria-hidden="true"><use xlink:href="#instagram"/></svg></a></li>
+      <li class="ms-3"><a class="text-body-secondary" href="#" aria-label="Facebook"><svg class="bi" width="24" height="24"><use xlink:href="#facebook"/></svg></a></li>
+    </ul>
+  </footer>
+</div>
+
