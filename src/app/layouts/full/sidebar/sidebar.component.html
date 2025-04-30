@@ -1,98 +1,109 @@
 <!-- Top Bar: Branding and Toggle -->
-<div class="d-flex align-items-center justify-content-between">
+<div class="d-flex align-items-center justify-content-between mb-3">
   <div class="branding">
     <app-branding></app-branding>
   </div>
 
-  @if(showToggle) {
+  <ng-container *ngIf="showToggle">
     <a href="javascript:void(0)"
        (click)="toggleMobileNav.emit()"
-       class="d-flex justify-content-center align-items-center icon-40 ng-star-inserted">
+       class="d-flex justify-content-center align-items-center icon-40">
       <i-tabler name="x" class="icon-20 d-flex"></i-tabler>
     </a>
-  }
+  </ng-container>
 </div>
 
-
-
-
 <!-- Navigation Menu -->
+<div class="menu-section mt-4">
 
-<ng-container *ngIf="entityName === 'Admin' && isSuperAdmin">
-  <div class="mt-4">
-    <button mat-menu-item [routerLink]="['/dashboard']">
-      <i-tabler name="layout-dashboard" class="icon-20 me-2"></i-tabler>
-      Dashboard
-    </button>
-
-    <button mat-menu-item [routerLink]="['/myaccount/users']">
-      <i-tabler name="users" class="icon-20 me-2"></i-tabler>
-      Users
-    </button>
-
-    <button mat-menu-item [routerLink]="['/myaccount/crypto']">
-      <i-tabler name="list-checks" class="icon-20 me-2"></i-tabler>
-      List Trade
-    </button>
-
-    <button mat-menu-item [routerLink]="['/myaccount/available']">
-      <i-tabler name="box" class="icon-20 me-2"></i-tabler>
-      Available Trades
-    </button>
-
-    <button mat-menu-item [routerLink]="['/myaccount/payouts']">
-      <i-tabler name="banknote" class="icon-20 me-2"></i-tabler>
-      Withdraws
-    </button>
-
-    <button mat-menu-item [routerLink]="['/myaccount/notification']">
-      <i-tabler name="send" class="icon-20 me-2"></i-tabler>
-      Notification
-    </button>
-
-    <button (click)="onLogout()" mat-stroked-button class="w-100">
-      Logout
-    </button>
-  </div>
-</ng-container>
-
-
-<ng-container *ngIf="entityName === 'Admin' && !isSuperAdmin">
-  <div class="mt-4">
-    <button mat-menu-item [routerLink]="['/dashboard']">
-      <i-tabler name="layout-dashboard" class="icon-20 me-2"></i-tabler>
-      Dashboard
-    </button>
-    <button mat-menu-item [routerLink]="['/myaccount/crypto']">
-      <i-tabler name="list-checks" class="icon-20 me-2"></i-tabler>
-      List Trade
-    </button>
-  
-    <button mat-menu-item [routerLink]="['/myaccount/available']">
-      <i-tabler name="box" class="icon-20 me-2"></i-tabler>
-      Available Trades
-    </button>
-  
-    <button mat-menu-item [routerLink]="['/myaccount/payouts']">
-      <i-tabler name="banknote" class="icon-20 me-2"></i-tabler>
-      Withdraws
-    </button>
-  
-    <button mat-menu-item [routerLink]="['/myaccount/notification']">
-      <i-tabler name="send" class="icon-20 me-2"></i-tabler>
-      notification
-    </button>
-  
-    <button (click)="onLogout()" mat-stroked-button class="w-100">
-      Logout
-    </button>
-  </div>
-  
+  <!-- Admin - Super Admin -->
+  <ng-container *ngIf="entityName === 'Admin' && isSuperAdmin">
+    <ng-container *ngTemplateOutlet="adminSuperMenu"></ng-container>
   </ng-container>
 
+  <!-- Admin - Regular -->
+  <ng-container *ngIf="entityName === 'Admin' && !isSuperAdmin">
+    <ng-container *ngTemplateOutlet="adminRegularMenu"></ng-container>
+  </ng-container>
 
+  <!-- Trader -->
   <ng-container *ngIf="entityName === 'Trader'">
-<div class="mt-4">
+    <ng-container *ngTemplateOutlet="traderMenu"></ng-container>
+  </ng-container>
+
+</div>
+
+<!-- Admin Super Admin Menu -->
+<ng-template #adminSuperMenu>
+  <button mat-menu-item [routerLink]="['/dashboard']">
+    <i-tabler name="layout-dashboard" class="icon-20 me-2"></i-tabler>
+    Dashboard
+  </button>
+
+  <button mat-menu-item [routerLink]="['/myaccount/users']">
+    <i-tabler name="users" class="icon-20 me-2"></i-tabler>
+    Users
+  </button>
+
+  <button mat-menu-item [routerLink]="['/myaccount/crypto']">
+    <i-tabler name="list-checks" class="icon-20 me-2"></i-tabler>
+    List Trade
+  </button>
+
+  <button mat-menu-item [routerLink]="['/myaccount/available']">
+    <i-tabler name="box" class="icon-20 me-2"></i-tabler>
+    Available Trades
+  </button>
+
+  <button mat-menu-item [routerLink]="['/myaccount/payouts']">
+    <i-tabler name="banknote" class="icon-20 me-2"></i-tabler>
+    Withdraws
+  </button>
+
+  <button mat-menu-item [routerLink]="['/myaccount/notification']">
+    <i-tabler name="send" class="icon-20 me-2"></i-tabler>
+    Notification
+  </button>
+
+  <button (click)="onLogout()" mat-stroked-button class="w-100 mt-2">
+    Logout
+  </button>
+</ng-template>
+
+<!-- Admin Regular Menu -->
+<ng-template #adminRegularMenu>
+  <button mat-menu-item [routerLink]="['/dashboard']">
+    <i-tabler name="layout-dashboard" class="icon-20 me-2"></i-tabler>
+    Dashboard
+  </button>
+
+  <button mat-menu-item [routerLink]="['/myaccount/crypto']">
+    <i-tabler name="list-checks" class="icon-20 me-2"></i-tabler>
+    List Trade
+  </button>
+
+  <button mat-menu-item [routerLink]="['/myaccount/available']">
+    <i-tabler name="box" class="icon-20 me-2"></i-tabler>
+    Available Trades
+  </button>
+
+  <button mat-menu-item [routerLink]="['/myaccount/payouts']">
+    <i-tabler name="banknote" class="icon-20 me-2"></i-tabler>
+    Withdraws
+  </button>
+
+  <button mat-menu-item [routerLink]="['/myaccount/notification']">
+    <i-tabler name="send" class="icon-20 me-2"></i-tabler>
+    Notification
+  </button>
+
+  <button (click)="onLogout()" mat-stroked-button class="w-100 mt-2">
+    Logout
+  </button>
+</ng-template>
+
+<!-- Trader Menu -->
+<ng-template #traderMenu>
   <button mat-menu-item [routerLink]="['/dashboard']">
     <i-tabler name="layout-dashboard" class="icon-20 me-2"></i-tabler>
     Dashboard
@@ -123,11 +134,7 @@
     Refer
   </button>
 
-
-  <button (click)="onLogout()" mat-stroked-button class="w-100">
+  <button (click)="onLogout()" mat-stroked-button class="w-100 mt-2">
     Logout
   </button>
-</div>
-
-</ng-container>
-
+</ng-template>
