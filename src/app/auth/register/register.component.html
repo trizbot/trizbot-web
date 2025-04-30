@@ -31,24 +31,28 @@
   <mat-label>Email Address</mat-label>
   <input matInput type="email" placeholder="Enter your email" name="email"[(ngModel)]="registerData.email"/>
 </mat-form-field>
-<!-- Phone Number -->
-<mat-form-field appearance="outline" class="w-100 mb-3" color="primary">
-  <mat-label>Phone Number</mat-label>
-  <div class="d-flex">
-    <!-- Country Code -->
-    <mat-select [(ngModel)]="registerData.country" name="countryCode" placeholder="Country Code" class="country-code-select">
+<!-- Phone Section Wrapper -->
+<div class="d-flex gap-2 mb-3 align-items-start">
+
+  <!-- Country Code -->
+  <mat-form-field appearance="outline" color="primary" class="country-code-field">
+    <mat-label>Country Code</mat-label>
+    <mat-select [(ngModel)]="registerData.country" name="countryCode" placeholder="Country Code">
       <mat-option value="">-- Select Country Code --</mat-option>
       <mat-option *ngFor="let country of countries" [value]="country.code">
         {{ country.code }} ({{ country.name }})
       </mat-option>
     </mat-select>
+  </mat-form-field>
 
-    
-    
-    <!-- Phone Number Input -->
-    <input matInput type="tel" placeholder="Enter your phone number" name="phoneNumber" [(ngModel)]="registerData.phoneNumber" class="phone-number-input"/>
-  </div>
-</mat-form-field>
+  <!-- Phone Number Input -->
+  <mat-form-field appearance="outline" color="primary" class="flex-grow-1">
+    <mat-label>Phone Number</mat-label>
+    <input matInput type="tel" placeholder="Enter your phone number" name="phoneNumber"
+           [(ngModel)]="registerData.phoneNumber" />
+  </mat-form-field>
+
+</div>
 
 
 

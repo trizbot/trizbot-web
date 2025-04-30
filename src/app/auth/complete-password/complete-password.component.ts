@@ -20,6 +20,8 @@ export class CompletePasswordComponent {
   completeForgotData = {otp:"", newPassword:""}
   errorMessage: string="";
   loading:any = false;
+  hidePassword: boolean = true;
+  hideConfirmPassword: boolean = true;
   private sharedService = inject(SharedService);
   constructor(private authService:AuthService,  private router: Router) {}
 
