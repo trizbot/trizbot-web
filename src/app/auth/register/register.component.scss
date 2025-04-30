@@ -10,4 +10,17 @@
     border-radius: 6px;
     font-size: 16px;
   }
+  .d-flex {
+    display: flex;
+    align-items: center;
+  }
+  
+  .country-code-select {
+    width: 120px;  /* Adjust width based on your preference */
+    margin-right: 8px;
+  }
+  
+  .phone-number-input {
+    flex-grow: 1;
+  }
   
