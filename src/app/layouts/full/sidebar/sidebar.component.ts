@@ -17,21 +17,26 @@ import { Observable } from 'rxjs';
 import { Trader } from '../../../../app/appstate/appstate-model';
 import { selectTrader, selectTraderLoading, selectTraderError } from '../../../../app/appstate/trader.selectors';
 import { LogoutService } from '../../../../app/auth/logout/logout.service';
+import { TranslateModule } from '@ngx-translate/core';
 
+import { CommonModule } from '@angular/common';
+import { Router, RouterModule } from '@angular/router';
 
 
 @Component({
   selector: 'app-sidebar',
-  imports: [BrandingComponent, TablerIconsModule, MaterialModule],
+  imports: [BrandingComponent, TablerIconsModule, MaterialModule, RouterModule,CommonModule],
   templateUrl:'./sidebar.component.html',
 })
 export class SidebarComponent implements OnInit {
-   constructor(private traderService: TraderService,private logoutService: LogoutService) {}
+   constructor(private traderService: TraderService,private logoutService: LogoutService,public router: Router,) {}
       firstName: string;
       entityName: string ;
       lastName: string;
       isSuperAdmin: boolean ;
+      isSuperAdminType: boolean ;
       isNormalEntityType: boolean ;
+      isNormalAdminType: boolean ;
       isSuperEntityType: boolean ;
       
   @Input() showToggle = true;
@@ -52,11 +57,13 @@ export class SidebarComponent implements OnInit {
           localStorage.setItem('entityName', 'Admin');
           localStorage.setItem('isSuperAdminType', 'true');
           localStorage.setItem('isNormalAdminType', 'false');
+          localStorage.setItem('isNormalEntityType', 'false');
 
           }
          else  if (this.entityName=="Admin"  && !this.isSuperAdmin) {
           localStorage.setItem('entityName', 'Admin');
           localStorage.setItem('isSuperAdminType', 'false');
+          localStorage.setItem('isNormalEntityType', 'false');
           localStorage.setItem('isNormalAdminType', 'true');
 
           }
@@ -64,6 +71,7 @@ export class SidebarComponent implements OnInit {
             localStorage.setItem('entityName', 'Trader');
             localStorage.setItem('isSuperAdminType', 'true');
             localStorage.setItem('isNormalAdminType', 'false');
+            localStorage.setItem('isNormalEntityType', 'false');
             
           }
           else if (this.entityName=="Trader" &&!this.isSuperAdmin) {
@@ -71,6 +79,7 @@ export class SidebarComponent implements OnInit {
           localStorage.setItem('entityName', 'Trader');
           localStorage.setItem('isSuperAdminType', 'false');
           localStorage.setItem('isNormalAdminType', 'false');
+          localStorage.setItem('isNormalEntityType', 'true');
 
           }
           else{
@@ -78,6 +87,7 @@ export class SidebarComponent implements OnInit {
             localStorage.setItem('entityName', 'Trader');
             localStorage.setItem('isSuperAdminType', 'false');
             localStorage.setItem('isNormalAdminType', 'false');
+            localStorage.setItem('isNormalEntityType', 'true');
 
           }
   

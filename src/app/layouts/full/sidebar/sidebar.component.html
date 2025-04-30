@@ -1,18 +1,133 @@
+<!-- Top Bar: Branding and Toggle -->
 <div class="d-flex align-items-center justify-content-between">
   <div class="branding">
     <app-branding></app-branding>
   </div>
 
   @if(showToggle) {
-    <a href="javascript:void(0)" (click)="toggleMobileNav.emit()"
-      class="d-flex justify-content-center ng-star-inserted icon-40 align-items-center">
+    <a href="javascript:void(0)"
+       (click)="toggleMobileNav.emit()"
+       class="d-flex justify-content-center align-items-center icon-40 ng-star-inserted">
       <i-tabler name="x" class="icon-20 d-flex"></i-tabler>
     </a>
   }
 </div>
 
-<!-- Logout button moved downward here -->
- 
-<div class="mt-3">
-  <button (click)="onLogout()" mat-stroked-button class="w-100" style="font-size: 15px;">Logout</button>
+
+
+
+<!-- Navigation Menu -->
+
+<ng-container *ngIf="entityName === 'Admin' && isSuperAdmin">
+  <div class="mt-4">
+    <button mat-menu-item [routerLink]="['/dashboard']">
+      <i-tabler name="layout-dashboard" class="icon-20 me-2"></i-tabler>
+      Dashboard
+    </button>
+
+    <button mat-menu-item [routerLink]="['/myaccount/users']">
+      <i-tabler name="users" class="icon-20 me-2"></i-tabler>
+      Users
+    </button>
+
+    <button mat-menu-item [routerLink]="['/myaccount/crypto']">
+      <i-tabler name="list-checks" class="icon-20 me-2"></i-tabler>
+      List Trade
+    </button>
+
+    <button mat-menu-item [routerLink]="['/myaccount/available']">
+      <i-tabler name="box" class="icon-20 me-2"></i-tabler>
+      Available Trades
+    </button>
+
+    <button mat-menu-item [routerLink]="['/myaccount/payouts']">
+      <i-tabler name="banknote" class="icon-20 me-2"></i-tabler>
+      Withdraws
+    </button>
+
+    <button mat-menu-item [routerLink]="['/myaccount/notification']">
+      <i-tabler name="send" class="icon-20 me-2"></i-tabler>
+      Notification
+    </button>
+
+    <button (click)="onLogout()" mat-stroked-button class="w-100">
+      Logout
+    </button>
+  </div>
+</ng-container>
+
+
+<ng-container *ngIf="entityName === 'Admin' && !isSuperAdmin">
+  <div class="mt-4">
+    <button mat-menu-item [routerLink]="['/dashboard']">
+      <i-tabler name="layout-dashboard" class="icon-20 me-2"></i-tabler>
+      Dashboard
+    </button>
+    <button mat-menu-item [routerLink]="['/myaccount/crypto']">
+      <i-tabler name="list-checks" class="icon-20 me-2"></i-tabler>
+      List Trade
+    </button>
+  
+    <button mat-menu-item [routerLink]="['/myaccount/available']">
+      <i-tabler name="box" class="icon-20 me-2"></i-tabler>
+      Available Trades
+    </button>
+  
+    <button mat-menu-item [routerLink]="['/myaccount/payouts']">
+      <i-tabler name="banknote" class="icon-20 me-2"></i-tabler>
+      Withdraws
+    </button>
+  
+    <button mat-menu-item [routerLink]="['/myaccount/notification']">
+      <i-tabler name="send" class="icon-20 me-2"></i-tabler>
+      notification
+    </button>
+  
+    <button (click)="onLogout()" mat-stroked-button class="w-100">
+      Logout
+    </button>
+  </div>
+  
+  </ng-container>
+
+
+  <ng-container *ngIf="entityName === 'Trader'">
+<div class="mt-4">
+  <button mat-menu-item [routerLink]="['/dashboard']">
+    <i-tabler name="layout-dashboard" class="icon-20 me-2"></i-tabler>
+    Dashboard
+  </button>
+
+  <button mat-menu-item [routerLink]="['/myaccount/wallets']">
+    <i-tabler name="wallet" class="icon-20 me-2"></i-tabler>
+    Wallet
+  </button>
+
+  <button mat-menu-item [routerLink]="['/myaccount/history']">
+    <i-tabler name="repeat" class="icon-20 me-2"></i-tabler>
+    My Trades
+  </button>
+
+  <button mat-menu-item [routerLink]="['/myaccount/password']">
+    <i-tabler name="key" class="icon-20 me-2"></i-tabler>
+    Change Password
+  </button>
+
+  <button mat-menu-item [routerLink]="['/myaccount/profile']">
+    <i-tabler name="settings" class="icon-20 me-2"></i-tabler>
+    Settings
+  </button>
+
+  <button mat-menu-item [routerLink]="['/myaccount/refer']">
+    <i-tabler name="users" class="icon-20 me-2"></i-tabler>
+    Refer
+  </button>
+
+
+  <button (click)="onLogout()" mat-stroked-button class="w-100">
+    Logout
+  </button>
 </div>
+
+</ng-container>
+
