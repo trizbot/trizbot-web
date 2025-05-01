@@ -19,6 +19,7 @@ import { DepositConfirmationComponent } from './confirmation/deposit-confirmatio
 import { WithdrawComponent } from './withdraw/withdraw.component';
 import { PayoutsComponent } from './payouts/payouts.component';
 import { ReferComponent } from './refer/refer.component';
+import { ChatComponent } from './chat/chat.component';
 
 export const UiComponentsRoutes: Routes = [
   {
@@ -106,6 +107,11 @@ export const UiComponentsRoutes: Routes = [
       {
         path: 'refer',
         component: ReferComponent
+      },      
+ 
+      {
+        path: 'chat',
+        component: ChatComponent
       },      
  
 

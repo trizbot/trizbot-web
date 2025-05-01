@@ -106,6 +106,26 @@ export type GetTraderResBody = {
   };
 };
 
+export type GetDownlinesResBody = {
+  data: {
+    _id: string;
+    firstName: string;
+    lastName: string;
+    approvalStatus: string;
+    userName: string;
+    entityName: string;
+    email: string;
+    phoneNumber: string;
+    walletBalance: string;
+    walletAddress: string;
+    amountInvested: string;
+    profit: string;
+    createdAt: string;
+    imageSecureUrl: string;
+  
+  };
+};
+
 export type GetAllTradersResBody = {
   data: {
     

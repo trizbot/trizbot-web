@@ -16,7 +16,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { CoreService } from '../../../services/core.service';
 import { SharedService } from '../../../shared/shared.service';
 import { TraderService } from '../../../../app/appstate/trader.service';
-import { GetTraderResBody } from '../../../../app/services/auth.type';
+import { GetTraderResBody,GetDownlinesResBody } from '../../../../app/services/auth.type';
 import { ActivatedRoute } from '@angular/router';
 import { MatSnackBar } from '@angular/material/snack-bar';
 
@@ -49,19 +49,82 @@ export class ReferComponent implements OnInit {
     private snackBar: MatSnackBar
   ) {}
 
+
+  errorMessage: string = '';
+  loading: boolean = false;
+  cryptoId: string;
+
+  displayedColumns1: string[] = ['image', 'userName', 'approvalStatus',  'createdAt'];
+  completedReferralList: any[] = [];
+  pagedReferralList: any[] = [];
+  currentReferralPage = 1;
+  pageReferralSize = 40;
+
   ngOnInit(): void {
     this.getCurrentTrader();
+    this.getDownlines();
+    this.updateReferalPagedList();
   }
 
   getCurrentTrader(): void {
     this.traderService.getTrader().subscribe({
       next: (res: GetTraderResBody) => {
-        this.referralLink = res.data.referralLink;
+        this.referralLink = `https://www.trizbot.com/auth/register?ref=${res.data.referralLink}`;
       },
       error: (err) => {
       }
     });
   }
+  
+ 
+  getDownlines() {
+    this.traderService.getDownlines().subscribe({
+      next: (res: any) => {
+        this.completedReferralList = res.data.map((item: any) => {
+         const referalItem = {
+          firstName: item.firstName,
+          lastName: item.lastName,
+          approvalStatus: item.approvalStatus,
+          userName: item.userName,
+          entityName: item.entityName,
+          email: item.email,
+          phoneNumber: item.phoneNumber,
+          walletBalance: item.walletBalance,
+          walletAddress: item.walletAddress,
+          amountInvested: item.amountInvested,
+          profit: item.profit,
+          createdAt: item.createdAt,
+          imageSecureUrl: item.imageSecureUrl,
+         
+          };
+          return referalItem;
+        });
+        this.updateReferalPagedList();
+      },
+      error: (err) => {
+        // Handle error
+      }
+    });
+  }
+
+  updateReferalPagedList() {
+    const startIndex = (this.currentReferralPage - 1) * this.pageReferralSize;
+    const endIndex = startIndex + this.pageReferralSize;
+    this.pagedReferralList = this.completedReferralList.slice(startIndex, endIndex);
+  }
+
+  changeCompletedReferralPage(page: any) {
+    if (page < 1 || page > this.totalReferralPages.length) return;
+    this.currentReferralPage = page;
+    this.updateReferalPagedList();
+  }
+
+  get totalReferralPages(): any[] {
+    return Array(Math.ceil(this.completedReferralList.length / this.pageReferralSize)).fill(0).map((_, i) => i + 1);
+  }
+
+
+
 
   copyToClipboard(text: string): void {
     navigator.clipboard.writeText(text).then(() => {

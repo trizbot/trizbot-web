@@ -206,7 +206,6 @@ onCreateUploadAvatar(){
     uploadData.append('file', file_data);
     uploadData.append('upload_preset', 'trizbot');
 
-
     this.traderService.generateImage(uploadData).subscribe({
       next: (uploadResponse: any) => {
         const imageSecureUrl = uploadResponse.secure_url;
