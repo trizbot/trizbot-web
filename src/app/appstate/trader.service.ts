@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
-import { GetTraderResBody,GetAllTradersResBody,GetDepositResBody,GetWeeklyStatisticsResBody,GetNotificationResBody } from '../services/auth.type';
+import { GetTraderResBody,GetAllTradersResBody,GetDepositResBody,GetWeeklyStatisticsResBody,GetNotificationResBody,GetDownlinesResBody } from '../services/auth.type';
 
 
 @Injectable({
@@ -15,6 +15,11 @@ export class TraderService {
   getTrader(): Observable<GetTraderResBody> {
     const entity=  localStorage.getItem('entity');
     return this.http.get<GetTraderResBody>(`${environment.apiBaseUrl}/${entity}/me`);
+  }
+
+  getDownlines(): Observable<GetDownlinesResBody> {
+    const entity=  localStorage.getItem('entity');
+    return this.http.get<GetDownlinesResBody>(`${environment.apiBaseUrl}/${entity}/referrals`);
   }
 
   getNotification(): Observable<GetNotificationResBody> {

@@ -1,18 +1,105 @@
-<mat-card class="p-5 rounded-2xl shadow-lg bg-white border border-gray-200 hover:shadow-xl transition-shadow duration-300">
-    <div class="flex items-start gap-4">
+<div class="container mx-auto px-4 py-8 flex justify-center">
+  <mat-card class="p-5 rounded-2xl shadow-lg bg-white border border-gray-200 hover:shadow-xl transition-shadow duration-300 max-w-2xl w-full text-center">
+    <div class="flex items-start gap-4 text-left">
       <mat-icon color="warn" class="text-3xl mt-1">info</mat-icon>
-      <div class="flex-1">
-        <h2 class="text-lg font-semibold text-gray-800 mb-1">Invite & Earn Rewards</h2>
+
+      <div class="flex-1 container">
+        <h2 class="text-lg font-semibold text-gray-800 mb-1">
+          Invite & Earn Rewards
+        </h2>
+
         <p class="text-sm text-gray-600 mb-4 leading-relaxed">
-          Share your unique referral link below and earn a <span class="font-medium text-green-600">3% reward</span> from your invitee's first deposit. Start building your referral network today!
+          Share your unique referral link below and receive a 
+          <span class="font-medium text-green-600">3% reward</span> 
+          from your invitee's first deposit. Start growing your referral network today!
         </p>
+
         <div class="flex items-center justify-between bg-gray-50 border rounded-md px-4 py-2">
           <span class="text-blue-700 text-sm truncate">{{ referralLink }}</span>
           <button mat-icon-button (click)="copyToClipboard(referralLink)" matTooltip="Copy to clipboard">
-            <mat-icon>content_copy</mat-icon>
+            <mat-icon>copy</mat-icon>
           </button>
         </div>
       </div>
     </div>
   </mat-card>
-  
+</div>
+
+
+
+
+
+<mat-card class="cardWithShadow">
+  <mat-card-content>
+    <h4>My Downlines</h4>
+
+    <div class="table-responsive">
+      <table mat-table [dataSource]="pagedReferralList" class="w-100">
+        
+        <!-- Product Column -->
+        <ng-container matColumnDef="image">
+          <th mat-header-cell *matHeaderCellDef class="f-w-600 f-s-14 p-l-0">
+            Downline
+          </th>
+          <td mat-cell *matCellDef="let element" class="p-l-0">
+            <div class="d-flex align-items-center">
+              <img [src]="element.imageSecureUrl" alt="image" width="60" class="rounded" />
+              <div class="m-l-16">
+                <h6 class="f-s-14 f-w-600">
+                  {{ element.firstName }}      {{ element.lastName }}
+                </h6>
+              </div>
+            </div>
+          </td>
+        </ng-container>
+
+        <!-- Payment Column -->
+        <ng-container matColumnDef="userName">
+          <th mat-header-cell *matHeaderCellDef class="f-w-600 f-s-14">
+            Username
+          </th>
+          <td mat-cell *matCellDef="let element">
+            <h6 class="f-s-16 m-b-4">
+              <span class="text-dark f-w-600">${{ element.userName }}</span>
+            </h6>
+          </td>
+        </ng-container>
+
+        <!-- Status Column -->
+        <ng-container matColumnDef="approvalStatus">
+          <th mat-header-cell *matHeaderCellDef class="f-w-600 f-s-14">
+            Status
+          </th>
+          <td mat-cell *matCellDef="let element">
+            <span [ngClass]="{
+              'bg-light-success': element.approvalStatus === 'Approved',
+              'bg-light-warning': element.approvalStatus === 'Pending',
+              'bg-light-info': element.approvalStatus === 'Running',
+              'bg-light-danger': element.approvalStatus === 'Rejected',
+              'bg-light-default': element.approvalStatus === 'Cancelled',
+              'bg-light-error': element.approvalStatus === 'Failed'
+            }" class="rounded f-w-600 p-6 p-y-4 f-s-12">
+              {{ element.approvalStatus | titlecase }}
+            </span>
+          </td>
+        </ng-container>
+
+        <!-- Created Date Column -->
+        <ng-container matColumnDef="createdAt">
+          <th mat-header-cell *matHeaderCellDef class="f-w-600 f-s-14">
+            Created At
+          </th>
+          <td mat-cell *matCellDef="let element">
+            <span class="f-s-14">{{ element.createdAt | date: 'short' }}</span>
+          </td>
+        </ng-container>
+       
+    
+
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns1"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns1"></tr>
+      </table>
+    </div>
+  </mat-card-content>
+</mat-card>

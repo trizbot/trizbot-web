@@ -4,6 +4,7 @@ import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
+import { ActivatedRoute } from '@angular/router';
 
 import { MaterialModule } from 'src/app/material.module';
 import { CoreService } from '../../../app/services/core.service';
@@ -245,11 +246,21 @@ export class RegisterComponent {
 
   private unsubscriber$ = new Subject<void>();
   private sharedService = inject(SharedService);
+  referralCode: any="";
 
   constructor(
     private authService: AuthService,
-    private router: Router
+    private router: Router,private route: ActivatedRoute
   ) {}
+
+
+  
+ngOnInit(): void {
+  this.route.queryParamMap.subscribe(params => {
+    this.referralCode = params.get('ref');
+
+  });
+}
 
   onSignUp() {
     
@@ -265,7 +276,8 @@ export class RegisterComponent {
       password_confirmation,
       country,
       entityName,
-      userName
+      userName,
+      
     } = this.registerData;
 
 
@@ -279,7 +291,8 @@ export class RegisterComponent {
       password_confirmation,
       country,
       entityName,
-      userName
+      userName,
+      this.referralCode
     ).pipe(takeUntil(this.unsubscriber$)).subscribe({
       next: (response) => {
         this.sharedService.showToast({
