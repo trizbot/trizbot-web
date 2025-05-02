@@ -80,6 +80,8 @@ export class ReferComponent implements OnInit {
   getDownlines() {
     this.traderService.getDownlines().subscribe({
       next: (res: any) => {
+
+        console.log(res);
         this.completedReferralList = res.data.map((item: any) => {
          const referalItem = {
           firstName: item.firstName,

@@ -14,12 +14,13 @@
           from your invitee's first deposit. Start growing your referral network today!
         </p>
 
-        <div class="flex items-center justify-between bg-gray-50 border rounded-md px-4 py-2">
-          <span class="text-blue-700 text-sm truncate">{{ referralLink }}</span>
-          <button mat-icon-button (click)="copyToClipboard(referralLink)" matTooltip="Copy to clipboard">
-            <mat-icon>content-copy</mat-icon>
+        <div class="input-group">
+          <input type="text" class="form-control" id="referralLinkInput" [value]="referralLink" readonly>
+          <button class="btn btn-outline-secondary" type="button" (click)="copyToClipboard(referralLink)" matTooltip="Copy to clipboard">
+            <i class="bi bi-clipboard"></i>
           </button>
         </div>
+
       </div>
     </div>
   </mat-card>

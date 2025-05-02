@@ -22,8 +22,8 @@ export class TraderService {
     return this.http.get<GetDownlinesResBody>(`${environment.apiBaseUrl}/${entity}/referrals`);
   }
 
-  getNotification(): Observable<GetNotificationResBody> {
-    return this.http.get<GetNotificationResBody>(`${environment.apiBaseUrl}/notifications/unread`);
+  getNotification(): Observable<GetNotificationResBody[]> {
+    return this.http.get<GetNotificationResBody[]>(`${environment.apiBaseUrl}/notifications/unread`);
   }
   countNotification() {
     return this.http.get(`${environment.apiBaseUrl}/notifications/count`);

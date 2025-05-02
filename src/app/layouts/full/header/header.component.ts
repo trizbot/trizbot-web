@@ -118,21 +118,27 @@ export class HeaderComponent implements OnInit {
     this.logoutService.logout();
   }
 
- 
+
+
+  notifications: any[] = []; // declare at the top of your component
 
   getNotifications() {
     this.traderService.getNotification().subscribe({
-      next: (res: GetNotificationResBody) => {
-
-        this.notificationId = res.data._id;
-        this.notificationTitle = res.data.title;
-        this.notificationText = res.data.text;
+      next: (res: any) => {
+        if (res && Array.isArray(res.data)) {
+          this.notifications = res.data;
+        } else {
+          this.notifications = [];
+        }
       },
       error: (err) => {
         this.errorMessage = err?.message || 'Failed to load notifications.';
       }
     });
   }
+  
+  
+  
   
   
   countNotifications() {
@@ -150,7 +156,8 @@ export class HeaderComponent implements OnInit {
   onMarkAsRead(id: string){
         this.traderService.readNotification(id).subscribe({
       next: (res) => {
-        this.countNotification = res;
+       return res;
+    
       },
       error: (err) => {  }
     });
