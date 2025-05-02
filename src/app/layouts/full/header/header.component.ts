@@ -118,22 +118,22 @@ export class HeaderComponent implements OnInit {
     this.logoutService.logout();
   }
 
+ 
+
   getNotifications() {
     this.traderService.getNotification().subscribe({
       next: (res: GetNotificationResBody) => {
-        console.log(res)
-        if (res?.data) {
-          this.notificationTitle = res.data.title || '';
-          this.notificationText = res.data.text || '';
-          this.notificationId = res.data._id || '';
-        } else {
-          this.notificationTitle = 'No Title';
-          this.notificationText = 'No notification text available.';
-        }
+
+        this.notificationId = res.data._id;
+        this.notificationTitle = res.data.title;
+        this.notificationText = res.data.text;
       },
-      error: (err) => {  }
+      error: (err) => {
+        this.errorMessage = err?.message || 'Failed to load notifications.';
+      }
     });
   }
+  
   
   countNotifications() {
     this.traderService.countNotification().subscribe({
