@@ -74,6 +74,8 @@ export class HeaderComponent implements OnInit {
   ngOnInit(): void {
     this.getCurrentTraders();
     this.getNotifications();
+    this.countNotifications();
+      
   }
 
   getCurrentTraders(){
@@ -136,6 +138,7 @@ export class HeaderComponent implements OnInit {
     this.traderService.countNotification().subscribe({
       next: (res) => {
         this.countNotification = res;
+        return res;
       },
       error: (err) => {  }
     });

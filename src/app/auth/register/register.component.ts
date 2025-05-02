@@ -257,7 +257,7 @@ export class RegisterComponent {
   
 ngOnInit(): void {
   this.route.queryParamMap.subscribe(params => {
-    this.referralCode = params.get('ref')??;
+    this.referralCode = params.get('ref')??"1";
 
   });
 }
