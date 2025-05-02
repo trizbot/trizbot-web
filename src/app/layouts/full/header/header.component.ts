@@ -121,6 +121,7 @@ export class HeaderComponent implements OnInit {
   getNotifications() {
     this.traderService.getNotification().subscribe({
       next: (res: GetNotificationResBody) => {
+        console.log(res)
         if (res?.data) {
           this.notificationTitle = res.data.title || '';
           this.notificationText = res.data.text || '';
