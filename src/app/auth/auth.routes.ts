@@ -3,6 +3,8 @@ import { Routes } from '@angular/router';
 import { LoginComponent } from './login/login.component';
 import { RegisterComponent } from './register/register.component';
 import { LogoutComponent } from './logout/logout.component';
+import { FaqComponent } from './faq/faq.component';
+
 
 export const AuthenticationRoutes: Routes = [
   {
@@ -20,6 +22,10 @@ export const AuthenticationRoutes: Routes = [
       {
         path: 'logout',
         component: LogoutComponent,
+      },
+      {
+        path: 'faq',
+        component: FaqComponent,
       },
     ],
   },

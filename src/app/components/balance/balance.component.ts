@@ -99,6 +99,8 @@ export class WalletBalanceComponent implements OnInit {
         this.lastName = res.data.lastName;
         this.imageSecureUrl = res.data.imageSecureUrl;
         this.entityName = res.data.entityName;
+        this.isSuperAdmin = res.data.isSuperAdmin;
+
         if (this.entityName=="Admin"  &&this.isSuperAdmin) {
           this.isSuperEntityType=true;
           this.isAdminDashBoardType=true;
@@ -111,9 +113,9 @@ export class WalletBalanceComponent implements OnInit {
           this.isTradersDashBoardType=false;
           }
           else if (this.entityName=="Trader" &&this.isSuperAdmin) {
-          this.isNormalEntityType=true;
-          this.isAdminDashBoardType=false;
-          this.isTradersDashBoardType=true;
+          this.isNormalEntityType=false;
+          this.isAdminDashBoardType=true;
+          this.isTradersDashBoardType=false;
           }
           else if (this.entityName=="Trader" &&!this.isSuperAdmin) {
           this.isNormalEntityType=false;

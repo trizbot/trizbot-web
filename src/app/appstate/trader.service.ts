@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
-import { GetTraderResBody,GetAllTradersResBody,GetDepositResBody,GetWeeklyStatisticsResBody,GetNotificationResBody,GetDownlinesResBody } from '../services/auth.type';
+import { GetTraderResBody,GetAllTradersResBody,GetAllAdminsResBody,GetDepositResBody,GetWeeklyStatisticsResBody,GetNotificationResBody,GetDownlinesResBody } from '../services/auth.type';
 
 
 @Injectable({
@@ -28,6 +28,7 @@ export class TraderService {
   countNotification() {
     return this.http.get(`${environment.apiBaseUrl}/notifications/count`);
   }
+ 
   readNotification(notificationId:string) {
   const  payload={notificationId}
     return this.http.post(`${environment.apiBaseUrl}/notifications/read`,payload);
@@ -43,9 +44,18 @@ export class TraderService {
     return this.http.get<GetAllTradersResBody[]>(`${environment.apiBaseUrl}/traders/all`);
     
   }
+ 
+  getAllAdmins(): Observable<GetAllAdminsResBody[]> {
+    return this.http.get<GetAllAdminsResBody[]>(`${environment.apiBaseUrl}/admins/all`);
+    
+  }
 
 
-
+  removeAdmin(id: string): Observable<any> {
+    const url = `${environment.apiBaseUrl}/admins/${id}`;
+    return this.http.delete(url);
+  }
+  
 
   reviewTraders(comment: string,status: string,traderId: string){
     const payload = {comment, status}; 

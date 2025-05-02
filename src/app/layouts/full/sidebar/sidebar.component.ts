@@ -51,46 +51,7 @@ export class SidebarComponent implements OnInit {
           this.entityName =res.data.entityName;
           this.lastName = res.data.lastName;
           this.isSuperAdmin = res.data.isSuperAdmin;
-          localStorage.setItem('entityName', res.data.entityName);
-
-          if (this.entityName=="Admin"  &&this.isSuperAdmin) {
-          localStorage.setItem('entityName', 'Admin');
-          localStorage.setItem('isSuperAdminType', 'true');
-          localStorage.setItem('isNormalAdminType', 'false');
-          localStorage.setItem('isNormalEntityType', 'false');
-
-          }
-         else  if (this.entityName=="Admin"  && !this.isSuperAdmin) {
-          localStorage.setItem('entityName', 'Admin');
-          localStorage.setItem('isSuperAdminType', 'false');
-          localStorage.setItem('isNormalEntityType', 'false');
-          localStorage.setItem('isNormalAdminType', 'true');
-
-          }
-          else if (this.entityName=="Trader" &&this.isSuperAdmin) {
-            localStorage.setItem('entityName', 'Trader');
-            localStorage.setItem('isSuperAdminType', 'true');
-            localStorage.setItem('isNormalAdminType', 'false');
-            localStorage.setItem('isNormalEntityType', 'false');
-            
-          }
-          else if (this.entityName=="Trader" &&!this.isSuperAdmin) {
-          
-          localStorage.setItem('entityName', 'Trader');
-          localStorage.setItem('isSuperAdminType', 'false');
-          localStorage.setItem('isNormalAdminType', 'false');
-          localStorage.setItem('isNormalEntityType', 'true');
-
-          }
-          else{
-          
-            localStorage.setItem('entityName', 'Trader');
-            localStorage.setItem('isSuperAdminType', 'false');
-            localStorage.setItem('isNormalAdminType', 'false');
-            localStorage.setItem('isNormalEntityType', 'true');
-
-          }
-  
+                
   
         },
         error: (err) => {}

@@ -5,6 +5,7 @@ import { WelcomeComponent } from '../home/welcome/welcome.component';
 import { LoginComponent } from './auth/login/login.component';
 import { RegisterComponent } from './auth/register/register.component';
 import { ForgotComponent } from './auth/forgot/forgot.component';
+import { FaqComponent } from './auth/faq/faq.component';
 
 import { CompletePasswordComponent } from './auth/complete-password/complete-password.component';
 
@@ -38,6 +39,7 @@ export const routes: Routes = [
       { path: 'register', component: RegisterComponent },
       { path: 'forgot', component: ForgotComponent },
       { path: 'complete', component: CompletePasswordComponent },
+      { path: 'faq', component: FaqComponent },
       
     ],
   },

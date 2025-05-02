@@ -148,6 +148,27 @@ export type GetAllTradersResBody = {
   };
 };
 
+export type GetAllAdminsResBody = {
+  data: {
+   _id: string;
+    firstName: string;
+    lastName: string;
+    approvalStatus: string;
+    userName: string;
+    entityName: string;
+    email: string;
+    phoneNumber: string;
+    walletBalance: string;
+    walletAddress: string;
+    amountInvested: string;
+    imageUrl: string;
+    isSuperAdmin: boolean;
+    profit: string;
+    createdAt: string;
+    imageSecureUrl: string;
+  };
+};
+
 export type GetCryptoResBody = {
     _id: string;
     minAmount: string;

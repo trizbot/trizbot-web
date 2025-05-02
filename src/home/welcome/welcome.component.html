@@ -5,15 +5,14 @@
     <div class="navbar-header">
       <a class="navbar-brand d-flex align-items-center" href="#">
         <img src="assets/images/logos/dark-logo.jpg" alt="Logo" style="height: 40px; margin-right: 28px;">
-        TrizBot
       </a>
     </div>
-    <ul class="nav navbar-nav d-flex flex-row">
-      <li class="nav-item active">
+    <ul class="nav navbar-nav d-flex flex-row gap-4">
+      <li class="nav-item">
         <a class="nav-link" [routerLink]="['/welcome']">Home</a>
       </li>
       <li class="nav-item">
-        <a class="nav-link" [routerLink]="['/auth/register']">Sign Up</a>
+        <a class="nav-link" [routerLink]="['/auth/faq']">FAQ</a>
       </li>
       <li class="nav-item">
         <a class="nav-link" [routerLink]="['/auth/login']">Login</a>
@@ -22,20 +21,20 @@
   </div>
 </nav>
 
+
 <!-- ======= Hero Section ======= -->
 <section id="hero" class="d-flex align-items-center">
   <div class="container">
     <div class="row gy-4 align-items-center">
       <div class="col-lg-6 order-2 order-lg-1 d-flex flex-column justify-content-center">
-        <h2>
-          Discover new opportunities, trade with confidence, and maximize your earnings in a secure digital environment.
-        
-        <br>
-        <br>
+        <h2><b class="text-primary">TRIZBOT</b> <br><br>
+      
+          Find limitless crypto arbitrage opportunities, trade with confidence and maximize your earnings.
+     
+        <br><br>
         <a [routerLink]="['/auth/register']" class="btn btn-primary btn-lg text-white scrollto mt-3">
           Get Started
-        </a>
-      </h2>
+        </a>   </h2>
       </div>
       <div class="col-lg-6 order-1 order-lg-2 d-flex justify-content-center">
         <img src="assets/images/svgs/hero-img.svg" class="img-fluid hero-image animated" alt="Trizbot Trading Platform">
@@ -51,14 +50,26 @@
 
   <main id="main">
 
+    <section id="services" class="services section-bg">
+      <div class="container" data-aos="fade-up">
+        <div class="section-title">
+          <h1>About TrizBot</h1>
+          <h6 style="text-align: justify;">
+            TrizBot is an advanced cryptocurrency arbitrage platform designed for real-time market analysis. It monitors and compares price discrepancies across multiple cryptocurrency exchanges, providing users with critical insights into potential arbitrage opportunities. By leveraging up-to-the-minute market data, TrizBot empowers traders to make well-informed and timely decisions to optimize their trading strategies.
+          </h6>
+        </div>
+      </div>
+    </section>
+    
+
+
     <!-- ======= Services Section ======= -->
     <section id="services" class="services section-bg">
       <div class="container" data-aos="fade-up">
 
         <div class="section-title">
-          <h1>Live Trade Opportunities
-          </h1>
-          <h6>Real-time arbitrage opportunities across crypto exchanges</h6>
+          <h1>Live Trade Opportunities </h1>
+          <h6 style="padding-top:15px">Real-time arbitrage opportunities across crypto exchanges</h6>
         </div>
 
         <div class="row">
@@ -202,7 +213,7 @@
               <p class="text-muted small">Trizbot continuously scans the crypto market to identify profitable arbitrage opportunities.</p>
             </div>
           </div>
-    
+    <br>
           <div class="col-6 col-md-3" data-aos="zoom-in" data-aos-delay="200">
             <div class="icon-box bg-white shadow-sm p-4 rounded h-100">
               <div class="icon mb-3" style="font-size: 40px; color: #ff6600;">
@@ -214,7 +225,7 @@
               <p class="text-muted small">Visual insights and analytics on arbitrage trends and market volatility.</p>
             </div>
           </div>
-    
+          <br>
           <div class="col-6 col-md-3" data-aos="zoom-in" data-aos-delay="300">
             <div class="icon-box bg-white shadow-sm p-4 rounded h-100">
               <div class="icon mb-3" style="font-size: 40px; color: #ff6600;">
@@ -226,7 +237,7 @@
               <p class="text-muted small">Configure your automation settings and let Trizbot execute trades on your behalf.</p>
             </div>
           </div>
-    
+          <br>
           <div class="col-6 col-md-3" data-aos="zoom-in" data-aos-delay="400">
             <div class="icon-box bg-white shadow-sm p-4 rounded h-100">
               <div class="icon mb-3" style="font-size: 40px; color: #ff6600;">
@@ -241,7 +252,8 @@
         </div>
     
         <div class="text-center mt-5">
-          <a [routerLink]="['/auth/register']" class="btn btn-lg btn-primary" style=" color: white; padding: 12px 30px; border-radius: 50px;">
+          <br>
+          <a [routerLink]="['/auth/register']" class="btn btn-lg btn-primary" style=" color: white; padding-top:12px; padding: 12px 30px;">
             Get Started
           </a>
         </div>
@@ -252,7 +264,7 @@
     
 
     <!-- ======= F.A.Q Section ======= -->
-    <section id="faq" class="faq section-bg">
+    <section id="faq" class="faq section-bg" hidden="" style ="display:none">
       <div class="container" data-aos="fade-up">
 
         <div class="section-title">
@@ -309,7 +321,7 @@
         <div class="row justify-content-center">
           <div class="col-lg-6">
             <h3>Join Our Growing Crypto Community</h3>
-                <p> Connect with thousands of other traders and stay updated on the latest market movements.</p>
+                <p style="padding-top:14px"> Connect with thousands of other traders and stay updated on the latest market movements.</p>
 <a href="https://t.me/trizbotglobal" class="btn btn-primary btn-lg text-white">Join Now</a>
           </div>
         </div>
@@ -320,10 +332,7 @@
     <div class="footer-top">
       <div class="container">
         <div class="row">
-          <h4 class="mb-3">About TrizBot</h4>
-          <p style="text-align: justify;">
-            TrizBot is a crypto arbitrage tool for direct-to-market analysis. It tracks real-time price differences across multiple cryptocurrency exchanges. The system highlights potential arbitrage points based on current market data. Users can review these differences to make informed trading decisions.
-          </p>
+        <!--  -->
 
         </div>
       </div>

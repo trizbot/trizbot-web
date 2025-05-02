@@ -22,7 +22,7 @@
 
     <!-- Welcome Message -->
     <div class="d-md-flex align-items-center fw-semibold pe-3" style="font-size: 17px;">
-      Welcome back, {{ firstName }} {{ lastName }}!
+      {{ firstName }} {{ lastName }}!
     </div>
 
     <!-- Create Admin Button -->
@@ -66,9 +66,11 @@
         <i-tabler name="mail" class="icon-20 me-2"></i-tabler> Settings
       </button>
 
-      <div class="p-3">
-        <button (click)="onLogout()" mat-stroked-button class="w-100" style="font-size: 15px;">Logout</button>
-      </div>
+      <button mat-menu-item (click)="onLogout()">
+        <i-tabler name="logout" class="w-100 icon-20 me-2"></i-tabler>
+        Logout
+      </button>
+
     </mat-menu>
 
   </div>
