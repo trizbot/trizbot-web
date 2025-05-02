@@ -13,13 +13,24 @@
           <span class="font-medium text-green-600">3% reward</span> 
           from your invitee's first deposit. Start growing your referral network today!
         </p>
-
-        <div class="input-group">
-          <input type="text" class="form-control" id="referralLinkInput" [value]="referralLink" readonly>
-          <button class="btn btn-outline-secondary" type="button" (click)="copyToClipboard(referralLink)" matTooltip="Copy to clipboard">
+        <div class="input-group" style="max-width: 600px;">
+          <input
+            type="text"
+            class="form-control"
+            id="referralLinkInput"
+            [value]="referralLink"
+            readonly
+          />
+          <button
+            class="btn btn-outline-secondary"
+            type="button"
+            (click)="copyToClipboard(referralLink)"
+            matTooltip="Copy to clipboard"
+          >
             <i class="bi bi-clipboard"></i>
           </button>
         </div>
+        
 
       </div>
     </div>
