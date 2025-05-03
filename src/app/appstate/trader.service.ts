@@ -17,9 +17,10 @@ export class TraderService {
     return this.http.get<GetTraderResBody>(`${environment.apiBaseUrl}/${entity}/me`);
   }
 
-  getDownlines(): Observable<GetDownlinesResBody> {
+  getDownlines(traderId:string): Observable<GetDownlinesResBody> {
     const entity=  localStorage.getItem('entity');
-    return this.http.get<GetDownlinesResBody>(`${environment.apiBaseUrl}/${entity}/referrals`);
+    const payload ={traderId}
+    return this.http.put<GetDownlinesResBody>(`${environment.apiBaseUrl}/${entity}/${traderId}/referrals`,payload);
   }
 
   getNotification(): Observable<GetNotificationResBody[]> {

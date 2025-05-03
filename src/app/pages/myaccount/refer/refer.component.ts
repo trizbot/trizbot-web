@@ -53,6 +53,7 @@ export class ReferComponent implements OnInit {
   errorMessage: string = '';
   loading: boolean = false;
   cryptoId: string;
+  traderId: string;
 
   displayedColumns1: string[] = ['image', 'userName', 'approvalStatus',  'createdAt'];
   completedReferralList: any[] = [];
@@ -61,54 +62,49 @@ export class ReferComponent implements OnInit {
   pageReferralSize = 40;
 
   ngOnInit(): void {
-    this.getCurrentTrader();
     this.getDownlines();
     this.updateReferalPagedList();
   }
 
-  getCurrentTrader(): void {
+
+ 
+  getDownlines() {
     this.traderService.getTrader().subscribe({
       next: (res: GetTraderResBody) => {
+        this.traderId = res.data._id;
         this.referralLink = `https://www.trizbot.com/auth/register?ref=${res.data.referralLink}`;
+  
+        this.traderService.getDownlines(res.data.referralLink).subscribe({
+          next: (res: any) => {
+            const rawData = res.data || [];
+  
+            this.completedReferralList = rawData.map((item: any) => ({
+              firstName: item.firstName,
+              lastName: item.lastName,
+              approvalStatus: item.approvalStatus,
+              userName: item.userName,
+              entityName: item.entityName,
+              email: item.email,
+              phoneNumber: item.phoneNumber,
+              walletBalance: item.walletBalance,
+              walletAddress: item.walletAddress,
+              amountInvested: item.amountInvested,
+              profit: item.profit,
+              createdAt: item.createdAt,
+              imageSecureUrl: item.imageSecureUrl || null, // fallback if missing
+            }));
+  
+            this.updateReferalPagedList();
+          },
+          error: (err) => {
+          },
+        });
       },
       error: (err) => {
-      }
+      },
     });
   }
   
- 
-  getDownlines() {
-    this.traderService.getDownlines().subscribe({
-      next: (res: any) => {
-
-        console.log(res);
-        this.completedReferralList = res.data.map((item: any) => {
-         const referalItem = {
-          firstName: item.firstName,
-          lastName: item.lastName,
-          approvalStatus: item.approvalStatus,
-          userName: item.userName,
-          entityName: item.entityName,
-          email: item.email,
-          phoneNumber: item.phoneNumber,
-          walletBalance: item.walletBalance,
-          walletAddress: item.walletAddress,
-          amountInvested: item.amountInvested,
-          profit: item.profit,
-          createdAt: item.createdAt,
-          imageSecureUrl: item.imageSecureUrl,
-         
-          };
-          return referalItem;
-        });
-        this.updateReferalPagedList();
-      },
-      error: (err) => {
-        // Handle error
-      }
-    });
-  }
-
   updateReferalPagedList() {
     const startIndex = (this.currentReferralPage - 1) * this.pageReferralSize;
     const endIndex = startIndex + this.pageReferralSize;
