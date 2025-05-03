@@ -205,6 +205,7 @@ onCreateUploadAvatar(){
     const uploadData = new FormData();
     uploadData.append('file', file_data);
     uploadData.append('upload_preset', 'trizbot');
+    uploadData.append('folder', 'cryptos');
 
     this.traderService.generateImage(uploadData).subscribe({
       next: (uploadResponse: any) => {
