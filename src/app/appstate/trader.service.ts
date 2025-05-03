@@ -51,7 +51,7 @@ export class TraderService {
   }
 
 
-  removeAdmin(id: string): Observable<any> {
+  removeAdmin(id: any): Observable<any> {
     const url = `${environment.apiBaseUrl}/admins/${id}`;
     return this.http.delete(url);
   }
@@ -106,7 +106,8 @@ export class TraderService {
     
     
 generateImage(formData: FormData): Observable<any> {
-return this.http.post(`${environment.cloudUploadApiUrl}/${environment.cloudinaryName}/image/upload`, formData);
+const response= this.http.post(`${environment.cloudUploadApiUrl}/${environment.cloudinaryName}/image/upload`, formData);
+return response;
 }
         
 updateAvatar(imageUrl:string,imageSecureUrl: string, imageAssetId:string, imagePublicId:string,entity:string){

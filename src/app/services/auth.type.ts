@@ -67,7 +67,7 @@ export type GetNotificationResBody = {
   data: {
     title: string;
     text: string;
-    _id: string;
+    _id: any;
     
   };
 };

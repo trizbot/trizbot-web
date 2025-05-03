@@ -148,10 +148,10 @@ export class AdminComponent implements OnInit {
 
   onRemove(id: string): void {
     this.selectedCryptoId = id;
-    const encodedId = btoa(id);
+    // const encodedId = btoa(id);
     this.loading = true;
   
-    this.traderService.removeAdmin(encodedId).subscribe({
+    this.traderService.removeAdmin(id).subscribe({
       next: () => {
         this.sharedService.showToast({
           title: 'Administrator account was deleted successfully.',
