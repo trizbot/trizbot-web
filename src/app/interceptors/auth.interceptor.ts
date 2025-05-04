@@ -5,6 +5,16 @@ import { Router } from '@angular/router';
 import { catchError, throwError } from 'rxjs';
 import { LogoutService } from '../auth/logout/logout.service';
 
+function isTokenExpired(token: string): boolean {
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    const currentTime = Math.floor(Date.now() / 1000); // in seconds
+    return payload.exp && payload.exp < currentTime;
+  } catch (e) {
+    return true; // Treat invalid token as expired
+  }
+}
+
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const authService = inject(AuthService);
   const logoutService = inject(LogoutService);
@@ -16,7 +26,6 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
     return next(req);
   }
 
-  
   const authReq = authToken
     ? req.clone({
         setHeaders: {
@@ -28,7 +37,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
 
   return next(authReq).pipe(
     catchError((error) => {
-      if (error.status === 401 || error.status === 403) {
+      if ((error.status === 401 || error.status === 403) && authToken && isTokenExpired(authToken)) {
         logoutService.logout();
         router.navigate(['/auth/login']);
       }

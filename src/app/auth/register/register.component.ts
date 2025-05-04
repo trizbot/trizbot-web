@@ -263,7 +263,6 @@ ngOnInit(): void {
 }
 
   onSignUp() {
-    
     this.errorMessage = '';
     this.loading= true;
     const {
@@ -295,15 +294,11 @@ ngOnInit(): void {
       this.referralCode
     ).pipe(takeUntil(this.unsubscriber$)).subscribe({
       next: (response) => {
-        this.sharedService.showToast({
-          title: 'Your account has been created successfully. Please log in to continue.',
-        });
-        
         this.successMessage = "Your account has been created successfully. Please log in to continue.";
         this.loading= false;
-        
       },
       error: (err) => {
+        this.successMessage = "";
         this.errorMessage =
         err?.error.message|| err?.error?.message ||  'Sign up failed. Please try again';
           this.loading= false;
