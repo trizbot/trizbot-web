@@ -16,7 +16,7 @@ import { CommonModule } from '@angular/common';
 export class LoginComponent {
   loginData = { email: '', password: '' };
   errorMessage: string = '';
-  loading = false;
+  loading: boolean = false;
   hidePassword: boolean = true;
   hideConfirmPassword: boolean = true;
 

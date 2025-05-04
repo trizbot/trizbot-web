@@ -242,7 +242,7 @@ export class RegisterComponent {
 
   errorMessage: any = '';
   successMessage: any = '';
-  loading:any = false;
+  loading: boolean = false;
 
   private unsubscriber$ = new Subject<void>();
   private sharedService = inject(SharedService);
@@ -296,17 +296,16 @@ ngOnInit(): void {
     ).pipe(takeUntil(this.unsubscriber$)).subscribe({
       next: (response) => {
         this.sharedService.showToast({
-          title: 'Registration successful. Please login'
+          title: 'Your account has been created successfully. Please log in to continue.',
         });
-
+        
         this.successMessage = response || 'Success';
         this.loading= false;
-        this.router.navigateByUrl('login');
+        this.router.navigate(['/auth/login']);
       },
       error: (err) => {
-        console.error('Sign up error:', err);
         this.errorMessage =
-          err?.error?.message || 'Sign up failed. Please try again';
+        err?.error.message|| err?.error?.message ||  'Sign up failed. Please try again';
           this.loading= false;
       }
     });
