@@ -85,10 +85,11 @@
   </button>
 </mat-form-field>
 
-<!-- Sign Up Button -->
-            <button mat-flat-button color="primary" class="w-100 py-2 fw-bold" type="submit"> <b *ngIf="loading">
+<button mat-flat-button color="primary" class="w-100 py-2 fw-bold" type="submit"> <b *ngIf="loading">
               <img src="./assets/images/loading.gif" alt="Loading..." style="width: 26px; height: 26px;" /></b>Sign Up
             </button> 
+
+            
           </form>
 
           
@@ -96,6 +97,7 @@
 <div *ngIf="errorMessage" class="alert alert-danger">
   <b>{{ errorMessage }}</b>
 </div>
+
 <div *ngIf="successMessage" class="alert alert-success">
   <b>{{ successMessage }}</b>
 </div>
