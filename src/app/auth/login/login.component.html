@@ -12,15 +12,13 @@
           </div>
 
           <!-- Form -->
-          <form class="mt-3" (submit)="onLogin()"  #LoginForm="ngForm">
+          <form class="mt-3" (submit)="onLogin()">
 
-            <!-- Username -->
             <mat-label class="mb-2 fw-semibold text-muted">Email Address</mat-label>
             <mat-form-field appearance="outline" class="w-100 mb-3" color="primary">
               <input matInput placeholder="Enter your email" name="email" [(ngModel)]="loginData.email" />
             </mat-form-field>
 
-            <!-- Password -->
             <mat-form-field appearance="outline" class="w-100 mb-4" color="primary">
               <mat-label>Password</mat-label>
               <input matInput [type]="hidePassword ? 'password' : 'text'" name="password" placeholder="Enter a secure password" [(ngModel)]="loginData.password">
@@ -36,23 +34,10 @@
 
          
             
-            <!-- <button mat-flat-button color="primary" class="w-100 py-2 fw-bold" type="submit">    <b *ngIf="loading">
+            <button mat-flat-button color="primary" class="w-100 py-2 fw-bold" type="submit">    <b *ngIf="loading">
               <img src="./assets/images/loading.gif" alt="Loading..." style="width: 26px; height: 26px;" /></b>Sign In
-            </button> -->
+            </button>
 
-            <div class="m-t-6">
-              <button
-                mat-flat-button
-                color="primary"
-                class="w-100 py-2 fw-bold"
-                type="submit"
-                [disabled]="loading || !LoginForm.form.valid">
-                <b *ngIf="loading">
-                  <img src="./assets/images/loading.gif" alt="Loading..." style="width: 26px; height: 26px;" />
-                </b>
-                Sign In
-              </button>
-            </div>
 
           </form>
 
