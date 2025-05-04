@@ -300,7 +300,7 @@ ngOnInit(): void {
         //   title: 'Your account has been created successfully. Please log in to continue.',
         // });
         
-        this.successMessage = 'Your account has been created successfully. Please log in to continue.' || 'Success';
+        this.successMessage = 'Your account has been created successfully. Please log in to continue.';
         this.loading= false;
         
       },
