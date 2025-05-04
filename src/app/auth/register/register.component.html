@@ -13,8 +13,7 @@
 
           <!-- Signup Form -->
 
-<form (ngSubmit)="onSignUp()" class="mt-3"  #RegisterForm="ngForm"> 
-<!-- First Name -->
+<form (ngSubmit)="onSignUp()" class="mt-3" #RegisterForm="ngForm"> 
 <mat-form-field appearance="outline" class="w-100 mb-3" color="primary">
   <mat-label>First Name</mat-label>
   <input matInput placeholder="Enter your first name"name="firstName"[(ngModel)]="registerData.firstName"/>
@@ -92,7 +91,7 @@
             </button> -->
 
             <div class="m-t-6">
-              <button
+              <button 
                 mat-flat-button
                 color="primary"
                 class="w-100 py-2 fw-bold"

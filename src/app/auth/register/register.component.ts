@@ -295,13 +295,14 @@ ngOnInit(): void {
       this.referralCode
     ).pipe(takeUntil(this.unsubscriber$)).subscribe({
       next: (response) => {
+        // this.router.navigate(['/auth/login']);
         this.sharedService.showToast({
           title: 'Your account has been created successfully. Please log in to continue.',
         });
         
         this.successMessage = response || 'Success';
         this.loading= false;
-        this.router.navigate(['/auth/login']);
+        
       },
       error: (err) => {
         this.errorMessage =
