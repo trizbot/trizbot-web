@@ -12,7 +12,7 @@
           </div>
 
           <!-- Form -->
-          <form class="mt-3" (submit)="onLogin()">
+          <form class="mt-3" (submit)="onLogin()"  #LoginForm="ngForm">
 
             <!-- Username -->
             <mat-label class="mb-2 fw-semibold text-muted">Email Address</mat-label>
@@ -36,10 +36,23 @@
 
          
             
-            <button mat-flat-button color="primary" class="w-100 py-2 fw-bold" type="submit">    <b *ngIf="loading">
+            <!-- <button mat-flat-button color="primary" class="w-100 py-2 fw-bold" type="submit">    <b *ngIf="loading">
               <img src="./assets/images/loading.gif" alt="Loading..." style="width: 26px; height: 26px;" /></b>Sign In
-            </button>
+            </button> -->
 
+            <div class="m-t-6">
+              <button
+                mat-flat-button
+                color="primary"
+                class="w-100 py-2 fw-bold"
+                type="submit"
+                [disabled]="loading || !LoginForm.form.valid">
+                <b *ngIf="loading">
+                  <img src="./assets/images/loading.gif" alt="Loading..." style="width: 26px; height: 26px;" />
+                </b>
+                Sign In
+              </button>
+            </div>
 
           </form>
 
