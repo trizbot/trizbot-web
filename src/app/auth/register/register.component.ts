@@ -263,7 +263,8 @@ ngOnInit(): void {
 }
 
   onSignUp() {
-        this.errorMessage = '';
+    
+    this.errorMessage = '';
     this.loading= true;
     const {
       email,
@@ -279,6 +280,7 @@ ngOnInit(): void {
       
     } = this.registerData;
 
+
     this.authService.signUpTraders(
       email,
       password,
@@ -292,15 +294,19 @@ ngOnInit(): void {
       userName,
       this.referralCode
     ).pipe(takeUntil(this.unsubscriber$)).subscribe({
-      next: (response) => {            
+      next: (response) => {
+        this.sharedService.showToast({
+          title: 'Your account has been created successfully. Please log in to continue.',
+        });
+        
         this.successMessage = "Your account has been created successfully. Please log in to continue.";
         this.loading= false;
+        
       },
       error: (err) => {
         this.errorMessage =
-        err?.error.message|| err?.error?.message ||  `Sign up failed. Please try again ${err}`;
-        
-        this.loading= false;
+        err?.error.message|| err?.error?.message ||  'Sign up failed. Please try again';
+          this.loading= false;
       }
     });
   }
