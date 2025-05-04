@@ -296,11 +296,11 @@ ngOnInit(): void {
     ).pipe(takeUntil(this.unsubscriber$)).subscribe({
       next: (response) => {
         // this.router.navigate(['/auth/login']);
-        this.sharedService.showToast({
-          title: 'Your account has been created successfully. Please log in to continue.',
-        });
+        // this.sharedService.showToast({
+        //   title: 'Your account has been created successfully. Please log in to continue.',
+        // });
         
-        this.successMessage = response || 'Success';
+        this.successMessage = 'Your account has been created successfully. Please log in to continue.' || 'Success';
         this.loading= false;
         
       },
