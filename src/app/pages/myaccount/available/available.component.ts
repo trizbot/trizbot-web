@@ -339,9 +339,9 @@ get totalPages(): any[] {
 
 onRemoveTrade(id: string) {
   this.selectedCryptoId = id;
-  const encodedId = btoa(id); 
+  // const encodedId = btoa(id); 
   this.loading = true;
-  this.cryptoService.removeTrade(encodedId).subscribe({
+  this.cryptoService.removeTrade(id).subscribe({
     next: (response) => {
       this.sharedService.showToast({
         title: `Crypto Trades has been successfully deleted.`,

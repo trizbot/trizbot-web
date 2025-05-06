@@ -63,7 +63,7 @@ export class AdminComponent implements OnInit {
   }
 
 
-  displayedColumns1: string[] = ['id','ImageUrl','userName', 'phoneNumber', 'email',  'CurBalance', 'Profit','FirstName', 'LastName', 'createdAt'];
+  displayedColumns1: string[] = ['id','ImageUrl','userName', 'phoneNumber', 'email', 'FirstName', 'LastName', 'createdAt'];
   completedInvestmentList: any[] = [];
   pagedCompletedInvestmentList: any[] = [];
   currentCompletedInvestPage = 1;

@@ -106,8 +106,13 @@ export class ChangePasswordComponent implements OnInit {
   onRequest(){
     this.errorMessage ="";
     this.loading=true;
-    const {email} = this.email;
-    this.authService.forgotPassword(email).subscribe({
+    this.traderService.getTrader().subscribe({
+      next: (res: GetTraderResBody) => {
+        this.entityName =res.data.entityName;
+        this.traderId = res.data._id;
+        this.email = res.data.email;
+
+    this.authService.forgotPassword(this.email).subscribe({
       next:(response)=>{
         this.sharedService.showToast({
           title: `A password Reset OTP has been sent to your registered email, use it to complete your password reset.`,
@@ -121,6 +126,8 @@ export class ChangePasswordComponent implements OnInit {
       }
     }); 
 
+  }
+}); 
   }
 
 
