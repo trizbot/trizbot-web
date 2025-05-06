@@ -26,7 +26,7 @@ export class AuthService {
   constructor(private http: HttpClient, private router: Router) {}
 
   signUpTraders(
-        email: string,password: string,firstName: string,address: string,lastName: string,phoneNumber: string,password_confirmation: string,country: string,entityName: string,userName: string,referralCode:string,countryCode:string){
+        email: string,password: string,firstName: string,address: string,lastName: string,phoneNumber: string,password_confirmation: string,country: string,entityName: string,userName: string,countryCode:string,referralCode:string){
 
   const payload = {email,password, firstName,   address, lastName,  phoneNumber,password_confirmation, country, entityName, userName,countryCode,referralCode};
 

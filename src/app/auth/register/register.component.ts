@@ -335,8 +335,7 @@ error: (err) => {
     this.loading= true;
     
     const {
-    
-      email,
+     email,
       password,
       firstName,
       address,
@@ -350,6 +349,8 @@ error: (err) => {
     } = this.registerData;
 
 
+    ,countryCode:string,referralCode:string){
+
     this.authService.signUpTraders(
       email,
       password,
@@ -361,8 +362,8 @@ error: (err) => {
       country,
       entityName,
       userName,
+      countryCode,
       this.referralCode,
-       countryCode,
     ).pipe(takeUntil(this.unsubscriber$)).subscribe({
       next: (response) => {
         this.successMessage = "Your account has been created successfully. Please log in to continue.";
