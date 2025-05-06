@@ -25,8 +25,24 @@ export class AuthService {
   
   constructor(private http: HttpClient, private router: Router) {}
 
-  signUpTraders(email: string,password: string,firstName: string,address: string,lastName: string,phoneNumber: string,password_confirmation: string,country: string,entityName: string,userName: string,countryCode:string,referralCode:string){
-  const payload = {email,password, firstName,   address, lastName,  phoneNumber,password_confirmation, countryCode, entityName, userName,country,referralCode};
+  signUpTraders(
+    
+    email,
+    password,
+    firstName,
+    address,
+    lastName,
+    phoneNumber,
+    password_confirmation,
+    country,
+    entityName,
+    userName,
+    this.referralCode,
+     countryCode,
+     
+    email: string,password: string,firstName: string,address: string,lastName: string,phoneNumber: string,password_confirmation: string,country: string,entityName: string,userName: string,referralCode:string,countryCode:string){
+
+  const payload = {email,password, firstName,   address, lastName,  phoneNumber,password_confirmation, country, entityName, userName,countryCode,referralCode};
 
   if(entityName=="Trader"){
     return this.http.post(`${environment.apiBaseUrl}/traders`, payload);
