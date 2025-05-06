@@ -42,7 +42,8 @@ export class ProfileComponent implements OnInit {
   
   private htmlElement!: HTMLHtmlElement;
   private sharedService = inject(SharedService);
-
+  hidePassword: boolean = true;
+  hideConfirmPassword: boolean = true;
   errorMessage: string = '';
   errorPinMessage: string = '';
   errorAvatarMessage: string = '';
@@ -52,6 +53,8 @@ export class ProfileComponent implements OnInit {
   isNormalEntityType: boolean = false;
   traderId: string;
   entityName: string;
+  address: any;
+  phoneNumber: any;
   entity: string;
   imageUrl: string;
 
@@ -82,6 +85,8 @@ export class ProfileComponent implements OnInit {
     this.traderService.getTrader().subscribe({
       next: (res: GetTraderResBody) => {
         this.entityName =res.data.entityName;
+        this.phoneNumber =res.data.phoneNumber;
+        this.address =res.data.address;
         this.traderId = res.data._id;
         if (this.entityName=="Admin") {
           this.isNormalEntityType=true;

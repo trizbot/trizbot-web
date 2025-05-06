@@ -1,6 +1,6 @@
 <mat-card class="cardWithShadow theme-card">
     <mat-card-header>
-      <mat-card-title class="m-b-0">Create Investment</mat-card-title>
+      <mat-card-title class="m-b-0">Create Trade</mat-card-title>
     </mat-card-header>
     <mat-card-content class="b-t-1">
   
@@ -8,7 +8,7 @@
         <div class="row">
           <!-- Investment Amount -->
           <div class="col-lg-6">
-            <mat-label class="f-w-600 m-b-8 d-block">Investment Amount *</mat-label>
+            <mat-label class="f-w-600 m-b-8 d-block">Amount *</mat-label>
             <mat-form-field appearance="outline" class="w-100">
               <input
                 matInput
@@ -20,19 +20,7 @@
             </mat-form-field>
           </div>
   
-          <!-- Description -->
-          <div class="col-lg-6">
-            <mat-label class="f-w-600 m-b-8 d-block">Description *</mat-label>
-            <mat-form-field appearance="outline" class="w-100">
-              <textarea
-                matInput
-                placeholder="Enter description"
-                name="description"
-                required
-                rows="3"
-                [(ngModel)]="investData.description"></textarea>
-            </mat-form-field>
-          </div>
+         
         </div>
   
         <!-- Submit Button & Error Message -->
