@@ -226,6 +226,9 @@ export class RegisterComponent {
   ];
   
 
+validEmailData={
+  verificationCode:'',
+};
 
   registerData = {
     firstName: '',
@@ -237,12 +240,20 @@ export class RegisterComponent {
     country: '',
     userName: '',
     password: '',
+    countryCode: '',
     password_confirmation: ''
   };
 
   errorMessage: any = '';
   successMessage: any = '';
+  validEmailAddress: any = '';
   loading: boolean = false;
+  loadingCode: boolean = false;
+
+  emailVerified = false;
+codeSent = false;
+verificationCode = '';
+
 
   private unsubscriber$ = new Subject<void>();
   private sharedService = inject(SharedService);
@@ -262,9 +273,67 @@ ngOnInit(): void {
   });
 }
 
+
+onCountrySelect(selectedCode: string) {
+  const selectedCountry = this.countries.find(c => c.code === selectedCode);
+  this.registerData.countryCode = selectedCountry ? selectedCountry.name : '';
+}
+
+getCountryName(code: string): string {
+  const country = this.countries.find(c => c.code === code);
+  return country ? country.name : '';
+}
+
+
+requestVerificationCode() {
+  this.loadingCode= true;
+  if (!this.registerData.email) {
+    this.errorMessage = 'Please enter your email first.';
+    this.loadingCode= false;
+    return;
+  }
+
+this.authService.requestVerificationCode(this.registerData.email).pipe(takeUntil(this.unsubscriber$)).subscribe({
+  next: (response) => {
+    this.codeSent = true;
+    this.errorMessage = '';
+    this.successMessage = 'Verification code sent to your email.';
+    this.loadingCode= false;
+  },
+  error: (err) => {
+    this.successMessage = "";
+    this.codeSent = false;
+    this.loadingCode= false;
+    this.errorMessage =
+    err?.error.message|| err?.error?.message ||  'Email verification failed. Please try again';
+  }
+});
+  // TODO: Call backend to send code
+
+}
+
+verifyCode() {
+  
+  this.authService.confirmVerificationCode(this.validEmailData.verificationCode).pipe(takeUntil(this.unsubscriber$)).subscribe({
+    next: (response) => {
+    this.emailVerified = true;
+    this.successMessage = 'Email verified. Continue signup.';
+    this.errorMessage = "";
+    this.validEmailAddress =this.registerData.email;
+},
+error: (err) => {
+    this.emailVerified = false;
+    this.successMessage = "";
+    this.errorMessage = err?.error.message|| err?.error?.message || 'Invalid verification code.';
+}
+});
+
+}
+
   onSignUp() {
     this.errorMessage = '';
     this.loading= true;
+    
     const {
       email,
       password,
@@ -276,7 +345,7 @@ ngOnInit(): void {
       country,
       entityName,
       userName,
-      
+      countryCode,
     } = this.registerData;
 
 
@@ -291,6 +360,7 @@ ngOnInit(): void {
       country,
       entityName,
       userName,
+      countryCode,
       this.referralCode
     ).pipe(takeUntil(this.unsubscriber$)).subscribe({
       next: (response) => {

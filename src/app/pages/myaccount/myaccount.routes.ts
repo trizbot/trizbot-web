@@ -20,6 +20,7 @@ import { WithdrawComponent } from './withdraw/withdraw.component';
 import { PayoutsComponent } from './payouts/payouts.component';
 import { ReferComponent } from './refer/refer.component';
 import { ChatComponent } from './chat/chat.component';
+import { EmailConfirmationComponent } from '../../auth/email/email-confirmation.component';
 
 export const UiComponentsRoutes: Routes = [
   {
@@ -47,7 +48,10 @@ export const UiComponentsRoutes: Routes = [
         path: 'confirmation',
         component: DepositConfirmationComponent,
       },
-
+{
+        path: 'email-confirmation',
+        component: EmailConfirmationComponent,
+      },
       {
         path: 'deposit',
         component: DepositComponent,

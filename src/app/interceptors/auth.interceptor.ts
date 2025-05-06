@@ -21,7 +21,6 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const router = inject(Router);
   const authToken = authService.getToken();
 
-  // Bypass interceptor for Cloudinary upload requests
   if (req.url.includes('https://api.cloudinary.com')) {
     return next(req);
   }

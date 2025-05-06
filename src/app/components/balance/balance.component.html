@@ -64,9 +64,9 @@
         <mat-tab label="📈 Available Trades" style="font-size: 15px!important;">
           <div class="p-12">
             <div *ngIf="availableCryptoList.length > 0; else noData">
-              <div class="crypto-list-container">
+              <div class="crypto-list-container" >
                 <div *ngFor="let crypto of pagedCryptoList" class="crypto-item">
-                  <mat-card class="crypto-card">
+                  <mat-card class="crypto-card" *ngIf="crypto.status; else noMarketData">
                     <mat-card-content class="crypto-card-content">
                       <div class="crypto-left">
                         <img *ngIf="crypto.imageUrl" [src]="crypto.imageUrl" alt="Crypto Image" width="80" height="80" style="border-radius: 45px;" />
@@ -80,11 +80,14 @@
                         <div><strong>Sell Exchange:</strong> {{ crypto.sellExchange }}</div>
                         <div><strong>Market:</strong> {{ crypto.tradeStatus }}</div>
                         <div *ngIf="!crypto.status"><strong>Reason:</strong> {{ crypto.description }}</div>
-                        <button mat-raised-button color="primary" (click)="onSetupTrade(crypto.id)">Setup Trade</button>
+                        <button mat-raised-button color="primary" *ngIf="crypto.status" (click)="onSetupTrade(crypto.id)">Setup Trade</button>
                       </div>
                       
                     </mat-card-content>
                   </mat-card>
+                  <ng-template #noMarketData>
+                    <p class="text-muted">{{ crypto.description }}</p>
+                  </ng-template>
                 </div>
               </div>
         
@@ -111,6 +114,8 @@
             <ng-template #noData>
               <p class="text-muted">No Available trades.</p>
             </ng-template>
+           
+         
           </div>
         </mat-tab>
     

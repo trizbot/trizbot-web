@@ -25,8 +25,8 @@ export class AuthService {
   
   constructor(private http: HttpClient, private router: Router) {}
 
-  signUpTraders(email: string,password: string,firstName: string,address: string,lastName: string,phoneNumber: string,password_confirmation: string,country: string,entityName: string,userName: string,referralCode:string){
-  const payload = {email,password, firstName,   address, lastName,  phoneNumber,password_confirmation, country, entityName, userName,referralCode};
+  signUpTraders(email: string,password: string,firstName: string,address: string,lastName: string,phoneNumber: string,password_confirmation: string,country: string,entityName: string,userName: string,countryCode:string,referralCode:string){
+  const payload = {email,password, firstName,   address, lastName,  phoneNumber,password_confirmation, countryCode, entityName, userName,country,referralCode};
 
   if(entityName=="Trader"){
     return this.http.post(`${environment.apiBaseUrl}/traders`, payload);
@@ -44,6 +44,21 @@ export class AuthService {
         observe: 'response'
       });
     }
+ 
+    requestVerificationCode(email: string) {
+      const payload = { email };
+      return this.http.post(`${environment.apiBaseUrl}/traders/email-code`,payload, {
+        observe: 'response'
+      });
+    }
+ 
+    confirmVerificationCode(otp: string) {
+      const payload = { otp };
+      return this.http.post(`${environment.apiBaseUrl}/traders/confirm-code`,payload, {
+        observe: 'response'
+      });
+    }
+  
     
       signInTrader(email: string, password: string, entityName:any) {
       const body = { email, password };
@@ -155,6 +170,14 @@ completePassword(otp: string, newPassword:string ) {
     `${environment.apiBaseUrl}/traders/complete-password-change`,
     {
       params: { otp,newPassword }
+    }
+  );
+}
+
+completeEmailVerification(otp: string) {
+ return this.http.put(`${environment.apiBaseUrl}/traders/complete-email-verification`,
+    {
+      params: { otp }
     }
   );
 }

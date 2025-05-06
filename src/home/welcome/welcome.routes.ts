@@ -1,7 +1,7 @@
 import { Routes } from '@angular/router';
 
 import { WelcomeComponent } from './welcome.component';
-import { FaqComponent } from '../../app/auth/faq/faq.component';
+
 
 export const WelcomeRoutes: Routes = [
   {
@@ -12,11 +12,7 @@ export const WelcomeRoutes: Routes = [
         component: WelcomeComponent,
       },
      
-      {
-        path: 'faq',
-        component: FaqComponent,
-      },
-     
+  
      
     ],
   },
