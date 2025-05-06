@@ -77,6 +77,7 @@ export class UsersComponent implements OnInit {
           walletBalance: item.walletBalance,
           walletAddress: item.walletAddress,
           amountInvested: item.amountInvested,
+          countryCode: item.countryCode,
           profit: item.profit,
           createdAt: item.createdAt
         }));

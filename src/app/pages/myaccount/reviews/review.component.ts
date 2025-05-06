@@ -45,7 +45,8 @@ export class ReviewComponent implements OnInit {
     private htmlElement!: HTMLHtmlElement;
     private sharedService = inject(SharedService);
 
-
+    hidePassword: boolean = true;
+    hideConfirmPassword: boolean = true;
   errorMessage: string = '';
   errorCreditMessage: string = '';
   loading: boolean = false;

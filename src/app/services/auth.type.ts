@@ -102,6 +102,7 @@ export type GetTraderResBody = {
     payoutStatus: string;
     tradeStatus: string;
     reviewerId: string;
+    address: string;
     payoutDescription: string;
   };
 };

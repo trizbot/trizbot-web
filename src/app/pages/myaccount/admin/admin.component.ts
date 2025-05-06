@@ -54,7 +54,8 @@ export class AdminComponent implements OnInit {
   errorMessage: string="";
   loading:any = false;
   selectedCryptoId: string = ''; 
-
+  hidePassword: boolean = true;
+  hideConfirmPassword: boolean = true;
 
   ngOnInit(): void {
     this.getUsers();

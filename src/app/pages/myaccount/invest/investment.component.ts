@@ -82,21 +82,20 @@ const reference = `IRV${timestamp}${randomStr}${this.cryptoId}`;
 
   
     if (!amount || isNaN(+amount) || +amount <= 0) {
-      this.errorMessage = 'Please enter a valid investment amount.';
+      this.errorMessage = 'Please enter a valid trade amount.';
       this.loading = false;
       return;
     }
   
     this.investService.createInvestment(
       reference,
-      description,
       transactionType,
       +amount,
       cryptoId
     ).subscribe({
       next: (response) => {
         this.sharedService.showToast({
-          title: `Investment created successfully`,
+          title: `Trade created successfully`,
         });
         this.loading = false;
       },

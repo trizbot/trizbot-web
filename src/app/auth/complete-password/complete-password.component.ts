@@ -40,7 +40,7 @@ export class CompletePasswordComponent {
     },
     error:(err)=>{
       this. loading= false;
-    this.errorMessage = err.errors?.message||"Unable complete forgot failed. Please try again";
+    this.errorMessage = err.errors?.message||"Unable update password. Kindly request a new one";
 
     }
   }); 
