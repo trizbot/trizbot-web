@@ -65,7 +65,8 @@ export class TraderService {
 
 
   creditTraders(amount: any,reason: string, transactionPin:any, traderId: string){
-    const payload = {amount, reason,transactionPin}; 
+    const payload = {amount, transactionPin,reason}; 
+
     return this.http.put(`${environment.apiBaseUrl}/traders/${traderId}/credit`, payload);
     }
 

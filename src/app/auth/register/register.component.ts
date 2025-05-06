@@ -237,10 +237,10 @@ validEmailData={
     email: '',
     entityName: 'Trader',
     phoneNumber: '',
-    country: '',
+    countryCode: '',
     userName: '',
     password: '',
-    countryCode: '',
+    country: '',
     password_confirmation: ''
   };
 
@@ -335,6 +335,7 @@ error: (err) => {
     this.loading= true;
     
     const {
+    
       email,
       password,
       firstName,

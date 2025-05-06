@@ -62,8 +62,9 @@ export class ReviewComponent implements OnInit {
   
   creditData = {
     amount: '',
-    reason: '',
     transactionPin: '',
+    reason: '',
+    
   };
   constructor(
     private route: ActivatedRoute,
@@ -139,6 +140,7 @@ onCreateReview(): void {
       return;
     }
   
+    
     this.traderService.creditTraders(
       amount,
       transactionPin,
