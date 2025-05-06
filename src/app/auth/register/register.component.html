@@ -56,16 +56,8 @@
 <!-- Email -->
 <mat-form-field appearance="outline" class="w-100 mb-3" color="primary">
   <mat-label>Email Address</mat-label>
-  <input 
-  disabled="disabled"
-    matInput 
-    type="email" 
-    placeholder="Enter your email" 
-    name="email" 
-    [(ngModel)]="registerData.email" 
-    [disabled]="true" />
+  <input matInput type="email" placeholder="Enter your email" disabled="disabled"  value="{{validEmailAddress}}" name="email"[(ngModel)]="registerData.email"/>
 </mat-form-field>
-
 <!-- Phone Section Wrapper -->
 <div class="d-flex gap-2 mb-3 align-items-start">
 
