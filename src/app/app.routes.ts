@@ -8,7 +8,6 @@ import { ForgotComponent } from './auth/forgot/forgot.component';
 import { FaqComponent } from './auth/faq/faq.component';
 
 import { CompletePasswordComponent } from './auth/complete-password/complete-password.component';
-import { EmailConfirmationComponent } from './auth/email/email-confirmation.component';
 
 export const routes: Routes = [
   {
@@ -41,7 +40,6 @@ export const routes: Routes = [
       { path: 'forgot', component: ForgotComponent },
       { path: 'complete', component: CompletePasswordComponent },
       { path: 'faq', component: FaqComponent },
-      { path: 'email', component: EmailConfirmationComponent},
       
     ],
   },

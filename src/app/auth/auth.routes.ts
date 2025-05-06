@@ -4,7 +4,6 @@ import { LoginComponent } from './login/login.component';
 import { RegisterComponent } from './register/register.component';
 import { LogoutComponent } from './logout/logout.component';
 import { FaqComponent } from './faq/faq.component';
-import { EmailConfirmationComponent } from './email/email-confirmation.component';
 
 
 export const AuthenticationRoutes: Routes = [
