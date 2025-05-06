@@ -349,7 +349,7 @@ error: (err) => {
     } = this.registerData;
 
 
-    ,countryCode:string,referralCode:string){
+
 
     this.authService.signUpTraders(
       email,
