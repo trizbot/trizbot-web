@@ -20,15 +20,22 @@
         <button
           mat-menu-item
           *ngFor="let notification of notifications"
-          style="font-size: 15px;"
-          (click)="onMarkAsRead(notification._id)">
-          {{ notification.text }}
+          (click)="onMarkAsRead(notification._id)"
+          style="font-weight: bold; font-size: 16px; white-space: normal; text-align: left; line-height: 1.4;">
+          <div>
+            <div style="font-size: 16px; font-weight: 600;">{{ notification.title }}</div>
+            <div style="font-size: 14px; color: #555;">{{ notification.text }}</div>
+          </div>
         </button>
       </ng-container>
-    
+      
       <ng-template #noNotifications>
-        <button mat-menu-item disabled>No notifications</button>
+        <button mat-menu-item disabled style="font-style: italic; color: #999;">
+          No notifications available.
+        </button>
       </ng-template>
+      
+  
     </mat-menu>
     
 
