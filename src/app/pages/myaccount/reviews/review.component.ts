@@ -141,7 +141,8 @@ onCreateReview(): void {
   
     this.traderService.creditTraders(
       amount,
-      transactionPin,reason,
+      transactionPin,
+      reason,
       traderId
     ).subscribe({
       next: (response) => {

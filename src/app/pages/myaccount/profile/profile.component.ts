@@ -124,7 +124,7 @@ export class ProfileComponent implements OnInit {
     }
   
     this.traderService.setTransaction(
-      transactionPin,
+      parseInt(transactionPin),
       traderId,
       this.entity,
     ).subscribe({

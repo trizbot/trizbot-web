@@ -64,12 +64,12 @@ export class TraderService {
     }
 
 
-  creditTraders(amount: string,reason: string, transactionPin:string, traderId: string){
+  creditTraders(amount: any,reason: string, transactionPin:any, traderId: string){
     const payload = {amount, reason,transactionPin}; 
     return this.http.put(`${environment.apiBaseUrl}/traders/${traderId}/credit`, payload);
     }
 
-    setTransaction(transactionPin: string, traderId: string,entity:string){
+    setTransaction(transactionPin: any, traderId: string,entity:string){
     const payload = {transactionPin}; 
     return this.http.put(`${environment.apiBaseUrl}/${entity}/${traderId}/set-transaction-pin`, payload);
     }
