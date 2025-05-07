@@ -64,11 +64,11 @@
   <!-- Country Code -->
   <mat-form-field appearance="outline" color="primary" class="country-code-field">
     <mat-label>Country Code</mat-label>
-    <mat-select [(ngModel)]="registerData.country" name="countryCode" placeholder="Country Code"
-                (selectionChange)="onCountrySelect($event.value)">
+    <mat-select [(ngModel)]="registerData.countryCode" name="countryCode" placeholder="Country Code"
+                (selectionChange)="onCountryCodeSelect($event.value)">
       <mat-option value="">-- Select Country Code --</mat-option>
-      <mat-option *ngFor="let country of countries" [value]="country.code">
-        {{ country.code }} ({{country.name}})
+      <mat-option *ngFor="let countryCodes of countries" [value]="countryCodes.code">
+        {{ countryCodes.code }} ({{countryCodes.name}})
       </mat-option>
     </mat-select>
   </mat-form-field>
@@ -84,14 +84,15 @@
 
 </div>
 
-<!-- country -->
-<mat-form-field appearance="outline" color="primary" class="flex-grow-1">
+ <mat-form-field appearance="outline" color="primary" class="country-code-field">
   <mat-label>Country</mat-label>
-  <input matInput type="text" placeholder="Selected Country"
-         name="countryName"
-         [value]="getCountryName(registerData.country)"
-         readonly />
+  <mat-select [(ngModel)]="registerData.country" name="country" placeholder="Country"
+              (selectionChange)="onCountrySelect($event.value)">
+    <mat-option value="">-- Select Country --</mat-option>
+    <mat-option *ngFor="let country of countries" [value]="country.name">{{country.name}}</mat-option>
+  </mat-select>
 </mat-form-field>
+
 
 <!-- Username -->
 <mat-form-field appearance="outline" class="w-100 mb-3" color="primary">

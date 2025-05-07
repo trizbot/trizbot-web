@@ -20,6 +20,9 @@
 
 
 
+
+
+
 /* Crypto Card Styling */
 .crypto-card {
   cursor: pointer;
@@ -118,4 +121,20 @@
 .crypto-title {
   font-size: 18px;
   font-weight: bold;
+}
+
+
+
+
+
+.crypto-info {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+  font-size: 16px;
+}
+
+.crypto-info mat-icon {
+  margin-right: 8px;
+  color: #4CAF50;  /* Change color as needed */
 }

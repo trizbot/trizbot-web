@@ -274,9 +274,14 @@ ngOnInit(): void {
 }
 
 
-onCountrySelect(selectedCode: string) {
-  const selectedCountry = this.countries.find(c => c.code === selectedCode);
-  this.registerData.countryCode = selectedCountry ? selectedCountry.name : '';
+onCountryCodeSelect(selectedCode: string) {
+  const selectedCountryCode = this.countries.find(c => c.code === selectedCode);
+  this.registerData.countryCode = selectedCountryCode ? selectedCountryCode.code : '';
+}
+
+onCountrySelect(selectedName: string) {
+  const selectedCountry = this.countries.find(c => c.name === selectedName);
+  this.registerData.country = selectedCountry ? selectedCountry.name : '';
 }
 
 getCountryName(code: string): string {
@@ -347,9 +352,6 @@ error: (err) => {
       userName,
       countryCode,
     } = this.registerData;
-
-
-
 
     this.authService.signUpTraders(
       email,

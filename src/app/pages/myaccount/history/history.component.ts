@@ -45,7 +45,7 @@ export class HistoryComponent implements OnInit {
   loading: boolean = false;
   cryptoId: string;
 
-  displayedColumns1: string[] = ['image', 'amount', 'transactionStatus', 'PrevBalance', 'CurBalance','Profit','Expired', 'createdAt'];
+  displayedColumns1: string[] = ['image', 'amount', 'transactionStatus', 'PrevBalance', 'CurBalance','Profit', 'createdAt'];
   completedInvestmentList: any[] = [];
   pagedCompletedInvestmentList: any[] = [];
   currentCompletedInvestPage = 1;

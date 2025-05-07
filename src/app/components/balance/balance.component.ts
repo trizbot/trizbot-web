@@ -3,7 +3,7 @@ import { MaterialModule } from '../../material.module';
 import { NgApexchartsModule } from 'ng-apexcharts';
 import { TablerIconsModule } from 'angular-tabler-icons';
 
-
+import { interval, Subscription } from 'rxjs';
 import { TraderService } from '../../../app/appstate/trader.service';
 import { GetTraderResBody,GetCryptoResBody,GetWeeklyStatisticsResBody } from '../../../app/services/auth.type';
 import { CommonModule } from '@angular/common';
@@ -54,6 +54,9 @@ export class WalletBalanceComponent implements OnInit {
   isNormalEntityType: boolean ;
   isSuperEntityType: boolean ;
 
+  countdowns: { [key: string]: string } = {}; // Track countdown per trade
+  private timerSub: Subscription;
+
   constructor(private store: Store,private traderService: TraderService,private authService:AuthService, private cryptoService: CryptoService, private investService:InvestmentService, private router: Router) {
     this.trader$ = this.store.select(selectTrader);
     this.loading$ = this.store.select(selectTraderLoading);
@@ -70,6 +73,7 @@ export class WalletBalanceComponent implements OnInit {
     this.getInvestments();
     this.getCompletedInvestments();
     this.getWeeklyStatistics();
+    this.startCountdown();
     
   }
 
@@ -337,4 +341,49 @@ onSetupTrade(id: string) {
 
 
 
+
+
+
+// count down 
+
+
+
+startCountdown() {
+  this.timerSub = interval(1000).subscribe(() => {
+    const now = new Date().getTime();
+
+    this.pagedInvestmentList.forEach(invest => {
+      const expiryTime = new Date(invest.expiry).getTime();
+      const remaining = expiryTime - now;
+
+      if (remaining > 0) {
+        const hours = Math.floor((remaining / (1000 * 60 * 60)) % 24);
+        const minutes = Math.floor((remaining / (1000 * 60)) % 60);
+        const seconds = Math.floor((remaining / 1000) % 60);
+        this.countdowns[invest.expiry] = `${this.pad(hours)}h ${this.pad(minutes)}m ${this.pad(seconds)}s`;
+      } else {
+        this.countdowns[invest.expiry] = 'Expired';
+        if (invest.transactionStatus !== 'Expired') {
+          invest.transactionStatus = 'Expired';
+          // Optional: Call API to persist the update
+          // this.investmentService.markAsExpired(invest._id).subscribe();
+        }
+      }
+    });
+  });
+}
+
+pad(num: number): string {
+  return num < 10 ? '0' + num : num.toString();
+}
+
+
+
+
+
+ngOnDestroy() {
+  if (this.timerSub) {
+    this.timerSub.unsubscribe();
+  }
+}
 }

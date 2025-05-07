@@ -99,11 +99,11 @@ export type GetTraderResBody = {
     profit: string;
     createdAt: string;
     imageSecureUrl: string;
-    payoutStatus: string;
     tradeStatus: string;
     reviewerId: string;
     address: string;
     payoutDescription: string;
+    payoutStatus: boolean;
   };
 };
 
@@ -205,7 +205,7 @@ export type GetInvestmentResBody = {
     description: string;
     traderId: string;
     traderName: {first:string,middle:string, last:string};
-    expiry: string;
+    expiry: any;
     imageUrl: string;
     investmentStatus: string;
     operationStatus: boolean;
@@ -227,7 +227,7 @@ export type GetCompletedInvestmentResBody = {
     description: string;
     traderId: string;
     traderName: {first:string,middle:string, last:string};
-    expiry: string;
+    expiry: any;
     imageUrl: string;
     investmentStatus: string;
     operationStatus: boolean;

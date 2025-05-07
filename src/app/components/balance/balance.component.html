@@ -150,12 +150,13 @@
                         </mat-card-title>
                         
                         <div><strong>💰 Amount:</strong> ${{ invest.amount }}</div>
-                        <div><strong>📈 Curr. Balance:</strong> ${{ invest.curBalance }}</div>
-                        <div><strong>📉 Prev Balance:</strong> ${{ invest.prevBalance }}</div>
                         <div><strong>📊 Status:</strong> {{ invest.transactionStatus }}</div>
+
                         <div><strong>📅 Created:</strong> {{ invest.createdAt | date:'medium' }}</div>
                         <div><strong>⏳ Expiry:</strong> {{ invest.expiry | date:'medium' }}</div>
-                        <div><strong>🧾 Profit:</strong> ${{ invest.profit }}</div>
+                        <div><strong><mat-icon>alarm</mat-icon> left:</strong> {{ countdowns[invest.expiry] || 'Loading...' }}</div>
+
+
                       </div>
                     </mat-card-content>
                   </mat-card>

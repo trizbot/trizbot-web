@@ -166,15 +166,16 @@ forgotPassword(email: string) {
 }
 
 
-completePassword(otp: string, newPassword:string ) {
 
-  return this.http.put<{ token: any }>(
-    `${environment.apiBaseUrl}/traders/complete-password-change`,
-    {
-      params: { otp,newPassword }
-    }
-  );
+
+
+completePassword(otp: string, newPassword:string ) {
+  const payload = {  otp,newPassword };
+  return this.http.put(`${environment.apiBaseUrl}/traders/complete-password-change`, payload, {
+    observe: 'response'
+  });
 }
+
 
 completeEmailVerification(otp: string) {
  return this.http.put(`${environment.apiBaseUrl}/traders/complete-email-verification`,

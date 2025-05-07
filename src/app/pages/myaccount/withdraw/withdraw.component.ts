@@ -51,6 +51,8 @@ export class WithdrawComponent implements OnInit {
     traderId: string;
     email: string;
     isNormalEntityType: boolean = false;
+    payoutStatus: boolean;
+    payoutDescription: string;
     
     entityName: string;
     entity: string;
@@ -80,6 +82,8 @@ ngOnInit(): void {
         this.entityName =res.data.entityName;
         this.traderId = res.data._id;
         this.email = res.data.email;
+        this.payoutStatus = res.data.payoutStatus;
+        this.payoutDescription = res.data.payoutDescription;
         if (this.entityName=="Admin") {
           this.isNormalEntityType=true;
           this.entity='admins';

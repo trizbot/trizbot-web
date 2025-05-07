@@ -108,6 +108,7 @@ updatedAt: string = '';
     ngOnInit(): void {
       this.getPayoutTransactions();
       this.updatePagedList();
+      this.getCurrentTrader();
        
     }
   
@@ -115,6 +116,19 @@ updatedAt: string = '';
 pagedPayoutList: any[] = [];
 currentPage = 1;
 pageSize = 6;
+
+payoutDescription:string;
+payoutStatus:boolean;
+
+
+
+getCurrentTrader(){
+  this.traderService.getTrader().subscribe({
+    next: (res: GetTraderResBody) => {
+      this.payoutStatus = res.data.payoutStatus;
+      this.payoutDescription = res.data.payoutDescription;
+    }});
+  }
 
 getPayoutTransactions() {
     this.payoutsService.getPayoutTransactions().subscribe({
