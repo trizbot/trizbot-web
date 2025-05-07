@@ -139,6 +139,7 @@ ngOnInit(): void {
           this.loading = false;
         },
         error: (err) => {
+          
           const message = err?.error.message|| err?.error?.message || 'An unexpected error occurred.';
           this.errorMessage = message;
           this.loading = false;
