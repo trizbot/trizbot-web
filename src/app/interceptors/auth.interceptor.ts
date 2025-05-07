@@ -36,7 +36,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
 
   return next(authReq).pipe(
     catchError((error) => {
-      if ((error.status === 403) && authToken && isTokenExpired(authToken)) {
+      if (( error.status === 403||error.status==401) && authToken && isTokenExpired(authToken)) {
         logoutService.logout();
         router.navigate(['/auth/login']);
       }
