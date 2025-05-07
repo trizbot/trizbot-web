@@ -247,7 +247,7 @@ onSetupTrade(id: string) {
             createdAt: item.createdAt
           };
   
-          if (item.operationStatus === true && item.investmentStatus=="Running" &&item.transactionType=="Debit" && item.transactionStatus=="Pending") {
+          if (item.operationStatus === true  &&item.transactionType=="Debit" && item.transactionStatus=="Pending") {
             this.runningOperation = true;
           }else{
             this.runningOperation=false;
@@ -372,7 +372,7 @@ startCountdown() {
       } else {
         this.countdowns[invest.expiry] = '0:0';
         if (invest.transactionStatus !== 'Expired') {
-          invest.transactionStatus = invest.transactionStatus;
+          invest.transactionStatus = invest.investmentStatus;
       
         }
       }
