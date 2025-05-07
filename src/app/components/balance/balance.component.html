@@ -131,14 +131,14 @@
           <div class="p-12">
             <div *ngIf="investmentList.length > 0; else noRunningData">
               <div class="crypto-list-container grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-                <div *ngFor="let invest of pagedInvestmentList" class="crypto-item">
-                  <mat-card class="crypto-card shadow-md rounded-xl border border-gray-200">
+                <div *ngFor="let runningTrade of pagedInvestmentList" class="crypto-item">
+                  <mat-card   *ngIf="runningOperation;else noRunningData"  class="crypto-card shadow-md rounded-xl border border-gray-200">
                     <mat-card-content class="crypto-card-content flex items-center gap-4">
                       <div class="crypto-left">
                          <img 
-                          *ngIf="invest.imageUrl" 
-                          [src]="invest.imageUrl" 
-                          alt="{{ invest.cryptoName }} Image"
+                          *ngIf="runningTrade.imageUrl" 
+                          [src]="runningTrade.imageUrl" 
+                          alt="{{ runningTrade.cryptoName }} Image"
                           width="80" height="80"
                           class="rounded-full border border-gray-300"
                         /> -
@@ -146,15 +146,13 @@
         
                       <div class="crypto-right">
                         <mat-card-title class="crypto-title text-uppercase text-success font-bold text-lg mb-2">
-                          {{ invest.cryptoName }}
+                          {{ runningTrade.cryptoName }} 
                         </mat-card-title>
-                        
-                        <div><strong>💰 Amount:</strong> ${{ invest.amount }}</div>
-                        <div><strong>📊 Status:</strong> {{ invest.transactionStatus }}</div>
-
-                        <div><strong>📅 Created:</strong> {{ invest.createdAt | date:'medium' }}</div>
-                        <div><strong>⏳ Expiry:</strong> {{ invest.expiry | date:'medium' }}</div>
-                        <div><strong><mat-icon>alarm</mat-icon> left:</strong> {{ countdowns[invest.expiry] || 'Loading...' }}</div>
+                        <div><strong>💰 Amount:</strong> ${{ runningTrade.amount }}</div>
+                        <div><strong>📊 Status:</strong> {{ runningTrade.transactionStatus }}</div>
+                        <div><strong>📅 Created:</strong> {{ runningTrade.createdAt | date:'medium' }}</div>
+                        <div><strong>⏳ Expiry:</strong> {{ runningTrade.expiry | date:'medium' }}</div>
+                        <div><strong><mat-icon>alarm</mat-icon>Left:</strong> {{ countdowns[runningTrade.expiry] || 'Loading...' }}</div>
 
 
                       </div>

@@ -215,12 +215,13 @@ onSetupTrade(id: string) {
 
 
 // ###############################################################
-  // get available investments
+  // get running trades
   investmentList: any[] = [];
   pagedInvestmentList: any[] = [];
   currentInvestPage = 1;
   pageInvestSize = 6;
   selectedInvestId: string = ''; 
+  runningOperation: boolean = false;
   getInvestments() {
     this.investService.getInvestments().subscribe({
       next: (res: any) => {
@@ -232,7 +233,8 @@ onSetupTrade(id: string) {
             curBalance: item.curBalance,
             prevBalance: item.prevBalance,
             transactionType: item.transactionType,
-            transactionStatus: item.investmentStatus,
+            investmentStatus: item.investmentStatus,
+            transactionStatus: item.transactionStatus,
             imageUrl: item.imageUrl,
             cryptoId: item.cryptoId,
             cryptoName: item.cryptoName,
@@ -241,10 +243,16 @@ onSetupTrade(id: string) {
             traderName: item.traderName,
             profit: item.profit,
             expiry: item.expiry,
+            operationStatus: item.operationStatus,
             createdAt: item.createdAt
           };
   
-  
+          if (item.operationStatus === true && item.investmentStatus=="Running" &&item.transactionType=="Debit" && item.transactionStatus=="Pending") {
+            this.runningOperation = true;
+          }else{
+            this.runningOperation=false;
+          }
+
           return investmentItem;
         });
   
@@ -271,7 +279,7 @@ onSetupTrade(id: string) {
   get totalInvestPages(): any[] {
     return Array(Math.ceil(this.investmentList.length / this.pageInvestSize)).fill(0).map((_, i) => i + 1);
   }
-  // end of investement cryptos
+  // end of running trades
   // ###############################################################
   
   
@@ -362,11 +370,10 @@ startCountdown() {
         const seconds = Math.floor((remaining / 1000) % 60);
         this.countdowns[invest.expiry] = `${this.pad(hours)}h ${this.pad(minutes)}m ${this.pad(seconds)}s`;
       } else {
-        this.countdowns[invest.expiry] = 'Expired';
+        this.countdowns[invest.expiry] = '0:0';
         if (invest.transactionStatus !== 'Expired') {
-          invest.transactionStatus = 'Expired';
-          // Optional: Call API to persist the update
-          // this.investmentService.markAsExpired(invest._id).subscribe();
+          invest.transactionStatus = invest.transactionStatus;
+      
         }
       }
     });
