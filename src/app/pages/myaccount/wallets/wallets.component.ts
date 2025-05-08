@@ -72,8 +72,8 @@ export class WalletComponent implements OnInit {
   
   walletData = {
     walletAddress: '',
-    walletCurrency:"",
-    addressNetwork:"",
+    walletCurrency:"USDT",
+    addressNetwork:"USDT BEP20",
     addressTags:""
   };
   constructor(

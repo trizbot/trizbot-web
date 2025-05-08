@@ -1,9 +1,6 @@
 <mat-card class="cardWithShadow theme-card">
   <mat-card-header>
     <mat-card-title class="m-b-0">Initiate Deposit</mat-card-title>
-    <p class="text-primary">
-      Please note: A service charge of 5% will be applied to the total deposit amount.
-    </p>
   </mat-card-header>
   
   <mat-card-content class="b-t-1">
@@ -22,21 +19,29 @@
       </div>
 
       <div class="col-lg-6">
-        <mat-label class="f-w-600 m-b-8 d-block">Select Payment Currency *</mat-label>
+        <mat-label class="f-w-600 m-b-8 d-block">Select Network *</mat-label>
         <mat-form-field appearance="outline" class="w-100">
           <mat-select
             placeholder="Choose Payment Currency"
             name="pay_currency"
             required
             [(ngModel)]="depositData.pay_currency">
-            <mat-option *ngFor="let currency of currencies" [value]="currency">
-              {{ currency.toUpperCase() }}
-            </mat-option>
+      
+            <mat-option value="usdttrc20">USDT TRC20</mat-option>
+            <mat-option value="usdtbep20">USDT BEP20</mat-option>
+            <mat-option value="usdtmatic">USDT MATIC (Polygon Mumbai)</mat-option>
+      
           </mat-select>
         </mat-form-field>
       </div>
       
-      <div class="col-lg-6">
+      
+
+         <!-- <mat-option *ngFor="let currency of currencies" [value]="currency">
+              {{ currency.toUpperCase() }}
+            </mat-option> -->
+
+      <!-- <div class="col-lg-6">
         <mat-label class="f-w-600 m-b-8 d-block">Note *</mat-label>
         <mat-form-field appearance="outline" class="w-100">
           <textarea
@@ -47,7 +52,7 @@
             rows="3"
             [(ngModel)]="depositData.note"></textarea>
         </mat-form-field>
-      </div>
+      </div> -->
 
 
       <div class="m-t-6">
@@ -60,7 +65,7 @@
           <ng-container *ngIf="loading">
             <img src="./assets/images/loading.gif" alt="Loading..." style="width: 26px; height: 26px;" />
           </ng-container>
-          <span *ngIf="!loading">Next</span>
+          <span *ngIf="!loading">GET WALLET</span>
         </button>
       </div>
 
