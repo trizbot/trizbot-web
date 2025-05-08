@@ -105,6 +105,7 @@ export type GetTraderResBody = {
     address: string;
     payoutDescription: string;
     payoutStatus: boolean;
+    uplinerBonusAmount: number;
   };
 };
 

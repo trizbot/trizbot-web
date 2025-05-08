@@ -241,7 +241,8 @@ validEmailData={
     userName: '',
     password: '',
     country: '',
-    password_confirmation: ''
+    password_confirmation: '',
+    referralCode: ''
   };
 
   errorMessage: any = '';
@@ -257,7 +258,7 @@ verificationCode = '';
 
   private unsubscriber$ = new Subject<void>();
   private sharedService = inject(SharedService);
-  referralCode: any="";
+  // referralCode: any="";
 
   constructor(
     private authService: AuthService,
@@ -266,12 +267,12 @@ verificationCode = '';
 
 
   
-ngOnInit(): void {
-  this.route.queryParamMap.subscribe(params => {
-    this.referralCode = params.get('ref')??"1";
+// ngOnInit(): void {
+//   this.route.queryParamMap.subscribe(params => {
+//     this.referralCode = params.get('ref')??"1";
 
-  });
-}
+//   });
+// }
 
 
 onCountryCodeSelect(selectedCode: string) {
@@ -351,6 +352,7 @@ error: (err) => {
       entityName,
       userName,
       countryCode,
+      referralCode,
     } = this.registerData;
 
     this.authService.signUpTraders(
@@ -365,7 +367,8 @@ error: (err) => {
       entityName,
       userName,
       countryCode,
-      this.referralCode,
+      referralCode,
+      // this.referralCode,
     ).pipe(takeUntil(this.unsubscriber$)).subscribe({
       next: (response) => {
         this.successMessage = "Your account has been created successfully. Please log in to continue.";

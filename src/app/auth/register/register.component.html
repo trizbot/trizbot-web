@@ -77,6 +77,13 @@
 
   <!-- Phone Number Input -->
   <mat-form-field appearance="outline" color="primary" class="flex-grow-1">
+    <mat-label>referral Code(Optional)</mat-label>
+    <input matInput type="tel" placeholder="Enter referral Code(optional)" name="phoneNumber"
+           [(ngModel)]="registerData.referralCode" />
+  </mat-form-field>
+
+  <!-- Phone Number Input -->
+  <mat-form-field appearance="outline" color="primary" class="flex-grow-1">
     <mat-label>Phone Number</mat-label>
     <input matInput type="tel" placeholder="Enter your phone number" name="phoneNumber"
            [(ngModel)]="registerData.phoneNumber" />

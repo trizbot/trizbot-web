@@ -42,15 +42,15 @@
             <td mat-cell *matCellDef="let element">
               <span
                 [ngClass]="{
-                  'bg-light-secondary': element.transactionStatus === 'Created',
-                  'bg-light-success': element.transactionStatus === 'Completed',
-                  'bg-light-warning': element.transactionStatus === 'Pending',
-                  'bg-light-info': element.transactionStatus === 'Running',
-                  'bg-light-danger': element.transactionStatus === 'Rejected',
-                  'bg-light-default': element.transactionStatus === 'Cancelled',
-                  'bg-light-error': element.transactionStatus === 'Failed'
+                  'bg-secondary': element.transactionStatus === 'Created',
+                  'bg-success': element.transactionStatus === 'Completed',
+                  'bg-info': element.transactionStatus === 'Pending',
+                  'bg-warning': element.transactionStatus === 'Running',
+                  'bg-danger': element.transactionStatus === 'Rejected',
+                  'bg-default': element.transactionStatus === 'Cancelled',
+                  'bg-error': element.transactionStatus === 'Failed'
                 }"
-                class="rounded f-w-600 px-3 py-1 f-s-12 text-capitalize"
+                class="rounded f-w-600 px-3 py-1 f-s-12 text-capitalize text-white"
               >
                 {{ element.transactionStatus }}
               </span>

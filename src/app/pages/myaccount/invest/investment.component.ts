@@ -76,7 +76,7 @@ export class InvestmentComponent implements OnInit {
     const { description, transactionType, amount } = this.investData;
     const cryptoId = this.cryptoId;
 
-    const timestamp = Date.now(); // or new Date().toISOString() for readable format
+    const timestamp = Date.now(); 
 const randomStr = Math.random().toString(36).substring(2, 8).toUpperCase(); 
 const reference = `IRV${timestamp}${randomStr}${this.cryptoId}`;
 

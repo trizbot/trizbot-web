@@ -25,7 +25,7 @@ getInvestments(): Observable<GetInvestmentResBody[]> {
 }
 
 getCompletedInvestments(): Observable<GetCompletedInvestmentResBody[]> {
-  return this.http.get<GetCompletedInvestmentResBody[]>(`${environment.apiBaseUrl}/transactions?pageNumber=1&pageSize=15&transactionType=Credit&transactionStatus=Completed`);
+  return this.http.get<GetCompletedInvestmentResBody[]>(`${environment.apiBaseUrl}/transactions?pageNumber=1&pageSize=15&transactionType=Debit&transactionStatus=Completed`);
 }
 
 getInvestmentHistory(): Observable<GetHistoryResBody[]> {

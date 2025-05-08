@@ -55,7 +55,7 @@ export class ReferComponent implements OnInit {
   cryptoId: string;
   traderId: string;
 
-  displayedColumns1: string[] = ['image', 'userName', 'approvalStatus',  'createdAt'];
+  displayedColumns1: string[] = ['image', 'userName', 'uplinerBonusAmount',  'createdAt'];
   completedReferralList: any[] = [];
   pagedReferralList: any[] = [];
   currentReferralPage = 1;
@@ -72,7 +72,8 @@ export class ReferComponent implements OnInit {
     this.traderService.getTrader().subscribe({
       next: (res: GetTraderResBody) => {
         this.traderId = res.data._id;
-        this.referralLink = `https://www.trizbot.com/auth/register?ref=${res.data.referralLink}`;
+        // this.referralLink = `https://www.trizbot.com/auth/register?ref=${res.data.referralLink}`;
+        this.referralLink = `${res.data.referralLink}`;
   
         this.traderService.getDownlines(res.data.referralLink).subscribe({
           next: (res: any) => {
@@ -91,6 +92,7 @@ export class ReferComponent implements OnInit {
               amountInvested: item.amountInvested,
               profit: item.profit,
               createdAt: item.createdAt,
+              uplinerBonusAmount: item.uplinerBonusAmount??0,
               imageSecureUrl: item.imageSecureUrl || null, // fallback if missing
             }));
   

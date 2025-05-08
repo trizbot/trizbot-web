@@ -12,5 +12,3 @@ export const environment = {
     cloudUrl:"cloudinary://831632495684182:n5wNHD0R88iUKT8QgSlLD02Yj-s@dvkf7xs6c"
   };
 
-
-
