@@ -54,17 +54,15 @@ export class DepositComponent implements OnInit {
     entityName: string;
     entity: string;
 
-    // currencies: string[] = [
-    //   "btg", "eth", "xmr", "zec", "xvg", "ada", "ltc", "bch", "qtum", "dash",
-    //   "xlm", "xrp", "xem", "dgb", "lsk", "doge", "trx", "kmd", "rep", "bat",
-    //   "ark", "waves", "bnb", "xzc", "nano", "tusd", "vet", "zen", "grs", "fun",
-    //   "neo", "gas", "pax", "usdc", "ont", "xtz", "link", "rvn", "bnbmainnet",
-    //   "zil", "bcd", "usdt", "usdterc20", "cro", "dai", "ht", "wabi", "busd",
-    //   "algo", "usdttrc20", "gt", "stpt", "ava", "sxp", "uni", "okb", "btc"
-    // ];
     currencies: string[] = [
-      "usdt",
+      "btg", "eth", "xmr", "zec", "xvg", "ada", "ltc", "bch", "qtum", "dash",
+      "xlm", "xrp", "xem", "dgb", "lsk", "doge", "trx", "kmd", "rep", "bat",
+      "ark", "waves", "bnb", "xzc", "nano", "tusd", "vet", "zen", "grs", "fun",
+      "neo", "gas", "pax", "usdc", "ont", "xtz", "link", "rvn", "bnbmainnet",
+      "zil", "bcd", "usdt", "usdterc20", "cro", "dai", "ht", "wabi", "busd",
+      "algo", "usdttrc20", "gt", "stpt", "ava", "sxp", "uni", "okb", "btc"
     ];
+   
     
     
     depositData = {

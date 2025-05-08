@@ -1,6 +1,6 @@
 <div class="row g-4" *ngIf="isTradersDashBoardType">
   <!-- BALANCE CARD -->
-  <div class="col-md-4" >
+  <div class="col-md-3" >
     <mat-card class="cardWithShadow h-100 border-0">
       <mat-card-header>
         <div mat-card-avatar class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center fs-5">
@@ -25,7 +25,7 @@
   </div>
 
   <!-- PROFIT CARD -->
-  <div class="col-md-4">
+  <div class="col-md-3">
     <mat-card class="cardWithShadow h-100 border-0">
       <mat-card-header>
         <div mat-card-avatar class="bg-success text-white rounded-circle d-flex align-items-center justify-content-center fs-5">
@@ -40,19 +40,35 @@
   </div>
 
   <!-- INVESTED CARD -->
-  <div class="col-md-4">
+  <div class="col-md-3">
     <mat-card class="cardWithShadow h-100 border-0">
       <mat-card-header>
         <div mat-card-avatar class="bg-warning text-white rounded-circle d-flex align-items-center justify-content-center fs-5">
           <i class="bi bi-bar-chart-line"></i>
         </div>
-        <mat-card-title class="fw-bold">Total Amount Funded</mat-card-title>
+        <mat-card-title class="fw-bold">Weekly Funded Amount</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <h3 class="text-warning fw-bold">${{depositBalance}}</h3>
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+  <div class="col-md-3">
+    <mat-card class="cardWithShadow h-100 border-0">
+      <mat-card-header>
+        <div mat-card-avatar class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center fs-5">
+          <i class="bi bi-bar-chart-line"></i>
+        </div>
+        <mat-card-title class="fw-bold">Weekly Traded Amount</mat-card-title>
       </mat-card-header>
       <mat-card-content>
         <h3 class="text-warning fw-bold">${{amountInvested}}</h3>
       </mat-card-content>
     </mat-card>
   </div>
+
+
 </div>
 
 <!-- TRADE TABS SECTION -->
@@ -149,7 +165,7 @@
                           {{ runningTrade.cryptoName }} 
                         </mat-card-title>
                         <div><strong>💰 Amount:</strong> ${{ runningTrade.amount }}</div>
-                        <div><strong>📊 Status:</strong> {{ runningTrade.transactionStatus }}</div>
+                        <div><strong>📊 Status:</strong> {{ runningTrade.investmentStatus }}</div>
                         <div><strong>📅 Created:</strong> {{ runningTrade.createdAt | date:'medium' }}</div>
                         <div><strong>⏳ Expiry:</strong> {{ runningTrade.expiry | date:'medium' }}</div>
                         <div><strong><mat-icon>alarm</mat-icon>Left:</strong> {{ countdowns[runningTrade.expiry] || 'Loading...' }}</div>

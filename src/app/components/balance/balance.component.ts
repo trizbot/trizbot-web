@@ -29,6 +29,7 @@ export class WalletBalanceComponent implements OnInit {
   walletBalance: string = '0.00';
   amountInvested: string = '0.00';
   profit: string = '0.00';
+  depositBalance: string = '0.00';
   userRevenue: string = '';
   lastName: string = '';
   phoneNumber: string = '';
@@ -98,6 +99,8 @@ export class WalletBalanceComponent implements OnInit {
         this.walletBalance = res.data.walletBalance;
         this.amountInvested = res.data.amountInvested;
         this.walletAddress = res.data.walletAddress;
+        this.depositBalance = res.data.depositBalance;
+    
         this.profit = res.data.profit;
         this.userRevenue =res.data.firstName;
         this.lastName = res.data.lastName;

@@ -98,6 +98,7 @@ export type GetTraderResBody = {
     isSuperAdmin: boolean;
     profit: string;
     createdAt: string;
+    depositBalance: string;
     imageSecureUrl: string;
     tradeStatus: string;
     reviewerId: string;
@@ -144,6 +145,7 @@ export type GetAllTradersResBody = {
     imageUrl: string;
     isSuperAdmin: boolean;
     profit: string;
+    depositBalance: string;
     createdAt: string;
     imageSecureUrl: string;
   };
