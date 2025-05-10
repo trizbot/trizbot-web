@@ -127,11 +127,14 @@ getCurrentTrader(){
     next: (res: GetTraderResBody) => {
       this.payoutStatus = res.data.payoutStatus;
       this.payoutDescription = res.data.payoutDescription;
+      this.entityName = res.data.entityName;
+      this.isSuperAdmin = res.data.isSuperAdmin;
     }});
   }
 
+
 getPayoutTransactions() {
-    this.payoutsService.getPayoutTransactions().subscribe({
+this.payoutsService.getPayoutTransactions().subscribe({
       next: (res: any[]) => {
         this.payoutTransactionList = res.map(item => ({
           senderEmail: item.senderEmail,
@@ -148,6 +151,7 @@ getPayoutTransactions() {
           batch_withdrawal_id: item.batch_withdrawal_id,
           ipn_callback_url: item.ipn_callback_url,
           status: item.status,
+          payout_status: item.payout_status,
           extra_id: item.extra_id,
           hash: item.hash,
           error: item.error,
@@ -188,15 +192,26 @@ getPayoutTransactions() {
 
         displayedColumns1: string[] = [
             'senderName',
-            'senderEmail',
             'amount',
-            'transactionType',
-            'status',
+            'amount_withdrawn',
             'address',
             'currency',
             'transactionId',
             'created_at',
-            'transReference'
+            'payout_status',
+            'errorState',
+            'batch_withdrawal_id',
+            'payoutId'
+          ];
+
+        displayedColumnsUsers: string[] = [
+            'senderName',
+            'amount',
+            'address',
+            'currency',
+            'payout_status',
+            'created_at',
+            'payoutId'
           ];
           
 
@@ -228,3 +243,5 @@ onResumeTrade(){
     });
     }
 }
+
+
