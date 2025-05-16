@@ -273,6 +273,7 @@ ngOnInit(): void {
     this.validEmailAddress = decodeURIComponent(onceDecoded);
 
     this.emailVerified = true;
+      this.registerData.email = this.validEmailAddress;
     this.successMessage = `${this.validEmailAddress} verified. Continue signup.`;
   });
 }
