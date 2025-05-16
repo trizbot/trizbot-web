@@ -268,11 +268,15 @@ verificationCode = '';
 ngOnInit(): void {
   this.route.queryParams.subscribe(params => {
     const encodedEmail = params['email'];
-    this.validEmailAddress = encodedEmail ? decodeURIComponent(encodedEmail) : '';
+    // Decode twice to handle double-encoded email
+    const onceDecoded = encodedEmail ? decodeURIComponent(encodedEmail) : '';
+    this.validEmailAddress = decodeURIComponent(onceDecoded);
+
     this.emailVerified = true;
     this.successMessage = `${this.validEmailAddress} verified. Continue signup.`;
   });
 }
+
 onCountryCodeSelect(selectedCode: string) {
   const selectedCountryCode = this.countries.find(c => c.code === selectedCode);
   this.registerData.countryCode = selectedCountryCode ? selectedCountryCode.code : '';
@@ -319,22 +323,22 @@ this.authService.requestVerificationCode(this.registerData.email).pipe(takeUntil
 
 
 
-verifyCode() { 
-  this.authService.confirmVerificationCode(this.validEmailData.verificationCode).pipe(takeUntil(this.unsubscriber$)).subscribe({
-    next: (response) => {
-    this.emailVerified = true;
-    this.successMessage = 'Email verified. Continue signup.';
-    this.errorMessage = "";
-    this.validEmailAddress =this.registerData.email;
-},
-error: (err) => {
-    this.emailVerified = false;
-    this.successMessage = "";
-    this.errorMessage = err?.error.message|| err?.error?.message || 'Invalid verification code.';
-}
-});
+// verifyCode() { 
+//   this.authService.confirmVerificationCode(this.validEmailData.verificationCode).pipe(takeUntil(this.unsubscriber$)).subscribe({
+//     next: (response) => {
+//     this.emailVerified = true;
+//     this.successMessage = 'Email verified. Continue signup.';
+//     this.errorMessage = "";
+//     this.validEmailAddress =this.registerData.email;
+// },
+// error: (err) => {
+//     this.emailVerified = false;
+//     this.successMessage = "";
+//     this.errorMessage = err?.error.message|| err?.error?.message || 'Invalid verification code.';
+// }
+// });
 
-}
+// }
 
   onSignUp() {
     this.errorMessage = '';
