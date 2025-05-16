@@ -60,6 +60,11 @@ export class AuthService {
         observe: 'response'
       });
     }
+   confirmReferralCode(referralCode:string) {
+      return this.http.get<'referralName'>(`${environment.apiBaseUrl}/traders/${referralCode}/referrals`, {
+        observe: 'response'
+      });
+    }
   
     
       signInTrader(email: string, password: string, entityName:any) {

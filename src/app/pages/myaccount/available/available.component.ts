@@ -367,7 +367,7 @@ this.cryptoService.resumeTrade(
   tradeStatus,
 ).subscribe({
   next: (response) => {
-    this.sharedService.showToast({ title: `Available Crypto Trades has been successfully update.`,});
+    this.sharedService.showToast({ title: `Available Crypto Trades has been successfully updated.`,});
     this.loading = false;
     this.getCurrentTrader();
   },

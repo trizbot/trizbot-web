@@ -17,9 +17,13 @@
           <button [routerLink]="['/myaccount/deposit']" class="btn btn-outline-success btn-sm w-100 d-flex align-items-center justify-content-center gap-1">
             <i class="bi bi-arrow-down-circle"></i>Deposit
           </button>&nbsp;&nbsp;
-          <button [routerLink]="['/myaccount/withdraw']" class="btn btn-outline-danger btn-sm w-100 d-flex align-items-center justify-content-center gap-1 btn btn-primary" >
+          <button *ngIf="isCryptoAvailableStatus" [routerLink]="['/myaccount/withdraw']" class="btn btn-outline-danger btn-sm w-100 d-flex align-items-center justify-content-center gap-1 btn btn-primary" >
             <i class="bi bi-arrow-up-circle"></i>Withdraw
           </button>
+        <br>
+          <p *ngIf="!isCryptoAvailableStatus"  class="text text-danger btn-sm w-100 d-flex align-items-center justify-content-center btn btn-primary" >
+            <i class="bi bi-arrow-up-circle"></i>{{isCryptoAvailableDescription}}
+          </p>
         </div>
       </mat-card-content>
     </mat-card>
@@ -32,7 +36,7 @@
         <div mat-card-avatar class="bg-success text-white rounded-circle d-flex align-items-center justify-content-center fs-5">
           <i class="bi bi-graph-up-arrow"></i>
         </div>
-        <mat-card-title class="fw-bold">Daily Profit</mat-card-title>
+        <mat-card-title class="fw-bold">Daily Earning</mat-card-title>
       </mat-card-header>
       <mat-card-content>
         <h3 class="text-success fw-bold">${{profit || 0.0 | number: '1.0-2'}}</h3>

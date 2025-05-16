@@ -43,12 +43,20 @@ verificationCode = '';
 
   private unsubscriber$ = new Subject<void>();
   private sharedService = inject(SharedService);
-  // referralCode: any="";
+  referralCode: any="";
 
   constructor(
     private authService: AuthService,
     private router: Router,private route: ActivatedRoute
   ) {}
+
+  ngOnInit(): void {
+  this.route.queryParams.subscribe(params => {
+    const encodedReferral = params['ref'];
+    const onceDecoded = encodedReferral ? decodeURIComponent(encodedReferral) : '';
+    this.referralCode = decodeURIComponent(onceDecoded);
+  });
+}
 
 
 requestVerificationCode() {
@@ -65,9 +73,15 @@ this.authService.requestVerificationCode(this.requestOtpData.email).pipe(takeUnt
     this.errorMessage = '';
     this.successMessage = 'Verification code sent to your email.';
     this.loadingCode= false;
+    if(this.referralCode!=""){
     this.router.navigate(['auth/confirm-otp'], {
         queryParams: { email: encodeURIComponent(this.requestOtpData.email) }
         });
+      }else{
+      this.router.navigate(['auth/confirm-otp'], {
+        queryParams: { email: encodeURIComponent(this.requestOtpData.email),referralCode:this.referralCode }
+        });
+      }
 
   },
   error: (err) => {

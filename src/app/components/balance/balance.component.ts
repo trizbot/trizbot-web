@@ -102,6 +102,8 @@ export class WalletBalanceComponent implements OnInit {
         this.amountInvested = res.data.amountInvested;
         this.walletAddress = res.data.walletAddress;
         this.depositBalance = res.data.depositBalance;
+        this.isCryptoAvailableStatus = res.data.isCryptoAvailableStatus;
+        this.isCryptoAvailableDescription = res.data.isCryptoAvailableDescription;
     
         this.profit = res.data.profit;
         this.userRevenue =res.data.firstName;
@@ -109,14 +111,7 @@ export class WalletBalanceComponent implements OnInit {
         this.imageSecureUrl = res.data.imageSecureUrl;
         this.entityName = res.data.entityName;
         this.isSuperAdmin = res.data.isSuperAdmin;
-        this.isCryptoAvailableDescription = res.data.isCryptoAvailableDescription;
-
-        
-        if (res.data.isCryptoAvailableStatus) {
-          this.isCryptoAvailableStatus ==true;
-        }else{
-          this.isCryptoAvailableStatus ==false;
-        }
+   
 
         if (this.entityName=="Admin"  &&this.isSuperAdmin) {
           this.isSuperEntityType=true;

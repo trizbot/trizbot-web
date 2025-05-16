@@ -40,17 +40,41 @@ export class ConfirmOtpComponent {
   emailVerified = false;
 codeSent = false;
 verificationCode = '';
+referralName:string;
 
 
   private unsubscriber$ = new Subject<void>();
   private sharedService = inject(SharedService);
-  // referralCode: any="";
+  referralCode: any="";
 
   constructor(
     private authService: AuthService,
     private router: Router,private route: ActivatedRoute
   ) {}
 
+
+    ngOnInit(): void {
+  this.route.queryParams.subscribe(params => {
+    const encodedReferral = params['referralCode'];
+    const onceDecoded = encodedReferral ? decodeURIComponent(encodedReferral) : '';
+    this.referralCode = decodeURIComponent(onceDecoded);
+  this.authService.confirmReferralCode(this.referralCode).pipe(takeUntil(this.unsubscriber$)).subscribe({
+    next: (response) => {
+      // console.log(response);
+    // this.referralName= response?.referralName;
+    // this.referralName= response?.referralName;
+
+},
+error: (err) => {
+ 
+    this.errorMessage = err?.error.message|| err?.error?.message || ' code.';
+}
+});
+
+
+  
+});
+    }
 
 verifyCode() { 
   this.loading=true;
