@@ -125,7 +125,6 @@ export class HeaderComponent implements OnInit {
 
 
   notifications: any[] = []; // declare at the top of your component
-
   getNotifications() {
     this.traderService.getNotification().subscribe({
       next: (res: any) => {
@@ -140,11 +139,7 @@ export class HeaderComponent implements OnInit {
       }
     });
   }
-  
-  
-  
-  
-  
+    
   countNotifications() {
     this.traderService.countNotification().subscribe({
       next: (res) => {
@@ -156,28 +151,29 @@ export class HeaderComponent implements OnInit {
   }
   
 
-  
-  onShowFullText(text: string, title:string, id:string){
-        this.showNotificationTitle =title;
-   this.showNotificationText=  text;
-   this.showNotificationId=  id;
-   this.isShowingNotification = true;
 
-  }
-  
 
-  onMarkAsRead(id: string){
-        this.traderService.readNotification(id).subscribe({
+
+selectedNotificationId: string | null = null;
+selectedNotification: any = null;
+
+onSelectNotification(notification: any) {
+  this.selectedNotificationId = notification._id;
+  this.selectedNotification = notification;
+}
+
+clearSelection() {
+   this.traderService.readNotification(this.selectedNotificationId).subscribe({
       next: (res) => {
         this.isShowingNotification = false;
         this.getNotifications();
+        this.countNotifications();
        return res;
-  
       },
       error: (err) => {  }
     });
+  this.selectedNotificationId = null;
+  this.selectedNotification = null;
+}
 
-  }
-
-  
 }

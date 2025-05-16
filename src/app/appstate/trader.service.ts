@@ -30,7 +30,7 @@ export class TraderService {
     return this.http.get(`${environment.apiBaseUrl}/notifications/count`);
   }
  
-  readNotification(notificationId:string) {
+  readNotification(notificationId:any) {
   const  payload={notificationId}
     return this.http.post(`${environment.apiBaseUrl}/notifications/read`,payload);
   }

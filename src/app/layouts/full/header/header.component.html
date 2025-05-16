@@ -9,87 +9,41 @@
 
   <!-- Right: Notification, Welcome, Profile -->
   <div class="d-flex align-items-center gap-2 ms-auto">
+<!-- Notification Bell -->
+<button mat-icon-button [matMenuTriggerFor]="menu" aria-label="Notifications">
+  <i-tabler name="bell" class="icon-28" matBadge="{{ countNotification }}" matBadgeColor="accent"></i-tabler>
+</button>
 
-    <!-- Notification Bell -->
-    <button mat-icon-button [matMenuTriggerFor]="menu" aria-label="Notifications">
-      <i-tabler name="bell" class="icon-28" matBadge="{{countNotification}}" matBadgeColor="accent"></i-tabler>
-    </button>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    
-    
-    <mat-menu #menu="matMenu">
-      <ng-container  *ngIf="!isShowingNotification">
-        <button
-          mat-menu-item
-          *ngFor="let notification of notifications"
-          (click)="onShowFullText(notification.text,notification.title,notification._id)"
-          
-          style="font-weight: bold; font-size: 16px; white-space: normal; text-align: left; line-height: 1.4;">
-          <div>
-            <div style="font-size: 16px; font-weight: 600;">{{ notification.title }}</div>
-            <div style="font-size: 14px; color: #555; padding-top:9px"> 
-              {{ notification.text.length > 50 ? (notification.text | slice:0:50) + '...' : notification.text }}
-            </div>
-
-          </div>
-        </button>
-      </ng-container>
-
-    <!-- Show a detail -->
-<ng-container *ngIf="isShowingNotification">
-  <button mat-menu-item style="padding: 12px 16px;">
-    <div class="flex items-start justify-between gap-3 w-full">
-      
-      <!-- Left section with back icon -->
-      <div class="flex items-start gap-3">
-        <mat-icon color="primary" style="font-size: 24px;" (click)="onMarkAsRead(showNotificationId)">arrow_back</mat-icon>
-        <div>
-          <div style="font-size: 18px; font-weight: 700; color:text-primary;"  (click)="onMarkAsRead(showNotificationId)">
-            {{ showNotificationTitle }}
-          </div>
-          
-          <div style="font-size: 14px; color: #4b5563; padding-top: 16px;"  (click)="onMarkAsRead(showNotificationId)">
-            {{ showNotificationText }}
-          </div>
+<mat-menu #menu="matMenu">
+  <div mat-menu-content>
+    <ng-container *ngIf="!selectedNotificationId; else detailView">
+      <div
+        *ngFor="let notification of notifications"
+        (click)="onSelectNotification(notification); $event.stopPropagation()"
+        style="cursor: pointer; padding: 10px; font-weight: bold; font-size: 16px; white-space: normal; text-align: left; line-height: 1.8; border-bottom: 1px solid #ccc;">
+        
+        <div style="font-size: 16px; font-weight: 600;">{{ notification.title }}</div>
+        <div style="font-size: 14px; color: #555; padding-top: 9px">
+          {{ notification.text.length > 50 ? (notification.text | slice: 0:50) + '...' : notification.text }}
         </div>
       </div>
+    </ng-container>
 
-    </div>
-  </button>
-</ng-container>
+    <ng-template #detailView>
+      <div style="padding: 10px;" (click)="$event.stopPropagation()">
+        <div style="font-size: 18px; font-weight: bold;">{{ selectedNotification?.title }}</div>
+        <div style="font-size: 14px; padding-top:8px; margin-top: 8px;">{{ selectedNotification?.text }}</div>
+        <button mat-button color="primary" (click)="clearSelection(); $event.stopPropagation()" style="margin-top: 10px;">Back</button>
+      </div>
+    </ng-template>
+  </div>
+</mat-menu>
 
-      
-
-      <ng-template #noNotifications>
-        <button mat-menu-item disabled style="font-style: italic; color: #999;">
-          No notifications available.
-        </button>
-      </ng-template>
-      
-  
-    </mat-menu>
-    
 
     <!-- Welcome Message -->
     <div class="d-md-flex align-items-center fw-semibold pe-3" style="font-size: 17px;">
       {{ firstName }} {{ lastName }}!
     </div>
-
     <!-- Create Admin Button -->
     <a *ngIf="isSuperEntityType"
        mat-flat-button
