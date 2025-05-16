@@ -1,0 +1,47 @@
+<mat-card class="cardWithShadow theme-card">
+    <mat-card-header>
+      <mat-card-title class="m-b-0">Create Trade</mat-card-title>
+    </mat-card-header>
+    <mat-card-content class="b-t-1">
+  
+      <form class="mt-3" (ngSubmit)="onCreateInvestment()" #investmentForm="ngForm">
+        <div class="row">
+          <!-- Investment Amount -->
+          <div class="col-lg-6">
+            <mat-label class="f-w-600 m-b-8 d-block">Amount *</mat-label>
+            <mat-form-field appearance="outline" class="w-100">
+              <input
+                matInput
+                placeholder="Enter Amount"
+                name="amount"
+                required
+                type="number"
+                [(ngModel)]="investData.amount" />
+            </mat-form-field>
+          </div>
+  
+         
+        </div>
+  
+        <!-- Submit Button & Error Message -->
+        <div class="m-t-6">
+          <button
+            mat-flat-button
+            color="primary"
+            class="w-100 py-2 fw-bold"
+            type="submit"
+            [disabled]="loading || !investmentForm.form.valid">
+            <b *ngIf="loading">
+              <img src="./assets/images/loading.gif" alt="Loading..." style="width: 26px; height: 26px;" />
+            </b>
+            Create
+          </button>
+        </div>
+  
+        <div *ngIf="errorMessage" class="alert alert-danger mt-2">
+          <b>{{ errorMessage }}</b>
+        </div>
+      </form>
+    </mat-card-content>
+  </mat-card>
+  

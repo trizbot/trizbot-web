@@ -1,0 +1,354 @@
+<div class="row g-4" *ngIf="isTradersDashBoardType">
+  <!-- BALANCE CARD -->
+  <div class="col-md-4" >
+    <mat-card class="cardWithShadow h-100 border-0">
+      <mat-card-header>
+        <div mat-card-avatar class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center fs-5">
+          <i class="bi bi-wallet2"></i>
+        </div>
+        <mat-card-title class="fw-bold">Wallet Balance</mat-card-title>
+      </mat-card-header>
+
+      
+      <mat-card-content>
+        <h3 class="text-primary fw-bold mb-4">${{ walletBalance || 0.0 | number: '1.0-2' }} </h3>
+
+        <div class="d-flex justify-content-between gap-2">
+          <button [routerLink]="['/myaccount/deposit']" class="btn btn-outline-success btn-sm w-100 d-flex align-items-center justify-content-center gap-1">
+            <i class="bi bi-arrow-down-circle"></i>Deposit
+          </button>&nbsp;&nbsp;
+          <button [routerLink]="['/myaccount/withdraw']" class="btn btn-outline-danger btn-sm w-100 d-flex align-items-center justify-content-center gap-1 btn btn-primary" >
+            <i class="bi bi-arrow-up-circle"></i>Withdraw
+          </button>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+  <!-- PROFIT CARD -->
+  <div class="col-md-4">
+    <mat-card class="cardWithShadow h-100 border-0">
+      <mat-card-header>
+        <div mat-card-avatar class="bg-success text-white rounded-circle d-flex align-items-center justify-content-center fs-5">
+          <i class="bi bi-graph-up-arrow"></i>
+        </div>
+        <mat-card-title class="fw-bold">Daily Profit</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <h3 class="text-success fw-bold">${{profit || 0.0 | number: '1.0-2'}}</h3>
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+  <!-- INVESTED CARD -->
+  <div class="col-md-4">
+    <mat-card class="cardWithShadow h-100 border-0">
+      <mat-card-header>
+        <div mat-card-avatar class="bg-warning text-white rounded-circle d-flex align-items-center justify-content-center fs-5">
+          <i class="bi bi-graph-down-arrow"></i>
+        </div>
+        <mat-card-title class="fw-bold">Weekly Deposit</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <h3 class="text-warning fw-bold">${{depositBalance || 0.0 | number: '1.0-2'}}</h3>
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+  <div class="col-md-3" style="display:none;">
+    <mat-card class="cardWithShadow h-100 border-0">
+      <mat-card-header>
+        <div mat-card-avatar class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center fs-5">
+          <i class="bi bi-bar-chart-line"></i>
+        </div>
+        <mat-card-title class="fw-bold">Weekly Trades</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <h3 class="text-warning fw-bold">${{amountInvested || 0.0 | number: '1.0-2'}}</h3>
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+
+</div>
+
+<!-- TRADE TABS SECTION -->
+<div class="row mt-5" *ngIf="isTradersDashBoardType">
+  <div class="col-12">
+    <mat-card class="cardWithShadow">
+      <mat-tab-group animationDuration="300ms" class="custom-tabs">
+        <!-- Available trades begins -->
+<mat-tab label="📈 Available Trades" style="font-size: 15px!important;">
+  <div class="p-12">
+
+
+<p class="text-muted"><strong>{{ isCryptoAvailableDescription }}</strong> </p>
+
+
+
+    
+      <ng-container *ngIf="availableCryptoList.length > 0; else noData">
+        <div class="crypto-list-container">
+          <div *ngFor="let crypto of pagedCryptoList" class="crypto-item">
+            <mat-card class="crypto-card" *ngIf="crypto.status;">
+              <mat-card-content class="crypto-card-content">
+                <div class="crypto-left">
+                  <img *ngIf="crypto.imageUrl" [src]="crypto.imageUrl" alt="Crypto Image" width="80" height="80" style="border-radius: 45px;" />
+                </div>
+                <div class="crypto-right">
+                  <mat-card-title class="crypto-title text-uppercase text-success">{{ crypto.title }}</mat-card-title>
+                  <div><strong>Min Amount: $</strong>{{ crypto.minAmount }}</div>
+                  <div><strong>Percentage: </strong>{{ crypto.percentage }}%</div>
+                  <div><strong>Expires:</strong> {{ crypto.expiry }} Hours</div>
+                  <div><strong>Buy Exchange:</strong> {{ crypto.buyExchange }}</div>
+                  <div><strong>Sell Exchange:</strong> {{ crypto.sellExchange }}</div>
+                  <div><strong>Market:</strong> {{ crypto.tradeStatus }}</div>
+                  <button mat-raised-button color="primary" (click)="onSetupTrade(crypto.id)">Setup Trade</button>
+                </div>
+              </mat-card-content>
+            </mat-card>
+
+          
+
+          </div>
+        </div>
+
+        <!-- Bootstrap Pagination -->
+        <nav *ngIf="totalPages.length > 1" aria-label="Page navigation" class="mt-4 text-center">
+          <ul class="pagination justify-content-center">
+            <li class="page-item" [class.disabled]="currentPage === 1">
+              <a class="page-link" href="#" (click)="changePage(currentPage - 1); $event.preventDefault()">Previous</a>
+            </li>
+            <li class="page-item" *ngFor="let page of totalPages" [class.active]="page === currentPage">
+              <a class="page-link" href="#" (click)="changePage(page); $event.preventDefault()">{{ page }}</a>
+            </li>
+            <li class="page-item" [class.disabled]="currentPage === totalPages.length">
+              <a class="page-link" href="#" (click)="changePage(currentPage + 1); $event.preventDefault()">Next</a>
+            </li>
+          </ul>
+        </nav>
+
+      </ng-container>
+    
+
+
+
+<!-- Fallback if no availableCryptoList -->
+    <ng-template #noData>
+      <p class="text-muted">No Available trades.</p>
+    </ng-template>
+
+
+  </div>
+</mat-tab>
+
+    
+  <!-- avaialble traces ends  -->
+
+
+
+
+
+        <!-- running traces begins -->
+        <mat-tab label="🔁 Running Trade" style="font-size: 15px!important;">
+
+          <div class="p-12">
+            <div *ngIf="investmentList.length > 0; else noRunningData">
+              <div class="crypto-list-container grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+                <div *ngFor="let runningTrade of pagedInvestmentList" class="crypto-item">
+                  <mat-card   *ngIf="runningOperation;else noRunningData"  class="crypto-card shadow-md rounded-xl border border-gray-200">
+                    <mat-card-content class="crypto-card-content flex items-center gap-4">
+                      <div class="crypto-left">
+                         <img 
+                          *ngIf="runningTrade.imageUrl" 
+                          [src]="runningTrade.imageUrl" 
+                          alt="{{ runningTrade.cryptoName }} Image"
+                          width="80" height="80"
+                          class="rounded-full border border-gray-300"
+                        /> -
+                      </div>
+        
+                      <div class="crypto-right">
+                        <mat-card-title class="crypto-title text-uppercase text-success font-bold text-lg mb-2">
+                          {{ runningTrade.cryptoName }} 
+                        </mat-card-title>
+                        <div><strong>💰 Amount:</strong> ${{ runningTrade.amount }}</div>
+                        <div><strong>⏳ Expiry:</strong> {{ runningTrade.expiry | date:'medium' }}</div>
+                        <div><strong><mat-icon>alarm</mat-icon>Left:</strong> {{ countdowns[runningTrade.expiry] || 'Loading...' }}</div>
+                        <div><strong>📊 Description:</strong> {{ runningTrade.investmentStatus }}</div>
+                        <!-- <div><strong>📅 Created:</strong> {{ runningTrade.createdAt | date:'medium' }}</div> -->
+                       
+
+                      </div>
+                    </mat-card-content>
+                  </mat-card>
+                </div>
+              </div>
+        
+               
+              <nav *ngIf="totalInvestPages.length > 1" aria-label="Page navigation" class="mt-6 text-center">
+                <ul class="pagination justify-content-center">
+                  <li class="page-item" [class.disabled]="currentInvestPage === 1">
+                    <a class="page-link" href="#" (click)="changeInvestPage(currentInvestPage - 1); $event.preventDefault()">Previous</a>
+                  </li>
+                  <li 
+                    class="page-item" 
+                    *ngFor="let page of totalInvestPages" 
+                    [class.active]="page === currentInvestPage">
+                    <a class="page-link" href="#" (click)="changeInvestPage(page); $event.preventDefault()">{{ page }}</a>
+                  </li>
+                  <li class="page-item" [class.disabled]="currentInvestPage === totalInvestPages.length">
+                    <a class="page-link" href="#" (click)="changeInvestPage(currentInvestPage + 1); $event.preventDefault()">Next</a>
+                  </li>
+                </ul>
+              </nav>
+            </div>
+        
+            <ng-template #noRunningData>
+              <p class="text-muted text-center mt-4">🚫 No Running trades.</p>
+            </ng-template>
+          </div> 
+        </mat-tab>
+        <!-- running traces begins -->
+
+
+         <!-- executed trades begins -->
+        <mat-tab label="✅ Executed Trade" style="font-size: 15px!important;">
+          <div class="p-12">
+            <div *ngIf="completedInvestmentList.length > 0; else noCompletedData">
+              <div class="crypto-list-container grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+                <div *ngFor="let invest of pagedCompletedInvestmentList" class="crypto-item">
+                  <mat-card class="crypto-card shadow-md rounded-xl border border-gray-200">
+                    <mat-card-content class="crypto-card-content flex items-center gap-4">
+                      <div class="crypto-left">
+                         <img 
+                          *ngIf="invest.imageUrl" 
+                          [src]="invest.imageUrl" 
+                          alt="{{ invest.cryptoName }} Image"
+                          width="80" height="80"
+                          class="rounded-full border border-gray-300"
+                        /> -
+                      </div>
+        
+                      <div class="crypto-right">
+                        <mat-card-title class="crypto-title text-uppercase text-success font-bold text-lg mb-2">
+                          {{ invest.cryptoName }}
+                        </mat-card-title>
+                        
+                        <div><strong>💰 Amount:</strong> ${{ invest.amount }}</div>
+                        <div><strong>📈 Curr. Balance:</strong> ${{ invest.curBalance }}</div>
+                        <div><strong>📉 Prev Balance:</strong> ${{ invest.prevBalance }}</div>
+                        <div><strong>📊 Status:</strong> {{ invest.transactionStatus }}</div>
+                        <div><strong>📅 Created:</strong> {{ invest.createdAt | date:'medium' }}</div>
+                        <div><strong>⏳ Expiry:</strong> {{ invest.expiry | date:'medium' }}</div>
+                        <div><strong>🧾 Profit:</strong> ${{ invest.profit }}</div>
+                      </div>
+                    </mat-card-content>
+                  </mat-card>
+                </div>
+              </div>
+        
+               
+              <nav *ngIf="totalCompletedInvestPages.length > 1" aria-label="Page navigation" class="mt-6 text-center">
+                <ul class="pagination justify-content-center">
+                  <li class="page-item" [class.disabled]="currentCompletedInvestPage === 1">
+                    <a class="page-link" href="#" (click)="changeCompletedInvestPage(currentCompletedInvestPage - 1); $event.preventDefault()">Previous</a>
+                  </li>
+                  <li 
+                    class="page-item" 
+                    *ngFor="let page of totalCompletedInvestPages" 
+                    [class.active]="page === currentCompletedInvestPage">
+                    <a class="page-link" href="#" (click)="changeCompletedInvestPage(page); $event.preventDefault()">{{ page }}</a>
+                  </li>
+                  <li class="page-item" [class.disabled]="currentCompletedInvestPage === totalCompletedInvestPages.length">
+                    <a class="page-link" href="#" (click)="changeCompletedInvestPage(currentCompletedInvestPage + 1); $event.preventDefault()">Next</a>
+                  </li>
+                </ul>
+              </nav>
+            </div>
+        
+            <ng-template #noCompletedData>
+              <p class="text-muted text-center mt-4">🚫 No Executed trades</p>
+            </ng-template>
+          </div> 
+        </mat-tab>
+     
+      </mat-tab-group>
+    </mat-card>
+  </div>
+</div>
+
+
+
+
+<!-- administrations -->
+
+
+<div class="row g-4" *ngIf="isAdminDashBoardType">
+  <!-- BALANCE CARD -->
+  <div class="col-md-3" >
+    <mat-card class="cardWithShadow h-100 border-0">
+      <mat-card-header>
+        <div mat-card-avatar class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center fs-5">
+          <i class="bi bi-wallet2"></i>
+        </div>
+        <mat-card-title class="fw-bold">Total users</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+   
+        <h3 class="text-primary fw-bold mb-4">{{totalUsers||0}}</h3>
+       
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+  <!-- PROFIT CARD -->
+  <div class="col-md-3" >
+    <mat-card class="cardWithShadow h-100 border-0">
+      <mat-card-header>
+        <div mat-card-avatar class="bg-success text-white rounded-circle d-flex align-items-center justify-content-center fs-5">
+          <i class="bi bi-graph-up-arrow"></i>
+        </div>
+        <mat-card-title class="fw-bold">Users active </mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+     
+        <h3 class="text-success fw-bold">{{totalActiveUsers||0}}</h3>
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+  <!-- INVESTED CARD -->
+  <div class="col-md-3">
+    <mat-card class="cardWithShadow h-100 border-0">
+      <mat-card-header>
+        <div mat-card-avatar class="bg-danger text-white rounded-circle d-flex align-items-center justify-content-center fs-5">
+          <i class="bi bi-bar-chart-line"></i>
+        </div>
+        <mat-card-title class="fw-bold">Total weekly funds</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+       
+        <h3 class="text-warning fw-bold">${{totalWeeklyFunds||0.0}}</h3>
+      </mat-card-content>
+    </mat-card>
+  </div>
+  <div class="col-md-3" >
+    <mat-card class="cardWithShadow h-100 border-0">
+      <mat-card-header>
+        <div mat-card-avatar class="bg-warning text-white rounded-circle d-flex align-items-center justify-content-center fs-5">
+          <i class="bi bi-bar-chart-line"></i>
+        </div>
+        <mat-card-title class="fw-bold">Total weekly profit</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+  
+        
+        <h3 class="text-warning fw-bold">${{ totalWeeklyProfits || 0.0 | number: '1.0-2' }} </h3>
+
+      </mat-card-content>
+    </mat-card>
+  </div>
+</div>
+
+<!-- administrations ends -->

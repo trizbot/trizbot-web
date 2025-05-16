@@ -1,0 +1,114 @@
+<!-- Add Crypto Wallet UI -->
+<mat-card class="cardWithShadow theme-card p-6">
+  <mat-card-header>
+    <mat-card-title class="text-2xl font-bold"> Add a valid USDT BEP20 wallet address</mat-card-title>
+  </mat-card-header>
+
+  <mat-card-content>
+    <!-- Current Wallet Address -->
+    <div class="mb-6">
+      <p class="text-sm text-muted">
+        <strong>Current Payment Wallet Address (USDT BEP20):</strong><br />
+        <span class="text-primary d-block mt-2">{{ availableWalletAddress || 'USDT BEP20 Not added yet!' }}</span>
+      </p>
+    </div>
+
+    <form (ngSubmit)="onCreateWalletAddress()">
+      <div class="row gx-4 gy-3">
+        <!-- Wallet Address -->
+        <div class="col-md-6">
+          <mat-form-field appearance="outline" class="w-100">
+            <mat-label>Wallet Address *</mat-label>
+            <input
+              matInput
+              placeholder="e.g., 0x1234abcd..."
+              name="walletAddress"
+              required
+              [(ngModel)]="walletData.walletAddress" />
+            <mat-icon matSuffix>account_balance_wallet</mat-icon>
+          </mat-form-field>
+        </div>
+
+        <!-- Network -->
+        <!-- <div class="col-md-6">
+          <mat-form-field appearance="outline" class="w-100">
+            <mat-label>Network (Optional)</mat-label>
+            <input
+            value ="USDT BEP20"
+              matInput
+              placeholder="e.g., BEP20"
+              name="addressNetwork"
+              [(ngModel)]="walletData.addressNetwork" />
+            <mat-icon matSuffix>link</mat-icon>
+          </mat-form-field>
+        </div> -->
+
+        <!-- Select Currency -->
+        <!-- <div class="col-12">
+          <mat-form-field appearance="outline" class="w-100">
+            <mat-label>Select Crypto Currency *</mat-label>
+            <mat-select
+              name="walletCurrency"
+              required
+              [(ngModel)]="walletData.walletCurrency">
+              <mat-option *ngFor="let currency of currencies" [value]="currency">
+                {{ currency.toUpperCase() }}
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div> -->
+
+        <!-- Destination Tag -->
+        <!-- <div class="col-md-6">
+          <mat-form-field appearance="outline" class="w-100">
+            <mat-label>Momo/Destination Tag (Optional)</mat-label>
+            <input
+              matInput
+              placeholder="e.g., 12345"
+              name="addressTags"
+              [(ngModel)]="walletData.addressTags" />
+            <mat-icon matSuffix>edit</mat-icon>
+          </mat-form-field>
+        </div> -->
+      </div>
+
+      <!-- Submit Button -->
+      <div class="mt-5">
+        <button
+          mat-flat-button
+          color="primary"
+          class="w-100 py-3 fw-semibold text-base"
+          type="submit"
+          [disabled]="loadingWallet">
+          <ng-container *ngIf="loadingWallet; else btnText">
+            <mat-progress-spinner
+              diameter="24"
+              mode="indeterminate"
+              color="accent"
+              class="me-2"
+              [strokeWidth]="3">
+            </mat-progress-spinner>
+          </ng-container>
+          <ng-template #btnText>
+            Add Wallet
+          </ng-template>
+        </button>
+      </div>
+
+      <!-- Disclaimer -->
+      <mat-card class="mt-5 p-4 bg-light border rounded">
+        <div class="d-flex align-items-start">
+          <mat-icon class="me-2" color="warn">info</mat-icon>
+          <p class="text-sm text-muted mb-0">
+            <strong>Disclaimer:</strong> Please ensure you enter a valid <strong>USDT BEP20 wallet address</strong> only. Incorrect or unsupported addresses may result in loss of funds and we would not be responsible for it.
+          </p>
+        </div>
+      </mat-card>
+
+      <!-- Error Message -->
+      <div *ngIf="errorWalletMessage" class="alert alert-danger mt-4 text-center">
+        <strong>{{ errorWalletMessage }}</strong>
+      </div>
+    </form>
+  </mat-card-content>
+</mat-card>

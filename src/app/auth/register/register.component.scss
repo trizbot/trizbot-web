@@ -1,0 +1,26 @@
+.shadow-lg {
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.1);
+  }
+  
+  .mat-form-field {
+    font-size: 15px;
+  }
+  
+  .mat-flat-button {
+    border-radius: 6px;
+    font-size: 16px;
+  }
+  .d-flex {
+    display: flex;
+    align-items: center;
+  }
+  
+  .country-code-select {
+    width: 120px;  /* Adjust width based on your preference */
+    margin-right: 8px;
+  }
+  
+  .phone-number-input {
+    flex-grow: 1;
+  }
+  

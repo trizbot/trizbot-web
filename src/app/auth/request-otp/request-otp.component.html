@@ -1,0 +1,56 @@
+<div class="blank-layout-container d-flex justify-content-center align-items-center bg-light min-vh-100">
+  <div class="row w-100 justify-content-center">
+    <div class="col-lg-5 col-md-7 col-sm-10">
+      <mat-card class="shadow-lg rounded-4 p-4 border-0">
+        <mat-card-content>
+
+          <!-- Logo -->
+          <div class="text-center mb-4">
+            <a [routerLink]="['/welcome']">
+              <img src="./assets/images/logos/dark-logo.jpg" alt="logo" style="width: 100px;" />
+            </a>
+          </div>
+
+          <!-- Signup Form -->
+          <form (ngSubmit)="requestVerificationCode()" class="mt-3">
+            <!-- Email -->
+            <mat-form-field appearance="outline" class="w-100 mb-3" color="primary">
+              <mat-label>Email Address</mat-label>
+              <input matInput type="email" placeholder="Enter your email" name="email"
+                     [(ngModel)]="requestOtpData.email" required />
+            </mat-form-field>
+          
+            <!-- Request Code Button -->
+            <button mat-flat-button color="accent" class="w-100 py-2 fw-bold" type="submit"><b *ngIf="loadingCode">
+              <img src="./assets/images/loading.gif" alt="Loading..." style="width: 26px; height: 26px;" /></b>
+              Request Code
+            </button>
+          </form>
+
+
+
+
+
+          
+          <br>
+<div *ngIf="errorMessage" class="alert alert-danger">
+  <b>{{ errorMessage }}</b>
+</div>
+
+<div *ngIf="successMessage" class="alert alert-success">
+  <b>{{ successMessage }}</b>
+</div>
+          <!-- Already Have Account -->
+          <div class="text-center mt-4">
+            <span class="text-muted">Already have an account?</span>
+            <a [routerLink]="['/auth/login']" class="text-primary text-decoration-none fw-semibold">
+              Sign In
+            </a>
+          </div>
+         
+          
+        </mat-card-content>
+      </mat-card>
+    </div>
+  </div>
+</div>

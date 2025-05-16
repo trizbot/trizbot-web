@@ -1,0 +1,136 @@
+<!-- Create Investor Review -->
+<mat-card class="cardWithShadow theme-card" hidden="hidden" style="display:none;">
+    <mat-card-header>
+      <mat-card-title class="m-b-0">Create Trader Manually</mat-card-title>
+    </mat-card-header>
+    <mat-card-content class="b-t-1">
+      <form class="mt-3" (ngSubmit)="onCreateReview()" #reviewForm="ngForm">
+        <div class="row">
+          <!-- Review Status -->
+          <div class="col-lg-6">
+            <mat-label class="f-w-600 m-b-8 d-block">Review Status *</mat-label>
+            <mat-form-field appearance="outline" class="w-100">
+              <mat-select
+                placeholder="Select Status"
+                name="status"
+                required
+                [(ngModel)]="reviewData.status">
+                <mat-option value="Pending">Pending</mat-option>
+                <mat-option value="Approved">Approved</mat-option>
+                <mat-option value="Suspended">Suspended</mat-option>
+                <mat-option value="Verified">Verified</mat-option>
+                <mat-option value="Unverified">Unverified</mat-option>
+                <mat-option value="Certified">Certified</mat-option>
+              </mat-select>
+            </mat-form-field>
+          </div>
+  
+          <!-- Comment -->
+          <div class="col-lg-6">
+            <mat-label class="f-w-600 m-b-8 d-block">Comment *</mat-label>
+            <mat-form-field appearance="outline" class="w-100">
+              <textarea
+                matInput
+                placeholder="Enter comment"
+                name="comment"
+                required
+                rows="3"
+                [(ngModel)]="reviewData.comment"></textarea>
+            </mat-form-field>
+          </div>
+        </div>
+  
+        <!-- Submit Button & Error Message -->
+        <div class="m-t-6">
+          <button
+            mat-flat-button
+            color="primary"
+            class="w-100 py-2 fw-bold"
+            type="submit"
+            [disabled]="loading || !reviewForm.form.valid">
+            <ng-container *ngIf="loading">
+              <img src="./assets/images/loading.gif" alt="Loading..." style="width: 26px; height: 26px;" />
+            </ng-container>
+            <span *ngIf="!loading">Create</span>
+          </button>
+        </div>
+  
+        <div *ngIf="errorMessage" class="alert alert-danger mt-2">
+          <b>{{ errorMessage }}</b>
+        </div>
+      </form>
+    </mat-card-content>
+  </mat-card>
+  
+  <!-- Credit Investor Manually -->
+  <mat-card class="cardWithShadow theme-card">
+    <mat-card-header>
+      <mat-card-title class="m-b-0">Credit Trader Manually</mat-card-title>
+    </mat-card-header>
+    <mat-card-content class="b-t-1">
+      <form class="mt-3" (ngSubmit)="onCreateCreditManaual()" #creditManualForm="ngForm">
+        <div class="row">
+          <!-- Amount -->
+          <div class="col-lg-6">
+            <mat-label class="f-w-600 m-b-8 d-block">Amount *</mat-label>
+            <mat-form-field appearance="outline" class="w-100">
+              <input
+                matInput
+                type="number"
+                placeholder="Enter Amount"
+                name="amount"
+                required
+                [(ngModel)]="creditData.amount" />
+            </mat-form-field>
+          </div>
+  
+          <!-- Transaction Pin -->
+    
+          <div class="col-lg-6">
+            <mat-form-field appearance="outline" class="w-100 mb-4" color="primary">
+              <mat-label class="f-w-600 m-b-8 d-block">Transaction Pin *</mat-label>
+              <input matInput [type]="hidePassword ? 'password' : 'text'" name="transactionPin" placeholder="Enter transaction Pin" [(ngModel)]="creditData.transactionPin">
+              <button mat-icon-button matSuffix (click)="hidePassword = !hidePassword" [attr.aria-label]="'Hide or show password'" [attr.aria-pressed]="!hidePassword">
+                <mat-icon>{{ hidePassword ? 'visibility_off' : 'visibility' }}</mat-icon>
+              </button>
+            </mat-form-field>
+  
+          </div>
+  
+          <!-- Reason -->
+          <div class="col-lg-6">
+            <mat-label class="f-w-600 m-b-8 d-block">Reason *</mat-label>
+            <mat-form-field appearance="outline" class="w-100">
+              <textarea
+                matInput
+                placeholder="Enter Reason"
+                name="reason"
+                required
+                rows="3"
+                [(ngModel)]="creditData.reason"></textarea>
+            </mat-form-field>
+          </div>
+        </div>
+  
+        <!-- Submit Button & Error Message -->
+        <div class="m-t-6">
+          <button
+            mat-flat-button
+            color="primary"
+            class="w-100 py-2 fw-bold"
+            type="submit"
+            [disabled]="loadingCredit || !creditManualForm.form.valid">
+            <ng-container *ngIf="loadingCredit">
+              <img src="./assets/images/loading.gif" alt="Loading..." style="width: 26px; height: 26px;" />
+            </ng-container>
+            <span *ngIf="!loadingCredit">Credit</span>
+          </button>
+        </div>
+  
+        <div *ngIf="errorCreditMessage" class="alert alert-danger mt-2">
+          <b>{{ errorCreditMessage }}</b>
+        </div>
+      </form>
+    </mat-card-content>
+  </mat-card>
+  

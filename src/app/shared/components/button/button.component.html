@@ -1,0 +1,20 @@
+<button
+  class="flex items-center justify-center text-white font-bold py-2 px-4 rounded"
+  [disabled]="disabled || loading"
+  [ngClass]="{
+    'w-full': fullWidth,
+    'ezm-primary-color-bg': color === 'primary',
+    'ezm-success-bg': color === 'success',
+    'ezm-warning-bg': color === 'warning',
+    'ezm-danger-bg': color === 'danger',
+  }"
+  (click)="btnClick.emit()"
+  [type]="type"
+>
+  @if (loading) {
+  <app-loader class="mr-2"></app-loader>
+  }
+  <span>
+    {{ loading ? loadingText : text }}
+  </span>
+</button>

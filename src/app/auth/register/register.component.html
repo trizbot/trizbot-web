@@ -1,0 +1,166 @@
+<div class="blank-layout-container d-flex justify-content-center align-items-center bg-light min-vh-100">
+  <div class="row w-100 justify-content-center">
+    <div class="col-lg-5 col-md-7 col-sm-10">
+      <mat-card class="shadow-lg rounded-4 p-4 border-0">
+        <mat-card-content>
+
+          <!-- Logo -->
+          <div class="text-center mb-4">
+            <a [routerLink]="['/welcome']">
+              <img src="./assets/images/logos/dark-logo.jpg" alt="logo" style="width: 100px;" />
+            </a>
+          </div>
+
+          <!-- Signup Form -->
+          <form *ngIf="!emailVerified" (ngSubmit)="requestVerificationCode()" class="mt-3">
+            <!-- Email -->
+            <mat-form-field appearance="outline" class="w-100 mb-3" color="primary">
+              <mat-label>Email Address</mat-label>
+              <input matInput type="email" placeholder="Enter your email" name="email"
+                     [(ngModel)]="registerData.email" required />
+            </mat-form-field>
+          
+            <!-- Request Code Button -->
+            <button mat-flat-button color="accent" class="w-100 py-2 fw-bold" type="submit"><b *ngIf="loadingCode">
+              <img src="./assets/images/loading.gif" alt="Loading..." style="width: 26px; height: 26px;" /></b>
+              Request Verification Code
+            </button>
+          </form>
+          
+          <br>
+          <!-- Code Input (optional, if using a code) -->
+          <!-- <div *ngIf="codeSent && !emailVerified" class="mt-3">
+            <form *ngIf="codeSent && !emailVerified" class="mt-3">
+            <mat-form-field appearance="outline" class="w-100 mb-3" color="primary">
+              <mat-label>Enter Verification Code</mat-label>
+              <input matInput placeholder="Enter code" [(ngModel)]="validEmailData.verificationCode" name="verificationCode" required />
+            </mat-form-field>
+            <button mat-stroked-button color="primary" class="w-100 py-2" (click)="verifyCode()">
+              Verify Code
+            </button>
+            </form>
+          </div>
+       -->
+
+  <form (ngSubmit)="onSignUp()" class="mt-3" *ngIf="emailVerified" > 
+<mat-form-field appearance="outline" class="w-100 mb-3" color="primary">
+  <mat-label>First Name</mat-label>
+  <input matInput placeholder="Enter your first name"name="firstName"[(ngModel)]="registerData.firstName"/>
+</mat-form-field>
+
+<!-- Last Name -->
+<mat-form-field appearance="outline" class="w-100 mb-3" color="primary">
+  <mat-label>Last Name</mat-label>
+  <input matInput placeholder="Enter your last name"name="lastName" [(ngModel)]="registerData.lastName"/>
+</mat-form-field>
+
+<!-- Email -->
+<mat-form-field appearance="outline" class="w-100 mb-3" color="primary">
+  <mat-label>Email Address</mat-label>
+  <input matInput type="email" placeholder="Enter your email" disabled="disabled"  value="{{validEmailAddress}}" name="email"[(ngModel)]="registerData.email"/>
+</mat-form-field>
+<!-- Phone Section Wrapper -->
+<div class="d-flex gap-2 mb-3 align-items-start">
+
+  <!-- Country Code -->
+  <mat-form-field appearance="outline" color="primary" class="country-code-field">
+    <mat-label>Country Code</mat-label>
+    <mat-select [(ngModel)]="registerData.countryCode" name="countryCode" placeholder="Country Code"
+                (selectionChange)="onCountryCodeSelect($event.value)">
+      <mat-option value="">-- Select Country Code --</mat-option>
+      <mat-option *ngFor="let countryCodes of countries" [value]="countryCodes.code">
+        {{ countryCodes.code }} ({{countryCodes.name}})
+      </mat-option>
+    </mat-select>
+  </mat-form-field>
+  
+ 
+ 
+
+  <!-- Phone Number Input -->
+  <mat-form-field appearance="outline" color="primary" class="flex-grow-1">
+    <mat-label>Phone Number</mat-label>
+    <input matInput type="tel" placeholder="Enter your phone number" name="phoneNumber"
+           [(ngModel)]="registerData.phoneNumber" />
+  </mat-form-field>
+
+</div>
+
+ <mat-form-field appearance="outline" color="primary" class="flex-grow-1">
+    <mat-label>referral Code(Optional)</mat-label>
+    <input matInput type="tel" placeholder="Enter referral Code(optional)" name="phoneNumber"
+           [(ngModel)]="registerData.referralCode" />
+  </mat-form-field>
+
+  
+ <mat-form-field appearance="outline" color="primary" class="country-code-field">
+  <mat-label>Country</mat-label>
+  <mat-select [(ngModel)]="registerData.country" name="country" placeholder="Country"
+              (selectionChange)="onCountrySelect($event.value)">
+    <mat-option value="">-- Select Country --</mat-option>
+    <mat-option *ngFor="let country of countries" [value]="country.name">{{country.name}}</mat-option>
+  </mat-select>
+</mat-form-field>
+
+
+<!-- Username -->
+<mat-form-field appearance="outline" class="w-100 mb-3" color="primary">
+  <mat-label>Address</mat-label>
+  <input matInput placeholder="Enter Residential Address" name="address" [(ngModel)]="registerData.address"/>
+</mat-form-field>
+
+<!-- Username -->
+<mat-form-field appearance="outline" class="w-100 mb-3" color="primary">
+  <mat-label>Username</mat-label>
+  <input matInput placeholder="Choose a username" name="userName" [(ngModel)]="registerData.userName"/>
+</mat-form-field>
+
+<!-- Password -->
+<mat-form-field appearance="outline" class="w-100 mb-4" color="primary">
+  <mat-label>Password</mat-label>
+  <input matInput [type]="hidePassword ? 'password' : 'text'" name="password" placeholder="Enter a secure password" [(ngModel)]="registerData.password">
+  <button mat-icon-button matSuffix (click)="hidePassword = !hidePassword" [attr.aria-label]="'Hide or show password'" [attr.aria-pressed]="!hidePassword">
+    <mat-icon>{{ hidePassword ? 'visibility_off' : 'visibility' }}</mat-icon>
+  </button>
+</mat-form-field>
+
+<!-- Confirm Password -->
+<mat-form-field appearance="outline" class="w-100 mb-4" color="primary">
+  <mat-label>Confirm Password</mat-label>
+  <input matInput [type]="hideConfirmPassword ? 'password' : 'text'" name="password_confirmation" placeholder="Verify password" [(ngModel)]="registerData.password_confirmation">
+  <button mat-icon-button matSuffix (click)="hideConfirmPassword = !hideConfirmPassword" [attr.aria-label]="'Hide or show password confirmation'" [attr.aria-pressed]="!hideConfirmPassword">
+    <mat-icon>{{ hideConfirmPassword ? 'visibility_off' : 'visibility' }}</mat-icon>
+  </button>
+</mat-form-field>
+
+<button mat-flat-button color="primary" class="w-100 py-2 fw-bold" type="submit"> <b *ngIf="loading">
+              <img src="./assets/images/loading.gif" alt="Loading..." style="width: 26px; height: 26px;" /></b>Sign Up
+            </button> 
+
+            
+          </form>
+
+          
+          <br>
+<div *ngIf="errorMessage" class="alert alert-danger">
+  <b>{{ errorMessage }}</b>
+</div>
+
+<div *ngIf="successMessage" class="alert alert-success">
+  <b>{{ successMessage }}</b>
+</div>
+          <!-- Already Have Account -->
+          <!-- <div class="text-center mt-4" *ngIf="emailVerified"> -->
+          <div class="text-center mt-4" *ngIf="emailVerified">
+            <span class="text-muted">Already have an account?</span>
+            <a [routerLink]="['/auth/login']" class="text-primary text-decoration-none fw-semibold">
+              Sign In
+            </a>
+          </div>
+         
+          
+        </mat-card-content>
+      </mat-card>
+    </div>
+  </div>
+</div>

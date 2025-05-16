@@ -1,0 +1,92 @@
+<mat-card class="cardWithShadow theme-card p-4">
+
+  <!-- Card Header -->
+  <mat-card-header *ngIf="payoutStatus">
+    <mat-card-title class="text-xl fw-bold m-0">Request Payout</mat-card-title>
+    <p class="text-primary">
+      Please note: A service charge of 5% will be applied to the total withdrawal amount.
+    </p>
+  </mat-card-header>
+
+  <!-- Card Content -->
+  <mat-card-content class="b-t-1 mt-3">
+
+    <!-- Form Section (Shown if payout is available) -->
+    <div class="row" *ngIf="payoutStatus; else noPayout">
+      <form (ngSubmit)="onCreateWithdraw()" #payoutForm="ngForm">
+        <div class="row gx-4">
+
+          <!-- Amount Input -->
+          <div class="col-md-6 mb-4">
+            <label class="fw-semibold mb-2 d-block">Amount *</label>
+            <mat-form-field appearance="outline" class="w-100">
+              <input
+                matInput
+                type="number"
+                placeholder="Enter amount"
+                name="amount"
+                required
+                [(ngModel)]="withdrawData.amount" />
+              <mat-icon matSuffix>attach_money</mat-icon>
+            </mat-form-field>
+          </div>
+
+          <!-- Transaction PIN Input -->
+          <div class="col-md-6 mb-4">
+            <label class="fw-semibold mb-2 d-block">Transaction PIN *</label>
+            <mat-form-field appearance="outline" class="w-100">
+              <input
+                matInput
+                type="password"
+                placeholder="Enter transaction PIN"
+                name="transactionPin"
+                required
+                [(ngModel)]="withdrawData.transactionPin" />
+              <mat-icon matSuffix>lock</mat-icon>
+            </mat-form-field>
+          </div>
+        </div>
+
+        <!-- Submit Button -->
+        <div class="text-center mt-3">
+          <button
+            mat-flat-button
+            color="primary"
+            class="px-5 py-2 fw-semibold"
+            type="submit"
+            [disabled]="loading || !payoutForm.form.valid">
+            
+            <ng-container *ngIf="loading">
+              <mat-progress-spinner
+                diameter="22"
+                color="accent"
+                mode="indeterminate"
+                [strokeWidth]="3"
+                class="me-2">
+              </mat-progress-spinner>
+            </ng-container>
+            <span *ngIf="!loading">Payout</span>
+          </button>
+        </div>
+
+        <!-- Error Message -->
+        <div *ngIf="errorMessage" class="alert alert-danger mt-3">
+          <strong>{{ errorMessage }}</strong>
+        </div>
+      </form>
+    </div>
+
+    <!-- Else Block (Shown if payout is unavailable) -->
+
+<ng-template #noPayout>
+  <mat-card class="payout-card mat-elevation-z2 position-relative text-center mb-4">
+    <mat-card-content>
+      <h4 class="text-danger fw-bold mb-2">Withdrawal Unavailable</h4>
+      <p class="text-muted">{{ payoutDescription || 'Withdrawal is currently not available.' }}</p>
+    </mat-card-content>
+
+  </mat-card>
+</ng-template>
+  </mat-card-content>
+
+</mat-card>

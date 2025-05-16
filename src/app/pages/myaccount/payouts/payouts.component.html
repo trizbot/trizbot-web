@@ -1,0 +1,222 @@
+<mat-card class="cardWithShadow p-4">
+  <mat-card-content>
+
+    <!-- Title -->
+    <h2 class="text-primary mb-4">Payout Transactions</h2>
+
+<div *ngIf="isSuperAdmin">
+    <!-- Payout Status Section -->
+    <ng-container *ngIf="payoutStatus; else noPayout">
+      <mat-card class="payout-card mat-elevation-z2 text-center mb-4">
+        <mat-card-content>
+          <h4 class="text-success fw-bold mb-2">Withdrawal Available</h4>
+          <p class="text-muted">Traders can now proceed with your withdrawals.</p>
+        </mat-card-content>
+      </mat-card>
+    </ng-container>
+
+<ng-template #noPayout>
+  <mat-card class="payout-card mat-elevation-z2 position-relative text-center mb-4">
+    <mat-card-content>
+      <h4 class="text-danger fw-bold mb-2">Withdrawal Unavailable</h4>
+      <p class="text-muted">{{ payoutDescription || 'Withdrawal is currently not available.' }}</p>
+    </mat-card-content>
+
+  </mat-card>
+</ng-template>
+
+
+    <!-- Trade Status Form -->
+    <form class="mb-5" (ngSubmit)="onResumeTrade()" #resumeTradeForm="ngForm">
+      <div class="row g-4">
+
+        <!-- Trade Status -->
+        <div class="col-lg-4 col-md-6">
+          <mat-form-field appearance="outline" class="w-100">
+            <mat-label>Withdrawal Status *</mat-label>
+            <mat-select
+              placeholder="Select Trade Status"
+              name="tradeStatus"
+              required
+              [(ngModel)]="resumeData.tradeStatus">
+              <mat-option value="open">Open</mat-option>
+              <mat-option value="close">Close</mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+
+        <!-- Description -->
+        <div class="col-lg-4 col-md-6">
+          <mat-form-field appearance="outline" class="w-100">
+            <mat-label>Description *</mat-label>
+            <textarea
+              matInput
+              placeholder="Enter description"
+              name="description"
+              required
+              rows="3"
+              [(ngModel)]="resumeData.description">
+            </textarea>
+          </mat-form-field>
+        </div>
+
+      </div>
+
+      <!-- Submit Button -->
+      <div class="mt-4 d-flex align-items-center">
+        <button
+          mat-flat-button
+          color="primary"
+          class="px-5 py-2 fw-bold"
+          type="submit"
+          [disabled]="loading || !resumeTradeForm.form.valid">
+          <ng-container *ngIf="loading; else updateText">
+            <img src="./assets/images/loading.gif" alt="Loading..." width="24" height="24" />
+          </ng-container>
+          <ng-template #updateText>Update</ng-template>
+        </button>
+      </div>
+
+      <!-- Error Message -->
+      <div *ngIf="errorMessage" class="alert alert-danger mt-3">
+        <strong>{{ errorMessage }}</strong>
+      </div>
+    </form>
+
+  </div>
+    <!-- Transaction Table -->
+    <div class="table-responsive" *ngIf="isSuperAdmin">
+      <table mat-table [dataSource]="payoutTransactionList" class="mat-elevation-z2 w-100">
+
+        <!-- Sender Name -->
+        <ng-container matColumnDef="senderName" >
+          <th mat-header-cell *matHeaderCellDef>Sender</th>
+          <td mat-cell *matCellDef="let element">{{ element.senderName }}</td>
+        </ng-container>
+
+        <!-- Sender Email -->
+        <ng-container matColumnDef="payoutId">
+          <th mat-header-cell *matHeaderCellDef>Payout ID</th>
+          <td mat-cell *matCellDef="let element">{{ element.id }}</td>
+        </ng-container>
+
+        <!-- Amount -->
+        <ng-container matColumnDef="amount">
+          <th mat-header-cell *matHeaderCellDef>Requested Amount</th>
+          <td mat-cell *matCellDef="let element">${{ element.amount }}</td>
+        </ng-container>
+       
+      
+        <ng-container matColumnDef="amount_withdrawn">
+          <th mat-header-cell *matHeaderCellDef>Amount Withdrawn</th>
+          <td mat-cell *matCellDef="let element">${{ element.amount_withdrawn }}</td>
+        </ng-container>
+    
+        <ng-container matColumnDef="errorState">
+          <th mat-header-cell *matHeaderCellDef>Transaction State</th>
+          <td mat-cell *matCellDef="let element">{{ element.error }}</td>
+        </ng-container>
+    
+        <ng-container matColumnDef="payout_status">
+          <th mat-header-cell *matHeaderCellDef>Payout Status</th>
+          <td mat-cell *matCellDef="let element">{{ element.payout_status }}</td>
+        </ng-container>
+       
+        <ng-container matColumnDef="batch_withdrawal_id">
+          <th mat-header-cell *matHeaderCellDef>Batch Withdrawal ID</th>
+          <td mat-cell *matCellDef="let element">{{ element.batch_withdrawal_id }}</td>
+        </ng-container>
+
+  
+        <!-- Wallet Address -->
+        <ng-container matColumnDef="address">
+          <th mat-header-cell *matHeaderCellDef>Wallet Address</th>
+          <td mat-cell *matCellDef="let element">{{ element.address }}</td>
+        </ng-container>
+
+        <!-- Currency -->
+        <ng-container matColumnDef="currency">
+          <th mat-header-cell *matHeaderCellDef>Currency</th>
+          <td mat-cell *matCellDef="let element">{{ element.currency }}</td>
+        </ng-container>
+
+        <!-- Transaction ID -->
+        <ng-container matColumnDef="transactionId">
+          <th mat-header-cell *matHeaderCellDef>Transaction ID</th>
+          <td mat-cell *matCellDef="let element">{{ element.transactionId }}</td>
+        </ng-container>
+
+        <!-- Created At -->
+        <ng-container matColumnDef="created_at">
+          <th mat-header-cell *matHeaderCellDef>Created At</th>
+          <td mat-cell *matCellDef="let element">{{ element.created_at | date: 'short' }}</td>
+        </ng-container>
+
+       
+
+        <!-- Row Definitions -->
+        <tr mat-header-row *matHeaderRowDef="displayedColumns1"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns1"></tr>
+      </table>
+    </div>
+  
+
+    <!-- nomal traders -->
+    <div class="table-responsive" *ngIf="!isSuperAdmin">
+      <table mat-table [dataSource]="payoutTransactionList" class="mat-elevation-z2 w-100">
+
+        <!-- Sender Name -->
+        <ng-container matColumnDef="senderName" >
+          <th mat-header-cell *matHeaderCellDef>Sender</th>
+          <td mat-cell *matCellDef="let element">{{ element.senderName }}</td>
+        </ng-container>
+
+        <!-- Sender Email -->
+        <ng-container matColumnDef="payoutId">
+          <th mat-header-cell *matHeaderCellDef>Payout ID</th>
+          <td mat-cell *matCellDef="let element">{{ element.id }}</td>
+        </ng-container>
+
+        <!-- Amount -->
+        <ng-container matColumnDef="amount">
+          <th mat-header-cell *matHeaderCellDef>Requested Amount</th>
+          <td mat-cell *matCellDef="let element">${{ element.amount }}</td>
+        </ng-container>
+       
+      
+    
+        <ng-container matColumnDef="payout_status">
+          <th mat-header-cell *matHeaderCellDef>Status</th>
+          <td mat-cell *matCellDef="let element">{{ element.payout_status }}</td>
+        </ng-container>
+       
+      
+
+  
+        <!-- Wallet Address -->
+        <ng-container matColumnDef="address">
+          <th mat-header-cell *matHeaderCellDef>Wallet Address</th>
+          <td mat-cell *matCellDef="let element">{{ element.address }}</td>
+        </ng-container>
+
+        <!-- Currency -->
+        <ng-container matColumnDef="currency">
+          <th mat-header-cell *matHeaderCellDef>Currency</th>
+          <td mat-cell *matCellDef="let element">{{ element.currency }}</td>
+        </ng-container>
+
+        <!-- Created At -->
+        <ng-container matColumnDef="created_at">
+          <th mat-header-cell *matHeaderCellDef>Created At</th>
+          <td mat-cell *matCellDef="let element">{{ element.created_at | date: 'short' }}</td>
+        </ng-container>
+       
+
+        <!-- Row Definitions -->
+        <tr mat-header-row *matHeaderRowDef="displayedColumnsUsers"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumnsUsers"></tr>
+      </table>
+    </div>
+
+  </mat-card-content>
+</mat-card>

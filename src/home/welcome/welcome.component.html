@@ -1,0 +1,354 @@
+
+
+
+<nav class="navbar custom-navbar">
+  <div class="container-fluid d-flex justify-content-between align-items-center">
+    <div class="navbar-header">
+      <a class="navbar-brand d-flex align-items-center" href="#">
+        <img src="assets/images/logos/dark-logo.jpg" alt="Logo" style="height: 40px; margin-right: 28px;">
+      </a>
+    </div>
+    <ul class="nav navbar-nav d-flex flex-row gap-4">
+      <li class="nav-item">
+        <a class="nav-link" [routerLink]="['/welcome']">Home</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" [routerLink]="['/auth/faq']">FAQ</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" [routerLink]="['/auth/login']">Login</a>
+      </li>
+   
+    </ul>
+  </div>
+</nav>
+<!-- ======= Hero Section ======= -->
+<section  class="d-flex align-items-center">
+  <div class="container">
+    <div class="row gy-0 align-items-center">
+      <div class="col-lg-6 order-2 order-lg-1 d-flex flex-column justify-content-center">
+        <h2><b class="text-primary">TRIZBOT</b> <br><br>
+      
+          Find limitless crypto arbitrage opportunities, trade with confidence and maximize your earnings.
+     
+        <br><br>
+        <a [routerLink]="['/auth/request-otp']" class="btn btn-primary btn-lg text-white scrollto mt-3">
+          Get Started
+        </a>   </h2>
+      </div>
+      <div class="col-lg-6 order-1 order-lg-2 d-flex justify-content-center">
+        <img src="assets/images/svgs/hero-img.svg" class="img-fluid hero-image animated" alt="Trizbot Trading Platform">
+      </div>
+    </div>
+  </div>
+</section>
+
+
+  
+  
+  <!-- End Hero -->
+
+  <!-- <main id="main"> -->
+
+ <!-- ======= About Section ======= -->
+<section  class="services section-bg py-5 bg-light">
+  <div class="container-fluid" data-aos="fade-up">
+    <div class="section-title text-center mb-4">
+      <h1 class="fw-bold text-primary">About TrizBot</h1>
+    </div>
+    <div class="row justify-content-center">
+      <div class="col-lg-10">
+        <p class="text-dark text-justify" style="font-size: 1.8rem; line-height: 2.1rem;">
+          <strong>TrizBot</strong> is an advanced cryptocurrency arbitrage platform designed for real-time market analysis. 
+          It monitors and compares price discrepancies across multiple cryptocurrency exchanges, providing users with 
+          critical insights into potential arbitrage opportunities. By leveraging up-to-the-minute market data, TrizBot 
+          empowers traders to make well-informed and timely decisions to optimize their trading strategies.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+
+    <!-- ======= Services Section ======= -->
+    <section id="services" class="services section-bg">
+      <div class="container" data-aos="fade-up">
+
+        <div class="section-title">
+          <h1>Live Trade Opportunities </h1>
+          <h6 style="padding-top:15px;font-size: 1.8rem; line-height: 2.1rem;">Real-time arbitrage opportunities across crypto exchanges</h6>
+        </div>
+
+        <div class="row">
+          <div class="col-md-6 col-lg-3 d-flex align-items-stretch" data-aos="zoom-in" data-aos-delay="100">
+            <div class="icon-box">
+              <table class="table table-striped table-responsive" style="border: none;">
+                <tr>
+                  <td colspan="2" class="text-center">
+                    <div class="icon"><i class="bx bxl-dribbble"></i></div>
+                    <h4 class="title"><a href="">BTC/USDT</a></h4>
+                  </td>
+                </tr>
+                <tr>
+                  <td><i class="bi bi-arrow-up-circle" style="color: #28a745;"></i> <strong>Buy on:</strong></td>
+                  <td>Binance</td>
+                </tr>
+                <tr>
+                  <td><i class="bi bi-arrow-down-circle" style="color: #dc3545;"></i> <strong>Sell on:</strong></td>
+                  <td>Bitmart</td>
+                </tr>
+                <tr>
+                  <td><i class="bi bi-graph-up-arrow" style="color: #ffc107;"></i> <strong>Profit:</strong></td>
+                  <td>4%</td>
+                </tr>
+              </table>
+              <div class="text-center">
+                <a [routerLink]="['/auth/request-otp']" class="btn btn-primary btn-lg text-white" style="padding: 10px 20px; font-size: 16px; border-radius: 5px;">Set Up</a>
+              </div>
+            </div>
+          </div>
+          
+          
+
+          <div class="col-md-6 col-lg-3 d-flex align-items-stretch" data-aos="zoom-in" data-aos-delay="100">
+            <div class="icon-box">
+              <table class="table table-striped table-responsive" style="border: none;">
+                <tr>
+                  <td colspan="2" class="text-center">
+                    <div class="icon"><i class="bx bxl-dribbble"></i></div>
+                    <h4 class="title"><a href="">ANIME/BNB/USDT</a></h4>
+                  </td>
+                </tr>
+                <tr>
+                  <td><i class="bi bi-arrow-up-circle" style="color: #28a745;"></i> <strong>Buy on:</strong></td>
+                  <td>Binance</td>
+                </tr>
+                <tr>
+                  <td><i class="bi bi-arrow-down-circle" style="color: #dc3545;"></i> <strong>Sell on:</strong></td>
+                  <td>Binance</td>
+                </tr>
+                <tr>
+                  <td><i class="bi bi-graph-up-arrow" style="color: #ffc107;"></i> <strong>Profit:</strong></td>
+                  <td>2%</td>
+                </tr>
+              </table>
+              <div class="text-center">
+                <a [routerLink]="['/auth/request-otp']" class="btn btn-primary btn-lg text-white" style="padding: 10px 20px; font-size: 16px; border-radius: 5px;">Set Up</a>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-md-6 col-lg-3 d-flex align-items-stretch" data-aos="zoom-in" data-aos-delay="100">
+            <div class="icon-box">
+              <table class="table table-striped table-responsive" style="border: none;">
+                <tr>
+                  <td colspan="2" class="text-center">
+                    <div class="icon"><i class="bx bxl-dribbble"></i></div>
+                    <h4 class="title"><a href="">COMP/BTC</a></h4>
+                  </td>
+                </tr>
+                <tr>
+                  <td><i class="bi bi-arrow-up-circle" style="color: #28a745;"></i> <strong>Buy on:</strong></td>
+                  <td>Binance</td>
+                </tr>
+                <tr>
+                  <td><i class="bi bi-arrow-down-circle" style="color: #dc3545;"></i> <strong>Sell on:</strong></td>
+                  <td>Bybit</td>
+                </tr>
+                <tr>
+                  <td><i class="bi bi-graph-up-arrow" style="color: #ffc107;"></i> <strong>Profit:</strong></td>
+                  <td>2.5%</td>
+                </tr>
+              </table>
+              <div class="text-center">
+                <a [routerLink]="['/auth/request-otp']" class="btn btn-primary btn-lg text-white" style="padding: 10px 20px; font-size: 16px; border-radius: 5px;">Set Up</a>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-md-6 col-lg-3 d-flex align-items-stretch" data-aos="zoom-in" data-aos-delay="100">
+            <div class="icon-box">
+              <table class="table table-striped table-responsive" style="border: none;">
+                <tr>
+                  <td colspan="2" class="text-center">
+                    <div class="icon"><i class="bx bxl-dribbble"></i></div>
+                    <h4 class="title"><a href="">ETH/USDT</a></h4>
+                  </td>
+                </tr>
+                <tr>
+                  <td><i class="bi bi-arrow-up-circle" style="color: #28a745;"></i> <strong>Buy on:</strong></td>
+                  <td>Bybit</td>
+                </tr>
+                <tr>
+                  <td><i class="bi bi-arrow-down-circle" style="color: #dc3545;"></i> <strong>Sell on:</strong></td>
+                  <td>Bitmart</td>
+                </tr>
+                <tr>
+                  <td><i class="bi bi-graph-up-arrow" style="color: #ffc107;"></i> <strong>Profit:</strong></td>
+                  <td>2%</td>
+                </tr>
+              </table>
+              <div class="text-center">
+                <a [routerLink]="['/auth/request-otp']" class="btn btn-primary btn-lg text-white" style="padding: 10px 20px; font-size: 16px; border-radius: 5px;">Set Up</a>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </section><!-- End Services Section -->
+    
+
+    <section id="services" class="services section-bg py-5">
+      <div class="container" data-aos="fade-up">
+    
+        <div class="section-title text-center mb-5">
+          <h1 class="fw-bold">How It Works</h1>
+          <h6 class="text-muted small" style="padding-top:15px;font-size: 1.8rem; line-height: 2.1rem;">Trizbot simplifies crypto arbitrage trading in three easy steps.</h6>
+        </div>
+    
+        <div class="row text-center g-4">
+          <div class="col-6 col-md-3" data-aos="zoom-in" data-aos-delay="100">
+            <div class="icon-box bg-white shadow-sm p-4 rounded h-100">
+              <div class="icon mb-3" style="font-size: 40px; color: #ff6600;">
+                <i class="bi bi-search" style="font-size: 50px;"></i>
+              </div>
+              <h5 class="fw-semibold"style="padding-top:15px;font-size: 1.8rem; line-height: 2.1rem;">
+                 Scan
+              </h5>
+              <p class="text-muted small" style="padding-top:15px;font-size: 1.8rem; line-height: 2.1rem;">Trizbot continuously scans the crypto market to identify profitable arbitrage opportunities.</p>
+            </div>
+          </div>
+    <br>
+          <div class="col-6 col-md-3" data-aos="zoom-in" data-aos-delay="200">
+            <div class="icon-box bg-white shadow-sm p-4 rounded h-100">
+              <div class="icon mb-3" style="font-size: 40px; color: #ff6600;">
+                <i class="bi bi-bar-chart-line" style="font-size: 50px;"></i>
+              </div>
+              <h5 class="fw-semibold"style="padding-top:15px;font-size: 1.8rem; line-height: 2.1rem;">
+                Analyze
+              </h5>
+              <p class="text-muted small" style="padding-top:15px;font-size: 1.8rem; line-height: 2.1rem;">Visual insights and analytics on arbitrage trends and market volatility.</p>
+            </div>
+          </div>
+          <br>
+          <div class="col-6 col-md-3" data-aos="zoom-in" data-aos-delay="300">
+            <div class="icon-box bg-white shadow-sm p-4 rounded h-100">
+              <div class="icon mb-3" style="font-size: 40px; color: #ff6600;">
+                <i class="bi bi-gear" style="font-size: 50px;"></i>
+              </div>
+              <h5 class="fw-semibold"style="padding-top:15px;font-size: 1.8rem; line-height: 2.1rem;">
+                Automate
+              </h5>
+              <p class="text-muted small" style="padding-top:15px;font-size: 1.8rem; line-height: 2.1rem;">Configure your automation settings and let Trizbot execute trades on your behalf.</p>
+            </div>
+          </div>
+          <br>
+          <div class="col-6 col-md-3" data-aos="zoom-in" data-aos-delay="400">
+            <div class="icon-box bg-white shadow-sm p-4 rounded h-100">
+              <div class="icon mb-3" style="font-size: 40px; color: #ff6600;">
+                <i class="bi bi-currency-bitcoin" style="font-size: 50px;"></i>
+              </div>
+              <h5 class="fw-semibold"style="padding-top:15px;font-size: 1.8rem; line-height: 2.1rem;">
+                Earn
+              </h5>
+              <p class="text-muted small" style="padding-top:15px;font-size: 1.8rem; line-height: 2.1rem;">Watch your profits grow automatically with successful arbitrage trades.</p>
+            </div>
+          </div>
+        </div>
+    
+        <div class="text-center mt-5">
+          <br>
+          <a [routerLink]="['/auth/request-otp']" class="btn btn-lg btn-primary" style=" color: white; padding-top:12px; padding: 12px 30px;">
+            Get Started
+          </a>
+        </div>
+    
+      </div>
+    </section>
+    
+    
+
+    <!-- ======= F.A.Q Section ======= -->
+    <section id="faq" class="faq section-bg" hidden="" style ="display:none">
+      <div class="container" data-aos="fade-up">
+
+        <div class="section-title">
+          <h2>F.A.Q</h2>
+          
+        </div>
+
+        <ul class="faq-list" data-aos="fade-up" data-aos-delay="100">
+
+          <li>
+            <div data-bs-toggle="collapse" class="collapsed question" href="#faq1">What is crypto arbitrage? <i class="bi bi-chevron-down icon-show"></i><i class="bi bi-chevron-up icon-close"></i></div>
+            <div id="faq1" class="collapse" data-bs-parent=".faq-list">
+              <p>
+                Crypto arbitrage is a trading strategy that leverages price differences across exchanges to generate profit with minimal risk.
+              </p>
+            </div>
+          </li>
+
+          <li>
+            <div data-bs-toggle="collapse" href="#faq2" class="collapsed question">How do you find opportunities? <i class="bi bi-chevron-down icon-show"></i><i class="bi bi-chevron-up icon-close"></i></div>
+            <div id="faq2" class="collapse" data-bs-parent=".faq-list">
+              <p>
+                Trizbot scans multiple exchanges and surfaces only the most profitable opportunities.
+              </p>
+            </div>
+          </li>
+
+          <li>
+            <div data-bs-toggle="collapse" href="#faq3" class="collapsed question">How do trades run on Trizbot?<i class="bi bi-chevron-down icon-show"></i><i class="bi bi-chevron-up icon-close"></i></div>
+            <div id="faq3" class="collapse" data-bs-parent=".faq-list">
+              <p>
+                All trades can be automated after choosing an opportunity, making earning easy and passive.
+              </p>
+            </div>
+          </li>
+
+         
+
+        </ul>
+
+      </div>
+    </section>
+    <!-- End F.A.Q Section -->
+
+    
+
+
+  <!-- </main> -->
+  <!-- End #main -->
+
+  <!-- ======= Footer ======= -->
+  <footer id="footer">
+
+    <div class="footer-newsletter">
+      <div class="container">
+        <div class="row justify-content-center">
+          <div class="col-lg-6">
+            <h3>Join Our Growing Crypto Community</h3>
+                <p style="padding-top:14px"> Connect with thousands of other traders and stay updated on the latest market movements.</p>
+<a href="https://t.me/trizbotglobal" class="btn btn-primary btn-lg text-white">Join Now</a>
+          </div>
+        </div>
+      </div>
+      
+    </div>
+
+   
+    <div class="container py-4">
+      <div class="copyright">
+        &copy; Copyright {{ currentYear }} <strong><span>Trizbot</span></strong>. All Rights Reserved
+      </div>
+      <div class="credits">
+      </div>
+    </div>
+  </footer><!-- End Footer -->
+
+  <a href="#" class="back-to-top d-flex align-items-center justify-content-center"><i class="bi bi-arrow-up-short"></i></a>
+
+
