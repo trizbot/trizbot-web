@@ -1,46 +1,53 @@
-<!-- Contact Buttons -->
-<div class="row text-center mt-4">
-
-    <div class="col-md-4" >
-    <mat-card class="cardWithShadow h-100 border-0">
-      <mat-card-content>
-        <div class="d-flex justify-content-between gap-2">
-          <button  class="btn btn-outline-success btn-sm w-100 d-flex align-items-center justify-content-center gap-1"> <i class="bi bi-arrow-down-circle"></i>
-        <a href="mailto:support@trizbot.com" class="d-block bg-blue-500 hover:bg-blue-600  py-3 rounded-lg transition text-decoration-none">
-      <div class="d-flex flex-column align-items-center">
-        <i class="fas fa-envelope fa-2x mb-2"></i>
-        <span>Send Email</span>
-      </div>
-    </a>
-</button>
-       
-        </div>
-          
-      </mat-card-content>
-    </mat-card>
-  </div>
-
-  
-
-  <!-- Telegram Column -->
-  <div class="col-md-4 mb-3">
-    <a href="https://t.me/trizbotsupport" target="_blank" class="d-block bg-cyan-500 hover:bg-cyan-600  py-3 rounded-lg transition text-decoration-none">
-      <div class="d-flex flex-column align-items-center">
-        <i class="fab fa-telegram-plane fa-2x mb-2"></i>
-        <span>Telegram Support</span>
-      </div>
-    </a>
-  </div>
-
-  <!-- Tawk.to Column -->
-  <div class="col-md-4 mb-3">
-    <a href="https://tawk.to/chat/68136afdbe6663190a6c5c56/1iq5tjs5u" target="_blank" class="d-block bg-green-500 hover:bg-green-600  py-3 rounded-lg transition text-decoration-none">
-      <div class="d-flex flex-column align-items-center">
-        <img src="https://uploads-ssl.webflow.com/618a86de5f4d1c4b1a0b68fd/63eeaa0d0b3f2476b1c18427_tawkto-icon.png" alt="Tawk.to" width="32" class="mb-2">
-        <span>Live Chat (Tawk.to)</span>
-      </div>
-    </a>
-  </div>
-
-</div>
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+
+<div class="container my-5">
+  <mat-card class="cardWithShadow border-0 p-4 rounded-4 shadow-sm bg-white">
+    <mat-card-content>
+
+      <!-- Header -->
+      <div class="mb-4 text-center">
+        <h2 class="h3 fw-bold text-primary">
+          <i class="fas fa-headset me-2"></i> Live Chat Support
+        </h2>
+        <p class="text-muted mt-2">
+          Our support team is available 24/7. Choose any of the options below to reach out and get instant help.
+        </p>
+      </div>
+
+      <!-- Contact Options -->
+      <div class="row text-center">
+
+        <!-- Email -->
+        <div class="col-md-4 mb-3">
+          <a href="mailto:support@trizbot.com" target="_blank" class="text-decoration-none">
+            <div class="bg-blue-500 hover:bg-blue-600 text-white rounded-3 p-4 transition d-flex flex-column align-items-center justify-content-center h-100">
+              <i class="fas fa-envelope fa-2x mb-2"></i>
+              <span class="fw-semibold">Send Email</span>
+            </div>
+          </a>
+        </div>
+
+        <!-- Telegram -->
+        <div class="col-md-4 mb-3">
+          <a href="https://t.me/trizbotsupport" target="_blank" class="text-decoration-none">
+            <div class="bg-cyan-500 hover:bg-cyan-600 text-white rounded-3 p-4 transition d-flex flex-column align-items-center justify-content-center h-100">
+              <i class="fab fa-telegram-plane fa-2x mb-2"></i>
+              <span class="fw-semibold">Telegram Support</span>
+            </div>
+          </a>
+        </div>
+
+        <!-- Tawk.to Live Chat -->
+        <div class="col-md-4 mb-3">
+          <a href="https://tawk.to/chat/68136afdbe6663190a6c5c56/1iq5tjs5u" target="_blank" class="text-decoration-none">
+            <div class="bg-green-500 hover:bg-green-600 text-white rounded-3 p-4 transition d-flex flex-column align-items-center justify-content-center h-100">
+              <img src="https://uploads-ssl.webflow.com/618a86de5f4d1c4b1a0b68fd/63eeaa0d0b3f2476b1c18427_tawkto-icon.png" alt="Live Chat" width="32" class="mb-2">
+              <span class="fw-semibold">Live Chat </span>
+            </div>
+          </a>
+        </div>
+
+      </div>
+    </mat-card-content>
+  </mat-card>
+</div>
