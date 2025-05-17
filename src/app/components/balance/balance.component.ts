@@ -51,6 +51,7 @@ export class WalletBalanceComponent implements OnInit {
   entityName: string ;
   isSuperAdmin: boolean ;
   isCryptoAvailableStatus: boolean;
+  payoutStatus: boolean;
   isCryptoAvailableDescription: string;
   isTradersDashBoardType: boolean ;
   isAdminDashBoardType: boolean ;
@@ -104,6 +105,7 @@ export class WalletBalanceComponent implements OnInit {
         this.depositBalance = res.data.depositBalance;
         this.isCryptoAvailableStatus = res.data.isCryptoAvailableStatus;
         this.isCryptoAvailableDescription = res.data.isCryptoAvailableDescription;
+        this.payoutStatus = res.data.payoutStatus;
     
         this.profit = res.data.profit;
         this.userRevenue =res.data.firstName;
