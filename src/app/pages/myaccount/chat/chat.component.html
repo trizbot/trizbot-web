@@ -1,56 +1,35 @@
-<!-- Add this in the head if you're using Heroicons -->
-<!-- CDN for Heroicons -->
-<script src="https://unpkg.com/heroicons@2.0.16/dist/outline.js"></script>
+<!-- Contact Buttons -->
+<div class="row text-center mt-4">
 
-<div class="container mx-auto px-4 py-16 flex justify-center">
-  <mat-card class="p-8 rounded-3xl shadow-2xl bg-white border border-gray-100 max-w-2xl w-full transition-all duration-300 hover:shadow-[0_10px_30px_rgba(0,0,0,0.1)]">
-    
-    <!-- Header -->
-    <div class="text-left mb-6">
-      <h2 class="text-3xl font-bold text-gray-800 flex items-center gap-2 text-primary">
-        <svg class="w-7 h-7 text-blue-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M18.364 5.636a9 9 0 11-12.728 0 9 9 0 0112.728 0z" />
-          <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v4l3 2" />
-        </svg>
-        Live Chat Support
-      </h2>
-      <br>
-      <p class="text-sm text-gray-600 mt-2">
-        Have a question or need assistance? Our support team is available 24/7 to help you in real time.
-      </p>
-    </div>
-
-    <!-- Body -->
-    <div class="space-y-4 mt-6">
-      <p class="text-base text-gray-700">
-        To get started, click one of the options below to connect with our support team.
-      </p>
-
-      <!-- Contact Buttons -->
-      <div class="flex flex-col gap-4 mt-4">
-
-        <a href="mailto:support@trizbot.com" class="flex items-center justify-center gap-2 bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-lg transition">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M16 12H8m0 0h8m-8 0H3m5 0h2m6 0h2m5 0h-5m-2 0h2M12 4v1m0 14v1m7-7h1m-14 0H4m16.364-7.364l-1.414 1.414M5.05 18.95l-1.414-1.414M18.95 18.95l-1.414-1.414M5.05 5.05l1.414 1.414" />
-          </svg>
-          Send Email
-        </a>
-
-        <a href="https://t.me/trizbotsupport" target="_blank" class="flex items-center justify-center gap-2 bg-cyan-500 hover:bg-cyan-600 text-white py-2 px-4 rounded-lg transition">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M8 12l3 3L21 5M3 12h.01" />
-          </svg>
-          Telegram Support
-        </a>
-
-        <a href="https://tawk.to/chat/68136afdbe6663190a6c5c56/1iq5tjs5u" target="_blank" class="flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded-lg transition">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2m-6 0H7l-4 4V8a2 2 0 012-2h2" />
-          </svg>
-          Live Chat (Tawk.to)
-        </a>
+  <!-- Email Column -->
+  <div class="col-md-4 mb-3">
+    <a href="mailto:support@trizbot.com" class="d-block bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-lg transition text-decoration-none">
+      <div class="d-flex flex-column align-items-center">
+        <i class="fas fa-envelope fa-2x mb-2"></i>
+        <span>Send Email</span>
       </div>
-    </div>
+    </a>
+  </div>
 
-  </mat-card>
+  <!-- Telegram Column -->
+  <div class="col-md-4 mb-3">
+    <a href="https://t.me/trizbotsupport" target="_blank" class="d-block bg-cyan-500 hover:bg-cyan-600 text-white py-3 rounded-lg transition text-decoration-none">
+      <div class="d-flex flex-column align-items-center">
+        <i class="fab fa-telegram-plane fa-2x mb-2"></i>
+        <span>Telegram Support</span>
+      </div>
+    </a>
+  </div>
+
+  <!-- Tawk.to Column -->
+  <div class="col-md-4 mb-3">
+    <a href="https://tawk.to/chat/68136afdbe6663190a6c5c56/1iq5tjs5u" target="_blank" class="d-block bg-green-500 hover:bg-green-600 text-white py-3 rounded-lg transition text-decoration-none">
+      <div class="d-flex flex-column align-items-center">
+        <img src="https://uploads-ssl.webflow.com/618a86de5f4d1c4b1a0b68fd/63eeaa0d0b3f2476b1c18427_tawkto-icon.png" alt="Tawk.to" width="32" class="mb-2">
+        <span>Live Chat (Tawk.to)</span>
+      </div>
+    </a>
+  </div>
+
 </div>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
