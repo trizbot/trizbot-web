@@ -209,6 +209,7 @@ this.payoutsService.getPayoutTransactions().subscribe({
             'amount',
             'address',
             'currency',
+            'errorState',
             'payout_status',
             'created_at',
             'payoutId'
