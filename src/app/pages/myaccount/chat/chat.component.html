@@ -1,45 +1,56 @@
-<div class="min-h-screen bg-gradient-to-br from-indigo-100 via-white to-purple-100 py-16 px-4 flex items-center justify-center">
-  <div class="max-w-2xl w-full">
-    <div class="bg-white rounded-3xl shadow-2xl border border-gray-200 p-8 transition-all duration-300 hover:shadow-[0_20px_40px_rgba(0,0,0,0.1)]">
-      
-      <!-- Header -->
-      <div class="text-center mb-8">
-        <h2 class="text-4xl font-extrabold text-indigo-600 mb-2">
-          💬 Live Chat Support
-        </h2>
-        <p class="text-gray-600 text-md">
-          Need help? Our support team is here for you 24/7. Choose any method below to reach us.
-        </p>
-      </div>
+<!-- Add this in the head if you're using Heroicons -->
+<!-- CDN for Heroicons -->
+<script src="https://unpkg.com/heroicons@2.0.16/dist/outline.js"></script>
 
-      <!-- Buttons -->
-      <div class="space-y-4">
-        
-        <!-- Email Button -->
-        <a href="mailto:support@trizbot.com" 
-           class="flex items-center justify-center gap-3 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-medium py-3 px-6 rounded-full shadow-lg transition duration-300">
-          📧 Send Email
-        </a>
-
-        <!-- Telegram Button -->
-        <a href="https://t.me/trizbotsupport" target="_blank"
-           class="flex items-center justify-center gap-3 bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-600 hover:to-cyan-700 text-white font-medium py-3 px-6 rounded-full shadow-lg transition duration-300">
-          💬 Telegram Support
-        </a>
-
-        <!-- Tawk.to Button -->
-        <a href="https://tawk.to/chat/68136afdbe6663190a6c5c56/1iq5tjs5u" target="_blank"
-           class="flex items-center justify-center gap-3 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-medium py-3 px-6 rounded-full shadow-lg transition duration-300">
-          🗨️ Live Chat (Tawk.to)
-        </a>
-
-      </div>
-      
-      <!-- Footer Text -->
-      <div class="text-center text-sm text-gray-400 mt-8">
-        Trizbot Support • Always here to help 🤝
-      </div>
-
+<div class="container mx-auto px-4 py-16 flex justify-center">
+  <mat-card class="p-8 rounded-3xl shadow-2xl bg-white border border-gray-100 max-w-2xl w-full transition-all duration-300 hover:shadow-[0_10px_30px_rgba(0,0,0,0.1)]">
+    
+    <!-- Header -->
+    <div class="text-left mb-6">
+      <h2 class="text-3xl font-bold text-gray-800 flex items-center gap-2 text-primary">
+        <svg class="w-7 h-7 text-blue-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M18.364 5.636a9 9 0 11-12.728 0 9 9 0 0112.728 0z" />
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v4l3 2" />
+        </svg>
+        Live Chat Support
+      </h2>
+      <br>
+      <p class="text-sm text-gray-600 mt-2">
+        Have a question or need assistance? Our support team is available 24/7 to help you in real time.
+      </p>
     </div>
-  </div>
+
+    <!-- Body -->
+    <div class="space-y-4 mt-6">
+      <p class="text-base text-gray-700">
+        To get started, click one of the options below to connect with our support team.
+      </p>
+
+      <!-- Contact Buttons -->
+      <div class="flex flex-col gap-4 mt-4">
+
+        <a href="mailto:support@trizbot.com" class="flex items-center justify-center gap-2 bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-lg transition">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M16 12H8m0 0h8m-8 0H3m5 0h2m6 0h2m5 0h-5m-2 0h2M12 4v1m0 14v1m7-7h1m-14 0H4m16.364-7.364l-1.414 1.414M5.05 18.95l-1.414-1.414M18.95 18.95l-1.414-1.414M5.05 5.05l1.414 1.414" />
+          </svg>
+          Send Email
+        </a>
+
+        <a href="https://t.me/trizbotsupport" target="_blank" class="flex items-center justify-center gap-2 bg-cyan-500 hover:bg-cyan-600 text-white py-2 px-4 rounded-lg transition">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M8 12l3 3L21 5M3 12h.01" />
+          </svg>
+          Telegram Support
+        </a>
+
+        <a href="https://tawk.to/chat/68136afdbe6663190a6c5c56/1iq5tjs5u" target="_blank" class="flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded-lg transition">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2m-6 0H7l-4 4V8a2 2 0 012-2h2" />
+          </svg>
+          Live Chat (Tawk.to)
+        </a>
+      </div>
+    </div>
+
+  </mat-card>
 </div>
