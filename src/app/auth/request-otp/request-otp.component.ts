@@ -74,12 +74,13 @@ this.authService.requestVerificationCode(this.requestOtpData.email).pipe(takeUnt
     this.successMessage = 'Verification code sent to your email.';
     this.loadingCode= false;
     if(this.referralCode!=""){
-    this.router.navigate(['auth/confirm-otp'], {
-        queryParams: { email: encodeURIComponent(this.requestOtpData.email) }
-        });
-      }else{
-      this.router.navigate(['auth/confirm-otp'], {
+     this.router.navigate(['auth/confirm-otp'], {
         queryParams: { email: encodeURIComponent(this.requestOtpData.email),referralCode:this.referralCode }
+        });
+        
+      }else{
+     this.router.navigate(['auth/confirm-otp'], {
+        queryParams: { email: encodeURIComponent(this.requestOtpData.email) }
         });
       }
 

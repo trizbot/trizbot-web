@@ -73,7 +73,6 @@ export class ReferComponent implements OnInit {
       next: (res: GetTraderResBody) => {
         this.traderId = res.data._id;
         this.referralLink = `https://www.trizbot.com/auth/request-otp?ref=${res.data.referralLink}`;
-        // this.referralLink = `${res.data.referralLink}`;
         this.traderService.getDownlines(res.data.referralLink).subscribe({
           next: (res: any) => {
             const rawData = res.data || [];

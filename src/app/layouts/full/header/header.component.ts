@@ -52,9 +52,6 @@ export class HeaderComponent implements OnInit {
     amountInvested: string = '0.00';
     profit: string = '0.00';
     firstName: string;
-    showNotificationTitle: string;
-    showNotificationText: string;
-    showNotificationId: string;
     isShowingNotification: boolean= false;
     authStatus: string;
     phoneNumber: string;

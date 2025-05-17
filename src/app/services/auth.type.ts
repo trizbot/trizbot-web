@@ -130,6 +130,20 @@ export type GetDownlinesResBody = {
   
   };
 };
+export type GetReferralDetailResBody = {
+  data: {
+    firstName: string;
+    lastName?: string;
+    userName: string;
+    name?: {
+      first: string;
+      middle?: string;
+      last: string;
+    };
+    _id?: string;
+  }[];
+};
+
 
 export type GetAllTradersResBody = {
   data: {

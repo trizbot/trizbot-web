@@ -2,9 +2,9 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { Router } from '@angular/router';
 import { environment } from '../../environments/environment';
-import { BehaviorSubject, catchError, exhaustMap, of, switchMap, take, tap, throwError } from 'rxjs';
+import { BehaviorSubject, catchError, exhaustMap, Observable, of, switchMap, take, tap, throwError } from 'rxjs';
 import { SharedService } from '../shared/shared.service';
-import { AuthResBody, GetTraderResBody, AuthEntityResBody,SigninDto } from './auth.type';
+import { AuthResBody, GetTraderResBody, AuthEntityResBody,SigninDto,GetReferralDetailResBody } from './auth.type';
 import { Trader } from '../trader/models/trader.model';
 
 
@@ -60,12 +60,15 @@ export class AuthService {
         observe: 'response'
       });
     }
-   confirmReferralCode(referralCode:string) {
-      return this.http.get<'referralName'>(`${environment.apiBaseUrl}/traders/${referralCode}/referrals`, {
-        observe: 'response'
-      });
-    }
-  
+
+    
+    confirmReferralCode(referralCode:string) {
+      const payload = {referralCode};
+        return this.http.post<GetReferralDetailResBody>(`${environment.apiBaseUrl}/traders/myReferral`,payload,{
+          observe:'response'
+        });
+      }
+    
     
       signInTrader(email: string, password: string, entityName:any) {
          email = email.toLowerCase();

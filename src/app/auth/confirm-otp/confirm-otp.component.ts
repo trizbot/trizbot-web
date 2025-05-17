@@ -6,10 +6,11 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 
-import { MaterialModule } from 'src/app/material.module';
+import { MaterialModule } from '../../../app/material.module';
 import { CoreService } from '../../services/core.service';
 import { SharedService } from '../../shared/shared.service';
 import { AuthService } from '../../services/auth.service';
+import { GetReferralDetailResBody } from '../../../app/services/auth.type';
 
 @Component({
   selector: 'app-confirm-otp',
@@ -37,7 +38,7 @@ validEmailAddress: any = '';
 loading: boolean = false;
 loadingCode: boolean = false;
 emailVerified = false;
-codeSent = false;
+isReferred = false;
 verificationCode = '';
 referralName:string;
 private unsubscriber$ = new Subject<void>();
@@ -47,22 +48,29 @@ constructor(
 private authService: AuthService,
 private router: Router,private route: ActivatedRoute
 ){}
-
 ngOnInit(): void {
   this.route.queryParams.subscribe(params => {
-  const encodedReferral = params['referralCode'];
-  const onceDecoded = encodedReferral ? decodeURIComponent(encodedReferral) : '';
-  this.referralCode = decodeURIComponent(onceDecoded);
-  this.authService.confirmReferralCode(this.referralCode).pipe(takeUntil(this.unsubscriber$)).subscribe({
-  next: (res) => { 
-    console.log(res);
-  // this.referralName= res?.referralName; //
-  },
-  error: (err) => {
-  this.errorMessage = err?.error.message||err?.error?.message || ' code.';
-  },
+    const encodedReferral = params['referralCode'];
+    const onceDecoded = encodedReferral ? decodeURIComponent(encodedReferral) : '';
+    this.referralCode = decodeURIComponent(onceDecoded);
+    if(encodedReferral!=""){
+    this.authService.confirmReferralCode(this.referralCode)
+      .pipe(takeUntil(this.unsubscriber$))
+      .subscribe({
+        next: (res) => {
+          const firstReferral =  res.body?.data?.[0]; 
+          const username = firstReferral?.userName || '';
+          const firstName = firstReferral?.firstName || '';
+          this.referralName = username;
+          this.isReferred=true;
+        },
+        error: (err) => {
+          this.isReferred=false;
+        },
+      });
+    }
   });
-  });
+
 }
 
 verifyCode() { 
@@ -80,9 +88,18 @@ verifyCode() {
     this.errorMessage = "";
     this.loading=false;
     
-        this.router.navigate(['auth/register'], {
+     if(this.referralCode!=""){
+     this.router.navigate(['auth/register'], {
+        queryParams: { email: encodeURIComponent(this.validEmailAddress),ref: encodeURIComponent(this.referralCode) }
+        });
+        
+      }else{
+     this.router.navigate(['auth/register'], {
         queryParams: { email: encodeURIComponent(this.validEmailAddress) }
         });
+      }
+
+
 },
 error: (err) => {
     this.emailVerified = false;

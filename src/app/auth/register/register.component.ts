@@ -258,7 +258,7 @@ verificationCode = '';
 
   private unsubscriber$ = new Subject<void>();
   private sharedService = inject(SharedService);
-  // referralCode: any="";
+  referralCode: any;
 
   constructor(
     private authService: AuthService,
@@ -268,15 +268,22 @@ verificationCode = '';
 ngOnInit(): void {
   this.route.queryParams.subscribe(params => {
     const encodedEmail = params['email'];
-    // Decode twice to handle double-encoded email
+    const encodedRef = params['ref'];
+
     const onceDecoded = encodedEmail ? decodeURIComponent(encodedEmail) : '';
     this.validEmailAddress = decodeURIComponent(onceDecoded);
 
+    const onceDecodedRef = encodedRef ? decodeURIComponent(encodedRef) : '';
+    this.referralCode = onceDecodedRef; // Set it first
+
+    this.registerData.referralCode = this.referralCode || ''; // Then assign to model
     this.emailVerified = true;
-      this.registerData.email = this.validEmailAddress;
-    this.successMessage = `${this.validEmailAddress} verified. Continue signup.`;
+    this.registerData.email = this.validEmailAddress;
+
+    this.successMessage = `Email verified. Continue signup.`;
   });
 }
+
 
 onCountryCodeSelect(selectedCode: string) {
   const selectedCountryCode = this.countries.find(c => c.code === selectedCode);
