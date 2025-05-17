@@ -180,7 +180,7 @@
                         <div><strong>💰 Amount:</strong> ${{ runningTrade.amount }}</div>
                         <div><strong>⏳ Expiry:</strong> {{ runningTrade.expiry | date:'medium' }}</div>
                         <div><strong><mat-icon>alarm</mat-icon>{{ runningTrade.investmentStatus }}</strong> {{ countdowns[runningTrade.expiry] || 'Loading...' }}</div>
-                        <div><strong>📅 Created:</strong> {{ runningTrade.createdAt | date:'medium' }}</div>
+                        <div><strong>📅 Started:</strong> {{ runningTrade.createdAt | date:'medium' }}</div>
                        
 
                       </div>
