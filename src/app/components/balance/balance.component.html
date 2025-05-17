@@ -107,7 +107,7 @@
                   <div><strong>Expires:</strong> {{ crypto.expiry }} Hours</div>
                   <div><strong>Buy Exchange:</strong> {{ crypto.buyExchange }}</div>
                   <div><strong>Sell Exchange:</strong> {{ crypto.sellExchange }}</div>
-                  <div><strong>Market:</strong> {{ crypto.tradeStatus }}</div>
+                  <!-- <div><strong>Market:</strong> {{ crypto.tradeStatus }}</div> -->
                   <button mat-raised-button color="primary" (click)="onSetupTrade(crypto.id)">Setup Trade</button>
                 </div>
               </mat-card-content>
@@ -179,9 +179,8 @@
                         </mat-card-title>
                         <div><strong>💰 Amount:</strong> ${{ runningTrade.amount }}</div>
                         <div><strong>⏳ Expiry:</strong> {{ runningTrade.expiry | date:'medium' }}</div>
-                        <div><strong><mat-icon>alarm</mat-icon>Left:</strong> {{ countdowns[runningTrade.expiry] || 'Loading...' }}</div>
-                        <div><strong>📊 Description:</strong> {{ runningTrade.investmentStatus }}</div>
-                        <!-- <div><strong>📅 Created:</strong> {{ runningTrade.createdAt | date:'medium' }}</div> -->
+                        <div><strong><mat-icon>alarm</mat-icon>{{ runningTrade.investmentStatus }}</strong> {{ countdowns[runningTrade.expiry] || 'Loading...' }}</div>
+                        <div><strong>📅 Created:</strong> {{ runningTrade.createdAt | date:'medium' }}</div>
                        
 
                       </div>
@@ -241,8 +240,6 @@
                         </mat-card-title>
                         
                         <div><strong>💰 Amount:</strong> ${{ invest.amount }}</div>
-                        <div><strong>📈 Curr. Balance:</strong> ${{ invest.curBalance }}</div>
-                        <div><strong>📉 Prev Balance:</strong> ${{ invest.prevBalance }}</div>
                         <div><strong>📊 Status:</strong> {{ invest.transactionStatus }}</div>
                         <div><strong>📅 Created:</strong> {{ invest.createdAt | date:'medium' }}</div>
                         <div><strong>⏳ Expiry:</strong> {{ invest.expiry | date:'medium' }}</div>

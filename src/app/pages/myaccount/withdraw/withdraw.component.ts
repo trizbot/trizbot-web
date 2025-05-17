@@ -53,7 +53,9 @@ export class WithdrawComponent implements OnInit {
     isNormalEntityType: boolean = false;
     payoutStatus: boolean;
     payoutDescription: string;
-    
+
+      hidePassword: boolean = true;
+      hideConfirmPassword: boolean = true;
     entityName: string;
     entity: string;
   
