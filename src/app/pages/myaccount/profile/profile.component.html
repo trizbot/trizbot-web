@@ -76,7 +76,7 @@
         <div class="col-lg-6">
           <mat-form-field appearance="outline" class="w-100 mb-4" color="primary">
             <mat-label class="f-w-600 m-b-8 d-block">Transaction Pin *</mat-label>
-            <input matInput [type]="hidePassword ? 'password' : 'number'" name="transactionPin" placeholder="Enter transaction Pin" [(ngModel)]="pinData.transactionPin">
+            <input matInput [type]="hidePassword ? 'password' : 'number'" name="transactionPin"  maxlength="4" placeholder="Enter transaction Pin" [(ngModel)]="pinData.transactionPin">
             <button mat-icon-button matSuffix (click)="hidePassword = !hidePassword" [attr.aria-label]="'Hide or show password'" [attr.aria-pressed]="!hidePassword">
               <mat-icon>{{ hidePassword ? 'visibility_off' : 'visibility' }}</mat-icon>
             </button>
