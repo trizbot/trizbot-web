@@ -17,15 +17,12 @@
           <button [routerLink]="['/myaccount/deposit']" class="btn btn-outline-success btn-sm w-100 d-flex align-items-center justify-content-center gap-1">
             <i class="bi bi-arrow-down-circle"></i>Deposit
           </button>&nbsp;&nbsp;
-          <button *ngIf="payoutStatus" [routerLink]="['/myaccount/withdraw']" class="btn btn-outline-danger btn-sm w-100 d-flex align-items-center justify-content-center gap-1 btn btn-primary" >
+          <button [routerLink]="['/myaccount/withdraw']" class="btn btn-outline-danger btn-sm w-100 d-flex align-items-center justify-content-center gap-1 btn btn-primary" >
             <i class="bi bi-arrow-up-circle"></i>Withdraw
           </button>
        
         </div>
-         <br>
-          <b *ngIf="!payoutStatus"  class="text text-danger btn-sm w-100 d-flex align-items-center justify-content-center btn btn-primary" >
-            <i class="bi bi-arrow-up-circle"></i>{{isCryptoAvailableDescription}}
-          </b>
+       
       </mat-card-content>
     </mat-card>
   </div>
@@ -180,7 +177,7 @@
                         <div><strong>💰 Amount:</strong> ${{ runningTrade.amount }}</div>
                         <div><strong>⏳ Expiry:</strong> {{ runningTrade.expiry | date:'medium' }}</div>
                         <div><strong><mat-icon>alarm</mat-icon>{{ runningTrade.investmentStatus }}</strong> {{ countdowns[runningTrade.expiry] || 'Loading...' }}</div>
-                        <div><strong>📅 Started:</strong> {{ runningTrade.createdAt | date:'medium' }}</div>
+                        <div><strong>📅 Created:</strong> {{ runningTrade.createdAt | date:'medium' }}</div>
                        
 
                       </div>

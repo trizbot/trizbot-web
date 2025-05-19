@@ -40,6 +40,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 })
 export class ReferComponent implements OnInit {
     referralLink: string = '';
+    directReferralCode: string = '';
 
   constructor(
     private route: ActivatedRoute,
@@ -55,7 +56,7 @@ export class ReferComponent implements OnInit {
   cryptoId: string;
   traderId: string;
 
-  displayedColumns1: string[] = ['image', 'userName','referralCode', 'uplinerBonusAmount',  'createdAt'];
+  displayedColumns1: string[] = ['image', 'userName','email', 'uplinerBonusAmount',  'createdAt'];
   completedReferralList: any[] = [];
   pagedReferralList: any[] = [];
   currentReferralPage = 1;
@@ -73,6 +74,7 @@ export class ReferComponent implements OnInit {
       next: (res: GetTraderResBody) => {
         this.traderId = res.data._id;
         this.referralLink = `https://www.trizbot.com/auth/request-otp?ref=${res.data.referralLink}`;
+        this.directReferralCode = `${res.data.referralLink}`;
         this.traderService.getDownlines(res.data.referralLink).subscribe({
           next: (res: any) => {
             const rawData = res.data || [];
