@@ -130,11 +130,11 @@ ngOnInit(): void {
         this.loading = false;
         return;
       }
-      if (amount<150) {
-        this.errorMessage = 'The amount entered is below the minimum threshold. Please note that a minimum deposit of $150 is required to proceed with this transaction. Kindly adjust the amount and try again.';
-        this.loading = false;
-        return;
-      }
+      // if (amount<150) {
+      //   this.errorMessage = 'The amount entered is below the minimum threshold. Please note that a minimum deposit of $150 is required to proceed with this transaction. Kindly adjust the amount and try again.';
+      //   this.loading = false;
+      //   return;
+      // }
     
       this.traderService.deposits(
         amount,reference,pay_currency, note,
