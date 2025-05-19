@@ -1,8 +1,7 @@
 <mat-card class="cardWithShadow theme-card p-4">
 
   <!-- Card Header -->
-  <!-- <mat-card-header *ngIf="payoutStatus"> -->
-  <mat-card-header >
+  <mat-card-header *ngIf="payoutStatus">
     <mat-card-title class="text-xl fw-bold m-0">Request Payout</mat-card-title>
     <p class="text-primary">
       Please note: A service charge of 5% will be applied to the total withdrawal amount.
@@ -13,8 +12,7 @@
   <mat-card-content class="b-t-1 mt-3">
 
     <!-- Form Section (Shown if payout is available) -->
-    <!-- <div class="row" *ngIf="payoutStatus; else noPayout"> -->
-    <div class="row">
+    <div class="row" *ngIf="payoutStatus; else noPayout">
       <form (ngSubmit)="onCreateWithdraw()" #payoutForm="ngForm">
         <div class="row gx-4">
 
@@ -75,7 +73,6 @@
     </div>
 
     <!-- Else Block (Shown if payout is unavailable) -->
-<!-- 
 <ng-template #noPayout>
   <mat-card class="payout-card mat-elevation-z2 position-relative text-center mb-4">
     <mat-card-content>
@@ -84,7 +81,7 @@
     </mat-card-content>
 
   </mat-card>
-</ng-template> -->
+</ng-template> 
   </mat-card-content>
 
 </mat-card>
