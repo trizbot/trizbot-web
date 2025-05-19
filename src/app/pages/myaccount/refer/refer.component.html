@@ -22,10 +22,10 @@
             type="button"
             (click)="copyToClipboard(referralLink)"
             matTooltip="Copy to clipboard">
-            <i class="bi bi-clipboard text-white btn btn-success"></i>
+            <i class="bi bi-clipboard text-white btn btn-success">Copy</i>
           </button>
         </div>
-
+<br>
         <div class="flex-1">
           <input type="text" style="border:none" class="flex-1"id="referralLinkInput"[value]="directReferralCode"readonly/>
           <button
@@ -33,7 +33,7 @@
             type="button"
             (click)="copyToClipboard(directReferralCode)"
             matTooltip="Copy to clipboard">
-            <i class="bi bi-clipboard text-white btn btn-success"></i>
+            <i class="bi bi-clipboard text-white btn btn-primary">Copy</i>
           </button>
         </div>
 
