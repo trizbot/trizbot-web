@@ -8,8 +8,8 @@
     <!-- Current Wallet Address -->
     <div class="mb-6">
       <p class="text-sm text-muted">
-        <strong>Current Payment Wallet Address (USDT BEP20):</strong><br />
-        <span class="text-primary d-block mt-2">{{ availableWalletAddress || 'USDT BEP20 Not added yet!' }}</span>
+        <strong>Current Payment Wallet Address (USDT TRC20):</strong><br />
+        <span class="text-primary d-block mt-2">{{ availableWalletAddress || 'USDT TRC20 Not added yet!' }}</span>
       </p>
     </div>
 
@@ -46,7 +46,7 @@
         <!-- Select Currency -->
         <!-- <div class="col-12">
           <mat-form-field appearance="outline" class="w-100">
-            <mat-label>Select Crypto Currency *</mat-label>
+            <mat-label>Wallet Network *</mat-label>
             <mat-select
               name="walletCurrency"
               required
@@ -57,6 +57,21 @@
             </mat-select>
           </mat-form-field>
         </div> -->
+
+         <div class="col-lg-6">
+        <mat-label class="f-w-600 m-b-8 d-block">Select Network *</mat-label>
+        <mat-form-field appearance="outline" class="w-100">
+          <mat-select
+            placeholder="Choose USDT network"
+            name="walletCurrency"
+            required
+             [(ngModel)]="walletData.walletCurrency">
+            <mat-option value="usdttrc20">USDT TRC20</mat-option>
+            <!-- <mat-option value="usdterc20">USDT ERC20</mat-option> -->
+          </mat-select>
+        </mat-form-field>
+      </div>
+      
 
         <!-- Destination Tag -->
         <!-- <div class="col-md-6">
@@ -100,7 +115,7 @@
         <div class="d-flex align-items-start">
           <mat-icon class="me-2" color="warn">info</mat-icon>
           <p class="text-sm text-muted mb-0">
-            <strong>Disclaimer:</strong> Please ensure you enter a valid <strong>USDT BEP20 wallet address</strong> only. Incorrect or unsupported addresses may result in loss of funds and we would not be responsible for it.
+            <strong>Disclaimer:</strong> Please ensure you enter a valid <strong>USDT TRC20 wallet address</strong> only. Incorrect or unsupported addresses may result in loss of funds and we would not be responsible for it.
           </p>
         </div>
       </mat-card>
