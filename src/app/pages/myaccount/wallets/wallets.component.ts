@@ -72,7 +72,7 @@ export class WalletComponent implements OnInit {
   
   walletData = {
     walletAddress: '',
-    walletCurrency:"",
+    walletCurrency:"USDTTRC20",
     addressNetwork:"USDT",
     addressTags:""
   };
