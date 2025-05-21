@@ -17,8 +17,7 @@ export class PayoutService {
   imageUrl: string = '';
     constructor(private http: HttpClient, private router: Router) {}
     
-    
-
+  
 createCrypto(creatorName: string,title: string,maxAmount: any, minAmount:any,imageUrl:any, imageSecureUrl:any, imageAssetId:any, imagePublicId:any, percentage:any,expiry:any,sellExchange:string,buyExchange:string){
 const profit  = percentage/100 * minAmount;
 

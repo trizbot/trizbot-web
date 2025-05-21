@@ -1,94 +1,67 @@
 <!-- Add Crypto Wallet UI -->
 <mat-card class="cardWithShadow theme-card p-6">
   <mat-card-header>
-    <mat-card-title class="text-2xl font-bold"> Add a valid USDT TRC20 wallet address</mat-card-title>
+    <mat-card-title class="text-3xl font-semibold text-primary">
+      Add USDT TRC20 Wallet Address
+    </mat-card-title>
+    <mat-card-subtitle class="text-muted">
+      Only verified and supported wallets are accepted.
+    </mat-card-subtitle>
   </mat-card-header>
 
   <mat-card-content>
-    <!-- Current Wallet Address -->
+
+    <!-- Current Wallet Address Display -->
     <div class="mb-6">
-      <p class="text-sm text-muted">
-        <strong>Current Payment Wallet Address (USDT TRC20):</strong><br />
-        <span class="text-primary d-block mt-2">{{ availableWalletAddress || 'USDT TRC20 Not added yet!' }}</span>
-      </p>
+      <h3 class="text-base font-medium text-muted mb-2">
+        Current Payment Address (USDT TRC20):
+      </h3>
+      <div class="bg-gray-100 p-3 rounded text-sm text-primary">
+        {{ availableWalletAddress || 'No wallet address added yet.' }}
+      </div>
     </div>
 
-    <form (ngSubmit)="onCreateWalletAddress()">
+    <!-- Wallet Warning/Note -->
+    <mat-card class="mt-5 p-4 bg-light border rounded">
+      <div class="d-flex align-items-start">
+        <mat-icon class="me-2" color="info">info</mat-icon>
+        <div class="text-sm text-muted">
+          <strong>Note:</strong> Only wallet addresses from the following trusted providers are accepted:
+          <ul class="mt-2 ms-3 list-disc">
+            <li>Atomic Wallet – <a href="https://atomicwallet.io/" target="_blank">atomicwallet.io</a></li>
+            <li>Guarda Wallet – <a href="https://guarda.com/" target="_blank">guarda.com</a></li>
+            <li>imToken Wallet – <a href="https://token.im/" target="_blank">token.im</a></li>
+            <li>MetaMask Wallet – <a href="https://metamask.io/" target="_blank">metamask.io</a></li>
+            <li>MyEtherWallet – <a href="https://www.myetherwallet.com/" target="_blank">myetherwallet.com</a></li>
+            <li>Infinity Wallet – <a href="https://infinitywallet.io/" target="_blank">infinitywallet.io</a></li>
+            <li>AirGap Wallet – <a href="https://airgap.it/" target="_blank">airgap.it</a></li>
+            <li>Trustee Wallet – <a href="https://trustee.deals/ru" target="_blank">trustee.deals</a></li>
+            <li>Edge Wallet – <a href="https://edge.app/" target="_blank">edge.app</a></li>
+            <li>Cake Wallet – <a href="https://cakewallet.com/" target="_blank">cakewallet.com</a></li>
+          </ul>
+        </div>
+      </div>
+    </mat-card>
+
+    <!-- Add Wallet Form -->
+    <form (ngSubmit)="onCreateWalletAddress()" class="mt-6">
       <div class="row gx-4 gy-3">
-        <!-- Wallet Address -->
         <div class="col-md-6">
           <mat-form-field appearance="outline" class="w-100">
             <mat-label>Wallet Address *</mat-label>
             <input
               matInput
-              placeholder="e.g., 0x1234abcd..."
+              placeholder="e.g., TX7h1x...9A3cZ"
               name="walletAddress"
               required
               [(ngModel)]="walletData.walletAddress" />
             <mat-icon matSuffix>account_balance_wallet</mat-icon>
           </mat-form-field>
         </div>
-
-        <!-- Network -->
-        <!-- <div class="col-md-6">
-          <mat-form-field appearance="outline" class="w-100">
-            <mat-label>Network (Optional)</mat-label>
-            <input
-            value ="USDT BEP20"
-              matInput
-              placeholder="e.g., BEP20"
-              name="addressNetwork"
-              [(ngModel)]="walletData.addressNetwork" />
-            <mat-icon matSuffix>link</mat-icon>
-          </mat-form-field>
-        </div> -->
-
-        <!-- Select Currency -->
-        <!-- <div class="col-12"> 
-          <mat-form-field appearance="outline" class="w-100">
-            <mat-label>Wallet Network *</mat-label>
-            <mat-select
-              name="walletCurrency"
-              required
-              [(ngModel)]="walletData.walletCurrency">
-              <mat-option *ngFor="let currency of currencies" [value]="currency">
-                {{ currency.toUpperCase() }}
-              </mat-option>
-            </mat-select>
-          </mat-form-field>
-        </div>  -->
-
-         <!-- <div class="col-lg-6">
-        <mat-label class="f-w-600 m-b-8 d-block">Select Network *</mat-label>
-        <mat-form-field appearance="outline" class="w-100">
-          <mat-select
-            placeholder="Choose USDT network"
-            name="walletCurrency"
-            required
-             [(ngModel)]="walletData.walletCurrency">
-            <mat-option value="usdttrc20">USDT TRC20</mat-option>
-
-          </mat-select>
-        </mat-form-field>
-      </div> -->
-      
-
-        <!-- Destination Tag -->
-        <!-- <div class="col-md-6">
-          <mat-form-field appearance="outline" class="w-100">
-            <mat-label>Momo/Destination Tag (Optional)</mat-label>
-            <input
-              matInput
-              placeholder="e.g., 12345"
-              name="addressTags"
-              [(ngModel)]="walletData.addressTags" />
-            <mat-icon matSuffix>edit</mat-icon>
-          </mat-form-field>
-        </div> -->
       </div>
 
       <!-- Submit Button -->
-      <div class="mt-5">
+      <div class="mt-4">
         <button
           mat-flat-button
           color="primary"
@@ -105,18 +78,18 @@
             </mat-progress-spinner>
           </ng-container>
           <ng-template #btnText>
-            Add Wallet
+            Add Wallet Address
           </ng-template>
         </button>
       </div>
 
-      <!-- Disclaimer -->
+      <!-- Disclaimer Notice -->
       <mat-card class="mt-5 p-4 bg-light border rounded">
         <div class="d-flex align-items-start">
-          <mat-icon class="me-2" color="warn">info</mat-icon>
-          <p class="text-sm text-muted mb-0">
-            <strong>Disclaimer:</strong> Please ensure you enter a valid <strong>USDT TRC20 wallet address</strong> only. Incorrect or unsupported addresses may result in loss of funds and we would not be responsible for it.
-          </p>
+          <mat-icon class="me-2" color="warn">warning</mat-icon>
+          <div class="text-sm text-muted">
+            <strong>Disclaimer:</strong> Please ensure you enter a valid <strong>USDT TRC20</strong> wallet address only. Submitting an incorrect or unsupported address may lead to irreversible loss of funds. The platform is not liable for such errors.
+          </div>
         </div>
       </mat-card>
 
@@ -125,5 +98,6 @@
         <strong>{{ errorWalletMessage }}</strong>
       </div>
     </form>
+
   </mat-card-content>
 </mat-card>
