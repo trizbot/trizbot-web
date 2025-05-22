@@ -67,12 +67,12 @@ export class WalletComponent implements OnInit {
     "ark", "waves", "bnb", "xzc", "nano", "tusd", "vet", "zen", "grs", "fun",
     "neo", "gas", "pax", "usdc", "ont", "xtz", "link", "rvn", "bnbmainnet",
     "zil", "bcd", "usdt", "usdterc20", "cro", "dai", "ht", "wabi", "busd",
-    "algo", "usdttrc20", "gt", "stpt", "ava", "sxp", "uni", "okb", "btc"
+    "algo", "usdttrc20", "gt", "stpt", "ava", "sxp", "uni", "okb", "btc","USDTMATIC"
   ];
   
   walletData = {
     walletAddress: '',
-    walletCurrency:"USDTTRC20",
+    walletCurrency:"USDTMATIC",
     addressNetwork:"USDT",
     addressTags:""
   };
