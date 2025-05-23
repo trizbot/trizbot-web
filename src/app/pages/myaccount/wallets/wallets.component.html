@@ -2,7 +2,7 @@
 <mat-card class="cardWithShadow theme-card p-6">
   <mat-card-header>
     <mat-card-title class="text-3xl font-semibold text-primary">
-      Add USDT MATIC (Polygon Mumbai) Wallet Address
+      Add valid USDT Network Address
     </mat-card-title>
   
   </mat-card-header>
@@ -12,7 +12,7 @@
     <!-- Current Wallet Address Display -->
     <div class="mb-6">
       <h3 class="text-base font-medium text-muted mb-2">
-        Current Payment Address (USDT MATIC (Polygon Mumbai)):
+        Current Payment Address:
       </h3>
       <div class="bg-gray-100 p-3 rounded text-sm text-primary">
         {{ availableWalletAddress || 'No wallet address added yet.' }}
@@ -38,6 +38,22 @@
         </div>
       </div>
 
+        <div class="col-lg-6">
+        <mat-label class="f-w-600 m-b-8 d-block">Select Network *</mat-label>
+        <mat-form-field appearance="outline" class="w-100">
+          <mat-select
+            placeholder=" Choose USDT network"
+            name="walletCurrency"
+            required
+            [(ngModel)]="walletData.walletCurrency">
+            <mat-option value="usdttrc20">USDT TRC20</mat-option>
+            <!-- <mat-option value="bep20">USDT BEP20 (Binance Smart Chain)</mat-option> -->
+            <mat-option value="usdtmatic">USDT MATIC (Polygon Mumbai)</mat-option>
+      
+          </mat-select>
+        </mat-form-field>
+      </div>
+      
       <!-- Submit Button -->
       <div class="mt-4">
         <button
@@ -66,7 +82,7 @@
         <div class="d-flex align-items-start">
           <mat-icon class="me-2" color="warn">warning</mat-icon>
           <div class="text-sm text-muted">
-            <strong>Disclaimer:</strong> Please ensure you enter a valid <strong>USDT MATIC (Polygon Mumbai)</strong> wallet address only. Submitting an incorrect or unsupported address may lead to irreversible loss of funds. The platform is not liable for such errors.
+            <strong>Disclaimer:</strong> Please ensure you enter a <strong>VALID USDT NETWORK </strong> either USDT TRC20 or USDT MATIC (Polygon Mumbai) address only. Submitting an incorrect or unsupported address may lead to irreversible loss of funds. The platform is not liable for such errors.
           </div>
         </div>
       </mat-card>
