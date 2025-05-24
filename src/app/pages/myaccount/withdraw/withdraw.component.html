@@ -12,7 +12,7 @@
   <mat-card-content class="b-t-1 mt-3">
 
     <!-- Form Section (Shown if payout is available) -->
-    <div class="row" *ngIf="payoutStatus; else noPayout">
+    <div class="row"  *ngIf="payoutStatus; else noPayout">
       <form (ngSubmit)="onCreateWithdraw()" #payoutForm="ngForm">
         <div class="row gx-4">
 
@@ -73,7 +73,7 @@
     </div>
 
     <!-- Else Block (Shown if payout is unavailable) -->
-<ng-template #noPayout>
+<ng-template *ngIf="!payoutStatus;">
   <mat-card class="payout-card mat-elevation-z2 position-relative text-center mb-4">
     <mat-card-content>
       <h4 class="text-danger fw-bold mb-2">Withdrawal Unavailable</h4>
