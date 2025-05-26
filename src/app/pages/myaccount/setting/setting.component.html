@@ -1,0 +1,83 @@
+<mat-card class="cardWithShadow theme-card">
+  <mat-card-header>
+    <mat-card-title class="m-b-0">Payout and Deposit price Settings</mat-card-title>
+  </mat-card-header>
+  
+  <mat-card-content class="b-t-1">
+    <form class="mt-3" (ngSubmit)="onCreateSetting()" #settingForm="ngForm">
+      <div class="col-lg-6">
+        <mat-label class="f-w-600 m-b-8 d-block">USDT Bsc Deposit Amount*</mat-label>
+        <mat-form-field appearance="outline" class="w-100">
+          <input 
+            matInput
+            type="number"
+            placeholder="Enter Usdt Bsc Amount"
+            name="usdtBscDepositAmount"
+            required
+            [(ngModel)]="settingData.usdtBscDepositAmount" />
+        </mat-form-field>
+      </div>
+
+      <div class="col-lg-6">
+        <mat-label class="f-w-600 m-b-8 d-block">USDT Polygon Deposit Amount*</mat-label>
+        <mat-form-field appearance="outline" class="w-100">
+          <input 
+            matInput
+            type="number"
+            placeholder="Enter Usdt Polygon Amount"
+            name="usdtPolygonDepositAmount"
+            required
+            [(ngModel)]="settingData.usdtPolygonDepositAmount" />
+        </mat-form-field>
+      </div>
+
+   <div class="col-lg-6">
+        <mat-label class="f-w-600 m-b-8 d-block">USDT Bsc Payout Amount*</mat-label>
+        <mat-form-field appearance="outline" class="w-100">
+          <input 
+            matInput
+            type="number"
+            placeholder="Enter Usdt Bsc Amount"
+            name="usdtBscPayoutAmount"
+            required
+            [(ngModel)]="settingData.usdtBscPayoutAmount" />
+        </mat-form-field>
+      </div>
+
+      <div class="col-lg-6">
+        <mat-label class="f-w-600 m-b-8 d-block">USDT Polygon Payout Amount*</mat-label>
+        <mat-form-field appearance="outline" class="w-100">
+          <input 
+            matInput
+            type="number"
+            placeholder="Enter Usdt Polygon Amount"
+            name="usdtPolygonPayoutAmount"
+            required
+            [(ngModel)]="settingData.usdtPolygonPayoutAmount" />
+        </mat-form-field>
+      </div>
+      
+ 
+
+
+      <div class="m-t-6">
+        <button
+          mat-flat-button
+          color="primary"
+          class="w-50 py-2 fw-bold"
+          type="submit"
+          [disabled]="loading || !settingForm.form.valid">
+          <ng-container *ngIf="loading">
+            <img src="./assets/images/loading.gif" alt="Loading..." style="width: 26px; height: 26px;" />
+          </ng-container>
+          <span *ngIf="!loading">UPDATE</span>
+        </button>
+      </div>
+
+      <!-- Error Message -->
+      <div *ngIf="errorMessage" class="alert alert-danger mt-2">
+        <b>{{ errorMessage }}</b>
+      </div>
+    </form>
+  </mat-card-content>
+</mat-card>

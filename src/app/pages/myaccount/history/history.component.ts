@@ -45,9 +45,7 @@ export class HistoryComponent implements OnInit {
   loading: boolean = false;
   cryptoId: string;
 
-  displayedColumns1: string[] = ['createdAt', 'Profit', 'PrevBalance', 'transactionStatus', 'amount', 'image'];
-  
-// ...existing code...
+  displayedColumns1: string[] = ['image', 'amount', 'transactionStatus', 'PrevBalance','Profit', 'createdAt'];
   completedInvestmentList: any[] = [];
   pagedCompletedInvestmentList: any[] = [];
   currentCompletedInvestPage = 1;
@@ -85,15 +83,13 @@ export class HistoryComponent implements OnInit {
             createdAt: item.createdAt
           };
           return completedInvestmentItem;
-        })
-        .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        });
         this.updateCompletedInvestPagedList();
       },
       error: (err) => {
         // Handle error
       }
     });
-
   }
 
   updateCompletedInvestPagedList() {

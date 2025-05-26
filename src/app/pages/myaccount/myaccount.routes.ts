@@ -20,6 +20,7 @@ import { WithdrawComponent } from './withdraw/withdraw.component';
 import { PayoutsComponent } from './payouts/payouts.component';
 import { ReferComponent } from './refer/refer.component';
 import { ChatComponent } from './chat/chat.component';
+import { SettingComponent } from './setting/setting.component';
 
 export const UiComponentsRoutes: Routes = [
   {
@@ -112,6 +113,11 @@ export const UiComponentsRoutes: Routes = [
       {
         path: 'chat',
         component: ChatComponent
+      },      
+ 
+      {
+        path: 'setting',
+        component: SettingComponent
       },      
  
 
