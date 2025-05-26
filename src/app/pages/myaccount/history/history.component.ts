@@ -84,14 +84,15 @@ export class HistoryComponent implements OnInit {
           };
           return completedInvestmentItem;
         })
-        .sort((a: any, b: any) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
-        
+        // Sort by createdAt descending (most recent first)
+        .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
         this.updateCompletedInvestPagedList();
       },
       error: (err) => {
         // Handle error
       }
     });
+
   }
 
   updateCompletedInvestPagedList() {
