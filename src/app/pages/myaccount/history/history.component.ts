@@ -83,7 +83,9 @@ export class HistoryComponent implements OnInit {
             createdAt: item.createdAt
           };
           return completedInvestmentItem;
-        });
+        })
+        .sort((a: any, b: any) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+        
         this.updateCompletedInvestPagedList();
       },
       error: (err) => {
