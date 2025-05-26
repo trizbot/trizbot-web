@@ -60,30 +60,33 @@ export class HistoryComponent implements OnInit {
     this.getInvestmentHistory();
     this.updateCompletedInvestPagedList();
   }
-
-  getInvestmentHistory() {
+  
+getInvestmentHistory() {
     this.investService.getInvestmentHistory().subscribe({
       next: (res: any) => {
-        this.completedInvestmentList = res.data.map((item: any) => {
-          const completedInvestmentItem = {
-            amount: item.amount,
-            traderEmail: item.traderEmail,
-            curBalance: item.curBalance,
-            prevBalance: item.prevBalance,
-            transactionType: item.transactionType,
-            transactionStatus: item.investmentStatus,
-            imageUrl: item.imageUrl,
-            cryptoId: item.cryptoId,
-            cryptoName: item.cryptoName,
-            description: item.description,
-            traderId: item.traderId,
-            traderName: item.traderName,
-            profit: item.profit,
-            expiry: item.expiry,
-            createdAt: item.createdAt
-          };
-          return completedInvestmentItem;
-        });
+        this.completedInvestmentList = res.data
+          .map((item: any) => {
+            const completedInvestmentItem = {
+              amount: item.amount,
+              traderEmail: item.traderEmail,
+              curBalance: item.curBalance,
+              prevBalance: item.prevBalance,
+              transactionType: item.transactionType,
+              transactionStatus: item.investmentStatus,
+              imageUrl: item.imageUrl,
+              cryptoId: item.cryptoId,
+              cryptoName: item.cryptoName,
+              description: item.description,
+              traderId: item.traderId,
+              traderName: item.traderName,
+              profit: item.profit,
+              expiry: item.expiry,
+              createdAt: item.createdAt
+            };
+            return completedInvestmentItem;
+          })
+          // Sort by createdAt descending (most recent first)
+          .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
         this.updateCompletedInvestPagedList();
       },
       error: (err) => {
@@ -91,7 +94,6 @@ export class HistoryComponent implements OnInit {
       }
     });
   }
-
   updateCompletedInvestPagedList() {
     const startIndex = (this.currentCompletedInvestPage - 1) * this.pageCompletedInvestSize;
     const endIndex = startIndex + this.pageCompletedInvestSize;

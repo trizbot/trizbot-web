@@ -70,8 +70,8 @@ export class DepositConfirmationComponent implements OnInit {
   errorMessage: string = '';
   loading: boolean = false;
   paymentId: string ;
-  totalSeconds = 60 * 60; // 60 minutes
-  displayTime = '60:00';
+  totalSeconds = 90 * 60; // 90 minutes
+  displayTime = '90:00';
   intervalId: any;
 
   constructor(
