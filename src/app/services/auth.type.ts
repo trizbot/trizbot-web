@@ -257,7 +257,7 @@ export type GetHistoryResBody = {
     amount: string;
     transactionStatus: string;
     transactionKind: string;
-    createdAt: string;
+    createdAt: Date;
     traderEmail:string;
     curBalance: any;
     profit: any;
