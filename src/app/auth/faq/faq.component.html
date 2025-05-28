@@ -14,11 +14,11 @@
 <mat-accordion class="mt-7">
     <mat-expansion-panel *ngFor="let faq of faqs">
       <mat-expansion-panel-header>
-        <mat-panel-title>
+        <mat-panel-title style="padding-top:15px;font-size: 1.8rem; line-height: 2.1rem;">
           {{ faq.question }}
         </mat-panel-title>
       </mat-expansion-panel-header>
-      <p>{{ faq.answer }}</p>
+      <p style="padding-top:15px;font-size: 1.8rem; line-height: 2.1rem;">{{ faq.answer }}</p>
     </mat-expansion-panel>
   </mat-accordion>
 
