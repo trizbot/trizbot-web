@@ -10,17 +10,16 @@
           </div>
 
           <!-- FAQ Section -->
-          <mat-accordion class="mt-7">
-            <mat-expansion-panel *ngFor="let faq of faqs" class="mb-3">
-              <mat-expansion-panel-header>
-                <mat-panel-title style="padding-top:15px;font-size: 1.8rem; line-height: 2.1rem;">
-                  {{ faq.question }}
-                </mat-panel-title>
-              </mat-expansion-panel-header>
-              <p style="padding-top:15px;font-size: 1.8rem; line-height: 2.1rem;">{{ faq.answer }}</p>
-            </mat-expansion-panel>
-          </mat-accordion>
-
+        <mat-accordion class="mt-7">
+  <mat-expansion-panel *ngFor="let faq of faqs" class="mb-6">
+    <mat-expansion-panel-header>
+      <mat-panel-title style="padding-top:15px; font-size: 1.8rem; line-height: 2.1rem;">
+        {{ faq.question }}
+      </mat-panel-title>
+    </mat-expansion-panel-header>
+    <p style="padding-top:15px; font-size: 1.8rem; line-height: 2.1rem;">{{ faq.answer }}</p>
+  </mat-expansion-panel>
+</mat-accordion>
           <div class="text-center mt-4">
             <a [routerLink]="['/welcome']" class="text-primary text-decoration-none fw-semibold">
               Go Back ?
