@@ -162,7 +162,7 @@ this.payoutsService.getPayoutTransactions().subscribe({
           updatedAt: item.updatedAt
         }))
           // .sort((a, b) => a.id - b.id);
-        .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
   
         this.updatePagedList();
       },
