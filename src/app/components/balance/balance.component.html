@@ -98,16 +98,38 @@
                   <img *ngIf="crypto.imageUrl" [src]="crypto.imageUrl" alt="Crypto Image" width="80" height="80" style="border-radius: 45px;" />
                 </div>
                 <div class="crypto-right">
-                  <mat-card-title class="crypto-title text-uppercase text-success">{{ crypto.title }}</mat-card-title>
-                  <div><strong>Min Amount: $</strong>{{ crypto.minAmount }}</div>
-                  <div><strong>Percentage: </strong>{{ crypto.percentage }}%</div>
-                  <div><strong>Expires:</strong> {{ crypto.expiry }} Hours</div>
-                  <div><strong>Buy Exchange:</strong> {{ crypto.buyExchange }}</div>
-                  <div><strong>Sell Exchange:</strong> {{ crypto.sellExchange }}</div>
-                  <!-- <div><strong>Market:</strong> {{ crypto.tradeStatus }}</div> -->
-                  
+                 <mat-card-title class="crypto-title text-uppercase text-success mb-3">
+  {{ crypto.title }}
+</mat-card-title>
+<div class="row g-2 mb-2">
+  <div class="col-6 col-md-4">
+    <div class="fw-bold mb-1">Min Amount</div>
+    <div>${{ crypto.minAmount }}</div>
+  </div>
+  <div class="col-6 col-md-4">
+    <div class="fw-bold mb-1">Percentage</div>
+    <div>{{ crypto.percentage }}%</div>
+  </div>
+  <div class="col-6 col-md-4">
+    <div class="fw-bold mb-1">Expires</div>
+    <div>{{ crypto.expiry }} Hours</div>
+  </div>
+  <div class="col-6 col-md-6">
+    <div class="fw-bold mb-1">Buy Exchange</div>
+    <div>{{ crypto.buyExchange }}</div>
+  </div>
+  <div class="col-6 col-md-6">
+    <div class="fw-bold mb-1">Sell Exchange</div>
+    <div>{{ crypto.sellExchange }}</div>
+  </div>
+</div>
+<button mat-raised-button 
+        color="warn" 
+        (click)="onSetupTrade(crypto.id)" 
+        style="color: #fff; background-color: orange; border: none;">
+  Setup Trade
+</button>
                 </div>
-              <button mat-raised-button color="primary" (click)="onSetupTrade(crypto.id)">Setup Trade</button>
               </mat-card-content>
             </mat-card>
 
@@ -171,30 +193,34 @@
                         /> -
                       </div>
         
-                    <div class="crypto-right">
-  <mat-card-title class="crypto-title text-uppercase text-success font-bold text-lg mb-2">
-    {{ runningTrade.cryptoName }}
-  </mat-card-title>
-  <div class="mb-1">
-    <strong>💰 Amount:</strong>
-    <span class="ms-1">${{ runningTrade.amount }}</span>
+                      <div class="crypto-right">
+                       <mat-card-title class="crypto-title text-uppercase text-success font-bold text-lg mb-2">
+  {{ runningTrade.cryptoName }}
+</mat-card-title>
+<div class="row g-2">
+  <div class="col-6 col-md-3">
+    <div class="fw-bold mb-1">💰 Amount</div>
+    <div>${{ runningTrade.amount }}</div>
   </div>
-  <div class="mb-1">
-    <strong>📅 Created:</strong>
-    <span class="ms-1">{{ runningTrade.createdAt | date:'medium' }}</span>
+  <div class="col-6 col-md-3">
+    <div class="fw-bold mb-1">📅 Created</div>
+    <div>{{ runningTrade.createdAt | date:'medium' }}</div>
   </div>
-  <div class="mb-1">
-    <strong>⏳ Expiry:</strong>
-    <span class="ms-1">{{ runningTrade.expiry | date:'medium' }}</span>
+  <div class="col-6 col-md-3">
+    <div class="fw-bold mb-1">⏳ Expiry</div>
+    <div>{{ runningTrade.expiry | date:'medium' }}</div>
   </div>
-  <div class="mb-1 d-flex align-items-center">
-    <strong class="me-1">
+  <div class="col-6 col-md-3">
+    <div class="fw-bold mb-1">
       <mat-icon class="me-1" style="vertical-align: middle;">alarm</mat-icon>
       {{ runningTrade.investmentStatus }}
-    </strong>
-    <span>{{ countdowns[runningTrade.expiry] || 'Loading...' }}</span>
+    </div>
+    <div>{{ countdowns[runningTrade.expiry] || 'Loading...' }}</div>
   </div>
 </div>
+                       
+
+                      </div>
                     </mat-card-content>
                   </mat-card>
                 </div>
@@ -245,31 +271,33 @@
                         /> -
                       </div>
         
-                    <div class="crypto-right">
-  <mat-card-title class="crypto-title text-uppercase text-success font-bold text-lg mb-2">
-    {{ invest.cryptoName }}
-  </mat-card-title>
-  <div class="mb-1">
-    <strong>💰 Amount:</strong>
-    <span class="ms-1">${{ invest.amount }}</span>
+                      <div class="crypto-right">
+                       <mat-card-title class="crypto-title text-uppercase text-success font-bold text-lg mb-2">
+  {{ invest.cryptoName }}
+</mat-card-title>
+<div class="row g-2">
+  <div class="col-6 col-md-4">
+    <div class="fw-bold mb-1">💰 Amount</div>
+    <div>${{ invest.amount }}</div>
   </div>
-  <div class="mb-1">
-    <strong>📊 Status:</strong>
-    <span class="ms-1">{{ invest.transactionStatus }}</span>
+  <div class="col-6 col-md-4">
+    <div class="fw-bold mb-1">📊 Status</div>
+    <div>{{ invest.transactionStatus }}</div>
   </div>
-  <div class="mb-1">
-    <strong>📅 Created:</strong>
-    <span class="ms-1">{{ invest.createdAt | date:'medium' }}</span>
+  <div class="col-6 col-md-4">
+    <div class="fw-bold mb-1">🧾 Profit</div>
+    <div>${{ invest.profit }}</div>
   </div>
-  <div class="mb-1">
-    <strong>⏳ Expiry:</strong>
-    <span class="ms-1">{{ invest.expiry | date:'medium' }}</span>
+  <div class="col-6 col-md-6">
+    <div class="fw-bold mb-1">📅 Created</div>
+    <div>{{ invest.createdAt | date:'medium' }}</div>
   </div>
-  <div class="mb-1">
-    <strong>🧾 Profit:</strong>
-    <span class="ms-1">${{ invest.profit }}</span>
+  <div class="col-6 col-md-6">
+    <div class="fw-bold mb-1">⏳ Expiry</div>
+    <div>{{ invest.expiry | date:'medium' }}</div>
   </div>
 </div>
+                      </div>
                     </mat-card-content>
                   </mat-card>
                 </div>
