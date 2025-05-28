@@ -160,7 +160,7 @@ this.payoutsService.getPayoutTransactions().subscribe({
           created_at: item.created_at,
           requestedAt: item.requestedAt,
           updatedAt: item.updatedAt
-        }));
+        })).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
   
         this.updatePagedList();
       },

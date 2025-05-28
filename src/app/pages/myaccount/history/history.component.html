@@ -1,60 +1,125 @@
-<!-- Replace your Angular Material table with this Bootstrap table -->
-<div class="card shadow-sm mb-4">
-  <div class="card-body">
-    <h4 class="mb-4">Trade History</h4>
-    <div class="table-responsive">
-      <table class="table table-striped align-middle">
-        <thead class="table-light">
-          <tr>
-            <th>Trade</th>
-            <th>Amount</th>
-            <th>Status</th>
-            <th>Created At</th>
-            <th>Previous Balance</th>
-            <th>Profit</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let element of pagedCompletedInvestmentList">
-            <td>
+<mat-card class="cardWithShadow">
+    <mat-card-content>
+      <h4>Trade History</h4>
+  
+      <div class="table-responsive">
+        <table mat-table [dataSource]="pagedCompletedInvestmentList" class="w-100">
+          
+          <!-- Product Column -->
+          <ng-container matColumnDef="image">
+            <th mat-header-cell *matHeaderCellDef class="f-w-600 f-s-14 p-l-0">
+              Trade
+            </th>
+            <td mat-cell *matCellDef="let element" class="p-l-0">
               <div class="d-flex align-items-center">
-                <img [src]="element.imageUrl" alt="crypto-image" width="40" class="rounded me-2" />
-                <div>
-                  <div class="fw-bold">{{ element.cryptoName }}</div>
+                <img [src]="element.imageUrl" alt="crypto-image" width="60" class="rounded" />
+                <div class="m-l-16">
+                  <h6 class="f-s-14 f-w-600">
+                    {{ element.cryptoName }}
+                  </h6>
                 </div>
               </div>
             </td>
-            <td>
-              <span class="fw-semibold">${{ element.amount }}</span>
+          </ng-container>
+  
+          <!-- Payment Column -->
+          <ng-container matColumnDef="amount">
+            <th mat-header-cell *matHeaderCellDef class="f-w-600 f-s-14">
+              Amount
+            </th>
+            <td mat-cell *matCellDef="let element">
+              <h6 class="f-s-16 m-b-4">
+                <span class="text-dark f-w-600">${{ element.amount }}</span>
+              </h6>
             </td>
-            <td>
-              <span 
-                class="badge text-capitalize"
+          </ng-container>
+  
+          <!-- Status Column -->
+          <ng-container matColumnDef="transactionStatus">
+            <th mat-header-cell *matHeaderCellDef class="f-w-600 f-s-14">
+              Status
+            </th>
+            <td mat-cell *matCellDef="let element">
+              <span
                 [ngClass]="{
                   'bg-secondary': element.transactionStatus === 'Created',
                   'bg-success': element.transactionStatus === 'Completed',
                   'bg-info': element.transactionStatus === 'Pending',
-                  'bg-primary': element.transactionStatus === 'Running',
-                  'bg-warning': element.transactionStatus === 'Rejected',
-                  'bg-dark': element.transactionStatus === 'Cancelled',
-                  'bg-danger': element.transactionStatus === 'Failed'
+                  'bg-warning': element.transactionStatus === 'Running',
+                  'bg-danger': element.transactionStatus === 'Rejected',
+                  'bg-default': element.transactionStatus === 'Cancelled',
+                  'bg-error': element.transactionStatus === 'Failed'
                 }"
+                class="rounded f-w-600 px-3 py-1 f-s-12 text-capitalize text-white"
               >
                 {{ element.transactionStatus }}
               </span>
             </td>
-            <td>
-              <span>{{ element.createdAt }}</span>
+          </ng-container>
+          
+  
+          <!-- Created Date Column -->
+          <ng-container matColumnDef="createdAt">
+            <th mat-header-cell *matHeaderCellDef class="f-w-600 f-s-14">
+              Created At
+            </th>
+            <td mat-cell *matCellDef="let element">
+              <span class="f-s-14">{{ element.createdAt | date: 'short' }}</span>
             </td>
-            <td>
-              <span>${{ element.prevBalance || 0.0 | number: '1.0-2' }}</span>
+          </ng-container>
+       
+        
+          <ng-container matColumnDef="PrevBalance">
+            <th mat-header-cell *matHeaderCellDef class="f-w-600 f-s-14">
+              Previous Balance
+            </th>
+            <td mat-cell *matCellDef="let element">
+              <span class="f-s-14">${{ element.prevBalance || 0.0 | number: '1.0-2' }}</span>
             </td>
-            <td>
-              <span class="fw-semibold">${{ element.profit || 0.0 | number: '1.0-2' }}</span>
+          </ng-container>
+
+
+
+
+          <ng-container matColumnDef="Profit">
+            <th mat-header-cell *matHeaderCellDef class="f-w-600 f-s-14">
+              Profit
+            </th>
+            <td mat-cell *matCellDef="let element">
+              <h6 class="f-s-16 m-b-4">
+                <span class="text-dark f-w-600">${{ element.profit || 0.0 | number: '1.0-2' }}</span>
+              </h6>
             </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-</div>
+          </ng-container>
+  
+          <!-- Menu Column -->
+          <ng-container matColumnDef="actions" hidden="hidden">
+            <th mat-header-cell *matHeaderCellDef class="f-w-600 f-s-14"></th>
+            <td mat-cell *matCellDef="let element">
+              <button mat-icon-button [matMenuTriggerFor]="menu" aria-label="Example icon-button with a menu">
+                <mat-icon>more_vert</mat-icon>
+              </button>
+              <mat-menu #menu="matMenu">
+                <button mat-menu-item>
+                  <mat-icon>add</mat-icon>
+                  <span>Add</span>
+                </button>
+                <button mat-menu-item>
+                  <mat-icon>edit</mat-icon>
+                  <span>Edit</span>
+                </button>
+                <button mat-menu-item>
+                  <mat-icon>delete</mat-icon>
+                  <span>Delete</span>
+                </button>
+              </mat-menu>
+            </td>
+          </ng-container>
+  
+          <tr mat-header-row *matHeaderRowDef="displayedColumns1"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns1"></tr>
+        </table>
+      </div>
+    </mat-card-content>
+  </mat-card>
+  
