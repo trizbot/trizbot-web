@@ -81,12 +81,14 @@ getInvestmentHistory() {
               traderName: item.traderName,
               profit: item.profit,
               expiry: item.expiry,
-              createdAt: item.createdAt
+              createdAt: item.createdAt,
+              id: item.id
             };
             return completedInvestmentItem;
           })
           // Sort by createdAt descending (most recent first)
-          .sort((a: any, b: any) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+          // .sort((a: any, b: any) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+          .sort((a: any, b: any) => b.id - a.id);
         this.updateCompletedInvestPagedList();
       },
       error: (err) => {
