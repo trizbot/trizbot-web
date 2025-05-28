@@ -1,12 +1,16 @@
 <mat-card class="cardWithShadow theme-card p-4">
 
   <!-- Card Header -->
+
   <mat-card-header *ngIf="payoutStatus">
-    <mat-card-title class="text-xl fw-bold m-0">Request Payout</mat-card-title>
-    <p class="text-primary">
-      Please note: A service charge of 5% will be applied to the total withdrawal amount.
-    </p>
-  </mat-card-header>
+  <mat-card-title class="text-xl fw-bold m-0">
+    Request Withdrawal
+  </mat-card-title>
+  <mat-card-subtitle class="mt-2 text-primary" style="font-size: 15px;">
+      Please note that a service fee of<b>5%</b>would be debited from your withdrawal
+  </mat-card-subtitle>
+</mat-card-header>
+
 
   <!-- Card Content -->
   <mat-card-content class="b-t-1 mt-3">
@@ -61,7 +65,7 @@
                 class="me-2">
               </mat-progress-spinner>
             </ng-container>
-            <span *ngIf="!loading">Payout</span>
+            <span *ngIf="!loading">Withdraw</span>
           </button>
         </div>
 

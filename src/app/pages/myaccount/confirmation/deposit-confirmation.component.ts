@@ -70,8 +70,8 @@ export class DepositConfirmationComponent implements OnInit {
   errorMessage: string = '';
   loading: boolean = false;
   paymentId: string ;
-  totalSeconds = 90 * 60; // 90 minutes
-  displayTime = '90:00';
+    totalSeconds = 0; // Initialize to 0
+  displayTime = '00:00';
   intervalId: any;
 
   constructor(
@@ -91,7 +91,7 @@ export class DepositConfirmationComponent implements OnInit {
 
   
 this.getPaymentWalletAddress();
-this.startCountdown();
+
 
   }
   
@@ -150,6 +150,12 @@ getPaymentWalletAddress() {
         this.expirationDate = new Date(this.expiration_estimate_date);
 
         this.valid_until = data.valid_until;
+         // Calculate totalSeconds based on expiration_estimate_date
+          const now = new Date();
+          const expire = new Date(this.expiration_estimate_date);
+          this.totalSeconds = Math.max(0, Math.floor((expire.getTime() - now.getTime()) / 1000));
+          this.startCountdown();
+
       } else {
         this.errorMessage ='No payment data received.';
       }
@@ -182,7 +188,6 @@ getPaymentWalletAddress() {
 
 
 
-    
 
 
 

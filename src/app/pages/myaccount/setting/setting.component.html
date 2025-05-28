@@ -1,12 +1,12 @@
 <mat-card class="cardWithShadow theme-card">
   <mat-card-header>
-    <mat-card-title class="m-b-0">Payout and Deposit price Settings</mat-card-title>
+    <mat-card-title class="m-b-0">Withdrawal and Deposit Charges</mat-card-title>
   </mat-card-header>
   
   <mat-card-content class="b-t-1">
     <form class="mt-3" (ngSubmit)="onCreateSetting()" #settingForm="ngForm">
       <div class="col-lg-6">
-        <mat-label class="f-w-600 m-b-8 d-block">USDT Bsc Deposit Amount*</mat-label>
+        <mat-label class="f-w-600 m-b-8 d-block">USDT Bsc Deposit Charge*</mat-label>
         <mat-form-field appearance="outline" class="w-100">
           <input 
             matInput
@@ -19,7 +19,7 @@
       </div>
 
       <div class="col-lg-6">
-        <mat-label class="f-w-600 m-b-8 d-block">USDT Polygon Deposit Amount*</mat-label>
+        <mat-label class="f-w-600 m-b-8 d-block">USDT Polygon Deposit Charge*</mat-label>
         <mat-form-field appearance="outline" class="w-100">
           <input 
             matInput
@@ -32,7 +32,7 @@
       </div>
 
    <div class="col-lg-6">
-        <mat-label class="f-w-600 m-b-8 d-block">USDT Bsc Payout Amount*</mat-label>
+        <mat-label class="f-w-600 m-b-8 d-block">USDT Bsc Payout Charge*</mat-label>
         <mat-form-field appearance="outline" class="w-100">
           <input 
             matInput
@@ -45,7 +45,7 @@
       </div>
 
       <div class="col-lg-6">
-        <mat-label class="f-w-600 m-b-8 d-block">USDT Polygon Payout Amount*</mat-label>
+        <mat-label class="f-w-600 m-b-8 d-block">USDT Polygon Payout Charge*</mat-label>
         <mat-form-field appearance="outline" class="w-100">
           <input 
             matInput
@@ -56,6 +56,26 @@
             [(ngModel)]="settingData.usdtPolygonPayoutAmount" />
         </mat-form-field>
       </div>
+
+      
+        <mat-card-header>
+    <mat-card-title class="m-b-0">Withdrawal and Deposit Limit</mat-card-title>
+  </mat-card-header>
+      <div class="col-lg-6">
+        <mat-label class="f-w-600 m-b-8 d-block">Minimum Deposit Amount*</mat-label>
+        <mat-form-field appearance="outline" class="w-100">
+          <input 
+            matInput
+            type="number"
+            placeholder="Enter Minimum Deposit Amount"
+            name="minimumDepositAmount"
+            required
+            [(ngModel)]="settingData.minimumDepositAmount" />
+        </mat-form-field>
+      </div>
+      
+ 
+    
       
  
 

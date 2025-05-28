@@ -55,6 +55,8 @@ export class SettingComponent implements OnInit {
       usdtPolygonDepositAmount: 0,
       usdtBscPayoutAmount: 0,
       usdtPolygonPayoutAmount: 0,
+       minimumDepositAmount: 0,
+      minimumPayoutAmount: 0,
     };
     constructor(
       private route: ActivatedRoute,
@@ -69,8 +71,9 @@ ngOnInit(): void {}
   onCreateSetting(){
       this.errorMessage = '';
       this.loading= true;
-     const {usdtBscDepositAmount,usdtPolygonDepositAmount, usdtBscPayoutAmount,usdtPolygonPayoutAmount} = this.settingData;  
-      this.settingService.createSetting(usdtBscDepositAmount,usdtPolygonDepositAmount, usdtBscPayoutAmount,usdtPolygonPayoutAmount).subscribe({
+     const {usdtBscDepositAmount,usdtPolygonDepositAmount, usdtBscPayoutAmount,usdtPolygonPayoutAmount,minimumDepositAmount,minimumPayoutAmount} = this.settingData;  
+      this.settingService.createSetting(usdtBscDepositAmount,usdtPolygonDepositAmount, usdtBscPayoutAmount,usdtPolygonPayoutAmount, minimumDepositAmount,
+            minimumPayoutAmount).subscribe({
         next: (response) => {
              this.sharedService.showToast({
             title: `Price Setting successfully created.`,

@@ -9,17 +9,17 @@
   <!-- Card Content -->
   <mat-card-content class="space-y-6">
 
-    <!-- Wallet Address -->
-    <div>
-      <label class="block text-sm font-medium text-gray-600 mb-1">
-        <i>Kindly deposit the exact amount below into the address within the validity time frame to avoid loss of funds. </i>
-      </label>
-      
+    <!-- Instruction -->
+    <div class="mb-2">
+      <span class="block text-sm text-gray-600 italic">
+        Kindly deposit the <b>exact amount</b> below into the address within the validity time frame to avoid loss of funds.
+      </span>
     </div>
+
     <!-- Wallet Address -->
     <div>
       <label class="block text-sm font-medium text-gray-600 mb-1">
-        Wallet Address ({{ network }}):
+        Wallet Address <span class="text-xs text-gray-400">({{ network }})</span>:
       </label>
       <div class="flex items-center justify-between bg-gray-100 p-3 rounded-md">
         <span class="text-blue-700 text-sm break-all">{{ pay_address }}</span>
@@ -58,7 +58,6 @@
         <label class="block text-sm text-gray-500 mb-1">Price Amount</label>
         <p class="text-base font-medium">{{ price_amount }} {{ price_currency }}</p>
       </div>
-      <!-- Uncomment if needed -->
       <!--
       <div>
         <label class="block text-sm text-gray-500 mb-1">Amount to Pay</label>
@@ -75,8 +74,9 @@
 
     <!-- Countdown Timer -->
     <div class="bg-red-50 border border-red-200 p-3 rounded-md">
-      <p class="text-red-700 font-medium">
-        ⏳ Time Remaining: {{ displayTime }}
+      <p class="text-red-700 font-medium flex items-center gap-2">
+        <mat-icon color="warn">timer</mat-icon>
+        <span>Time Remaining: {{ displayTime }}</span>
       </p>
     </div>
 

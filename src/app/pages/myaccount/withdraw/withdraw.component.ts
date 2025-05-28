@@ -136,7 +136,7 @@ ngOnInit(): void {
       ).subscribe({
         next: (response) => {
           this.sharedService.showToast({
-            title: `Withdraw request is successfully created.`,
+            title: `Withdrawal successfully sent.`,
           });
           this.loading = false;
         },
