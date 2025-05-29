@@ -58,11 +58,11 @@ export class SettingComponent implements OnInit {
       minimumPayoutAmount: any;
 
     settingData = {
-      usdtBscDepositAmount: '',
-      usdtPolygonDepositAmount: '',
-      usdtBscPayoutAmount: '',
-      usdtPolygonPayoutAmount: '',
-       minimumDepositAmount: '',
+      usdtBscDepositAmount: 0,
+      usdtPolygonDepositAmount: 0,
+      usdtBscPayoutAmount: 0,
+      usdtPolygonPayoutAmount: 0,
+       minimumDepositAmount: 0,
       minimumPayoutAmount: 0,
     };
     constructor(
@@ -74,12 +74,10 @@ export class SettingComponent implements OnInit {
   
 
   ngOnInit(): void {
-
-    this.getCurrentTrader();
-    
+    this.getCharges();
   }
 
-  getCurrentTrader(){
+  getCharges(){
     this.settingService.getCharges().subscribe({
       next: (res: GetChargeResBody) => {
         this.usdtBscDepositAmount =res.data.usdtBscDepositAmount;
