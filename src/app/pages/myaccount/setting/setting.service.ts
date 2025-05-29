@@ -29,8 +29,7 @@ return this.http.post(`${environment.apiBaseUrl}/settings`, payload);
 
 
   getCharges(): Observable<GetChargeResBody> {
-    const entity=  localStorage.getItem('entity');
-    return this.http.get<GetChargeResBody>(`${environment.apiBaseUrl}/${entity}/settings`);
+    return this.http.get<GetChargeResBody>(`${environment.apiBaseUrl}/settings`);
   }
 
 
