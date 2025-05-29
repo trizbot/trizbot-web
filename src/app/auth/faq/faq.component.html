@@ -8,16 +8,21 @@
               <img src="./assets/images/logos/dark-logo.jpg" alt="logo" style="width: 100px;" />
             </a>
           </div>
+          <div class="text-center mb-4">
+            <h6 style="font-size: 1.85rem; line-height: 3.2; padding-bottom:38px;">
+              Frequently Asked Questions
+            </h6>
+          </div>
 
           <!-- FAQ Section -->
       <mat-accordion class="mt-12">
             <mat-expansion-panel *ngFor="let faq of faqs" class="mb-30">
               <mat-expansion-panel-header>
-                <mat-panel-title style="font-size: 1.25rem; line-height: 2.7;padding-bottom:34px;">
+                <mat-panel-title style="font-size: 1.85rem; line-height: 2.9; padding-bottom:48px;padding-top:28px;">
                   {{ faq.question }}
                 </mat-panel-title>
               </mat-expansion-panel-header>
-              <p class="mb-0" style="font-size: 1.1rem; line-height: 2.7;">{{ faq.answer }}</p>
+              <p class="mb-0" style="font-size: 1.25rem; line-height: 2.7;">{{ faq.answer }}</p>
             </mat-expansion-panel>
       </mat-accordion>
         

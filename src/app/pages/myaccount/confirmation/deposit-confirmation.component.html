@@ -67,9 +67,9 @@
     </div>
 
     <!-- Expiration Info -->
-    <div *ngIf="expiration_estimate_date">
+    <div *ngIf="expiry">
       <label class="block text-sm text-gray-500 mb-1">Expires On</label>
-      <p class="text-sm text-gray-700">{{ expiration_estimate_date | date:'medium' }}</p>
+      <p class="text-sm text-gray-700">{{ expiry | date:'medium' }}</p>
     </div>
 
     <!-- Countdown Timer -->

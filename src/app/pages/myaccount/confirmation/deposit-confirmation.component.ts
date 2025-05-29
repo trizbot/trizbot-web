@@ -59,6 +59,7 @@ export class DepositConfirmationComponent implements OnInit {
      
      expiration_estimate_date!: string;
      valid_until!: string;
+     expiry!: string;
      expirationDate!: Date;
     
     
