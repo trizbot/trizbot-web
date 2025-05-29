@@ -1,22 +1,20 @@
 <mat-card class="cardWithShadow theme-card p-4">
 
   <!-- Card Header -->
-
   <mat-card-header *ngIf="payoutStatus">
-  <mat-card-title class="text-xl fw-bold m-0">
-    Request Withdrawal
-  </mat-card-title>
-  <mat-card-subtitle class="mt-2 text-primary" style="font-size: 15px;">
+    <mat-card-title class="text-xl fw-bold m-0">
+      Request Withdrawal
+    </mat-card-title>
+    <mat-card-subtitle class="mt-2 text-primary" style="font-size: 15px;">
       Please note that a service fee of <b>5%</b> would be debited from your withdrawal
-  </mat-card-subtitle>
-</mat-card-header>
-
+    </mat-card-subtitle>
+  </mat-card-header>
 
   <!-- Card Content -->
   <mat-card-content class="b-t-1 mt-3">
 
     <!-- Form Section (Shown if payout is available) -->
-    <div class="row"  *ngIf="payoutStatus;">
+    <div class="row" *ngIf="payoutStatus; else noPayout">
       <form (ngSubmit)="onCreateWithdraw()" #payoutForm="ngForm">
         <div class="row gx-4">
 
@@ -37,10 +35,21 @@
 
           <!-- Transaction PIN Input -->
           <div class="col-md-6 mb-4">
-           <mat-form-field appearance="outline" class="w-100 mb-4" color="primary">
-              <label class="fw-semibold mb-2 d-block">Transaction PIN *</label>
-              <input matInput [type]="hidePassword ? 'password' : 'number'" maxlength="4" name="password" placeholder="Enter Transaction PIN" [(ngModel)]="withdrawData.transactionPin">
-              <button mat-icon-button matSuffix (click)="hidePassword = !hidePassword" [attr.aria-label]="'Hide or show password'" [attr.aria-pressed]="!hidePassword">
+            <label class="fw-semibold mb-2 d-block">Transaction PIN *</label>
+            <mat-form-field appearance="outline" class="w-100 mb-4" color="primary">
+              <input
+                matInput
+                [type]="hidePassword ? 'password' : 'number'"
+                maxlength="4"
+                name="password"
+                placeholder="Enter Transaction PIN"
+                [(ngModel)]="withdrawData.transactionPin" />
+              <button
+                mat-icon-button
+                matSuffix
+                (click)="hidePassword = !hidePassword"
+                [attr.aria-label]="'Hide or show password'"
+                [attr.aria-pressed]="!hidePassword">
                 <mat-icon>{{ hidePassword ? 'visibility_off' : 'visibility' }}</mat-icon>
               </button>
             </mat-form-field>
@@ -55,7 +64,7 @@
             class="px-5 py-2 fw-semibold"
             type="submit"
             [disabled]="loading || !payoutForm.form.valid">
-            
+
             <ng-container *ngIf="loading">
               <mat-progress-spinner
                 diameter="22"
@@ -77,15 +86,15 @@
     </div>
 
     <!-- Else Block (Shown if payout is unavailable) -->
-<ng-template *ngIf="!payoutStatus;">
-  <mat-card class="payout-card mat-elevation-z2 position-relative text-center mb-4">
-    <mat-card-content>
-      <h4 class="text-danger fw-bold mb-2">Withdrawal Unavailable</h4>
-      <p class="text-muted">{{ payoutDescription || 'Withdrawal is currently not available.' }}</p>
-    </mat-card-content>
+    <ng-template #noPayout>
+      <mat-card class="payout-card mat-elevation-z2 position-relative text-center mb-4">
+        <mat-card-content>
+          <h4 class="text-danger fw-bold mb-2">Withdrawal Unavailable</h4>
+          <p class="text-muted">{{ payoutDescription || 'Withdrawal is currently not available.' }}</p>
+        </mat-card-content>
+      </mat-card>
+    </ng-template>
 
-  </mat-card>
-</ng-template> 
   </mat-card-content>
 
 </mat-card>
