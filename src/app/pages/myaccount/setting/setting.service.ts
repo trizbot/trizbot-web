@@ -6,7 +6,7 @@ import { Router } from '@angular/router';
 
 import { Observable } from 'rxjs';
 import { environment } from '../../../../environments/environment';
-import { GetCryptoResBody,PayoutTransactionResBody } from '../../../services/auth.type';
+import { GetChargeResBody, GetCryptoResBody,PayoutTransactionResBody } from '../../../services/auth.type';
 
 
 
@@ -27,6 +27,11 @@ return this.http.post(`${environment.apiBaseUrl}/settings`, payload);
 }
 
 
+
+  getCharges(): Observable<GetChargeResBody> {
+    const entity=  localStorage.getItem('entity');
+    return this.http.get<GetChargeResBody>(`${environment.apiBaseUrl}/${entity}/settings`);
+  }
 
 
 

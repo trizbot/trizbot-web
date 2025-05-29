@@ -9,7 +9,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { CoreService } from '../../../services/core.service';
 import { SharedService } from '../../../shared/shared.service';
 import { TraderService } from '../../../appstate/trader.service';
-import { GetTraderResBody } from '../../../services/auth.type';
+import { GetChargeResBody, GetTraderResBody } from '../../../services/auth.type';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { InvestmentService } from '../invest/investment.service';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
@@ -49,7 +49,14 @@ export class SettingComponent implements OnInit {
   
     errorMessage: string = '';
     loading: boolean = false;
-  
+
+   usdtBscDepositAmount: any;
+      usdtPolygonDepositAmount: any;
+      usdtBscPayoutAmount: any;
+      usdtPolygonPayoutAmount: any;
+       minimumDepositAmount: any;
+      minimumPayoutAmount: any;
+
     settingData = {
       usdtBscDepositAmount: 0,
       usdtPolygonDepositAmount: 0,
@@ -65,7 +72,31 @@ export class SettingComponent implements OnInit {
       private router: Router
     ) {}
   
-ngOnInit(): void {}
+
+  ngOnInit(): void {
+
+    this.getCurrentTrader();
+    
+  }
+
+  getCurrentTrader(){
+    this.settingService.getCharges().subscribe({
+      next: (res: GetChargeResBody) => {
+        this.usdtBscDepositAmount =res.data.usdtBscDepositAmount;
+        this.minimumDepositAmount =res.data.minimumDepositAmount;
+        this.minimumPayoutAmount =res.data.minimumPayoutAmount;
+        this.usdtPolygonDepositAmount =res.data.usdtPolygonDepositAmount;
+        this.usdtPolygonDepositAmount =res.data.usdtPolygonDepositAmount; 
+        this.usdtBscPayoutAmount =res.data.usdtBscPayoutAmount;
+      },
+      error: (err) => {
+        this.errorMessage = '';
+      }
+    });
+
+  }
+
+
 
 
   onCreateSetting(){

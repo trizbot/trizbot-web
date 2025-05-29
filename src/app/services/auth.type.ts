@@ -110,6 +110,18 @@ export type GetTraderResBody = {
     uplinerBonusAmount: number;
   };
 };
+export type GetChargeResBody = {
+  data: {
+    _id: string;
+    usdtBscDepositAmount: string;
+    usdtPolygonDepositAmount: string;
+    usdtBscPayoutAmount: string;
+    usdtPolygonPayoutAmount: string;
+    minimumDepositAmount: string;
+    minimumPayoutAmount: string;
+    
+  };
+};
 
 export type GetDownlinesResBody = {
   data: {
