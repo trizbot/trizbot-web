@@ -50,13 +50,14 @@ export class SettingComponent implements OnInit {
     errorMessage: string = '';
     loading: boolean = false;
 
-   usdtBscDepositAmount: any;
-      usdtPolygonDepositAmount: any;
-      usdtBscPayoutAmount: any;
+   usdtBscDepositAmount: string;
+      usdtPolygonDepositAmount: string;
+      usdtBscPayoutAmount: string;
       usdtPolygonPayoutAmount: any;
-       minimumDepositAmount: any;
-      minimumPayoutAmount: any;
+       minimumDepositAmount: string;
+      minimumPayoutAmount: string;
 
+      settingList: any[] = [];
     settingData = {
       usdtBscDepositAmount: 0,
       usdtPolygonDepositAmount: 0,
@@ -77,22 +78,29 @@ export class SettingComponent implements OnInit {
     this.getCharges();
   }
 
-  getCharges(){
-    this.settingService.getCharges().subscribe({
-      next: (res: GetChargeResBody) => {
-        this.usdtBscDepositAmount =res.data.usdtBscDepositAmount;
-        this.minimumDepositAmount =res.data.minimumDepositAmount;
-        this.minimumPayoutAmount =res.data.minimumPayoutAmount;
-        this.usdtPolygonDepositAmount =res.data.usdtPolygonDepositAmount;
-        this.usdtPolygonDepositAmount =res.data.usdtPolygonDepositAmount; 
-        this.usdtBscPayoutAmount =res.data.usdtBscPayoutAmount;
-      },
-      error: (err) => {
-        this.errorMessage = '';
-      }
-    });
+getCharges() {
+  this.settingService.getCharges().subscribe({
+    next: (res: any) => {
+      this.settingList = res.data
+        .map((item: any) => {
+          this.usdtBscDepositAmount = item.usdtBscDepositAmount;
+          this.minimumDepositAmount = item.minimumDepositAmount;
+          this.minimumPayoutAmount = item.minimumPayoutAmount;
+          this.usdtPolygonDepositAmount = item.usdtPolygonDepositAmount;
+          this.usdtBscPayoutAmount = item.usdtBscPayoutAmount;
 
-  }
+          const completedInvestmentItem = {
+            id: item.id,
+            createdAt: item.createdAt // Required for sorting
+          };
+          return completedInvestmentItem;
+        })
+        // Sort by createdAt descending (most recent first)
+        .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    },
+    error: (err) => {}
+  });
+}
 
 
 

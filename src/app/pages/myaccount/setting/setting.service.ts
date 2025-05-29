@@ -28,8 +28,8 @@ return this.http.post(`${environment.apiBaseUrl}/settings`, payload);
 
 
 
-  getCharges(): Observable<GetChargeResBody> {
-    return this.http.get<GetChargeResBody>(`${environment.apiBaseUrl}/settings`);
+  getCharges(): Observable<GetChargeResBody[]> {
+    return this.http.get<GetChargeResBody[]>(`${environment.apiBaseUrl}/settings`);
   }
 
 

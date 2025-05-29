@@ -83,6 +83,8 @@ export class DepositComponent implements OnInit {
 ngOnInit(): void {
 
     this.getCurrentTrader();
+
+    this.resetDepositDailyAndWeekly();
     
   }
 
@@ -142,6 +144,19 @@ ngOnInit(): void {
         error: (err) => {
           const message = err?.error.message|| err?.error?.message || 'An unexpected error occurred.';
           this.errorMessage = message;
+          this.loading = false;
+        },
+      });
+    }
+
+    resetDepositDailyAndWeekly(){
+       this.traderService.resetDepositDailyAndWeekly().subscribe({
+        next: (response) => {
+            
+          this.loading = false;
+        },
+        error: (err) => {
+                  
           this.loading = false;
         },
       });

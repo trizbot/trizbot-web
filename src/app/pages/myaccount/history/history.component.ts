@@ -59,6 +59,7 @@ export class HistoryComponent implements OnInit {
   ngOnInit(): void {
     this.getInvestmentHistory();
     this.updateCompletedInvestPagedList();
+    
   }
   
 getInvestmentHistory() {

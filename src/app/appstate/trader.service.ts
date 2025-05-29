@@ -125,5 +125,8 @@ getPaymentWalletAddress(): Observable<GetDepositResBody[]> {
 fundWallet(){
   return this.http.get(`${environment.apiBaseUrl}/deposits/fund`);
 }
+resetDepositDailyAndWeekly(){
+  return this.http.get(`${environment.apiBaseUrl}/transactions/resetDepositDailyAndWeekly`);
+}
 
 }
