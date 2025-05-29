@@ -58,11 +58,11 @@ export class SettingComponent implements OnInit {
       minimumPayoutAmount: any;
 
     settingData = {
-      usdtBscDepositAmount: 0,
-      usdtPolygonDepositAmount: 0,
-      usdtBscPayoutAmount: 0,
-      usdtPolygonPayoutAmount: 0,
-       minimumDepositAmount: 0,
+      usdtBscDepositAmount: '',
+      usdtPolygonDepositAmount: '',
+      usdtBscPayoutAmount: '',
+      usdtPolygonPayoutAmount: '',
+       minimumDepositAmount: '',
       minimumPayoutAmount: 0,
     };
     constructor(
