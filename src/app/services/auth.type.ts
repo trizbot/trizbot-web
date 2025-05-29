@@ -119,6 +119,7 @@ export type GetChargeResBody = {
     usdtPolygonPayoutAmount: string;
     minimumDepositAmount: string;
     minimumPayoutAmount: string;
+    minimumTradeAmount: string;
     
   };
 };
