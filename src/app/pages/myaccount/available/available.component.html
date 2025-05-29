@@ -71,23 +71,40 @@
             <div *ngIf="availableCryptoList.length > 0; else noData">
               <div class="crypto-list-container d-flex flex-wrap gap-3 justify-content-start">
                 <div *ngFor="let crypto of pagedCryptoList" class="crypto-item">
-                  <mat-card class="crypto-card" style="width: 350px; min-height: 280px;">
+                  <mat-card class="crypto-card" style="width: 350px;">
                     <mat-card-content class="crypto-card-content d-flex">
                       <div class="crypto-left me-3">
                         <img *ngIf="crypto.imageUrl" [src]="crypto.imageUrl" alt="Crypto Image" width="80" height="80" style="border-radius: 50%;" />
                       </div>
-                      <div class="crypto-right">
-                        <mat-card-title class="crypto-title text-uppercase text-success">{{ crypto.title }}</mat-card-title>
-                        <div><strong>Min Amount: $</strong>{{ crypto.minAmount }}</div>
-                        <div><strong>Percentage: </strong>{{ crypto.percentage }}%</div>
-                        <div><strong>Expires:</strong> {{ crypto.expiry }} Hours</div>
-                        <div><strong>Buy Exchange:</strong> {{ crypto.buyExchange }}</div>
-                        <div><strong>Sell Exchange:</strong> {{ crypto.sellExchange }}</div>
-                        <!-- <div><strong>Market:</strong> {{ crypto.tradeStatus }}</div> -->
-                        <!-- <div *ngIf="!crypto.status"><strong>Reason:</strong> {{ crypto.description }}</div> -->
-                     
+
+                <div class="crypto-right">
+                 <mat-card-title class="crypto-title text-uppercase text-success mb-3">
+                  {{ crypto.title }}
+                </mat-card-title>
+<div class="row g-4 mb-4">
+  <div class="col-12 mb-4">
+    <div class="fw-bold mb-4">   <br><b>Min Amount:</b></div>
+    <div>${{ crypto.minAmount }}</div>
+  </div>
+  <div class="col-12 mb-4">
+    <div class="fw-bold mb-4">   <br><b>Percentage:</b></div>
+    <div>{{ crypto.percentage }}%</div>
+  </div>
+  <div class="col-12 mb-4">
+    <div class="fw-bold mb-4">   <br><b>Expires:</b></div>
+    <div>{{ crypto.expiry }} Hours</div>
+  </div>
+  <div class="col-12 mb-4">
+    <div class="fw-bold mb-4">   <br><b>Buy Exchange:</b></div>
+    <div>{{ crypto.buyExchange }}</div>
+  </div>
+  <div class="col-12 mb-4">
+    <div class="fw-bold mb-4">   <br><b>Sell Exchange:</b></div>
+    <div>{{ crypto.sellExchange }}</div>
+  </div>
+</div>
                         <br>
-                        <button mat-stroked-button color="warn" class="mt-2" style="font-size: 20px;" (click)="onRemoveTrade(crypto.id)">Remove</button>
+                        <button mat-raised-button (click)="onRemoveTrade(crypto.id)" style="color: #fff; background-color: #FF5722; border: none;">Delete</button>
                       </div>
                     </mat-card-content>
                   </mat-card>

@@ -34,13 +34,13 @@
       </div>
 
    <div class="col-lg-6">
-        <mat-label class="f-w-600 m-b-8 d-block">Payout Service Charge*</mat-label>
+        <mat-label class="f-w-600 m-b-8 d-block">Payout Service Charge (5%)*</mat-label>
         <mat-form-field appearance="outline" class="w-100">
           <input 
             matInput
               value="{{usdtBscPayoutAmount}}"
             type="number"
-            placeholder="Enter Usdt Bsc Amount"
+            placeholder="Enter Payout Charge"
             name="usdtBscPayoutAmount"
             required
             [(ngModel)]="settingData.usdtBscPayoutAmount" />
@@ -62,7 +62,7 @@
 
       
         <mat-card-header>
-    <mat-card-title class="m-b-0">Withdrawal and Deposit Limit</mat-card-title>
+    <mat-card-title class="m-b-0">Trade and Deposit Limit</mat-card-title>
   </mat-card-header>
       <div class="col-lg-6">
         <mat-label class="f-w-600 m-b-8 d-block">Minimum Deposit Amount*</mat-label>
@@ -90,6 +90,20 @@
             [(ngModel)]="settingData.minimumPayoutAmount" />
         </mat-form-field>
       </div> -->
+      
+      <div class="col-lg-6"> 
+        <mat-label class="f-w-600 m-b-8 d-block">Minimum Trade Amount</mat-label>
+        <mat-form-field appearance="outline" class="w-100">
+          <input 
+            matInput
+            value="{{minimumTradeAmount}}"
+            type="number"
+            placeholder="Enter Minimum Trade Amount"
+            name="minimumTradeAmount"
+            required
+            [(ngModel)]="settingData.minimumTradeAmount" />
+        </mat-form-field>
+      </div> 
       
  
     

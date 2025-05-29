@@ -84,10 +84,7 @@
   <div class="p-12">
 
 
-<p class="text-muted" *ngIf="!isCryptoAvailableDescription"><strong>{{ isCryptoAvailableDescription }}</strong> </p>
-
-
-
+<p class="text-muted" *ngIf="!isCryptoAvailableStatus"><strong>{{ isCryptoAvailableDescription }}</strong> </p>
     
       <ng-container *ngIf="availableCryptoList.length > 0; else noData">
         <div class="crypto-list-container">

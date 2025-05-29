@@ -20,9 +20,9 @@ export class SettingService {
     constructor(private http: HttpClient, private router: Router) {}
     
 createSetting(usdtBscDepositAmount: any,usdtPolygonDepositAmount: any, usdtBscPayoutAmount: any,usdtPolygonPayoutAmount: any,  minimumDepositAmount: any,
-            minimumPayoutAmount:any){
+            minimumPayoutAmount:any,minimumTradeAmount:any){
 
-    const payload = { usdtBscDepositAmount,usdtPolygonDepositAmount, usdtBscPayoutAmount,usdtPolygonPayoutAmount, minimumDepositAmount,minimumPayoutAmount}; 
+    const payload = { usdtBscDepositAmount,usdtPolygonDepositAmount, usdtBscPayoutAmount,usdtPolygonPayoutAmount, minimumDepositAmount,minimumPayoutAmount,minimumTradeAmount}; 
 return this.http.post(`${environment.apiBaseUrl}/settings`, payload);
 }
 

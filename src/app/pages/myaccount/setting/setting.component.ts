@@ -56,6 +56,7 @@ export class SettingComponent implements OnInit {
       usdtPolygonPayoutAmount: any;
        minimumDepositAmount: string;
       minimumPayoutAmount: string;
+      minimumTradeAmount: string;
 
       settingList: any[] = [];
     settingData = {
@@ -65,6 +66,7 @@ export class SettingComponent implements OnInit {
       usdtPolygonPayoutAmount: 0,
        minimumDepositAmount: 0,
       minimumPayoutAmount: 0,
+      minimumTradeAmount: 0,
     };
     constructor(
       private route: ActivatedRoute,
@@ -88,6 +90,7 @@ getCharges() {
           this.minimumPayoutAmount = item.minimumPayoutAmount;
           this.usdtPolygonDepositAmount = item.usdtPolygonDepositAmount;
           this.usdtBscPayoutAmount = item.usdtBscPayoutAmount;
+          this.minimumTradeAmount = item.minimumTradeAmount;
 
           const completedInvestmentItem = {
             id: item.id,
@@ -110,7 +113,7 @@ getCharges() {
       this.loading= true;
      const {usdtBscDepositAmount,usdtPolygonDepositAmount, usdtBscPayoutAmount,usdtPolygonPayoutAmount,minimumDepositAmount,minimumPayoutAmount} = this.settingData;  
       this.settingService.createSetting(usdtBscDepositAmount,usdtPolygonDepositAmount, usdtBscPayoutAmount,usdtPolygonPayoutAmount, minimumDepositAmount,
-            minimumPayoutAmount).subscribe({
+            minimumPayoutAmount,minimumTradeAmount).subscribe({
         next: (response) => {
              this.sharedService.showToast({
             title: `Price Setting successfully created.`,

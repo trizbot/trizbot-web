@@ -45,14 +45,14 @@
       {{ firstName }} {{ lastName }}!
     </div>
     <!-- Create Admin Button -->
-    <a *ngIf="isSuperEntityType"
+    <!-- <a *ngIf="isSuperEntityType"
        mat-flat-button
        color="primary"
        class="bg-success text-white me-2"
        [routerLink]="['/myaccount/admin']"
        style="font-size: 15px;">
       Create Admin
-    </a>
+    </a> -->
 
     <!-- Profile Avatar -->
     <button mat-mini-fab [matMenuTriggerFor]="profilemenu" aria-label="Profile Menu">
@@ -76,19 +76,30 @@
       <mat-divider></mat-divider>
 
       <ng-container *ngIf="isSuperEntityType">
+      <button *ngIf="isSuperEntityType" mat-menu-item [routerLink]="['/myaccount/admin']" style="font-size: 15px;">
+        <i-tabler name="user" class="icon-20 me-2"></i-tabler> Create Admin
+      </button>
+      </ng-container>
+
+      <ng-container *ngIf="isSuperEntityType">
         <button mat-menu-item [routerLink]="['/myaccount/users']" style="font-size: 15px;">
           <i-tabler name="list-check" class="icon-20 me-2"></i-tabler> Users
         </button>
       </ng-container>
 
+
+   <ng-container>
       <button mat-menu-item [routerLink]="['/myaccount/profile']" style="font-size: 15px;">
         <i-tabler name="mail" class="icon-20 me-2"></i-tabler> Settings
       </button>
+      </ng-container>
 
+      <ng-container></ng-container>
       <button mat-menu-item (click)="onLogout()">
         <i-tabler name="logout" class="w-100 icon-20 me-2"></i-tabler>
         Logout
       </button>
+      </ng-container>
 
     </mat-menu>
 
