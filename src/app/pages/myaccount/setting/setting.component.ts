@@ -111,7 +111,7 @@ getCharges() {
   onCreateSetting(){
       this.errorMessage = '';
       this.loading= true;
-     const {usdtBscDepositAmount,usdtPolygonDepositAmount, usdtBscPayoutAmount,usdtPolygonPayoutAmount,minimumDepositAmount,minimumPayoutAmount} = this.settingData;  
+     const {usdtBscDepositAmount,usdtPolygonDepositAmount, usdtBscPayoutAmount,usdtPolygonPayoutAmount,minimumDepositAmount,minimumPayoutAmount,minimumTradeAmount} = this.settingData;  
       this.settingService.createSetting(usdtBscDepositAmount,usdtPolygonDepositAmount, usdtBscPayoutAmount,usdtPolygonPayoutAmount, minimumDepositAmount,
             minimumPayoutAmount,minimumTradeAmount).subscribe({
         next: (response) => {
