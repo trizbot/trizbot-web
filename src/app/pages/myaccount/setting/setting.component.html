@@ -74,6 +74,19 @@
         </mat-form-field>
       </div>
       
+      <div class="col-lg-6">
+        <mat-label class="f-w-600 m-b-8 d-block">Minimum Payout Amount*</mat-label>
+        <mat-form-field appearance="outline" class="w-100">
+          <input 
+            matInput
+            type="number"
+            placeholder="Enter Minimum Deposit Amount"
+            name="minimumDepositAmount"
+            required
+            [(ngModel)]="settingData.minimumPayoutAmount" />
+        </mat-form-field>
+      </div>
+      
  
     
       
