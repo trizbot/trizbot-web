@@ -152,11 +152,12 @@ ngOnInit(): void {
     resetDepositDailyAndWeekly(){
        this.traderService.resetDepositDailyAndWeekly().subscribe({
         next: (response) => {
+        console.log(response);
             
           this.loading = false;
         },
         error: (err) => {
-                  
+          console.log(err);
           this.loading = false;
         },
       });

@@ -20,6 +20,7 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 })
 export class FaqComponent implements OnInit {
   currentYear: number;
+  openedIndex: number | null = null;
   title = 'Trizbot';
   faqs: { question: string; answer: string }[] = [];
 
@@ -117,5 +118,9 @@ this.faqs = [
   }
 ];
   }
+ toggle(index: number) {
+    this.openedIndex = this.openedIndex === index ? null : index;
+  }
+  
 
 }
