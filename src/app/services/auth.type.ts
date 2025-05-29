@@ -329,6 +329,7 @@ export type GetDepositResBody = {
     burning_percent: string | null;
     expiration_estimate_date: string;
     valid_until: string;
+    expiry: string;
   
 };
 

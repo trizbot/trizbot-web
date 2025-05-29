@@ -150,9 +150,11 @@ getPaymentWalletAddress() {
         this.expirationDate = new Date(this.expiration_estimate_date);
 
         this.valid_until = data.valid_until;
+        this.expiry = data.expiry;
          // Calculate totalSeconds based on expiration_estimate_date
           const now = new Date();
-          const expire = new Date(this.expiration_estimate_date);
+          // const expire = new Date(this.expiration_estimate_date);
+          const expire = new Date(this.expiry);
           this.totalSeconds = Math.max(0, Math.floor((expire.getTime() - now.getTime()) / 1000));
           this.startCountdown();
 
