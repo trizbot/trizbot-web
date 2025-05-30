@@ -119,9 +119,7 @@ export class WalletBalanceComponent implements OnInit {
           this.isSuperEntityType=true;
           this.isAdminDashBoardType=true;
           this.isTradersDashBoardType=false;
-
-          }
-         else  if (this.entityName=="Admin"  && !this.isSuperAdmin) {
+       } else  if (this.entityName=="Admin"  && !this.isSuperAdmin) {
           this.isSuperEntityType=false;
           this.isAdminDashBoardType=true;
           this.isTradersDashBoardType=false;
@@ -156,7 +154,7 @@ export class WalletBalanceComponent implements OnInit {
 availableCryptoList: any[] = [];
 pagedCryptoList: any[] = [];
 currentPage = 1;
-pageSize = 6;
+pageSize = 1000;
 selectedCryptoId: string = ''; 
 
 getAvailableCryptos() {
@@ -229,7 +227,7 @@ onSetupTrade(id: string) {
   investmentList: any[] = [];
   pagedInvestmentList: any[] = [];
   currentInvestPage = 1;
-  pageInvestSize = 6;
+  pageInvestSize = 30;
   selectedInvestId: string = ''; 
   runningOperation: boolean = false;
   getInvestments() {

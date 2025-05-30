@@ -1,4 +1,4 @@
-<mat-toolbar class="topbar gap-10" style="font-size: 16px; display: flex; justify-content: space-between;">
+<mat-toolbar class="topbar gap-6" style="font-size: 16px; display: flex; justify-content: space-between;">
 
   <!-- Left: Mobile Menu -->
   <div class="d-flex align-items-center">
@@ -41,26 +41,20 @@
 
 
     <!-- Welcome Message -->
-    <div class="d-md-flex align-items-center fw-semibold pe-3" style="font-size: 17px;">
-      {{ firstName }} {{ lastName }}!
-    </div>
-    <!-- Create Admin Button -->
-    <!-- <a *ngIf="isSuperEntityType"
-       mat-flat-button
-       color="primary"
-       class="bg-success text-white me-2"
-       [routerLink]="['/myaccount/admin']"
-       style="font-size: 15px;">
-      Create Admin
-    </a> -->
+ <div class="d-md-flex align-items-center fw-semibold pe-3" style="font-size: 17px; padding-right:30px;">
+  {{ firstName }} {{ lastName }}!
+</div>
 
-    <!-- Profile Avatar -->
-    <button mat-mini-fab [matMenuTriggerFor]="profilemenu" aria-label="Profile Menu">
-      <img [src]="imageSecureUrl || '/assets/images/profile/user-1.jpg'" 
-           alt="Profile Picture"
-           width="48"
-           class="rounded-circle object-cover d-block" />
-    </button>
+<!-- Add a gap using a spacer div or margin -->
+<div style="width: 18px;"></div>
+
+<!-- Profile Avatar -->
+<button mat-mini-fab [matMenuTriggerFor]="profilemenu" aria-label="Profile Menu">
+  <img [src]="imageSecureUrl || '/assets/images/profile/user-1.jpg'" 
+       alt="Profile Picture"
+       width="48"
+       class="rounded-circle object-cover d-block" />
+</button>
 
     <!-- Profile Menu -->
     <mat-menu #profilemenu="matMenu" class="cardWithShadow topbar-dd" style="font-size: 15px;">
