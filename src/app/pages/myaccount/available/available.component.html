@@ -73,9 +73,17 @@
                 <div *ngFor="let crypto of pagedCryptoList" class="crypto-item">
                   <mat-card class="crypto-card" style="width: 350px;">
                     <mat-card-content class="crypto-card-content d-flex">
-                      <div class="crypto-left me-3">
-                        <img *ngIf="crypto.imageUrl" [src]="crypto.imageUrl" alt="Crypto Image" width="80" height="80" style="border-radius: 50%;" />
-                      </div>
+                    <div class="crypto-left me-3">
+  <img
+    *ngIf="crypto.imageUrl"
+    [src]="crypto.imageUrl"
+    alt="Crypto Image"
+    width="80"
+    height="80"
+    class="rounded-circle shadow border border-2 border-secondary object-fit-cover"
+    style="object-fit: cover;"
+  />
+</div>
 
                 <div class="crypto-right">
                  <mat-card-title class="crypto-title text-uppercase text-success mb-3">
