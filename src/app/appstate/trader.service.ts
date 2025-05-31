@@ -42,7 +42,7 @@ export class TraderService {
 
 
   getAllTraders(p0: { page: number; limit: number; }): Observable<GetAllTradersResBody[]> {
-    return this.http.get<GetAllTradersResBody[]>(`${environment.apiBaseUrl}/traders/all`);
+    return this.http.get<GetAllTradersResBody[]>(`${environment.apiBaseUrl}/traders/all?page=${p0.page}&limit=${p0.limit}`);
     
   }
  
