@@ -31,6 +31,9 @@ getCompletedInvestments(): Observable<GetCompletedInvestmentResBody[]> {
 getInvestmentHistory(): Observable<GetHistoryResBody[]> {
   return this.http.get<GetHistoryResBody[]>(`${environment.apiBaseUrl}/transactions/history`);
 }
+autoRevertFunds() {
+  return this.http.get(`${environment.apiBaseUrl}/transactions/auto-revert-funds`);
+}
 
 
 
