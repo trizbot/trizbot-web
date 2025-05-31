@@ -378,19 +378,18 @@ startCountdown() {
         const seconds = Math.floor((remaining / 1000) % 60);
         this.countdowns[invest.expiry] = `${this.pad(hours)}h ${this.pad(minutes)}m ${this.pad(seconds)}s`;
       } else {
-        this.countdowns[invest.expiry] = '';
+      
         if (invest.transactionStatus !== 'Expired') {
           invest.transactionStatus = invest.investmentStatus;
       
           // auto-revert-funds 
     this.investService.autoRevertFunds().subscribe({
       next: (res: any) => {
-     
+        this.countdowns[invest.expiry] = '00h 00m 00s';
       }
     }
   );
-
-          
+  // end of counter
         }
       }
     });
