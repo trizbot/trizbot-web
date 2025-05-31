@@ -41,7 +41,7 @@ export class TraderService {
   }
 
 
-  getAllTraders(): Observable<GetAllTradersResBody[]> {
+  getAllTraders(p0: { page: number; limit: number; }): Observable<GetAllTradersResBody[]> {
     return this.http.get<GetAllTradersResBody[]>(`${environment.apiBaseUrl}/traders/all`);
     
   }

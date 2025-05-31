@@ -1,156 +1,91 @@
-<mat-card class="cardWithShadow">
-    <mat-card-content>
-      <h4>Available Users</h4>
-  
-      <div class="table-responsive">
-        <table mat-table [dataSource]="pagedCompletedInvestmentList" class="w-100">
-            <ng-container matColumnDef="id">
-                <th mat-header-cell *matHeaderCellDef class="f-w-600 f-s-14 p-l-0">
-                  Review
-                </th>
-                <td mat-cell *matCellDef="let element" class="p-l-0">
-                  <div class="d-flex align-items-center">
-                    <button mat-raised-button color="danger" (click)="onSetupReview(element._id)">Top Up</button>
-                  </div>
-                </td>
-              </ng-container>
+<div class="user-table-toolbar">
+  <mat-form-field appearance="standard">
+    <mat-label>Filter users</mat-label>
+    <input matInput (keyup)="applyFilter($event)" placeholder="Ex. John">
+  </mat-form-field>
 
-            
-          <!-- Product Column -->
-          <ng-container matColumnDef="ImageUrl">
-            <th mat-header-cell *matHeaderCellDef class="f-w-600 f-s-14 p-l-0">
-              Avatar
-            </th>
-            <td mat-cell *matCellDef="let element" class="p-l-0">
-              <div class="d-flex align-items-center">
-                <img [src]="element.imageUrl" alt="crypto-image" width="60" class="rounded" />
+  <button mat-raised-button color="primary" (click)="exportToCSV()">
+    Export CSV
+  </button>
+</div>
 
-              </div>
-            </td>
-          </ng-container>
-  
+<table mat-table [dataSource]="dataSource" matSort class="mat-elevation-z8">
 
-          <ng-container matColumnDef="email">
-            <th mat-header-cell *matHeaderCellDef class="f-w-600 f-s-14">
-                Email 
-            </th>
-            <td mat-cell *matCellDef="let element">
-              <h6 class="f-s-16 m-b-4">
-                <span class="text-dark f-w-600">{{ element.email }}</span>
-              </h6>
-            </td>
-          </ng-container>
-          <ng-container matColumnDef="userName">
-            <th mat-header-cell *matHeaderCellDef class="f-w-600 f-s-14">
-                UserName 
-            </th>
-            <td mat-cell *matCellDef="let element">
-              <h6 class="f-s-16 m-b-4">
-                <span class="text-dark f-w-600">{{ element.userName }}</span>
-              </h6>
-            </td>
-          </ng-container>
-          <ng-container matColumnDef="country">
-            <th mat-header-cell *matHeaderCellDef class="f-w-600 f-s-14">
-                Country 
-            </th>
-            <td mat-cell *matCellDef="let element">
-              <h6 class="f-s-16 m-b-4">
-                <span class="text-dark f-w-600">{{ element.country }}</span>
-              </h6>
-            </td>
-          </ng-container>
+  <!-- Image Column -->
+  <ng-container matColumnDef="imageUrl">
+    <th mat-header-cell *matHeaderCellDef> Image </th>
+    <td mat-cell *matCellDef="let user">
+      <img [src]="user.imageUrl" alt="User Image" width="40" height="40" />
+    </td>
+  </ng-container>
 
-          <ng-container matColumnDef="phoneNumber">
-            <th mat-header-cell *matHeaderCellDef class="f-w-600 f-s-14">
-                Phone Number
-            </th>
-            <td mat-cell *matCellDef="let element">
-              <h6 class="f-s-16 m-b-4">
-                <span class="text-dark f-w-600">({{element.countryCode}}){{ element.phoneNumber }}</span>
-              </h6>
-            </td>
-          </ng-container>
-  
-          <!-- Status Column -->
-          <!-- <ng-container matColumnDef="ApprovalStatus" >
-            <th mat-header-cell *matHeaderCellDef class="f-w-600 f-s-14">
-              Status
-            </th>
-            <td mat-cell *matCellDef="let element">
-              <span [ngClass]="{
-                'bg-light-success': element.approvalStatus === 'Approved',
-                'bg-light-warning': element.approvalStatus === 'Pending',
-                'bg-light-info': element.approvalStatus === 'Running',
-                'bg-light-danger': element.approvalStatus === 'Rejected',
-                'bg-light-default': element.approvalStatus === 'Cancelled',
-                'bg-light-error': element.approvalStatus === 'Failed'
-              }" class="rounded f-w-600 p-6 p-y-4 f-s-12">
-                {{ element.approvalStatus | titlecase }}
-              </span>
-            </td>
-          </ng-container> -->
-  
-          <!-- Created Date Column -->
-          <ng-container matColumnDef="createdAt">
-            <th mat-header-cell *matHeaderCellDef class="f-w-600 f-s-14">
-              Created At
-            </th>
-            <td mat-cell *matCellDef="let element">
-              <span class="f-s-14">{{ element.createdAt | date: 'short' }}</span>
-            </td>
-          </ng-container>
-         
-          <ng-container matColumnDef="LastName">
-            <th mat-header-cell *matHeaderCellDef class="f-w-600 f-s-14">
-              Last Name
-            </th>
-            <td mat-cell *matCellDef="let element">
-              <span class="f-s-14">{{ element.lastName }}</span>
-            </td>
-          </ng-container>
-        
-          <ng-container matColumnDef="FirstName">
-            <th mat-header-cell *matHeaderCellDef class="f-w-600 f-s-14">
-              First Name
-            </th>
-            <td mat-cell *matCellDef="let element">
-              <span class="f-s-14">{{ element.firstName }}</span>
-            </td>
-          </ng-container>
+  <!-- Username Column -->
+  <ng-container matColumnDef="userName">
+    <th mat-header-cell *matHeaderCellDef mat-sort-header> Username </th>
+    <td mat-cell *matCellDef="let user"> {{ user.userName }} </td>
+  </ng-container>
 
+  <!-- Email -->
+  <ng-container matColumnDef="email">
+    <th mat-header-cell *matHeaderCellDef mat-sort-header> Email </th>
+    <td mat-cell *matCellDef="let user"> {{ user.email }} </td>
+  </ng-container>
 
+  <!-- Phone Number -->
+  <ng-container matColumnDef="phoneNumber">
+    <th mat-header-cell *matHeaderCellDef> Phone </th>
+    <td mat-cell *matCellDef="let user"> {{ user.phoneNumber }} </td>
+  </ng-container>
 
+  <!-- Country -->
+  <ng-container matColumnDef="country">
+    <th mat-header-cell *matHeaderCellDef> Country </th>
+    <td mat-cell *matCellDef="let user"> {{ user.country }} </td>
+  </ng-container>
 
-          <ng-container matColumnDef="CurBalance">
-            <th mat-header-cell *matHeaderCellDef class="f-w-600 f-s-14">
-              Current Balance
-            </th>
-            <td mat-cell *matCellDef="let element">
-              <h6 class="f-s-16 m-b-4">
-                <span class="text-dark f-w-600">${{ element.walletBalance || 0.0 | number: '1.0-2'}}</span>
-              </h6>
-            </td>
-          </ng-container>
-        
-          <ng-container matColumnDef="Profit">
-            <th mat-header-cell *matHeaderCellDef class="f-w-600 f-s-14">
-              Profit
-            </th>
-            <td mat-cell *matCellDef="let element">
-              <h6 class="f-s-16 m-b-4">
-                <span class="text-dark f-w-600">${{ element.profit || 0.0 | number: '1.0-2' }}</span>
-                
-              </h6>
-            </td>
-          </ng-container>
-  
-          <!-- Menu Column -->
-        
-          <tr mat-header-row *matHeaderRowDef="displayedColumns1"></tr>
-          <tr mat-row *matRowDef="let row; columns: displayedColumns1"></tr>
-        </table>
-      </div>
-    </mat-card-content>
-  </mat-card>
-  
+  <!-- Wallet Balance -->
+  <ng-container matColumnDef="walletBalance">
+    <th mat-header-cell *matHeaderCellDef mat-sort-header> Wallet </th>
+    <td mat-cell *matCellDef="let user">
+      {{ user.walletBalance | currency:'USD':'symbol':'1.2-2' }}
+    </td>
+  </ng-container>
+
+  <!-- Profit -->
+  <ng-container matColumnDef="profit">
+    <th mat-header-cell *matHeaderCellDef mat-sort-header> Profit </th>
+    <td mat-cell *matCellDef="let user">
+      {{ user.profit | currency:'USD':'symbol':'1.2-2' }}
+    </td>
+  </ng-container>
+
+  <!-- Created At -->
+  <ng-container matColumnDef="createdAt">
+    <th mat-header-cell *matHeaderCellDef mat-sort-header> Created </th>
+    <td mat-cell *matCellDef="let user">
+      {{ user.createdAt | date: 'medium' }}
+    </td>
+  </ng-container>
+
+  <!-- Action Buttons -->
+  <ng-container matColumnDef="actions">
+    <th mat-header-cell *matHeaderCellDef> Actions </th>
+    <td mat-cell *matCellDef="let user">
+      <button mat-button color="primary" (click)="onSetupReview(user._id)">Review</button>
+      <button mat-button color="accent" (click)="onViewProfile(user._id)">View</button>
+    </td>
+  </ng-container>
+
+  <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+  <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+</table>
+
+<!-- <mat-paginator [pageSizeOptions]="[10, 20, 50]" showFirstLastButtons></mat-paginator> -->
+<mat-paginator [length]="totalUsers"
+               [pageSize]="10"
+               [pageSizeOptions]="[10, 20, 50]"
+               showFirstLastButtons
+               (page)="onPageChange($event)">
+</mat-paginator>
+<div class="total-users">
+  Total Users: {{ totalUsers }}

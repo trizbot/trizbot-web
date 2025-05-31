@@ -1,31 +1,36 @@
-import { Component, inject, OnInit } from '@angular/core';
-import { FormGroup, FormControl, Validators, FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { Router, RouterModule } from '@angular/router';
-import { MaterialModule } from '../../../material.module';
-import { AuthService } from '../../../services/auth.service';
-import { CryptoService } from '../crypto/crypto.service';
+import { Component, OnInit, ViewChild, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Router, RouterModule } from '@angular/router';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+
+// Angular Material Modules
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
+import { MatPaginator, MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatRadioModule } from '@angular/material/radio';
 import { MatSelectModule } from '@angular/material/select';
+import { MatSort, MatSortModule } from '@angular/material/sort';
+import { MatTableDataSource, MatTableModule } from '@angular/material/table';
+
+// App Services
+import { MaterialModule } from '../../../material.module';
 import { CoreService } from '../../../services/core.service';
+import { CryptoService } from '../crypto/crypto.service';
 import { SharedService } from '../../../shared/shared.service';
 import { TraderService } from '../../../../app/appstate/trader.service';
-import { GetTraderResBody, GetAllTradersResBody } from '../../../../app/services/auth.type';
 
 @Component({
   selector: 'app-users',
   standalone: true,
   imports: [
+    CommonModule,
     RouterModule,
-    MaterialModule,
     FormsModule,
     ReactiveFormsModule,
-    CommonModule,
+    MaterialModule,
     MatFormFieldModule,
     MatSelectModule,
     MatRadioModule,
@@ -33,6 +38,9 @@ import { GetTraderResBody, GetAllTradersResBody } from '../../../../app/services
     MatCardModule,
     MatInputModule,
     MatCheckboxModule,
+    MatTableModule,
+    MatPaginatorModule,
+    MatSortModule,
   ],
   templateUrl: './users.component.html',
   styleUrls: ['./users.component.scss'],
@@ -41,8 +49,19 @@ export class UsersComponent implements OnInit {
   private sharedService = inject(SharedService);
 
   errorMessage: string = '';
-  selectedCryptoId: string = ''; 
+  selectedCryptoId: string = '';
   loading: boolean = false;
+
+displayedColumns: string[] = [
+  'imageUrl', 'userName', 'country', 'phoneNumber', 'email',
+  'walletBalance', 'profit', 'createdAt', 'actions'
+];
+
+  dataSource = new MatTableDataSource<any>();
+
+  @ViewChild(MatPaginator) paginator!: MatPaginator;
+  @ViewChild(MatSort) sort!: MatSort;
+
   constructor(
     private settings: CoreService,
     private cryptoService: CryptoService,
@@ -50,71 +69,71 @@ export class UsersComponent implements OnInit {
     private router: Router
   ) {}
 
-  displayedColumns1: string[] = ['id','ImageUrl','userName', 'country','phoneNumber', 'email',  'CurBalance', 'Profit','FirstName', 'LastName', 'createdAt'];
-  completedInvestmentList: any[] = [];
-  pagedCompletedInvestmentList: any[] = [];
-  currentCompletedInvestPage = 1;
-  pageCompletedInvestSize = 40;
-
   ngOnInit(): void {
     this.getUsers();
-    this.updateCompletedInvestPagedList();
   }
 
-  getUsers() {
-    this.traderService.getAllTraders().subscribe({
-      next: (res: any) => {
-        this.completedInvestmentList = res.data.map((item: any) => ({
-          imageUrl: item.imageSecureUrl,
-          _id: item._id,
-          firstName: item.firstName,
-          lastName: item.lastName,
-          approvalStatus: item.approvalStatus,
-          userName: item.userName,
-          entityName: item.entityName,
-          email: item.email,
-          phoneNumber: item.phoneNumber,
-          walletBalance: item.walletBalance,
-          walletAddress: item.walletAddress,
-          amountInvested: item.amountInvested,
-          countryCode: item.countryCode,
-          country: item.country,
-          profit: item.profit,
-          createdAt: item.createdAt
-        }));
-        this.updateCompletedInvestPagedList();
-      },
-      error: (err) => {
-        this.errorMessage = 'Failed to load users.';
-      }
-    });
+totalUsers = 0;
+
+onPageChange(event: PageEvent) {
+  this.getUsers(event.pageIndex, event.pageSize);
+}
+
+  getUsers(pageIndex = 0, pageSize = 10) {
+  this.traderService.getAllTraders({ page: pageIndex + 1, limit: pageSize }).subscribe({
+    next: (res: any) => {
+      this.dataSource.data = res.data;
+      this.totalUsers = res.total; // bind to MatPaginator via [length]
+    },
+    error: () => {
+      this.errorMessage = 'Failed to load users.';
+    }
+  });
+}
+
+  applyFilter(event: Event) {
+    const filterValue = (event.target as HTMLInputElement).value;
+    this.dataSource.filter = filterValue.trim().toLowerCase();
+
+    if (this.dataSource.paginator) {
+      this.dataSource.paginator.firstPage();
+    }
   }
 
-  updateCompletedInvestPagedList() {
-    const startIndex = (this.currentCompletedInvestPage - 1) * this.pageCompletedInvestSize;
-    const endIndex = startIndex + this.pageCompletedInvestSize;
-    this.pagedCompletedInvestmentList = this.completedInvestmentList.slice(startIndex, endIndex);
-  }
-
-  changeCompletedInvestPage(page: number) {
-    if (page < 1 || page > this.totalCompletedInvestPages.length) return;
-    this.currentCompletedInvestPage = page;
-    this.updateCompletedInvestPagedList();
-  }
-
-  get totalCompletedInvestPages(): number[] {
-    return Array(Math.ceil(this.completedInvestmentList.length / this.pageCompletedInvestSize)).fill(0).map((_, i) => i + 1);
-  }
-
-
-
-
-  onSetupReview(id: string){
+  onSetupReview(id: string) {
     this.selectedCryptoId = id;
-    const encodedId = btoa(id); 
+    const encodedId = btoa(id);
     this.router.navigate(['/myaccount/review', encodedId]);
-
   }
 
+
+  exportToCSV() {
+  const csvData = this.dataSource.data.map((user: any) => ({
+    Username: user.userName,
+    Email: user.email,
+    Phone: user.phoneNumber,
+    Country: user.country,
+    Wallet: user.walletBalance,
+    Profit: user.profit,
+    CreatedAt: new Date(user.createdAt).toLocaleString()
+  }));
+
+  const csvContent = [
+    Object.keys(csvData[0]).join(','), // headers
+    ...csvData.map(row => Object.values(row).join(','))
+  ].join('\n');
+
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.setAttribute('download', 'users.csv');
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+onViewProfile(id: string) {
+  const encodedId = btoa(id);
+  this.router.navigate(['/myaccount/profile', encodedId]);
+}
 
 }
