@@ -213,6 +213,7 @@ export type GetCryptoResBody = {
     expiry: string;
     percentage: string;
     createdAt: string;
+    updatedAt: string;
     buyExchange: string,
     sellExchange: string,
     tradeStatus: string,

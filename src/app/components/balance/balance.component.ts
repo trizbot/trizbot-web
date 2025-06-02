@@ -177,7 +177,8 @@ getAvailableCryptos() {
           tradeStatus: item.tradeStatus,
           status: item.status,
           description: item.description,
-          createdAt: item.createdAt
+          createdAt: item.createdAt,
+          updatedAt: item.updatedAt
         }))  
                 .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
         
