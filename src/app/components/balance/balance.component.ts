@@ -178,7 +178,9 @@ getAvailableCryptos() {
           status: item.status,
           description: item.description,
           createdAt: item.createdAt
-        }));
+        }))  
+                .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+        
 
       this.updatePagedList();
     },
