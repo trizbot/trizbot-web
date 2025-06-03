@@ -242,6 +242,7 @@ export type GetInvestmentResBody = {
     imageUrl: string;
     investmentStatus: string;
     operationStatus: boolean;
+    updatedAt: string;
 };
 
 export type GetCompletedInvestmentResBody = {
@@ -264,6 +265,7 @@ export type GetCompletedInvestmentResBody = {
     imageUrl: string;
     investmentStatus: string;
     operationStatus: boolean;
+    updatedAt: string;
 };
 
 export type GetHistoryResBody = {
@@ -272,6 +274,7 @@ export type GetHistoryResBody = {
     transactionStatus: string;
     transactionKind: string;
     createdAt: Date;
+    updatedAt: string;
     traderEmail:string;
     curBalance: any;
     profit: any;
