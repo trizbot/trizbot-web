@@ -179,8 +179,7 @@ getAvailableCryptos() {
           description: item.description,
           createdAt: item.createdAt,
           updatedAt: item.updatedAt
-        }))  
-                .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+        })).sort((a:any, b:any) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
         
 
       this.updatePagedList();
@@ -255,7 +254,8 @@ onSetupTrade(id: string) {
             profit: item.profit,
             expiry: item.expiry,
             operationStatus: item.operationStatus,
-            createdAt: item.createdAt
+            createdAt: item.createdAt,
+            updatedAt:item.updatedAt
           };
   
           if (item.operationStatus === true  &&item.transactionType=="Debit" && item.transactionStatus=="Pending") {
@@ -265,7 +265,7 @@ onSetupTrade(id: string) {
           }
 
           return investmentItem;
-        }).sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+        }).sort((a:any, b:any) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
   
         this.updateInvestPagedList();
       },
@@ -324,12 +324,13 @@ onSetupTrade(id: string) {
             traderName: item.traderName,
             profit: item.profit,
             expiry: item.expiry,
+            updatedAt: item.updatedAt,
             createdAt: item.createdAt
           };
   
   
           return completedInvestmentItem;
-        }).sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+        }).sort((a:any, b:any) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
   
         this.updateCompletedInvestPagedList();
       },
