@@ -163,6 +163,8 @@ export type GetAllTradersResBody = {
     
    _id: string;
     firstName: string;
+    countryCode: string;
+    country: string;
     lastName: string;
     approvalStatus: string;
     userName: string;

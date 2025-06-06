@@ -34,7 +34,7 @@
   <!-- Phone Number -->
   <ng-container matColumnDef="phoneNumber">
     <th mat-header-cell *matHeaderCellDef> Phone </th>
-    <td mat-cell *matCellDef="let user"> {{ user.phoneNumber }} </td>
+    <td mat-cell *matCellDef="let user"> ({{ user.countryCode }}){{ user.phoneNumber }} </td>
   </ng-container>
 
   <!-- Country -->
