@@ -92,7 +92,7 @@ this.traderService.getAllTraders({ page: 1, limit: 100001 }).subscribe({
       this.totalWeeklyProfits += trader.profit ;
       this.totalWeeklyFunds += trader.depositBalance ;
 
-      if ((trader.walletBalance || 0) > 1) {
+      if (trader.walletBalance >= 1) {
         this.totalActiveUsers += 1;
       }
     });
