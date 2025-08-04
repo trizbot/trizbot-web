@@ -85,13 +85,16 @@ export class WalletBalanceComponent implements OnInit {
   
   
   getWeeklyStatistics(){
-  this.traderService.getAllTraders({ page: 1, limit: 100001 }).subscribe({
-      next: (res: any) => {
-        this.totalWeeklyProfits += res.data.profit;
-        this.totalWeeklyFunds+=res.data.depositBalance;
-      },
-      error: () => {}
+ this.traderService.getAllTraders({ page: 1, limit: 100001 }).subscribe({
+  next: (res: any) => {
+    res.data.forEach((trader: any) => {
+      this.totalWeeklyProfits += trader.profit || 0;
+      this.totalWeeklyFunds += trader.depositBalance || 0;
     });
+  },
+  error: () => {}
+});
+
 
 
     this.traderService.getWeeklyStatistics().subscribe({
