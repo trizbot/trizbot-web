@@ -89,8 +89,8 @@ this.traderService.getAllTraders({ page: 1, limit: 100001 }).subscribe({
   next: (res: any) => {
  
     res.data.forEach((trader: any) => {
-      this.totalWeeklyProfits += trader.profit || 0;
-      this.totalWeeklyFunds += trader.depositBalance || 0;
+      this.totalWeeklyProfits += trader.profit ;
+      this.totalWeeklyFunds += trader.depositBalance ;
 
       if ((trader.walletBalance || 0) > 1) {
         this.totalActiveUsers += 1;
