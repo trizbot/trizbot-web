@@ -22,6 +22,7 @@ import { ReferComponent } from './refer/refer.component';
 import { ChatComponent } from './chat/chat.component';
 import { SettingComponent } from './setting/setting.component';
 import { TraderCashRewardComponent } from './cash-reward/cash-reward.component';
+import { UserFeatureModalComponent } from './users-feature/user-disabled-feature.component';
 
 export const UiComponentsRoutes: Routes = [
   {
@@ -78,8 +79,8 @@ export const UiComponentsRoutes: Routes = [
         component: InvestmentComponent
       },
       {
-        path: 'users-disabled-feature/:id',
-        component: InvestmentComponent
+        path: 'users-feature/:id',
+        component: UserFeatureModalComponent
       },
 
       {
