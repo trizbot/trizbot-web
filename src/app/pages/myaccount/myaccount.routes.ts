@@ -21,6 +21,7 @@ import { PayoutsComponent } from './payouts/payouts.component';
 import { ReferComponent } from './refer/refer.component';
 import { ChatComponent } from './chat/chat.component';
 import { SettingComponent } from './setting/setting.component';
+import { TraderCashRewardComponent } from './cash-reward/cash-reward.component';
 
 export const UiComponentsRoutes: Routes = [
   {
@@ -118,6 +119,10 @@ export const UiComponentsRoutes: Routes = [
       {
         path: 'setting',
         component: SettingComponent
+      },      
+      {
+        path: 'cash-reward',
+        component: TraderCashRewardComponent
       },      
  
 

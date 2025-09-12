@@ -27,6 +27,7 @@ import { AuthService } from '../../../app/services/auth.service';
 })
 export class WalletBalanceComponent implements OnInit {
   walletBalance: string = '0.00';
+  tradeRewardCashWalletBalance: string = '0.00';
   amountInvested: string = '0.00';
   profit: string = '0.00';
   depositBalance: string = '0.00';
@@ -135,6 +136,7 @@ this.traderService.getAllTraders({ page: 1, limit: 100001 }).subscribe({
         this.isCryptoAvailableStatus = res.data.isCryptoAvailableStatus;
         this.isCryptoAvailableDescription = res.data.isCryptoAvailableDescription;
         this.payoutStatus = res.data.payoutStatus;
+        this.tradeRewardCashWalletBalance = res.data.tradeRewardCashWalletBalance;
     
         this.profit = res.data.profit;
         this.userRevenue =res.data.firstName;
