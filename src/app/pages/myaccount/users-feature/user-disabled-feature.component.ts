@@ -38,7 +38,6 @@ export class UserFeatureModalComponent implements OnInit {
     depositDisabled: false,
     walletDisabled: false,
     withdrawalDisabled: false,
-    comment: false,
   };
 
   errorMessage = '';
@@ -69,7 +68,7 @@ export class UserFeatureModalComponent implements OnInit {
       this.loading = false;
       return;
     }
-    const { depositDisabled, walletDisabled, withdrawalDisabled, comment } = this.featureData;
+    const { depositDisabled, walletDisabled, withdrawalDisabled } = this.featureData;
 
     this.featureService.createDisabledFeature(
       depositDisabled,
