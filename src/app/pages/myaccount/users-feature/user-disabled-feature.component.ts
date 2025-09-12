@@ -31,11 +31,11 @@ export class UserFeatureModalComponent implements OnInit {
   traderId: string | null = null;
 
   constructor(
-    public dialogRef: MatDialogRef<UserFeatureModalComponent>,
+    // public dialogRef: MatDialogRef<UserFeatureModalComponent>,
     private route: ActivatedRoute,
      private router: Router,
     private featureService: DisabledService,
-    @Inject(MAT_DIALOG_DATA) public data: any
+    // @Inject(MAT_DIALOG_DATA) public data: any
   ) {}
 
   ngOnInit(): void {

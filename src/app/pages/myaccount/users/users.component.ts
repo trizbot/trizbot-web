@@ -176,7 +176,7 @@ onViewProfile(id: string) {
 
 
   
-onDisableTraderFeature(id: any) {
+onDisableTraderFeature(id: string) {
   const encodedId = btoa(id); 
   this.router.navigate(['/myaccount/users-feature', encodedId]);
 }
