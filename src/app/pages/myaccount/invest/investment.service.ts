@@ -14,8 +14,8 @@ import { GetInvestmentResBody,GetCompletedInvestmentResBody,GetHistoryResBody } 
 export class InvestmentService {
 
 constructor(private http: HttpClient, private router: Router) {}
-createInvestment(reference:string, transactionType: string,amount: any, cryptoId: string){
-const payload = {reference, transactionType,amount, cryptoId}; 
+createInvestment(reference:string, transactionType: string,amount: any, cryptoId: string,transactionWalletType:string){
+const payload = {reference, transactionType,amount, cryptoId,transactionWalletType}; 
 return this.http.post(`${environment.apiBaseUrl}/transactions`, payload);
 }
 

@@ -20,6 +20,18 @@
             </mat-form-field>
           </div>
   
+          <div class="col-lg-6">
+            
+                 <mat-label class="f-w-600 m-b-8 d-block">Transaction Wallet Type</mat-label>
+  <mat-form-field appearance="outline" color="primary" class="country-code-field">
+    <mat-select [(ngModel)]="investData.transactionWalletType" name="transactionWalletType" placeholder="Transaction Wallet Type">
+      <mat-option value="">-- Select Transaction Wallet Type --</mat-option>
+      <mat-option value="MainWallet">Main Wallet</mat-option>
+      <mat-option value="TradeRewardCashWallet">Reward Cash Wallet</mat-option>
+    </mat-select>
+  </mat-form-field>
+          </div>
+  
          
         </div>
   

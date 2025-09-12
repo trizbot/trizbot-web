@@ -48,6 +48,7 @@ export class InvestmentComponent implements OnInit {
     transactionType: 'Debit',
     description: '',
     amount: '',
+    transactionWalletType: '',
   };
 
   errorMessage: string = '';
@@ -73,7 +74,7 @@ export class InvestmentComponent implements OnInit {
     this.errorMessage = '';
     this.loading = true;
   
-    const { description, transactionType, amount } = this.investData;
+    const { description, transactionType, amount,transactionWalletType } = this.investData;
     const cryptoId = this.cryptoId;
 
     const timestamp = Date.now(); 
@@ -91,7 +92,8 @@ const reference = `IRV${timestamp}${randomStr}${this.cryptoId}`;
       reference,
       transactionType,
       +amount,
-      cryptoId
+      cryptoId,
+      transactionWalletType
     ).subscribe({
       next: (response) => {
         this.sharedService.showToast({
