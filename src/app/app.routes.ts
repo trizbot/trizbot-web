@@ -45,6 +45,7 @@ export const routes: Routes = [
       { path: 'forgot', component: ForgotComponent },
       { path: 'complete', component: CompletePasswordComponent },
       { path: 'faq', component: FaqComponent },
+       { path: '**', component: NotFoundComponent }
       
     ],
   },
@@ -75,9 +76,9 @@ export const routes: Routes = [
       },
     ],
   },
-  {
-    path: '**',
+  
+    { path: '**', component: NotFoundComponent, 
     redirectTo: 'auth/not-found',
-     component: NotFoundComponent
+     
   },
 ];

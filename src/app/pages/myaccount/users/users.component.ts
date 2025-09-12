@@ -161,9 +161,11 @@ onViewProfile(id: string) {
         this.isUpdatingWallet = false;
       },
       error: (err) => {
-        const message = err?.error.message|| err?.error?.message || 'An unexpected error occurred.';
-        this.errorMessage = message;
+         this.sharedService.showToast({
+          title:  `${result} `,
+        });
         this.isUpdatingWallet = false;
+
       },
   });
 
