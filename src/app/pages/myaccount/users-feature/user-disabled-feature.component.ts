@@ -1,10 +1,17 @@
 import { Component, OnInit, inject } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatDialogModule } from '@angular/material/dialog';
 import { ActivatedRoute, Router } from '@angular/router';
 import { SharedService } from '../../../../app/shared/shared.service';
 import { DisabledService } from './user-disabled-feature.services';
+import { CommonModule } from '@angular/common';
+import { MatButtonModule } from '@angular/material/button';
+import { MatCardModule } from '@angular/material/card';
+import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/module.d-DBDMCw5I';
+import { MatFormFieldModule } from '@angular/material/module.d-vndDeG-q';
+import { MatRadioModule } from '@angular/material/radio';
 
 @Component({
   selector: 'app-user-feature',
@@ -12,6 +19,16 @@ import { DisabledService } from './user-disabled-feature.services';
     FormsModule,
     MatDialogModule,
     MatCheckboxModule,
+       FormsModule,
+        ReactiveFormsModule,
+        CommonModule,
+        MatFormFieldModule,
+        MatSelectModule,
+        MatRadioModule,
+        MatButtonModule,
+        MatCardModule,
+        MatInputModule,
+        MatCheckboxModule,
   ],
   templateUrl: 'user-disabled-feature.component.html',
 })
@@ -54,8 +71,9 @@ export class UserFeatureModalComponent implements OnInit {
       return;
     }
 
-    const { depositDisabled, walletDisabled, withdrawalDisabled, comment } = this.featureData;
 
+    const { depositDisabled, walletDisabled, withdrawalDisabled, comment } = this.featureData;
+alert(this.traderId)
     this.featureService.createDisabledFeature(
       depositDisabled,
       walletDisabled,
