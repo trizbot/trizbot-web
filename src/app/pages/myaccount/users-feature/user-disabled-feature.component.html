@@ -1,63 +1,65 @@
 <h2 mat-dialog-title class="fw-semibold text-primary">
   ⚙️ Manage Features 
 </h2>
-  <form class="mt-3" (ngSubmit)="onDisabledFeature()" #featureForm="ngForm">
-<mat-dialog-content class="p-3">
-  <div class="feature-option mb-3">
-    <mat-checkbox [(ngModel)]="featureData.depositDisabled" color="warn">
-      <span class="fw-medium">Disable Deposit</span>
-    </mat-checkbox>
-    <p class="text-muted small ms-4">
-      Prevents this user from making new deposit transactions.
-    </p>
-  </div>
 
-  <div class="feature-option mb-3">
-    <mat-checkbox [(ngModel)]="featureData.walletDisabled" color="accent">
-      <span class="fw-medium">Disable Wallet</span>
-    </mat-checkbox>
-    <p class="text-muted small ms-4">
-      Restricts access to adding wallet features.
-    </p>
-  </div>
+<form class="mt-3" (ngSubmit)="onDisabledFeature()" #featureForm="ngForm">
+  <mat-dialog-content class="p-3">
+    
+    <div class="feature-option mb-3">
+      <mat-checkbox [(ngModel)]="featureData.depositDisabled" name="depositDisabled" color="warn">
+        <span class="fw-medium">Disable Deposit</span>
+      </mat-checkbox>
+      <p class="text-muted small ms-4">
+        Prevents this user from making new deposit transactions.
+      </p>
+    </div>
 
-  <div class="feature-option">
-    <mat-checkbox [(ngModel)]="featureData.withdrawalDisabled" color="primary">
-      <span class="fw-medium">Disable Withdrawal</span>
-    </mat-checkbox>
-    <p class="text-muted small ms-4">
-      Stops this user from initiating payout or withdrawal operations.
-    </p>
-  </div>
-  <div class="feature-option">
-    <mat-checkbox [(ngModel)]="featureData.comment" color="primary">
-      <span class="fw-medium">Disable Withdrawal</span>
-    </mat-checkbox>
-    <p class="text-muted small ms-4">
-      Stops this user from initiating payout or withdrawal operations.
-    </p>
-  </div>
-</mat-dialog-content>
+    <div class="feature-option mb-3">
+      <mat-checkbox [(ngModel)]="featureData.walletDisabled" name="walletDisabled" color="accent">
+        <span class="fw-medium">Disable Wallet</span>
+      </mat-checkbox>
+      <p class="text-muted small ms-4">
+        Restricts access to adding wallet features.
+      </p>
+    </div>
 
-<mat-dialog-actions align="end" class="px-3 pb-3 gap-2">
+    <div class="feature-option mb-3">
+      <mat-checkbox [(ngModel)]="featureData.withdrawalDisabled" name="withdrawalDisabled" color="primary">
+        <span class="fw-medium">Disable Withdrawal</span>
+      </mat-checkbox>
+      <p class="text-muted small ms-4">
+        Stops this user from initiating payout or withdrawal operations.
+      </p>
+    </div>
+
+    <div class="feature-option mb-3">
+      <mat-checkbox [(ngModel)]="featureData.comment" name="commentDisabled" color="primary">
+        <span class="fw-medium">Disable Comment</span>
+      </mat-checkbox>
+      <p class="text-muted small ms-4">
+        Prevents this user from posting comments.
+      </p>
+    </div>
+
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end" class="px-3 pb-3 gap-2">
     <div class="m-t-6">
-          <button
-            mat-flat-button
-            color="primary"
-            class="w-100 py-2 fw-bold"
-            type="submit"
-            [disabled]="loading || !featureForm.form.valid">
-            <b *ngIf="loading">
-              <img src="./assets/images/loading.gif" alt="Loading..." style="width: 26px; height: 26px;" />
-            </b>
-            Trade
-          </button>
-        </div>
+      <button
+        mat-flat-button
+        color="primary"
+        class="w-100 py-2 fw-bold"
+        type="submit"
+        [disabled]="loading || !featureForm.form.valid">
+        <b *ngIf="loading">
+          <img src="./assets/images/loading.gif" alt="Loading..." style="width: 26px; height: 26px;" />
+        </b>
+        Trade
+      </button>
+    </div>
   
-        <div *ngIf="errorMessage" class="alert alert-danger mt-2">
-          <b>{{ errorMessage }}</b>
-        </div>
-     
-
-</mat-dialog-actions>
- </form>
+    <div *ngIf="errorMessage" class="alert alert-danger mt-2">
+      <b>{{ errorMessage }}</b>
+    </div>
+  </mat-dialog-actions>
+</form>
