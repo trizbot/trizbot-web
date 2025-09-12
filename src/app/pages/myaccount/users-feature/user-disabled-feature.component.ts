@@ -18,8 +18,7 @@ import { MatRadioModule } from '@angular/material/radio';
   imports: [
     FormsModule,
     MatDialogModule,
-    MatCheckboxModule,
-       FormsModule,
+    
         ReactiveFormsModule,
         CommonModule,
         MatFormFieldModule,
