@@ -169,11 +169,17 @@ onViewProfile(id: string) {
       },
   });
 
-        // TODO: call API to save changes
-        // console.log('Updated user features:', result);
+
       }
     });
   }
+
+
+  
+onDisableTraderFeature(user: any) {
+  const encodedId = btoa(user); 
+  this.router.navigate(['/myaccount/user-disabled-popup-feature', encodedId]);
+}
 
 
 }

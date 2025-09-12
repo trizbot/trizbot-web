@@ -81,7 +81,12 @@
   <td mat-cell *matCellDef="let user">
     <button mat-button color="primary" (click)="onSetupReview(user._id)">Credit</button>
     <br>
-    <button mat-button color="warn" (click)="openFeatureModal(user)">Disable Features</button>
+    <button mat-raised-button
+        (click)="onDisableTraderFeature(user)"
+        style="color: #fff; background-color: #FF5722; border: none;">
+  Disabled Feature 
+</button>
+    <!-- <button mat-button color="warn" (click)="openFeatureModal(user)">Disable Features</button> -->
   </td>
 </ng-container>
 

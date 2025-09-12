@@ -54,6 +54,7 @@ export class TraderCashRewardComponent implements OnInit {
   };
   
 
+  hidePassword: boolean = true;
   errorMessage: string = '';
   loading: boolean = false;
   imageUrl: string;
@@ -113,10 +114,7 @@ export class TraderCashRewardComponent implements OnInit {
       this.loading = false;
       return;
     }
-  
-   
     const { creatorName, tradeRewardCashType, amount, transactionPin,reason,email } = this.casheRewardData;
-  
         this.cashService.createCashReward(
           creatorName,
           tradeRewardCashType,
@@ -124,7 +122,6 @@ export class TraderCashRewardComponent implements OnInit {
           transactionPin,
           reason,
           email
-        
         ).subscribe({
           next: (response) => {
             this.sharedService.showToast({
