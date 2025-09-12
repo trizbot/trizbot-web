@@ -179,6 +179,7 @@ export type GetAllTradersResBody = {
     profit: string;
     depositBalance: string;
     createdAt: string;
+    referralCount: string;
     imageSecureUrl: string;
   };
 };

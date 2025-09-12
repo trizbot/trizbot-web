@@ -1,0 +1,37 @@
+<h2 mat-dialog-title class="fw-semibold text-primary">
+  ⚙️ Manage Features for <span class="text-dark">{{ data.userName }}</span>
+</h2>
+
+<mat-dialog-content class="p-3">
+  <div class="feature-option mb-3">
+    <mat-checkbox [(ngModel)]="data.depositDisabled" color="warn">
+      <span class="fw-medium">Disable Deposit</span>
+    </mat-checkbox>
+    <p class="text-muted small ms-4">
+      Prevents this user from making new deposit transactions.
+    </p>
+  </div>
+
+  <div class="feature-option mb-3">
+    <mat-checkbox [(ngModel)]="data.walletDisabled" color="accent">
+      <span class="fw-medium">Disable Wallet</span>
+    </mat-checkbox>
+    <p class="text-muted small ms-4">
+      Restricts access to adding wallet features.
+    </p>
+  </div>
+
+  <div class="feature-option">
+    <mat-checkbox [(ngModel)]="data.withdrawalDisabled" color="primary">
+      <span class="fw-medium">Disable Withdrawal</span>
+    </mat-checkbox>
+    <p class="text-muted small ms-4">
+      Stops this user from initiating payout or withdrawal operations.
+    </p>
+  </div>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end" class="px-3 pb-3">
+  <button mat-stroked-button color="warn" (click)="onCancel()">Cancel</button>
+  <button mat-raised-button color="primary" (click)="onSave()">Save Changes</button>
+</mat-dialog-actions>

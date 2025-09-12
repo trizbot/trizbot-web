@@ -9,7 +9,14 @@ import { GetTraderResBody,GetAllTradersResBody,GetAllAdminsResBody,GetDepositRes
   providedIn: 'root'
 })
 export class TraderService {
+
   constructor(private http: HttpClient) {}
+
+
+   disabledUserFeature(data: { traderId: any; result: any; }) {
+    const payload = { ...data.result }; 
+    return this.http.put(`${environment.apiBaseUrl}/traders/${data.traderId}/review`, payload);
+    }
 
 
   getTrader(): Observable<GetTraderResBody> {

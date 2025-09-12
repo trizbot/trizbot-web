@@ -21,6 +21,8 @@ import { CoreService } from '../../../services/core.service';
 import { CryptoService } from '../crypto/crypto.service';
 import { SharedService } from '../../../shared/shared.service';
 import { TraderService } from '../../../../app/appstate/trader.service';
+import { MatDialog } from '@angular/material/dialog';
+import { UserFeatureModalComponent } from '../user-disabled-popup-feature/user-feature-modal.component';
 
 @Component({
   selector: 'app-users',
@@ -51,6 +53,7 @@ export class UsersComponent implements OnInit {
   errorMessage: string = '';
   selectedCryptoId: string = '';
   loading: boolean = false;
+  isUpdatingWallet: boolean = false;
 
 displayedColumns: string[] = [
   'imageUrl', 'userName', 'country', 'phoneNumber', 'email',
@@ -66,7 +69,8 @@ displayedColumns: string[] = [
     private settings: CoreService,
     private cryptoService: CryptoService,
     private traderService: TraderService,
-    private router: Router
+    private router: Router,
+    private dialog: MatDialog
   ) {}
 
   ngOnInit(): void {
@@ -115,6 +119,7 @@ onPageChange(event: PageEvent) {
     Country: user.country,
     Wallet: user.walletBalance,
     Profit: user.profit,
+    referralCount: user.referralCount,
     CreatedAt: new Date(user.createdAt).toLocaleString()
   }));
 
@@ -135,5 +140,38 @@ onViewProfile(id: string) {
   const encodedId = btoa(id);
   this.router.navigate(['/myaccount/profile', encodedId]);
 }
+
+
+
+
+
+  openFeatureModal(user: any) {
+    const dialogRef = this.dialog.open(UserFeatureModalComponent, {
+      width: '400px',
+      data: { ...user }, // pass user data into modal
+    });
+
+    dialogRef.afterClosed().subscribe((result) => {
+      if (result) {
+          this.traderService.disabledUserFeature({ traderId: user.id, result: result }).subscribe({
+    next: (res: any) => {
+      this.sharedService.showToast({
+          title: `${user.lastName} ${user.firstName} Wallet has been successfully updated.`,
+        });
+        this.isUpdatingWallet = false;
+      },
+      error: (err) => {
+        const message = err?.error.message|| err?.error?.message || 'An unexpected error occurred.';
+        this.errorMessage = message;
+        this.isUpdatingWallet = false;
+      },
+  });
+
+        // TODO: call API to save changes
+        // console.log('Updated user features:', result);
+      }
+    });
+  }
+
 
 }

@@ -10,6 +10,7 @@ import { ForgotComponent } from './auth/forgot/forgot.component';
 import { FaqComponent } from './auth/faq/faq.component';
 
 import { CompletePasswordComponent } from './auth/complete-password/complete-password.component';
+import { NotFoundComponent } from './auth/not-found/not-found.component';
 
 export const routes: Routes = [
   {
@@ -76,6 +77,7 @@ export const routes: Routes = [
   },
   {
     path: '**',
-    redirectTo: 'auth/error',
+    redirectTo: 'auth/not-found',
+     component: NotFoundComponent
   },
 ];

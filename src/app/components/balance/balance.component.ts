@@ -57,6 +57,7 @@ export class WalletBalanceComponent implements OnInit {
   isAdminDashBoardType: boolean ;
   isNormalEntityType: boolean ;
   isSuperEntityType: boolean ;
+  isLoading = true;
 
   countdowns: { [key: string]: string } = {}; // Track countdown per trade
   private timerSub: Subscription;
@@ -122,8 +123,10 @@ this.traderService.getAllTraders({ page: 1, limit: 100001 }).subscribe({
   
 
   getCurrentTrader(){
+    this. isLoading = true;
     this.traderService.getTrader().subscribe({
       next: (res: GetTraderResBody) => {
+         this.isLoading = false;
         this.phoneNumber = res.data.phoneNumber;
         this.walletBalance = res.data.walletBalance;
         this.amountInvested = res.data.amountInvested;
@@ -169,6 +172,7 @@ this.traderService.getAllTraders({ page: 1, limit: 100001 }).subscribe({
       },
       error: (err) => {
         this.errorMessage = '';
+        this. isLoading = false;
       }
     });
 

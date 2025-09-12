@@ -1,0 +1,35 @@
+h2 {
+  font-size: 1.3rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+mat-dialog-content {
+  background: #f9fafb;
+  border-radius: 0.5rem;
+  margin: 0.5rem 0 1rem 0;
+}
+
+.feature-option {
+  padding: 0.5rem 0.8rem;
+  border-radius: 0.5rem;
+  transition: background 0.2s ease-in-out;
+
+  &:hover {
+    background: #f1f5f9;
+  }
+
+  mat-checkbox {
+    font-size: 0.95rem;
+  }
+
+  p {
+    margin: 0;
+    font-size: 0.8rem;
+  }
+}
+
+mat-dialog-actions {
+  border-top: 1px solid #e5e7eb;
+}

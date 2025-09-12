@@ -138,3 +138,18 @@
   margin-right: 8px;
   color: #4CAF50;  /* Change color as needed */
 }
+
+
+
+
+.loading-container {
+  height: 70vh;
+  background: #f9fafb; // subtle background
+}
+
+mat-card {
+  max-width: 320px;
+}
+mat-spinner {
+  color: #0d6efd; // primary color
+}
