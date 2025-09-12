@@ -88,7 +88,6 @@ export class UserFeatureModalComponent implements OnInit {
       
         const message = err?.error?.message || 'An unexpected error occurred.';
         this.errorMessage = message;
-          alert(message)
         this.loading = false;
       },
     });
