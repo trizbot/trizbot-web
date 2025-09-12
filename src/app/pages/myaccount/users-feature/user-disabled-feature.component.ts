@@ -18,7 +18,7 @@ import { DisabledService } from './user-disabled-feature.services';
 export class UserFeatureModalComponent implements OnInit {
 
   private sharedService = inject(SharedService);
-
+ private htmlElement!: HTMLHtmlElement;
   featureData = {
     depositDisabled: false,
     walletDisabled: false,
