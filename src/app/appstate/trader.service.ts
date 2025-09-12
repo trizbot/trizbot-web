@@ -14,7 +14,7 @@ export class TraderService {
 
 
    disabledUserFeature(data: { traderId: any; result: any; }) {
-    const payload = { isWalletDisabled:data.result.withdrawalDisabled,isDepositDisabled:data.result.depositDisabled,isWalletDisabled:data.result.walletDisabled }; 
+    const payload = { isWithdrawalDisabled:data.result.withdrawalDisabled,isDepositDisabled:data.result.depositDisabled,isWalletDisabled:data.result.walletDisabled }; 
     return this.http.put(`${environment.apiBaseUrl}/traders/${data.traderId}/disable-trader-features`, payload);
     }
 
