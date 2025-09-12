@@ -22,7 +22,7 @@ import { CryptoService } from '../crypto/crypto.service';
 import { SharedService } from '../../../shared/shared.service';
 import { TraderService } from '../../../../app/appstate/trader.service';
 import { MatDialog } from '@angular/material/dialog';
-import { UserFeatureModalComponent } from '../user-disabled-popup-feature/user-feature-modal.component';
+import { UserFeatureModalComponent } from '../users-feature/user-disabled-feature.component';
 
 @Component({
   selector: 'app-users',
@@ -177,8 +177,8 @@ onViewProfile(id: string) {
 
   
 onDisableTraderFeature(user: any) {
-  const encodedId = btoa(user); 
-  this.router.navigate(['/myaccount/user-disabled-popup-feature', encodedId]);
+  const encodedId = btoa(user.id); 
+  this.router.navigate(['/myaccount/user-feature', encodedId]);
 }
 
 

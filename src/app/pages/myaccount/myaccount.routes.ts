@@ -77,6 +77,10 @@ export const UiComponentsRoutes: Routes = [
         path: 'invest/:id',
         component: InvestmentComponent
       },
+      {
+        path: 'users-disabled-feature/:id',
+        component: InvestmentComponent
+      },
 
       {
         path: 'review/:id',
