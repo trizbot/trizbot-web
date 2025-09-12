@@ -43,7 +43,7 @@ export class UserFeatureModalComponent implements OnInit {
 
   errorMessage = '';
   loading = false;
-  traderId: string | null = null;
+  traderId: string ;
 
   constructor(
     private route: ActivatedRoute,
@@ -58,6 +58,8 @@ export class UserFeatureModalComponent implements OnInit {
       alert(encodedId)
       if (encodedId) {
         this.traderId = atob(encodedId);
+        alert(this.traderId);
+        alert(atob(encodedId));
       }
       alert(this.traderId);
     });
