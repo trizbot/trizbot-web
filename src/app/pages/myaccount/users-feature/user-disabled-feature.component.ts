@@ -2,7 +2,7 @@ import { Component, inject, Inject, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { SharedService } from '../../../../app/shared/shared.service';
 import { DisabledService } from './user-disabled-feature.services';
 
@@ -33,6 +33,7 @@ export class UserFeatureModalComponent implements OnInit {
   constructor(
     public dialogRef: MatDialogRef<UserFeatureModalComponent>,
     private route: ActivatedRoute,
+     private router: Router,
     private featureService: DisabledService,
     @Inject(MAT_DIALOG_DATA) public data: any
   ) {}
