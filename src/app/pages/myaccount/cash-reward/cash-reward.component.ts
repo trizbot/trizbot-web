@@ -118,7 +118,7 @@ export class TraderCashRewardComponent implements OnInit {
         this.cashService.createCashReward(
           creatorName,
           tradeRewardCashType,
-          amount,
+          Number(amount),
           transactionPin,
           reason,
           email
