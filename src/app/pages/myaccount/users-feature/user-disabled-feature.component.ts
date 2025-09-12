@@ -54,9 +54,12 @@ export class UserFeatureModalComponent implements OnInit {
   ngOnInit(): void {
     this.route.paramMap.subscribe(params => {
       const encodedId = params.get('id');
+
+      alert(encodedId)
       if (encodedId) {
         this.traderId = atob(encodedId);
       }
+      alert(this.traderId);
     });
   }
 

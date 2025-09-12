@@ -18,8 +18,6 @@ constructor(private http: HttpClient, private router: Router) {}
 
 createDisabledFeature(depositDisabled: boolean, walletDisabled: boolean, withdrawalDisabled: boolean, traderId: string){
 const payload = {isDepositDisabled:depositDisabled,isWalletDisabled:walletDisabled,isWithdrawalDisabled:withdrawalDisabled}; 
-
-alert(JSON.stringify(payload))
 return this.http.put(`${environment.apiBaseUrl}/traders/${traderId}/disable-trader-features`, payload)
 }
 
