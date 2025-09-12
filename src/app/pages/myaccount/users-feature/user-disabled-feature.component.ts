@@ -69,10 +69,8 @@ export class UserFeatureModalComponent implements OnInit {
       this.loading = false;
       return;
     }
-
-
     const { depositDisabled, walletDisabled, withdrawalDisabled, comment } = this.featureData;
-alert(this.traderId)
+
     this.featureService.createDisabledFeature(
       depositDisabled,
       walletDisabled,
@@ -87,8 +85,10 @@ alert(this.traderId)
         this.loading = false;
       },
       error: (err) => {
+      
         const message = err?.error?.message || 'An unexpected error occurred.';
         this.errorMessage = message;
+          alert(message)
         this.loading = false;
       },
     });
