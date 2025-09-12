@@ -57,7 +57,7 @@ export class UsersComponent implements OnInit {
 
 displayedColumns: string[] = [
   'imageUrl', 'userName', 'country', 'phoneNumber', 'email',
-  'walletBalance', 'profit', '' 'createdAt', 'actions'
+  'walletBalance', 'profit', 'referralCount', 'createdAt', 'actions'
 ];
 
   dataSource = new MatTableDataSource<any>();
