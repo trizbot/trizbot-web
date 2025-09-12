@@ -79,7 +79,7 @@ export class UserFeatureModalComponent implements OnInit {
     ).subscribe({
       next: () => {
         this.sharedService.showToast({
-          title: `Trader service updated successfully`,
+          title: `Trader selected feature is successfully updated.`,
         });
         this.loading = false;
       },

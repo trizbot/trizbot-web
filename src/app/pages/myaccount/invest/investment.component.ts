@@ -87,6 +87,11 @@ const reference = `IRV${timestamp}${randomStr}${this.cryptoId}`;
       this.loading = false;
       return;
     }
+    if (!amount || isNaN(+amount) || +amount <= 0) {
+      this.errorMessage = 'Please enter a valid trade amount.';
+      this.loading = false;
+      return;
+    }
   
     this.investService.createInvestment(
       reference,
