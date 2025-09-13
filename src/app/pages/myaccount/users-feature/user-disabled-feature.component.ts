@@ -65,7 +65,7 @@ export class UserFeatureModalComponent implements OnInit {
   }
 
   getCurrentTrader() {
-    this.traderService.getTrader().subscribe({
+    this.traderService.getTraderById(this.traderId).subscribe({
       next: (res: GetTraderResBody) => {
         // ✅ directly assign to featureData so checkboxes reflect initial state
         this.featureData = {

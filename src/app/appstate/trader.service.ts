@@ -23,6 +23,10 @@ export class TraderService {
     const entity=  localStorage.getItem('entity');
     return this.http.get<GetTraderResBody>(`${environment.apiBaseUrl}/${entity}/me`);
   }
+  getTraderById(traderId:string): Observable<GetTraderResBody> {
+    const entity=  localStorage.getItem('entity');
+    return this.http.get<GetTraderResBody>(`${environment.apiBaseUrl}/${entity}/${traderId}/id`);
+  }
 
   getDownlines(traderId:string): Observable<GetDownlinesResBody> {
     const entity=  localStorage.getItem('entity');
