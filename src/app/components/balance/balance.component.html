@@ -25,8 +25,7 @@
 
       
       <mat-card-content>
-        <h3 class="text-primary fw-bold mb-4">Main: ${{ walletBalance || 0.0 | number: '1.0-2' }} </h3>
-        <h3 class="text-success fw-bold mb-4">Reward: ${{ tradeRewardCashWalletBalance || 0.0 | number: '1.0-2' }} </h3>
+        <h3 class="text-primary fw-bold mb-4">${{ walletBalance || 0.0 | number: '1.0-2' }} </h3>
 
         <div class="d-flex justify-content-between gap-2">
           <button [routerLink]="['/myaccount/deposit']" class="btn btn-outline-success btn-sm w-100 d-flex align-items-center justify-content-center gap-1">
@@ -35,7 +34,9 @@
           <button [routerLink]="['/myaccount/withdraw']" class="btn btn-outline-danger btn-sm w-100 d-flex align-items-center justify-content-center gap-1 btn btn-primary" >
             <i class="bi bi-arrow-up-circle"></i>Withdraw
           </button>
-       
+       <br>
+      <h3 class="text-success fw-bold mb-4">Trade Booster: ${{ tradeRewardCashWalletBalance || 0.0 | number: '1.0-2' }} </h3>
+
         </div>
        
       </mat-card-content>

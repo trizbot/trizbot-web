@@ -43,18 +43,12 @@
           </div>
          
 
+       
           <div class="col-lg-6">
-            <mat-label class="f-w-600 m-b-8 d-block">Comment</mat-label>
-            <mat-form-field appearance="outline" class="w-100" color="primary">
-                <input matInput  placeholder="Enter Comment" name="reason" [(ngModel)]="casheRewardData.reason" />
-            </mat-form-field>
-          </div>
-        
-          <div class="col-lg-6">
-            <mat-label class="f-w-600 m-b-8 d-block">Transaction Type</mat-label>
+            <mat-label class="f-w-600 m-b-8 d-block">Booster Type</mat-label>
   <mat-form-field appearance="outline" color="primary" class="country-code-field">
     <mat-select [(ngModel)]="casheRewardData.tradeRewardCashType" name="tradeRewardCashType" placeholder="trade Reward Cash">
-      <mat-option value="">-- Select Transaction Type --</mat-option>
+      <mat-option value="">-- Select Booster Type --</mat-option>
       <mat-option value="credit">CREDIT</mat-option>
       <mat-option value="debit">DEBIT</mat-option>
     </mat-select>

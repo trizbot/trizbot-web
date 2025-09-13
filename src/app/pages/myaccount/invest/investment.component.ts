@@ -87,8 +87,8 @@ const reference = `IRV${timestamp}${randomStr}${this.cryptoId}`;
       this.loading = false;
       return;
     }
-    if (!amount || isNaN(+amount) || +amount <= 0) {
-      this.errorMessage = 'Please enter a valid trade amount.';
+    if (!transactionWalletType || transactionWalletType == "") {
+      this.errorMessage = 'Please select transaction wallet type.';
       this.loading = false;
       return;
     }

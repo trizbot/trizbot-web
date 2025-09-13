@@ -18,8 +18,8 @@ export class CashRewardService {
     constructor(private http: HttpClient, private router: Router) {}
    
     
-createCashReward(creatorName: string, tradeRewardCashType: string, amount: number, transactionPin: string, reason: string, email: string) {
-const payload = { creatorName, tradeRewardCashType, amount, transactionPin, reason, email };
+createCashReward(creatorName: string, tradeRewardCashType: string, amount: number, transactionPin: string,  email: string) {
+const payload = { creatorName, tradeRewardCashType, amount, transactionPin,  email };
 return this.http.put(`${environment.apiBaseUrl}/traders/reward-credit`, payload);
 }
 

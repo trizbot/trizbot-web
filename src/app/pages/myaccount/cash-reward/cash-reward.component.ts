@@ -49,7 +49,7 @@ export class TraderCashRewardComponent implements OnInit {
     transactionPin: '',
     tradeRewardCashType: '',
     creatorName: '',
-    reason: '',
+   
     email: '',
   };
   
@@ -114,13 +114,13 @@ export class TraderCashRewardComponent implements OnInit {
       this.loading = false;
       return;
     }
-    const { creatorName, tradeRewardCashType, amount, transactionPin,reason,email } = this.casheRewardData;
+    const { creatorName, tradeRewardCashType, amount, transactionPin,email } = this.casheRewardData;
         this.cashService.createCashReward(
           creatorName,
           tradeRewardCashType,
           Number(amount),
           transactionPin,
-          reason,
+          
           email
         ).subscribe({
           next: (response) => {
