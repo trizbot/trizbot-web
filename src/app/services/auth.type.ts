@@ -108,7 +108,7 @@ export type GetTraderResBody = {
     isCryptoAvailableStatus: boolean;
     isCryptoAvailableDescription: string;
     uplinerBonusAmount: number;
-    tradeRewardCashWalletBalance: string;
+    tradeRewardCashWalletBalance: any;
       
   isWalletDisabled?: boolean;
 

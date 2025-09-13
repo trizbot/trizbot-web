@@ -136,8 +136,13 @@ this.traderService.getAllTraders({ page: 1, limit: 100001 }).subscribe({
         this.isCryptoAvailableStatus = res.data.isCryptoAvailableStatus;
         this.isCryptoAvailableDescription = res.data.isCryptoAvailableDescription;
         this.payoutStatus = res.data.payoutStatus;
+        if(res.data.tradeRewardCashWalletBalance>=1){
         this.tradeRewardCashWalletBalance = res.data.tradeRewardCashWalletBalance;
-    
+        }
+        if(res.data.tradeRewardCashWalletBalance<=0){
+        this.tradeRewardCashWalletBalance = "0.0";
+        }
+
         this.profit = res.data.profit;
         this.userRevenue =res.data.firstName;
         this.lastName = res.data.lastName;
