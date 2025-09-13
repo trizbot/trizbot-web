@@ -24,8 +24,9 @@ export class TraderService {
     return this.http.get<GetTraderResBody>(`${environment.apiBaseUrl}/${entity}/me`);
   }
   getTraderById(traderId:string): Observable<GetTraderResBody> {
+    const  payload={traderId}
     const entity=  localStorage.getItem('entity');
-    return this.http.get<GetTraderResBody>(`${environment.apiBaseUrl}/${entity}/${traderId}/id`);
+    return this.http.post<GetTraderResBody>(`${environment.apiBaseUrl}/${entity}/disable-users`,payload);
   }
 
   getDownlines(traderId:string): Observable<GetDownlinesResBody> {
