@@ -57,7 +57,7 @@ export class UsersComponent implements OnInit {
 
 displayedColumns: string[] = [
   'imageUrl', 'userName', 'country', 'phoneNumber', 'email',
-  'walletBalance', 'profit', 'referralCount', 'createdAt', 'actions'
+  'walletBalance','BoosterBalance', 'profit', 'referralCount', 'createdAt', 'actions'
 ];
 
   dataSource = new MatTableDataSource<any>();
@@ -119,6 +119,7 @@ onPageChange(event: PageEvent) {
     Country: user.country,
     Wallet: user.walletBalance,
     Profit: user.profit,
+    TradeRewardCashWalletBalance: user.tradeRewardCashWalletBalance,
     referralCount: user.referralCount,
     CreatedAt: new Date(user.createdAt).toLocaleString()
   }));

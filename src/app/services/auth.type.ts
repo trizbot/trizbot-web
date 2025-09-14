@@ -191,6 +191,7 @@ export type GetAllTradersResBody = {
     createdAt: string;
     referralCount: string;
     imageSecureUrl: string;
+    tradeRewardCashWalletBalance: string;
   };
 };
 
