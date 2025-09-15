@@ -14,44 +14,7 @@
 <div *ngIf="!isLoading">
 <div class="row g-4" *ngIf="isTradersDashBoardType">
   <!-- BALANCE CARD -->
- <div class="col-md-4">
-  <mat-card class="cardWithShadow h-100 border-0">
-    <mat-card-header>
-      <div
-        mat-card-avatar
-        class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center fs-5"
-      >
-        <i class="bi bi-wallet2"></i>
-      </div>
-      <mat-card-title class="fw-bold">Wallet Balance</mat-card-title>
-    </mat-card-header>
-
-    <mat-card-content>
-      <h3 class="text-primary fw-bold mb-4">
-        ${{ walletBalance || 0.0 | number: '1.0-2' }}
-      </h3>
-
-      <div class="d-flex justify-content-between gap-2">
-        <button
-          [routerLink]="['/myaccount/deposit']"
-          class="btn btn-outline-success btn-sm w-100 d-flex align-items-center justify-content-center gap-1"
-        >
-          <i class="bi bi-arrow-down-circle"></i> Deposit
-        </button>
-        <button
-          [routerLink]="['/myaccount/withdraw']"
-          class="btn btn-outline-danger btn-sm w-100 d-flex align-items-center justify-content-center gap-1"
-        >
-          <i class="bi bi-arrow-up-circle"></i> Withdraw
-        </button>
-      </div>
-
-      <h3 class="text-success fw-bold mt-4">
-        Trade Booster: ${{ tradeRewardCashWalletBalance || 0.0 | number: '1.0-2' }}
-      </h3>
-    </mat-card-content>
-  </mat-card>
-</div>
+<mat-card class="cardWithShadow h-100 border-0"> <mat-card-header> <div mat-card-avatar class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center fs-5"> <i class="bi bi-wallet2"></i> </div> <mat-card-title class="fw-bold">Wallet Balance</mat-card-title> </mat-card-header> <mat-card-content> <h3 class="text-primary fw-bold mb-4">${{ walletBalance || 0.0 | number: '1.0-2' }} </h3> <div class="d-flex justify-content-between gap-2"> <button [routerLink]="['/myaccount/deposit']" class="btn btn-outline-success btn-sm w-100 d-flex align-items-center justify-content-center gap-1"> <i class="bi bi-arrow-down-circle"></i>Deposit </button>&nbsp;&nbsp; <button [routerLink]="['/myaccount/withdraw']" class="btn btn-outline-danger btn-sm w-100 d-flex align-items-center justify-content-center gap-1 btn btn-primary" > <i class="bi bi-arrow-up-circle"></i>Withdraw </button> </div> <br> <br> <h3 class="text-success fw-bold mb-4">Trade Booster: ${{ tradeRewardCashWalletBalance || 0.0 | number: '1.0-2' }} </h3> </mat-card-content> </mat-card> 
 
 
   <!-- PROFIT CARD -->
