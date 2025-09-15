@@ -125,7 +125,7 @@ export class TraderCashRewardComponent implements OnInit {
         ).subscribe({
           next: (response) => {
             this.sharedService.showToast({
-              title: `${this.casheRewardData.amount}USDT Booster ${tradeRewardCashType} successfully`,
+              title: `${this.casheRewardData.amount}USDT Booster ${tradeRewardCashType}ed successfully`,
             });
             this.loading = false;
           },
