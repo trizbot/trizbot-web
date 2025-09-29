@@ -98,7 +98,19 @@ this.traderService.getAllTraders({ page: 1, limit: 100001 }).subscribe({
       const walletBalance = trader.walletBalance || 0;
 
       this.totalWeeklyProfits += profit;
+
+      if(profit<0){
+        this.totalWeeklyProfits +=0;
+      }
+     else{
+      this.totalWeeklyProfits += profit;
+      }
+      if(depositBalance<0){
+        this.totalWeeklyFunds +=0;
+      }
+     else{
       this.totalWeeklyFunds += depositBalance;
+      }
 
       if (walletBalance >= 1) {
         this.totalActiveUsers += 1;
