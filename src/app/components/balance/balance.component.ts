@@ -85,41 +85,37 @@ export class WalletBalanceComponent implements OnInit {
 
 
   
-getWeeklyStatistics(){
-this.traderService.getAllTraders({ page: 1, limit: 100001 }).subscribe({
-  next: (res: any) => {
-    this.totalWeeklyProfits = 0;
-    this.totalWeeklyFunds = 0;
-    this.totalActiveUsers = 0;
+getWeeklyStatistics() {
+  this.traderService.getAllTraders({ page: 1, limit: 100001 }).subscribe({
+    next: (res: any) => {
+      this.totalWeeklyProfits = 0;
+      this.totalWeeklyFunds = 0;
+      this.totalActiveUsers = 0;
 
-    res.data.forEach((trader: any) => {
-      const profit = trader.profit || 0;
-      const depositBalance = trader.depositBalance || 0;
-      const walletBalance = trader.walletBalance || 0;
+      res.data.forEach((trader: any) => {
+        const profit = trader.profit || 0;
+        const depositBalance = trader.depositBalance || 0;
+        const walletBalance = trader.walletBalance || 0;
 
-      this.totalWeeklyProfits += profit;
+        // Add profit only if it's positive
+        if (profit > 0) {
+          this.totalWeeklyProfits += profit;
+        }
 
-      if(profit<0){
-        this.totalWeeklyProfits +=0;
-      }
-     else{
-      this.totalWeeklyProfits += profit;
-      }
-      if(depositBalance<0){
-        this.totalWeeklyFunds +=0;
-      }
-     else{
-      this.totalWeeklyFunds += depositBalance;
-      }
+        // Add depositBalance only if it's positive
+        if (depositBalance > 0) {
+          this.totalWeeklyFunds += depositBalance;
+        }
 
-      if (walletBalance >= 1) {
-        this.totalActiveUsers += 1;
-      }
-    });
-  },
-  error: () => {}
-});
-
+        // Count active users
+        if (walletBalance >= 1) {
+          this.totalActiveUsers += 1;
+        }
+      });
+    },
+    error: () => {}
+  });
+}
 
 
 
