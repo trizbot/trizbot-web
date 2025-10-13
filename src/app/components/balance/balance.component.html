@@ -368,11 +368,11 @@
         <div mat-card-avatar class="bg-danger text-white rounded-circle d-flex align-items-center justify-content-center fs-5">
           <i class="bi bi-bar-chart-line"></i>
         </div>
-        <mat-card-title class="fw-bold">Total weekly funds</mat-card-title>
+        <mat-card-title class="fw-bold">Weekly Deposit</mat-card-title>
       </mat-card-header>
       <mat-card-content>
        
-        <h3 class="text-warning fw-bold">${{totalWeeklyFunds||0.0}}</h3>
+        <h3 class="text-warning fw-bold">${{ (totalWeeklyFunds ?? 0) | number:'1.2-2' }}</h3>
       </mat-card-content>
     </mat-card>
   </div>
