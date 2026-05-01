@@ -1,6 +1,6 @@
 /* ============================================================
    TRIZBOT — welcome.component.scss
-   Theme: Clean Light · Bootstrap-compatible · Blue Accent
+   Theme: Clean Light · Bootstrap-compatible · Orange Accent
    Matches the login page style: bg-light, white cards, shadows
    ============================================================ */
 
@@ -14,7 +14,7 @@ body {
   background-color: #f8f9fa;
   color: #1a1a2e;
   font-family: 'Inter', sans-serif;
-  font-size: 15px;
+  font-size: 17px;
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
@@ -34,7 +34,7 @@ img { max-width: 100%; display: block; }
 
 /* ─── GRADIENT TEXT ───────────────────────────────────────── */
 .tz-gradient-text {
-  background: linear-gradient(135deg, #1565c0 0%, #0288d1 100%);
+  background: linear-gradient(135deg, #e8602c 0%, #f07840 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -47,14 +47,14 @@ img { max-width: 100%; display: block; }
   font-weight: 500;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: #1565c0;
+  color: #e8602c;
   margin-bottom: 10px;
 }
 
 /* ─── SECTION HEADING ─────────────────────────────────────── */
 .tz-section-heading {
   font-family: 'Inter', sans-serif;
-  font-size: clamp(1.9rem, 4vw, 2.8rem);
+  font-size: clamp(2.1rem, 4vw, 3rem);
   font-weight: 800;
   line-height: 1.2;
   color: #1a1a2e;
@@ -64,7 +64,7 @@ img { max-width: 100%; display: block; }
 
 .tz-section-sub {
   color: #6c757d;
-  font-size: 1rem;
+  font-size: 1.05rem;
   margin-top: 10px;
   max-width: 500px;
 }
@@ -81,7 +81,7 @@ img { max-width: 100%; display: block; }
   gap: 6px;
   font-family: 'Inter', sans-serif;
   font-weight: 600;
-  font-size: 0.92rem;
+  font-size: 1rem;
   border-radius: 6px;
   border: none;
   cursor: pointer;
@@ -92,40 +92,40 @@ img { max-width: 100%; display: block; }
   line-height: 1;
 }
 
-.tz-btn-lg { padding: 14px 32px; font-size: 1rem; }
+.tz-btn-lg { padding: 14px 32px; font-size: 1.05rem; }
 
 .tz-btn-primary {
-  background: #1565c0;
+  background: #e8602c;
   color: #fff;
 }
 .tz-btn-primary:hover {
-  background: #1251a3;
+  background: #cf4f20;
   transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(21, 101, 192, 0.35);
+  box-shadow: 0 6px 20px rgba(232, 96, 44, 0.35);
   color: #fff;
 }
 
 .tz-btn-outline {
   background: transparent;
-  color: #1565c0;
-  border: 2px solid #1565c0;
+  color: #e8602c;
+  border: 2px solid #e8602c;
 }
 .tz-btn-outline:hover {
-  background: #e3f0ff;
+  background: #fff3ee;
   transform: translateY(-1px);
-  color: #1565c0;
+  color: #e8602c;
 }
 
 .tz-btn-white {
   background: #fff;
-  color: #1565c0;
+  color: #e8602c;
   font-weight: 700;
 }
 .tz-btn-white:hover {
-  background: #f0f7ff;
+  background: #fff7f3;
   transform: translateY(-1px);
   box-shadow: 0 6px 20px rgba(0,0,0,0.12);
-  color: #1251a3;
+  color: #cf4f20;
 }
 
 .tz-btn-full {
@@ -190,7 +190,7 @@ img { max-width: 100%; display: block; }
 
 .tz-nav-links li a {
   font-family: 'Inter', sans-serif;
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   font-weight: 500;
   color: #495057;
   padding: 8px 14px;
@@ -201,14 +201,14 @@ img { max-width: 100%; display: block; }
 }
 
 .tz-nav-links li a:hover {
-  color: #1565c0;
-  background: #e3f0ff;
+  color: #e8602c;
+  background: #fff3ee;
 }
 
 .tz-nav-cta {
   display: inline-flex !important;
   align-items: center;
-  background: #1565c0 !important;
+  background: #e8602c !important;
   color: #fff !important;
   font-weight: 600 !important;
   padding: 8px 18px !important;
@@ -216,7 +216,7 @@ img { max-width: 100%; display: block; }
 }
 
 .tz-nav-cta:hover {
-  background: #1251a3 !important;
+  background: #cf4f20 !important;
   color: #fff !important;
   transform: translateY(-1px);
 }
@@ -265,13 +265,13 @@ img { max-width: 100%; display: block; }
 
 .tz-blob-1 {
   width: 500px; height: 500px;
-  background: radial-gradient(circle, rgba(21, 101, 192, 0.07), transparent 70%);
+  background: radial-gradient(circle, rgba(232, 96, 44, 0.07), transparent 70%);
   top: -80px; right: -60px;
 }
 
 .tz-blob-2 {
   width: 350px; height: 350px;
-  background: radial-gradient(circle, rgba(2, 136, 209, 0.06), transparent 70%);
+  background: radial-gradient(circle, rgba(240, 120, 64, 0.06), transparent 70%);
   bottom: 0; left: 5%;
 }
 
@@ -291,8 +291,8 @@ img { max-width: 100%; display: block; }
   font-family: 'IBM Plex Mono', monospace;
   font-size: 11px;
   color: #495057;
-  background: #f0f7ff;
-  border: 1px solid #bbdefb;
+  background: #fff7f3;
+  border: 1px solid #ffd0b8;
   border-radius: 100px;
   padding: 6px 14px;
   margin-bottom: 24px;
@@ -316,7 +316,7 @@ img { max-width: 100%; display: block; }
 
 .tz-hero-headline {
   font-family: 'Inter', sans-serif;
-  font-size: clamp(2.8rem, 5vw, 4rem);
+  font-size: clamp(3rem, 5.5vw, 4.4rem);
   font-weight: 800;
   line-height: 1.08;
   letter-spacing: -0.03em;
@@ -326,7 +326,7 @@ img { max-width: 100%; display: block; }
 }
 
 .tz-hero-sub {
-  font-size: 1.05rem;
+  font-size: 1.15rem;
   color: #6c757d;
   line-height: 1.75;
   max-width: 440px;
@@ -363,7 +363,7 @@ img { max-width: 100%; display: block; }
 }
 
 .tz-stat-label {
-  font-size: 0.75rem;
+  font-size: 0.82rem;
   color: #adb5bd;
   margin-top: 2px;
   letter-spacing: 0.04em;
@@ -514,7 +514,7 @@ img { max-width: 100%; display: block; }
 }
 
 .tz-about-body {
-  font-size: 1rem;
+  font-size: 1.05rem;
   color: #495057;
   line-height: 1.8;
   margin-bottom: 16px;
@@ -548,15 +548,15 @@ img { max-width: 100%; display: block; }
   position: absolute;
   top: 0; left: 0; right: 0;
   height: 3px;
-  background: linear-gradient(90deg, #1565c0, #0288d1);
+  background: linear-gradient(90deg, #e8602c, #f07840);
   opacity: 0;
   transition: opacity 0.25s;
 }
 
 .tz-opp-card:hover {
-  border-color: #bbdefb;
+  border-color: #ffd0b8;
   transform: translateY(-4px);
-  box-shadow: 0 16px 40px rgba(21, 101, 192, 0.1) !important;
+  box-shadow: 0 16px 40px rgba(232, 96, 44, 0.10) !important;
 }
 .tz-opp-card:hover::before { opacity: 1; }
 
@@ -569,8 +569,8 @@ img { max-width: 100%; display: block; }
 
 .tz-opp-icon {
   width: 32px; height: 32px;
-  background: #e3f0ff;
-  border: 1px solid #bbdefb;
+  background: #fff3ee;
+  border: 1px solid #ffd0b8;
   border-radius: 6px;
   display: flex;
   align-items: center;
@@ -581,7 +581,7 @@ img { max-width: 100%; display: block; }
 .tz-opp-pair {
   font-family: 'Inter', sans-serif;
   font-weight: 700;
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   color: #1a1a2e;
   flex: 1;
 }
@@ -601,12 +601,12 @@ img { max-width: 100%; display: block; }
 .tz-opp-profit-ring {
   width: 88px; height: 88px;
   border-radius: 50%;
-  border: 2px solid #bbdefb;
+  border: 2px solid #ffd0b8;
   display: flex;
   align-items: center;
   justify-content: center;
   margin: 0 auto 20px;
-  background: #e3f0ff;
+  background: #fff3ee;
   position: relative;
 }
 
@@ -615,7 +615,7 @@ img { max-width: 100%; display: block; }
   position: absolute;
   inset: -6px;
   border-radius: 50%;
-  border: 1px solid #e3f0ff;
+  border: 1px solid #fff3ee;
 }
 
 .tz-ring-inner {
@@ -627,7 +627,7 @@ img { max-width: 100%; display: block; }
 
 .tz-ring-val {
   font-family: 'Inter', sans-serif;
-  font-size: 1.1rem;
+  font-size: 1.15rem;
   font-weight: 800;
   color: #2e7d32;
 }
@@ -671,13 +671,13 @@ img { max-width: 100%; display: block; }
 
 .tz-route-ex {
   font-family: 'Inter', sans-serif;
-  font-size: 0.8rem;
+  font-size: 0.88rem;
   font-weight: 600;
   color: #1a1a2e;
 }
 
 .tz-route-arrow {
-  font-size: 1rem;
+  font-size: 1.05rem;
   color: #adb5bd;
   flex-shrink: 0;
 }
@@ -703,7 +703,7 @@ img { max-width: 100%; display: block; }
 }
 
 .tz-step:hover {
-  border-color: #bbdefb;
+  border-color: #ffd0b8;
   transform: translateY(-3px);
 }
 
@@ -711,7 +711,7 @@ img { max-width: 100%; display: block; }
   font-family: 'IBM Plex Mono', monospace;
   font-size: 11px;
   font-weight: 600;
-  color: #1565c0;
+  color: #e8602c;
   letter-spacing: 0.12em;
   margin-bottom: 14px;
   opacity: 0.8;
@@ -719,8 +719,8 @@ img { max-width: 100%; display: block; }
 
 .tz-step-icon-wrap {
   width: 48px; height: 48px;
-  background: #e3f0ff;
-  border: 1px solid #bbdefb;
+  background: #fff3ee;
+  border: 1px solid #ffd0b8;
   border-radius: 10px;
   display: flex;
   align-items: center;
@@ -731,26 +731,26 @@ img { max-width: 100%; display: block; }
 
 .tz-step-icon-wrap svg {
   width: 22px; height: 22px;
-  stroke: #1565c0;
+  stroke: #e8602c;
 }
 
 .tz-step:hover .tz-step-icon-wrap {
-  background: #1565c0;
-  border-color: #1565c0;
+  background: #e8602c;
+  border-color: #e8602c;
 }
 
 .tz-step:hover .tz-step-icon-wrap svg { stroke: #fff; }
 
 .tz-step-title {
   font-family: 'Inter', sans-serif;
-  font-size: 1.05rem;
+  font-size: 1.15rem;
   font-weight: 700;
   color: #1a1a2e;
   margin: 0 0 10px 0;
 }
 
 .tz-step-desc {
-  font-size: 0.88rem;
+  font-size: 0.95rem;
   color: #6c757d;
   line-height: 1.65;
   margin: 0;
@@ -764,7 +764,7 @@ img { max-width: 100%; display: block; }
 /* ─── COMMUNITY ───────────────────────────────────────────── */
 .tz-community {
   padding: 100px 0;
-  background: linear-gradient(135deg, #1565c0 0%, #0277bd 100%);
+  background: linear-gradient(135deg, #e8602c 0%, #d94f1e 100%);
   text-align: center;
   position: relative;
   overflow: hidden;
@@ -803,7 +803,7 @@ img { max-width: 100%; display: block; }
 
 .tz-community-heading {
   font-family: 'Inter', sans-serif;
-  font-size: clamp(2.2rem, 5vw, 3.2rem);
+  font-size: clamp(2.4rem, 5vw, 3.5rem);
   font-weight: 800;
   line-height: 1.15;
   letter-spacing: -0.02em;
@@ -812,7 +812,7 @@ img { max-width: 100%; display: block; }
 }
 
 .tz-community-heading .tz-gradient-text {
-  background: linear-gradient(135deg, #b3e5fc, #e1f5fe);
+  background: linear-gradient(135deg, #ffd4b8, #fff0e6);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -820,7 +820,7 @@ img { max-width: 100%; display: block; }
 
 .tz-community-sub {
   color: rgba(255,255,255,0.8);
-  font-size: 1rem;
+  font-size: 1.05rem;
   max-width: 480px;
   margin: 0 auto 32px;
   line-height: 1.75;
@@ -866,7 +866,7 @@ img { max-width: 100%; display: block; }
 
 .tz-footer-links a {
   font-family: 'Inter', sans-serif;
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   font-weight: 500;
   color: #6c757d;
   padding: 6px 12px;
@@ -876,8 +876,8 @@ img { max-width: 100%; display: block; }
 }
 
 .tz-footer-links a:hover {
-  color: #1565c0;
-  background: #e3f0ff;
+  color: #e8602c;
+  background: #fff3ee;
 }
 
 .tz-footer-bottom {
@@ -888,7 +888,7 @@ img { max-width: 100%; display: block; }
   gap: 12px;
   padding-top: 20px;
   border-top: 1px solid #e9ecef;
-  font-size: 0.8rem;
+  font-size: 0.88rem;
   color: #adb5bd;
 }
 
@@ -905,22 +905,22 @@ img { max-width: 100%; display: block; }
   bottom: 28px;
   right: 28px;
   width: 40px; height: 40px;
-  background: #1565c0;
+  background: #e8602c;
   border-radius: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
   color: #fff;
-  font-size: 1.1rem;
+  font-size: 1.15rem;
   font-weight: 700;
   transition: all 0.2s;
   z-index: 999;
   text-decoration: none;
-  box-shadow: 0 4px 14px rgba(21, 101, 192, 0.35);
+  box-shadow: 0 4px 14px rgba(232, 96, 44, 0.35);
 }
 
 .tz-back-to-top:hover {
-  background: #1251a3;
+  background: #cf4f20;
   transform: translateY(-2px);
   color: #fff;
 }
