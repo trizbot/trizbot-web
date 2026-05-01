@@ -1,18 +1,10 @@
 <!-- ======= NAVBAR ======= -->
 <nav class="tz-navbar">
   <div class="tz-nav-inner">
-    <a class="tz-brand" href="#">
-      <div class="tz-brand-icon">
-        <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
-          <polygon points="14,2 26,8 26,20 14,26 2,20 2,8" fill="none" stroke="#00e5ff" stroke-width="1.5"/>
-          <polygon points="14,7 21,11 21,18 14,22 7,18 7,11" fill="#00e5ff" opacity="0.15"/>
-          <circle cx="14" cy="14" r="3" fill="#00e5ff"/>
-        </svg>
-      </div>
-      <span class="tz-brand-text">TRIZBOT</span>
+    <a class="tz-brand" [routerLink]="['/welcome']">
+      <img src="./assets/images/logos/dark-logo.jpg" alt="TrizBot Logo" class="tz-logo-img" />
     </a>
 
-    <!-- Hamburger -->
     <button class="tz-hamburger" (click)="toggleMenu()" [class.open]="menuOpen" aria-label="Toggle menu">
       <span></span><span></span><span></span>
     </button>
@@ -22,25 +14,24 @@
       <li><a [routerLink]="['/auth/faq']" (click)="menuOpen=false">FAQ</a></li>
       <li>
         <a [routerLink]="['/auth/login']" class="tz-nav-cta" (click)="menuOpen=false">
-          Login <span class="tz-nav-arrow">→</span>
+          Login &nbsp;→
         </a>
       </li>
     </ul>
   </div>
 </nav>
 
-<!-- ======= HERO SECTION ======= -->
+<!-- ======= HERO ======= -->
 <section class="tz-hero">
-  <div class="tz-hero-grid-bg"></div>
-  <div class="tz-hero-orb tz-orb-1"></div>
-  <div class="tz-hero-orb tz-orb-2"></div>
-  <div class="tz-hero-orb tz-orb-3"></div>
+  <div class="tz-hero-blob tz-blob-1"></div>
+  <div class="tz-hero-blob tz-blob-2"></div>
 
   <div class="tz-container tz-hero-inner">
+
     <div class="tz-hero-content">
       <div class="tz-hero-badge">
         <span class="tz-pulse-dot"></span>
-        Live arbitrage engine · 47 exchanges
+        Live arbitrage engine &nbsp;·&nbsp; 47 exchanges
       </div>
 
       <h1 class="tz-hero-headline">
@@ -50,22 +41,16 @@
       </h1>
 
       <p class="tz-hero-sub">
-        TrizBot identifies and executes cross-exchange crypto arbitrage in real time — 
-        so you capture profit before the window closes.
+        TrizBot identifies and executes cross-exchange crypto arbitrage
+        in real time — so you capture profit before the window closes.
       </p>
 
       <div class="tz-hero-actions">
         <a [routerLink]="['/auth/request-otp']" class="tz-btn tz-btn-primary">
-          Start Trading
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-            <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
+          Start Trading &nbsp;→
         </a>
-        <a href="https://upload-apk.com/PMs01jMtMkn1GTY" target="_blank" class="tz-btn tz-btn-ghost">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-            <path d="M8 2v8M5 7l3 3 3-3M2 12h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-          Download App
+        <a href="https://upload-apk.com/PMs01jMtMkn1GTY" target="_blank" class="tz-btn tz-btn-outline">
+          ↓ &nbsp;Download App
         </a>
       </div>
 
@@ -87,62 +72,62 @@
       </div>
     </div>
 
+    <!-- Terminal Card -->
     <div class="tz-hero-visual">
-      <div class="tz-terminal">
+      <div class="tz-terminal shadow-lg">
         <div class="tz-terminal-bar">
-          <span class="tz-dot red"></span>
-          <span class="tz-dot yellow"></span>
-          <span class="tz-dot green"></span>
+          <span class="tz-dot tz-dot-red"></span>
+          <span class="tz-dot tz-dot-yellow"></span>
+          <span class="tz-dot tz-dot-green"></span>
           <span class="tz-terminal-title">arb_scanner.live</span>
+          <span class="tz-terminal-status">● LIVE</span>
         </div>
         <div class="tz-terminal-body">
-          <div class="tz-terminal-row">
-            <span class="tz-t-dim">›</span>
-            <span class="tz-t-label">Scanning</span>
-            <span class="tz-t-val scanning">47 exchanges...</span>
+          <div class="tz-terminal-header-row">
+            <span class="tz-th">Pair</span>
+            <span class="tz-th">Route</span>
+            <span class="tz-th tz-th-right">Profit</span>
           </div>
           <div class="tz-ticker-list">
             <div class="tz-ticker-row">
               <span class="tz-ticker-pair">BTC/USDT</span>
               <span class="tz-ticker-route">Binance → Bitmart</span>
-              <span class="tz-ticker-profit positive">+4.00%</span>
+              <span class="tz-ticker-profit tz-positive">+4.00%</span>
             </div>
             <div class="tz-ticker-row">
               <span class="tz-ticker-pair">ETH/USDT</span>
               <span class="tz-ticker-route">Bybit → Bitmart</span>
-              <span class="tz-ticker-profit positive">+2.00%</span>
+              <span class="tz-ticker-profit tz-positive">+2.00%</span>
             </div>
             <div class="tz-ticker-row">
               <span class="tz-ticker-pair">COMP/BTC</span>
               <span class="tz-ticker-route">Binance → Bybit</span>
-              <span class="tz-ticker-profit positive">+2.50%</span>
+              <span class="tz-ticker-profit tz-positive">+2.50%</span>
             </div>
             <div class="tz-ticker-row">
               <span class="tz-ticker-pair">ANIME/BNB</span>
               <span class="tz-ticker-route">Binance → Binance</span>
-              <span class="tz-ticker-profit positive">+2.00%</span>
+              <span class="tz-ticker-profit tz-positive">+2.00%</span>
             </div>
           </div>
-          <div class="tz-terminal-row tz-mt-sm">
-            <span class="tz-t-dim">›</span>
-            <span class="tz-t-label">Status</span>
-            <span class="tz-t-val online">● ONLINE</span>
-          </div>
-          <div class="tz-terminal-row">
-            <span class="tz-t-dim">›</span>
-            <span class="tz-t-label">Next scan</span>
-            <span class="tz-t-val countdown">0.3s</span>
+          <div class="tz-terminal-footer">
+            <span class="tz-tf-label">Next scan</span>
+            <span class="tz-tf-val tz-scanning">0.3s</span>
+            <span class="tz-tf-sep">·</span>
+            <span class="tz-tf-label">Status</span>
+            <span class="tz-tf-val tz-online">Online</span>
           </div>
         </div>
       </div>
     </div>
+
   </div>
 </section>
 
-<!-- ======= ABOUT SECTION ======= -->
-<section class="tz-about">
+<!-- ======= ABOUT ======= -->
+<section class="tz-about bg-light">
   <div class="tz-container">
-    <div class="tz-section-label">About</div>
+    <p class="tz-section-label">About TrizBot</p>
     <div class="tz-about-grid">
       <div class="tz-about-left">
         <h2 class="tz-section-heading">
@@ -152,43 +137,40 @@
       </div>
       <div class="tz-about-right">
         <p class="tz-about-body">
-          TrizBot is an advanced cryptocurrency arbitrage platform engineered for real-time market analysis. 
-          It monitors price discrepancies across 47+ exchanges simultaneously, surfacing the most profitable 
-          opportunities before the market corrects.
+          TrizBot is an advanced cryptocurrency arbitrage platform engineered for real-time market
+          analysis. It monitors price discrepancies across 47+ exchanges simultaneously, surfacing
+          the most profitable opportunities before the market corrects.
         </p>
         <p class="tz-about-body">
-          By processing up-to-the-millisecond market data, TrizBot gives traders an institutional-grade edge 
-          — previously available only to hedge funds and market makers.
+          By processing up-to-the-millisecond market data, TrizBot gives traders an
+          institutional-grade edge — previously available only to hedge funds and market makers.
         </p>
-        <div class="tz-about-actions">
-          <a href="https://upload-apk.com/PMs01jMtMkn1GTY" target="_blank" class="tz-btn tz-btn-outline">
-            Download App
-          </a>
-        </div>
+        <a href="https://upload-apk.com/PMs01jMtMkn1GTY" target="_blank" class="tz-btn tz-btn-primary" style="margin-top:24px">
+          Download App
+        </a>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ======= LIVE OPPORTUNITIES SECTION ======= -->
+<!-- ======= LIVE OPPORTUNITIES ======= -->
 <section class="tz-opps">
   <div class="tz-container">
     <div class="tz-section-header">
-      <div class="tz-section-label">Live Data</div>
+      <p class="tz-section-label">Live Data</p>
       <h2 class="tz-section-heading">Trade Opportunities</h2>
       <p class="tz-section-sub">Real-time arbitrage signals across major crypto exchanges.</p>
     </div>
 
     <div class="tz-opps-grid">
+      <div class="tz-opp-card shadow" *ngFor="let opp of opportunities">
 
-      <!-- Card 1 -->
-      <div class="tz-opp-card" *ngFor="let opp of opportunities; let i = index"
-           [style.animation-delay]="(i * 0.1) + 's'">
         <div class="tz-opp-header">
           <div class="tz-opp-icon">
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-              <circle cx="10" cy="10" r="8" stroke="#00e5ff" stroke-width="1.2"/>
-              <path d="M7 10l2 2 4-4" stroke="#00e5ff" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+            <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+              <circle cx="10" cy="10" r="8" stroke="#1565c0" stroke-width="1.4"/>
+              <path d="M7 10l2 2 4-4" stroke="#1565c0" stroke-width="1.4"
+                    stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
           </div>
           <span class="tz-opp-pair">{{ opp.pair }}</span>
@@ -203,80 +185,63 @@
         </div>
 
         <div class="tz-opp-route">
-          <div class="tz-route-node buy">
+          <div class="tz-route-node tz-buy">
             <span class="tz-route-dir">BUY</span>
             <span class="tz-route-ex">{{ opp.buyOn }}</span>
           </div>
-          <div class="tz-route-arrow">
-            <svg width="32" height="12" viewBox="0 0 32 12" fill="none">
-              <path d="M0 6h28M24 2l4 4-4 4" stroke="#00e5ff" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-          </div>
-          <div class="tz-route-node sell">
+          <span class="tz-route-arrow">→</span>
+          <div class="tz-route-node tz-sell">
             <span class="tz-route-dir">SELL</span>
             <span class="tz-route-ex">{{ opp.sellOn }}</span>
           </div>
         </div>
 
-        <a [routerLink]="['/auth/request-otp']" class="tz-btn tz-btn-card">
+        <a [routerLink]="['/auth/request-otp']" class="tz-btn tz-btn-primary tz-btn-full">
           Set Up Trade →
         </a>
       </div>
-
     </div>
   </div>
 </section>
 
 <!-- ======= HOW IT WORKS ======= -->
-<section class="tz-hiw">
+<section class="tz-hiw bg-light">
   <div class="tz-container">
     <div class="tz-section-header">
-      <div class="tz-section-label">Process</div>
+      <p class="tz-section-label">Process</p>
       <h2 class="tz-section-heading">How It Works</h2>
       <p class="tz-section-sub">TrizBot simplifies crypto arbitrage into four automated steps.</p>
     </div>
 
     <div class="tz-steps">
-      <div class="tz-step" *ngFor="let step of steps; let i = index" [style.animation-delay]="(i * 0.12) + 's'">
+      <div class="tz-step shadow" *ngFor="let step of steps; let i = index">
         <div class="tz-step-number">0{{ i + 1 }}</div>
-        <div class="tz-step-icon-wrap">
-          <span [innerHTML]="step.icon"></span>
-        </div>
+        <div class="tz-step-icon-wrap" [innerHTML]="step.icon"></div>
         <h4 class="tz-step-title">{{ step.title }}</h4>
         <p class="tz-step-desc">{{ step.desc }}</p>
-        <div class="tz-step-connector" *ngIf="i < steps.length - 1"></div>
       </div>
     </div>
 
     <div class="tz-hiw-cta">
       <a href="https://www.youtube.com/@Trizbot-updates" target="_blank" class="tz-btn tz-btn-primary">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-          <polygon points="6,4 13,8 6,12" fill="currentColor"/>
-          <circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.2" fill="none"/>
-        </svg>
-        Watch Tutorials
+        ▶ &nbsp;Watch Tutorials
       </a>
     </div>
   </div>
 </section>
 
-<!-- ======= COMMUNITY / FOOTER CTA ======= -->
+<!-- ======= COMMUNITY CTA ======= -->
 <section class="tz-community">
-  <div class="tz-community-orb"></div>
   <div class="tz-container tz-community-inner">
-    <div class="tz-community-badge">Community</div>
+    <p class="tz-community-label">Community</p>
     <h2 class="tz-community-heading">
-      Join 10,000+<br>
-      <span class="tz-gradient-text">Crypto Traders</span>
+      Join 10,000+ <span class="tz-gradient-text">Crypto Traders</span>
     </h2>
     <p class="tz-community-sub">
       Get real-time alerts, market insights, and connect with a global network of arbitrage traders.
     </p>
-    <a href="https://t.me/trizbotglobal" class="tz-btn tz-btn-primary tz-btn-lg" target="_blank">
-      <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-        <path d="M16 2L2 7.5l5 1.5 1 4 3-2 4 3L16 2z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round" fill="none"/>
-      </svg>
-      Join Telegram
+    <a href="https://t.me/trizbotglobal" class="tz-btn tz-btn-white tz-btn-lg" target="_blank">
+      ✈ &nbsp;Join Telegram
     </a>
   </div>
 </section>
@@ -285,16 +250,9 @@
 <footer class="tz-footer">
   <div class="tz-container">
     <div class="tz-footer-inner">
+
       <div class="tz-footer-brand">
-        <div class="tz-brand">
-          <div class="tz-brand-icon">
-            <svg width="22" height="22" viewBox="0 0 28 28" fill="none">
-              <polygon points="14,2 26,8 26,20 14,26 2,20 2,8" fill="none" stroke="#00e5ff" stroke-width="1.5"/>
-              <circle cx="14" cy="14" r="3" fill="#00e5ff"/>
-            </svg>
-          </div>
-          <span class="tz-brand-text">TRIZBOT</span>
-        </div>
+        <img src="./assets/images/logos/dark-logo.jpg" alt="TrizBot" class="tz-footer-logo" />
         <p class="tz-footer-tagline">The arbitrage edge. Automated.</p>
       </div>
 
@@ -305,17 +263,13 @@
         <a href="https://t.me/trizbotglobal" target="_blank">Community</a>
         <a href="https://www.youtube.com/@Trizbot-updates" target="_blank">YouTube</a>
       </div>
+
     </div>
 
     <div class="tz-footer-bottom">
       <span>&copy; {{ currentYear }} Trizbot. All Rights Reserved.</span>
-      <span class="tz-footer-note">Not financial advice. Trade responsibly.</span>
     </div>
   </div>
 </footer>
 
-<a href="#" class="tz-back-to-top">
-  <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-    <path d="M9 14V4M4 9l5-5 5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-  </svg>
-</a>
+<a href="#" class="tz-back-to-top">↑</a>
