@@ -1,0 +1,47 @@
+<h2 mat-dialog-title class="dialog-title">
+  Confirm Enrollment
+  <button mat-icon-button class="close-btn" type="button" (click)="close()">
+    <mat-icon>close</mat-icon>
+  </button>
+</h2>
+
+<mat-dialog-content [formGroup]="form">
+
+  <div class="course-summary">
+    <div class="summary-title">{{ course.title }}</div>
+    <div class="summary-instructor">by &#64;{{ course.instructor.username }}</div>
+  </div>
+
+  <div class="summary-row highlight">
+    <span class="label">Total to pay</span>
+    <span class="value">
+      <ng-container *ngIf="course.price > 0">&#36;{{ course.price | number: '1.2-2' }}</ng-container>
+      <ng-container *ngIf="course.price === 0">Free</ng-container>
+    </span>
+  </div>
+
+  <mat-label class="f-w-600 m-b-8 d-block m-t-3">Transaction PIN</mat-label>
+  <mat-form-field appearance="outline" class="w-100">
+    <input matInput type="password" inputmode="numeric" maxlength="6" formControlName="transactionPin" />
+  </mat-form-field>
+
+  <mat-label class="f-w-600 m-b-8 d-block">Reference</mat-label>
+  <mat-form-field appearance="outline" class="w-100">
+    <input matInput formControlName="reference" readonly />
+  </mat-form-field>
+
+  <div *ngIf="errorMessage" class="alert alert-danger m-t-2">
+    <b>{{ errorMessage }}</b>
+  </div>
+
+  <button
+    mat-flat-button
+    color="primary"
+    class="fw-bold w-100 submit-btn"
+    type="button"
+    [disabled]="loading"
+    (click)="submit()"
+  >
+    {{ loading ? 'Processing...' : (course.price === 0 ? 'Confirm Free Enrollment' : 'Confirm Payment') }}
+  </button>
+</mat-dialog-content>

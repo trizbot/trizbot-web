@@ -23,6 +23,9 @@ import { ChatComponent } from './chat/chat.component';
 import { SettingComponent } from './setting/setting.component';
 import { TraderCashRewardComponent } from './cash-reward/cash-reward.component';
 import { UserFeatureModalComponent } from './users-feature/user-disabled-feature.component';
+import { TransferComponent } from './transfer/transfer.component';
+import { P2pComponent } from './p2p/p2p.component';
+import { ArbitrageComponent } from './arbitrage/arbitrage.component';
 
 export const UiComponentsRoutes: Routes = [
   {
@@ -128,6 +131,19 @@ export const UiComponentsRoutes: Routes = [
       {
         path: 'cash-reward',
         component: TraderCashRewardComponent
+      },      
+ 
+      {
+        path: 'transfer',
+        component: TransferComponent
+      },      
+      {
+        path: 'p2p',
+        component: P2pComponent
+      },      
+      {
+        path: 'arbitrage',
+        component: ArbitrageComponent
       },      
  
 

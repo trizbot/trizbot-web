@@ -15,6 +15,15 @@ export interface HowItWorksStep {
   icon: string;
 }
 
+export interface PlatformFeature {
+  title: string;
+  desc: string;
+  icon: string;
+  badge?: string;
+  pricing?: { label: string; value: string }[];
+  pricingNote?: string;
+}
+
 @Component({
   selector: 'app-welcome',
   standalone: true,
@@ -72,6 +81,76 @@ export class WelcomeComponent implements OnInit {
                <path d="M12 7v2.5M12 14.5V17M9.5 9.5c0-1.38 1.12-2.5 2.5-2.5s2.5 1.12 2.5 2.5c0 2.5-5 2.5-5 5h5"
                      stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
              </svg>`,
+    },
+  ];
+
+  features: PlatformFeature[] = [
+    {
+      title: 'In-App Transfer',
+      desc: 'Send funds instantly to any user on the platform using just their username or email address — no wallet address needed.',
+      badge: 'Free',
+      icon: `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+               <path d="M4 8h13M17 8l-3.5-3.5M17 8l-3.5 3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+               <path d="M20 16H7M7 16l3.5-3.5M7 16l3.5 3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+             </svg>`,
+    },
+    {
+      title: 'Live Arbitrage Scanner',
+      desc: 'Real-time opportunities across platforms — token names, price differences, exchange pairs, and spread percentages, updated continuously.',
+      icon: `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+               <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6"/>
+               <path d="M12 12l5-3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+               <circle cx="12" cy="12" r="1.6" fill="currentColor"/>
+             </svg>`,
+      pricing: [
+        { label: 'Spreads ≤ 1%', value: 'Free' },
+        { label: 'Weekly (2%+ spreads)', value: '50 USDT' },
+        { label: 'Monthly (2%+ spreads)', value: '120 USDT' },
+      ],
+      pricingNote: 'Spreads of 2% and above require an active subscription.',
+    },
+    {
+      title: 'P2P Transaction',
+      desc: 'Buy and sell USDT directly with other users on the platform at competitive, transparent rates.',
+      badge: 'Free',
+      icon: `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+               <circle cx="8" cy="8" r="3" stroke="currentColor" stroke-width="1.6"/>
+               <circle cx="16" cy="16" r="3" stroke="currentColor" stroke-width="1.6"/>
+               <path d="M10.5 9.5L19 15M13.5 14.5L5 9" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+             </svg>`,
+    },
+    {
+      title: 'Feed — Crypto Updates',
+      desc: 'Stay ahead with a continuous feed of market trends, breaking news, and curated crypto updates in one place.',
+      badge: 'Free',
+      icon: `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+               <path d="M5 4v16" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+               <path d="M5 4c6 0 8 2 8 8M5 9c4 0 5.5 1.5 5.5 5.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+               <circle cx="5.5" cy="18.5" r="1.6" fill="currentColor"/>
+             </svg>`,
+    },
+    {
+      title: 'Crypto Academy',
+      desc: 'Buy and sell crypto trading courses created by the community. TrizBot takes a 10% platform fee on every course sold.',
+      badge: '10% platform fee',
+      icon: `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+               <path d="M12 4L2 8.5l10 4.5 10-4.5L12 4z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+               <path d="M6 11v4.5c0 1.5 2.7 3 6 3s6-1.5 6-3V11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+             </svg>`,
+    },
+    {
+      title: 'Signals',
+      desc: 'Subscribe for access to real-time trading signals curated and shared across the platform.',
+      icon: `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+               <path d="M12 19v-7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+               <path d="M8.5 14.5a5 5 0 010-7M15.5 14.5a5 5 0 000-7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+               <path d="M5.5 17.5a9 9 0 010-13M18.5 17.5a9 9 0 000-13" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+             </svg>`,
+      pricing: [
+        { label: 'Daily', value: '10 USDT' },
+        { label: 'Weekly', value: '55 USDT' },
+        { label: 'Monthly', value: '200 USDT' },
+      ],
     },
   ];
 

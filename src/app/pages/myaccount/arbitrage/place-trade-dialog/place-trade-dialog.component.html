@@ -1,0 +1,72 @@
+
+<h2 mat-dialog-title class="dialog-title">
+  Execute Arbitrage Trade
+  <button mat-icon-button class="close-btn" type="button" (click)="close()">
+    <mat-icon>close</mat-icon>
+  </button>
+</h2>
+
+<mat-dialog-content [formGroup]="form">
+
+  <div class="route-banner">
+    <div class="route-leg">
+      <span class="leg-dot" [style.background]="buyConfig.colorPrimary"></span>
+      <div>
+        <div class="leg-exchange">{{ buyConfig.label }}</div>
+        <div class="leg-role">Buy &middot; &#36;{{ opportunity.buyPrice | number: '1.2-6' }}</div>
+      </div>
+    </div>
+
+    <mat-icon class="route-arrow">arrow_forward</mat-icon>
+
+    <div class="route-leg">
+      <span class="leg-dot" [style.background]="sellConfig.colorPrimary"></span>
+      <div>
+        <div class="leg-exchange">{{ sellConfig.label }}</div>
+        <div class="leg-role">Sell &middot; &#36;{{ opportunity.sellPrice | number: '1.2-6' }}</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="spread-summary">
+    <span>Spread</span>
+    <b>{{ opportunity.spreadPercent | number: '1.2-2' }}%</b>
+  </div>
+
+  <mat-label class="f-w-600 m-b-8 d-block">Amount to commit ({{ opportunity.token }} quote)</mat-label>
+  <mat-form-field appearance="outline" class="w-100">
+    <span matPrefix>&#36;&nbsp;</span>
+    <input matInput type="number" formControlName="quoteAmount" placeholder="0.00" />
+  </mat-form-field>
+
+  <div class="estimate-grid" *ngIf="form.value.quoteAmount">
+    <div class="estimate-row">
+      <span class="label">You will receive (approx.)</span>
+      <span class="value">{{ estimatedCoinAmount | number: '1.2-6' }} {{ opportunity.token }}</span>
+    </div>
+    <div class="estimate-row highlight">
+      <span class="label">Estimated profit</span>
+      <span class="value">&#36;{{ estimatedProfit | number: '1.2-2' }}</span>
+    </div>
+  </div>
+
+  <p class="disclaimer">
+    Trade executes at the live market rate. If the spread drops below
+    {{ opportunity.spreadPercent | number: '1.2-2' }}% before execution, the trade will be rejected.
+  </p>
+
+  <div *ngIf="errorMessage" class="alert alert-danger m-t-2">
+    <b>{{ errorMessage }}</b>
+  </div>
+
+  <button
+    mat-flat-button
+    color="primary"
+    class="fw-bold w-100 submit-btn"
+    type="button"
+    [disabled]="loading"
+    (click)="submit()"
+  >
+    {{ loading ? 'Executing...' : 'Confirm Trade' }}
+  </button>
+</mat-dialog-content>

@@ -33,7 +33,6 @@ export const routes: Routes = [
     ],
   },
 
-
   {
     path: 'auth',
     component: BlankComponent,
@@ -45,14 +44,11 @@ export const routes: Routes = [
       { path: 'forgot', component: ForgotComponent },
       { path: 'complete', component: CompletePasswordComponent },
       { path: 'faq', component: FaqComponent },
-       { path: '**', component: NotFoundComponent }
-      
+      { path: 'not-found', component: NotFoundComponent },
+      { path: '**', redirectTo: 'not-found', pathMatch: 'full' },
     ],
   },
-  
 
-
-  
   {
     path: '',
     component: FullComponent,
@@ -76,9 +72,7 @@ export const routes: Routes = [
       },
     ],
   },
-  
-    { path: '**', component: NotFoundComponent, 
-    redirectTo: 'auth/not-found',
-     
-  },
+
+  // Top-level catch-all: must use ONLY redirectTo OR ONLY component, never both.
+  { path: '**', redirectTo: 'auth/not-found', pathMatch: 'full' },
 ];

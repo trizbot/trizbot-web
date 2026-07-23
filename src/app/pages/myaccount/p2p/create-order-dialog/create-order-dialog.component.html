@@ -1,0 +1,105 @@
+<h2 mat-dialog-title class="dialog-title">
+  Post a New Ad
+  <button mat-icon-button class="close-btn" type="button" (click)="close()">
+    <mat-icon>close</mat-icon>
+  </button>
+</h2>
+
+<mat-dialog-content [formGroup]="form">
+
+  <div class="type-toggle">
+    <button
+      type="button"
+      class="toggle-btn buy"
+      [class.active]="form.value.type === P2POrderType.Buy"
+      (click)="setType(P2POrderType.Buy)"
+    >
+      I want to Buy
+    </button>
+    <button
+      type="button"
+      class="toggle-btn sell"
+      [class.active]="form.value.type === P2POrderType.Sell"
+      (click)="setType(P2POrderType.Sell)"
+    >
+      I want to Sell
+    </button>
+  </div>
+
+  <div class="field-row">
+    <div>
+      <mat-label class="f-w-600 m-b-8 d-block">Asset</mat-label>
+      <mat-form-field appearance="outline" class="w-100">
+        <mat-select formControlName="coin">
+          <mat-option *ngFor="let coin of coinOptions" [value]="coin">{{ coin }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+    <div>
+      <mat-label class="f-w-600 m-b-8 d-block">Fiat currency</mat-label>
+      <mat-form-field appearance="outline" class="w-100">
+        <mat-select formControlName="fiatCurrency">
+          <mat-option *ngFor="let fiat of fiatOptions" [value]="fiat">{{ fiat }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+  </div>
+
+  <mat-label class="f-w-600 m-b-8 d-block">Price per unit</mat-label>
+  <mat-form-field appearance="outline" class="w-100">
+    <span matPrefix class="prefix">&#8358;&nbsp;</span>
+    <input matInput type="number" formControlName="pricePerUnit" placeholder="0.00" />
+    <span matSuffix>{{ form.value.fiatCurrency }} / {{ form.value.coin }}</span>
+  </mat-form-field>
+
+  <mat-label class="f-w-600 m-b-8 d-block">Total amount to trade</mat-label>
+  <mat-form-field appearance="outline" class="w-100">
+    <input matInput type="number" formControlName="totalAmount" placeholder="0.00" />
+    <span matSuffix>{{ form.value.coin }}</span>
+  </mat-form-field>
+
+  <div class="field-row">
+    <div>
+      <mat-label class="f-w-600 m-b-8 d-block">Min order limit</mat-label>
+      <mat-form-field appearance="outline" class="w-100">
+        <span matPrefix class="prefix">&#8358;&nbsp;</span>
+        <input matInput type="number" formControlName="minLimit" placeholder="0" />
+      </mat-form-field>
+    </div>
+    <div>
+      <mat-label class="f-w-600 m-b-8 d-block">Max order limit</mat-label>
+      <mat-form-field appearance="outline" class="w-100">
+        <span matPrefix class="prefix">&#8358;&nbsp;</span>
+        <input matInput type="number" formControlName="maxLimit" placeholder="0" />
+      </mat-form-field>
+    </div>
+  </div>
+  <div class="field-error" *ngIf="limitError">{{ limitError }}</div>
+
+  <mat-label class="f-w-600 m-b-8 d-block">Accepted payment methods</mat-label>
+  <mat-form-field appearance="outline" class="w-100">
+    <mat-select formControlName="paymentMethods" multiple>
+      <mat-option *ngFor="let method of paymentMethodOptions" [value]="method">{{ method }}</mat-option>
+    </mat-select>
+  </mat-form-field>
+
+  <mat-label class="f-w-600 m-b-8 d-block">Terms (optional)</mat-label>
+  <mat-form-field appearance="outline" class="w-100">
+    <textarea matInput rows="3" formControlName="terms" placeholder="e.g. Payment must be made from an account in your own name"></textarea>
+  </mat-form-field>
+
+  <div *ngIf="errorMessage" class="alert alert-danger m-t-2">
+    <b>{{ errorMessage }}</b>
+  </div>
+
+  <button
+    mat-flat-button
+    color="primary"
+    class="fw-bold w-100 submit-btn"
+    type="button"
+    [disabled]="loading"
+    (click)="submit()"
+  >
+    {{ loading ? 'Posting...' : 'Post Ad' }}
+  </button>
+</mat-dialog-content>

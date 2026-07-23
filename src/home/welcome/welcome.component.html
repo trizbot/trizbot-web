@@ -204,6 +204,39 @@
   </div>
 </section>
 
+<!-- ======= PLATFORM FEATURES ======= -->
+<section class="tz-features">
+  <div class="tz-container">
+    <div class="tz-section-header">
+      <p class="tz-section-label">Platform</p>
+      <h2 class="tz-section-heading">Everything You Need</h2>
+      <p class="tz-section-sub">One platform for transfers, arbitrage, trading, learning, and signals.</p>
+    </div>
+
+    <div class="tz-features-grid">
+      <div class="tz-feature-card shadow" *ngFor="let feature of features">
+
+        <div class="tz-feature-top">
+          <div class="tz-feature-icon-wrap" [innerHTML]="feature.icon"></div>
+          <span class="tz-feature-badge" *ngIf="feature.badge">{{ feature.badge }}</span>
+        </div>
+
+        <h4 class="tz-feature-title">{{ feature.title }}</h4>
+        <p class="tz-feature-desc">{{ feature.desc }}</p>
+
+        <div class="tz-feature-pricing" *ngIf="feature.pricing">
+          <div class="tz-price-row" *ngFor="let tier of feature.pricing">
+            <span class="tz-price-label">{{ tier.label }}</span>
+            <span class="tz-price-value">{{ tier.value }}</span>
+          </div>
+          <p class="tz-price-note" *ngIf="feature.pricingNote">{{ feature.pricingNote }}</p>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</section>
+
 <!-- ======= HOW IT WORKS ======= -->
 <section class="tz-hiw bg-light">
   <div class="tz-container">

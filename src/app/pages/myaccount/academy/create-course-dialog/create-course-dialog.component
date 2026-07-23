@@ -1,0 +1,127 @@
+// create-course-dialog/create-course-dialog.component.ts
+
+import { CommonModule } from '@angular/common';
+import { Component, Inject } from '@angular/core';
+import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
+
+import { MaterialModule } from '../../../../material.module';
+import { SharedService } from '../../../../shared/shared.service';
+import { AcademyService } from '../academy.service';
+import {
+  CATEGORY_OPTIONS,
+  Course,
+  CourseCategoryEnum,
+  CourseLevelEnum,
+  LEVEL_OPTIONS,
+  MAX_INLINE_CONTENT_LENGTH,
+} from '../academy.model';
+
+export interface CreateCourseDialogData {
+  existing?: Course;
+}
+
+@Component({
+  selector: 'app-create-course-dialog',
+  standalone: true,
+  imports: [CommonModule, ReactiveFormsModule, MaterialModule, MatDialogModule],
+  templateUrl: './create-course-dialog.component.html',
+  styleUrls: ['./create-course-dialog.component.scss'],
+})
+export class CreateCourseDialogComponent {
+  readonly categoryOptions = CATEGORY_OPTIONS;
+  readonly levelOptions = LEVEL_OPTIONS;
+  readonly maxContentLength = MAX_INLINE_CONTENT_LENGTH;
+
+  loading = false;
+  errorMessage = '';
+
+  get isEditing(): boolean {
+    return !!this.data.existing;
+  }
+
+  form = new FormGroup({
+    title: new FormControl('', [Validators.required, Validators.maxLength(300)]),
+    description: new FormControl('', [Validators.maxLength(1000)]),
+    content: new FormControl('', [Validators.required, Validators.maxLength(MAX_INLINE_CONTENT_LENGTH)]),
+    thumbnailUrl: new FormControl(''),
+    attachmentUrl: new FormControl(''),
+    price: new FormControl<number | null>(0, [Validators.required, Validators.min(0)]),
+    category: new FormControl<CourseCategoryEnum | ''>(''),
+    level: new FormControl<CourseLevelEnum | ''>(''),
+    tags: new FormControl(''), // comma-separated in the UI, split before submit
+  });
+
+  constructor(
+    private dialogRef: MatDialogRef<CreateCourseDialogComponent>,
+    private academyService: AcademyService,
+    private sharedService: SharedService,
+    @Inject(MAT_DIALOG_DATA) public data: CreateCourseDialogData
+  ) {
+    if (data.existing) {
+      const c = data.existing;
+      this.form.patchValue({
+        title: c.title,
+        description: c.description || '',
+        content: c.content,
+        thumbnailUrl: c.thumbnailUrl || '',
+        attachmentUrl: c.attachmentUrl || '',
+        price: c.price,
+        category: c.category || '',
+        level: c.level || '',
+        tags: (c.tags || []).join(', '),
+      });
+    }
+  }
+
+  get contentLength(): number {
+    return this.form.getRawValue().content?.length || 0;
+  }
+
+  submit(): void {
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
+      return;
+    }
+
+    this.errorMessage = '';
+    this.loading = true;
+    const value = this.form.getRawValue();
+    const tags = (value.tags || '')
+      .split(',')
+      .map((t) => t.trim())
+      .filter(Boolean);
+
+    const payload = {
+      title: value.title!,
+      description: value.description || undefined,
+      content: value.content!,
+      thumbnailUrl: value.thumbnailUrl || undefined,
+      attachmentUrl: value.attachmentUrl || undefined,
+      price: value.price!,
+      category: (value.category as CourseCategoryEnum) || undefined,
+      level: (value.level as CourseLevelEnum) || undefined,
+      tags: tags.length ? tags : undefined,
+    };
+
+    const request = this.isEditing
+      ? this.academyService.updateCourse(this.data.existing!.id, payload)
+      : this.academyService.createCourse(payload);
+
+    request.subscribe({
+      next: () => {
+        this.loading = false;
+        this.dialogRef.close(true);
+      },
+      error: (err) => {
+        this.loading = false;
+        const message = err?.error?.message || 'Could not save this course. Please try again.';
+        this.errorMessage = Array.isArray(message) ? message.join(', ') : message;
+      },
+    });
+  }
+
+  close(): void {
+    this.dialogRef.close(false);
+  }
+}

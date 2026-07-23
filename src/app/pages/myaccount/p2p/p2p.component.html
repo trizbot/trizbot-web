@@ -1,0 +1,236 @@
+<div class="p2p-wrapper">
+
+  <!-- Top-level nav -->
+  <div class="p2p-tabs">
+    <button class="p2p-tab" [class.active]="activeTab === 'market'" (click)="selectTab('market')">
+      Market
+    </button>
+    <button class="p2p-tab" [class.active]="activeTab === 'my-orders'" (click)="selectTab('my-orders')">
+      My Ads
+    </button>
+    <button class="p2p-tab" [class.active]="activeTab === 'my-trades'" (click)="selectTab('my-trades')">
+      My Trades
+    </button>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- MARKET -->
+  <!-- ===================================================================== -->
+  <mat-card class="cardWithShadow theme-card p2p-card" *ngIf="activeTab === 'market'">
+    <mat-card-content>
+
+      <div class="market-toolbar">
+        <div class="type-toggle">
+          <button
+            type="button"
+            class="type-btn buy"
+            [class.active]="marketType === P2POrderType.Buy"
+            (click)="setMarketType(P2POrderType.Buy)"
+          >
+            Buy USDT
+          </button>
+          <button
+            type="button"
+            class="type-btn sell"
+            [class.active]="marketType === P2POrderType.Sell"
+            (click)="setMarketType(P2POrderType.Sell)"
+          >
+            Sell USDT
+          </button>
+        </div>
+
+        <form class="filters" [formGroup]="filterForm">
+          <mat-form-field appearance="outline" class="filter-field">
+            <mat-select formControlName="paymentMethod" (selectionChange)="loadOrders()">
+              <mat-option value="">All payment methods</mat-option>
+              <mat-option *ngFor="let method of paymentMethodOptions" [value]="method">
+                {{ method }}
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <button mat-flat-button color="primary" class="post-ad-btn fw-bold" type="button"
+                  (click)="openCreateOrderDialog(marketType === P2POrderType.Buy ? P2POrderType.Sell : P2POrderType.Buy)">
+            <mat-icon>add</mat-icon>
+            Post Ad
+          </button>
+        </form>
+      </div>
+
+      <div class="table-loading" *ngIf="ordersLoading">
+        <img src="./assets/images/loading.gif" alt="Loading..." style="width: 26px; height: 26px;" />
+      </div>
+
+      <div class="table-empty" *ngIf="!ordersLoading && orders.length === 0">
+        No {{ marketType === P2POrderType.Buy ? 'buy' : 'sell' }} ads available right now.
+      </div>
+
+      <table class="order-book" *ngIf="!ordersLoading && orders.length > 0">
+        <thead>
+          <tr>
+            <th>Merchant</th>
+            <th>Price</th>
+            <th>Available / Limits</th>
+            <th>Payment</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let order of orders">
+            <td>
+              <div class="merchant-cell">
+                <div class="merchant-avatar">
+                  <img *ngIf="order.merchant.avatarUrl" [src]="order.merchant.avatarUrl" alt="" />
+                  <span *ngIf="!order.merchant.avatarUrl">{{ order.merchant.username.charAt(0).toUpperCase() }}</span>
+                </div>
+                <div>
+                  <div class="merchant-name">
+                    {{ order.merchant.username }}
+                    <mat-icon *ngIf="order.merchant.isVerified" class="verified-badge">verified</mat-icon>
+                  </div>
+                  <div class="merchant-stats">
+                    {{ order.merchant.totalTrades }} trades &middot; {{ order.merchant.completionRate }}%
+                  </div>
+                </div>
+              </div>
+            </td>
+            <td class="price-cell">&#8358;{{ order.pricePerUnit | number: '1.2-2' }}</td>
+            <td>
+              <div>{{ order.availableAmount | number: '1.2-4' }} {{ order.coin }}</div>
+              <div class="limits-text">
+                &#8358;{{ order.minLimit | number }} &ndash; &#8358;{{ order.maxLimit | number }}
+              </div>
+            </td>
+            <td>
+              <span class="payment-tag" *ngFor="let m of order.paymentMethods.slice(0, 2)">{{ m }}</span>
+              <span class="payment-tag more" *ngIf="order.paymentMethods.length > 2">
+                +{{ order.paymentMethods.length - 2 }}
+              </span>
+            </td>
+            <td class="action-cell">
+              <button
+                mat-flat-button
+                [color]="marketType === P2POrderType.Buy ? 'primary' : 'warn'"
+                class="fw-bold trade-action-btn"
+                type="button"
+                (click)="tradeOrder(order)"
+              >
+                {{ actionLabelFor(order) }}
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- ===================================================================== -->
+  <!-- MY ADS -->
+  <!-- ===================================================================== -->
+  <mat-card class="cardWithShadow theme-card p2p-card" *ngIf="activeTab === 'my-orders'">
+    <mat-card-header class="my-orders-header">
+      <mat-card-title class="m-b-0">My Ads</mat-card-title>
+      <button mat-flat-button color="primary" class="fw-bold" type="button" (click)="openCreateOrderDialog()">
+        <mat-icon>add</mat-icon>
+        Post Ad
+      </button>
+    </mat-card-header>
+
+    <mat-card-content class="b-t-1">
+      <div class="table-loading" *ngIf="myOrdersLoading">
+        <img src="./assets/images/loading.gif" alt="Loading..." style="width: 26px; height: 26px;" />
+      </div>
+
+      <div class="table-empty" *ngIf="!myOrdersLoading && myOrders.length === 0">
+        You haven't posted any ads yet.
+      </div>
+
+      <table class="order-book" *ngIf="!myOrdersLoading && myOrders.length > 0">
+        <thead>
+          <tr>
+            <th>Type</th>
+            <th>Price</th>
+            <th>Available</th>
+            <th>Limits</th>
+            <th>Status</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let order of myOrders">
+            <td>
+              <span class="type-pill" [ngClass]="order.type.toLowerCase()">{{ order.type }}</span>
+            </td>
+            <td class="price-cell">&#8358;{{ order.pricePerUnit | number: '1.2-2' }}</td>
+            <td>{{ order.availableAmount | number: '1.2-4' }} {{ order.coin }}</td>
+            <td class="limits-text">&#8358;{{ order.minLimit | number }} &ndash; &#8358;{{ order.maxLimit | number }}</td>
+            <td>
+              <span class="status-pill" [ngClass]="order.status.toLowerCase()">{{ order.status }}</span>
+            </td>
+            <td class="action-cell">
+              <button
+                mat-stroked-button
+                color="warn"
+                type="button"
+                *ngIf="order.status === OrderStatus.Active"
+                [disabled]="cancellingOrderId === order.id"
+                (click)="cancelOrder(order)"
+              >
+                {{ cancellingOrderId === order.id ? 'Cancelling...' : 'Cancel' }}
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- ===================================================================== -->
+  <!-- MY TRADES -->
+  <!-- ===================================================================== -->
+  <mat-card class="cardWithShadow theme-card p2p-card" *ngIf="activeTab === 'my-trades'">
+    <mat-card-header>
+      <mat-card-title class="m-b-0">My Trades</mat-card-title>
+    </mat-card-header>
+
+    <mat-card-content class="b-t-1">
+      <div class="table-loading" *ngIf="myTradesLoading">
+        <img src="./assets/images/loading.gif" alt="Loading..." style="width: 26px; height: 26px;" />
+      </div>
+
+      <div class="table-empty" *ngIf="!myTradesLoading && myTrades.length === 0">
+        No trades yet. Start one from the Market tab.
+      </div>
+
+      <table class="order-book" *ngIf="!myTradesLoading && myTrades.length > 0">
+        <thead>
+          <tr>
+            <th>Counterparty</th>
+            <th>Amount</th>
+            <th>Fiat Total</th>
+            <th>Status</th>
+            <th>Date</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let trade of myTrades" [class.active-row]="isActiveTrade(trade)">
+            <td>&#64;{{ trade.isBuyer ? trade.seller.username : trade.buyer.username }}</td>
+            <td>{{ trade.coinAmount }} {{ trade.order.coin }}</td>
+            <td>&#8358;{{ trade.fiatAmount | number: '1.2-2' }}</td>
+            <td>
+              <span class="status-pill" [ngClass]="trade.status.toLowerCase()">{{ trade.status }}</span>
+            </td>
+            <td>{{ trade.createdAt | date: 'medium' }}</td>
+            <td class="action-cell">
+              <button mat-stroked-button color="primary" type="button" (click)="openTrade(trade)">
+                {{ isActiveTrade(trade) ? 'Continue' : 'View' }}
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </mat-card-content>
+  </mat-card>
+
+</div>
