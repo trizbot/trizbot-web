@@ -26,6 +26,7 @@ import { UserFeatureModalComponent } from './users-feature/user-disabled-feature
 import { TransferComponent } from './transfer/transfer.component';
 import { P2pComponent } from './p2p/p2p.component';
 import { ArbitrageComponent } from './arbitrage/arbitrage.component';
+import { AcademyComponent } from './academy/academy.component';
 
 export const UiComponentsRoutes: Routes = [
   {
@@ -144,6 +145,10 @@ export const UiComponentsRoutes: Routes = [
       {
         path: 'arbitrage',
         component: ArbitrageComponent
+      },      
+      {
+        path: 'academy',
+        component: AcademyComponent
       },      
  
 

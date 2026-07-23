@@ -15,7 +15,7 @@ import {
   CourseLevelEnum,
   LEVEL_OPTIONS,
   MAX_INLINE_CONTENT_LENGTH,
-} from '../academy.model';
+} from '../model/academy.model';
 
 export interface CreateCourseDialogData {
   existing?: Course;

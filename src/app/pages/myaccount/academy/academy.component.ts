@@ -12,9 +12,8 @@ import { MatDialog } from '@angular/material/dialog';
 import { MaterialModule } from '../../../material.module';
 import { SharedService } from '../../../shared/shared.service';
 import { AcademyService } from './academy.service';
-import { CreateCourseDialogComponent } from '../create-course-dialog/create-course-dialog.component';
-import { PurchaseCourseDialogComponent } from '../purchase-course-dialog/purchase-course-dialog.component';
-
+import { CreateCourseDialogComponent } from './create-course-dialog/create-course-dialog.component';
+import { PurchaseCourseDialogComponent } from './purchase-course-dialog/purchase-course-dialog.component';
 
 
 import {

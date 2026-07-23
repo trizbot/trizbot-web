@@ -8,7 +8,7 @@ import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/materia
 import { MaterialModule } from '../../../../material.module';
 import { SharedService } from '../../../../shared/shared.service';
 import { AcademyService } from '../academy.service';
-import { Course } from '../academy.model';
+import { Course } from '../model/academy.model';
 
 export interface PurchaseCourseDialogData {
   course: Course;
