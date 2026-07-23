@@ -15,9 +15,7 @@ import { AcademyService } from './academy.service';
 import { CreateCourseDialogComponent } from './create-course-dialog/create-course-dialog.component';
 import { PurchaseCourseDialogComponent } from './purchase-course-dialog/purchase-course-dialog.component';
 
-
 import {
-
   CATEGORY_OPTIONS,
   Course,
   CoursePurchase,

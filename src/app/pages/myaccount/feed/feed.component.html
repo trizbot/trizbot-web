@@ -1,0 +1,296 @@
+<div class="feed-wrapper">
+
+  <!-- ===================================================================== -->
+  <!-- HERO HEADER -->
+  <!-- ===================================================================== -->
+  <div class="feed-hero">
+    <div class="feed-hero-text">
+      <span class="feed-eyebrow">Market Pulse</span>
+      <h1 class="feed-title">Feed</h1>
+      <p class="feed-subtitle">News, announcements and market analysis — curated in one stream.</p>
+    </div>
+    <button
+      *ngIf="isAdmin"
+      mat-flat-button
+      color="primary"
+      class="fw-bold new-post-btn"
+      type="button"
+      (click)="openCreateDialog()"
+    >
+      <mat-icon>edit_note</mat-icon>
+      New Post
+    </button>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- TABS -->
+  <!-- ===================================================================== -->
+  <div class="feed-tabs">
+    <button class="feed-tab" [class.active]="activeTab === 'feed'" (click)="selectTab('feed')">
+      <mat-icon>dynamic_feed</mat-icon>
+      All Feed
+    </button>
+    <button class="feed-tab" [class.active]="activeTab === 'trending'" (click)="selectTab('trending')">
+      <mat-icon>local_fire_department</mat-icon>
+      Trending
+    </button>
+    <button
+      *ngIf="isAdmin"
+      class="feed-tab"
+      [class.active]="activeTab === 'manage'"
+      (click)="selectTab('manage')"
+    >
+      <mat-icon>settings</mat-icon>
+      Manage
+    </button>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- ALL FEED -->
+  <!-- ===================================================================== -->
+  <section *ngIf="activeTab === 'feed'" class="feed-section">
+
+    <form class="feed-filters" [formGroup]="filterForm">
+      <div class="search-field">
+        <mat-icon class="search-icon">search</mat-icon>
+        <input
+          type="text"
+          formControlName="search"
+          placeholder="Search headlines, coins, sources..."
+          class="search-input"
+        />
+      </div>
+
+      <mat-form-field appearance="outline" class="filter-field">
+        <mat-select formControlName="category">
+          <mat-option value="">All categories</mat-option>
+          <mat-option *ngFor="let c of categoryOptions" [value]="c">
+            {{ categoryLabels[c] }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="filter-field coin-field">
+        <input matInput formControlName="coinSymbol" placeholder="Coin, e.g. BTC" />
+      </mat-form-field>
+
+      <button
+        type="button"
+        class="clear-filters-btn"
+        *ngIf="filterForm.get('search')?.value || filterForm.get('category')?.value || filterForm.get('coinSymbol')?.value"
+        (click)="clearFilters()"
+      >
+        Clear
+      </button>
+    </form>
+
+    <div class="feed-loading" *ngIf="itemsLoading">
+      <img src="./assets/images/loading.gif" alt="Loading..." style="width: 28px; height: 28px;" />
+    </div>
+
+    <div class="feed-empty" *ngIf="!itemsLoading && items.length === 0">
+      <mat-icon class="feed-empty-icon">inbox</mat-icon>
+      <p>No posts match your filters right now.</p>
+    </div>
+
+    <div class="feed-grid" *ngIf="!itemsLoading && items.length > 0">
+      <article class="feed-card" *ngFor="let item of items">
+        <div class="feed-card-media" [class.no-image]="!item.imageUrl">
+          <img *ngIf="item.imageUrl" [src]="item.imageUrl" [alt]="item.title" />
+          <mat-icon *ngIf="!item.imageUrl">insights</mat-icon>
+
+          <span
+            class="category-badge"
+            *ngIf="item.category"
+            [style.background]="categoryColors[item.category] + '1a'"
+            [style.color]="categoryColors[item.category]"
+            (click)="filterByCategory(item.category)"
+          >
+            {{ categoryLabels[item.category] }}
+          </span>
+
+          <span class="coin-badge" *ngIf="item.coinSymbol">{{ item.coinSymbol }}</span>
+        </div>
+
+        <div class="feed-card-body">
+          <h3 class="feed-card-title">{{ item.title }}</h3>
+          <p class="feed-card-summary" *ngIf="item.summary">{{ item.summary }}</p>
+
+          <div class="feed-card-tags" *ngIf="item.tags && item.tags.length">
+            <span class="tag-chip" *ngFor="let tag of item.tags.slice(0, 3)">#{{ tag }}</span>
+          </div>
+
+          <div class="feed-card-footer">
+            <span class="feed-source" *ngIf="item.source">{{ item.source }}</span>
+            <span class="feed-dot" *ngIf="item.source">&middot;</span>
+            <span class="feed-time">{{ timeAgo(item.createdAt) }}</span>
+
+            <button
+              class="read-more-btn"
+              type="button"
+              *ngIf="item.sourceUrl"
+              (click)="openSource(item, $event)"
+            >
+              Read source
+              <mat-icon>north_east</mat-icon>
+            </button>
+          </div>
+        </div>
+      </article>
+    </div>
+
+    <div class="feed-pagination" *ngIf="!itemsLoading && totalPages > 1">
+      <button
+        class="page-nav-btn"
+        type="button"
+        [disabled]="page === 1"
+        (click)="goToPage(page - 1)"
+      >
+        <mat-icon>chevron_left</mat-icon>
+      </button>
+
+      <button
+        class="page-btn"
+        type="button"
+        *ngFor="let p of pageRange()"
+        [class.active]="p === page"
+        (click)="goToPage(p)"
+      >
+        {{ p }}
+      </button>
+
+      <button
+        class="page-nav-btn"
+        type="button"
+        [disabled]="page === totalPages"
+        (click)="goToPage(page + 1)"
+      >
+        <mat-icon>chevron_right</mat-icon>
+      </button>
+    </div>
+  </section>
+
+  <!-- ===================================================================== -->
+  <!-- TRENDING -->
+  <!-- ===================================================================== -->
+  <section *ngIf="activeTab === 'trending'" class="feed-section">
+
+    <div class="trending-header">
+      <p class="trending-caption">Auto-ranked from live market activity.</p>
+      <button
+        *ngIf="isAdmin"
+        mat-stroked-button
+        color="primary"
+        type="button"
+        [disabled]="syncingTrending"
+        (click)="syncTrending()"
+      >
+        <mat-icon>{{ syncingTrending ? 'hourglass_empty' : 'refresh' }}</mat-icon>
+        {{ syncingTrending ? 'Syncing...' : 'Sync Trending' }}
+      </button>
+    </div>
+
+    <div class="feed-loading" *ngIf="trendingLoading">
+      <img src="./assets/images/loading.gif" alt="Loading..." style="width: 28px; height: 28px;" />
+    </div>
+
+    <div class="feed-empty" *ngIf="!trendingLoading && trending.length === 0">
+      <mat-icon class="feed-empty-icon">local_fire_department</mat-icon>
+      <p>Nothing trending yet.</p>
+    </div>
+
+    <ol class="trending-list" *ngIf="!trendingLoading && trending.length > 0">
+      <li class="trending-row" *ngFor="let item of trending; let i = index">
+        <span class="trending-rank" [class.top-rank]="i < 3">{{ i + 1 }}</span>
+
+        <div class="trending-info">
+          <div class="trending-title-row">
+            <span class="coin-badge inline" *ngIf="item.coinSymbol">{{ item.coinSymbol }}</span>
+            <h4 class="trending-title">{{ item.title }}</h4>
+          </div>
+          <div class="trending-meta">
+            <span *ngIf="item.source">{{ item.source }}</span>
+            <span *ngIf="item.source">&middot;</span>
+            <span>{{ timeAgo(item.createdAt) }}</span>
+          </div>
+        </div>
+
+        <mat-icon class="trending-flame">local_fire_department</mat-icon>
+      </li>
+    </ol>
+  </section>
+
+  <!-- ===================================================================== -->
+  <!-- MANAGE (admin) -->
+  <!-- ===================================================================== -->
+  <section *ngIf="activeTab === 'manage' && isAdmin" class="feed-section">
+    <div class="manage-header">
+      <p class="manage-caption">{{ manageItems.length }} post(s)</p>
+      <button mat-flat-button color="primary" class="fw-bold" type="button" (click)="openCreateDialog()">
+        <mat-icon>add</mat-icon>
+        New Post
+      </button>
+    </div>
+
+    <div class="feed-loading" *ngIf="manageLoading">
+      <img src="./assets/images/loading.gif" alt="Loading..." style="width: 28px; height: 28px;" />
+    </div>
+
+    <div class="feed-empty" *ngIf="!manageLoading && manageItems.length === 0">
+      <mat-icon class="feed-empty-icon">post_add</mat-icon>
+      <p>No posts yet. Create your first one.</p>
+    </div>
+
+    <table class="manage-table" *ngIf="!manageLoading && manageItems.length > 0">
+      <thead>
+        <tr>
+          <th>Title</th>
+          <th>Category</th>
+          <th>Coin</th>
+          <th>Status</th>
+          <th>Date</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of manageItems">
+          <td class="manage-title-cell">{{ item.title }}</td>
+          <td>
+            <span
+              class="category-badge table"
+              *ngIf="item.category"
+              [style.background]="categoryColors[item.category] + '1a'"
+              [style.color]="categoryColors[item.category]"
+            >
+              {{ categoryLabels[item.category] }}
+            </span>
+            <span class="muted" *ngIf="!item.category">&mdash;</span>
+          </td>
+          <td>{{ item.coinSymbol || '—' }}</td>
+          <td>
+            <span class="status-pill" [ngClass]="item.isPublished ? 'published' : 'draft'">
+              {{ item.isPublished ? 'Published' : 'Draft' }}
+            </span>
+          </td>
+          <td>{{ item.createdAt | date: 'mediumDate' }}</td>
+          <td class="manage-actions">
+            <button mat-icon-button type="button" (click)="openEditDialog(item)" aria-label="Edit post">
+              <mat-icon>edit</mat-icon>
+            </button>
+            <button
+              mat-icon-button
+              color="warn"
+              type="button"
+              [disabled]="deletingId === item.id"
+              (click)="deletePost(item)"
+              aria-label="Delete post"
+            >
+              <mat-icon>{{ deletingId === item.id ? 'hourglass_empty' : 'delete' }}</mat-icon>
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+</div>
