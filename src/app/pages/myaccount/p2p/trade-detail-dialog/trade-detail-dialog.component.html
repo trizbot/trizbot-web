@@ -1,0 +1,138 @@
+<h2 mat-dialog-title class="dialog-title">
+  Trade #{{ trade.id.slice(-8).toUpperCase() }}
+  <button mat-icon-button class="close-btn" type="button" (click)="close()">
+    <mat-icon>close</mat-icon>
+  </button>
+</h2>
+
+<mat-dialog-content>
+
+  <!-- Status banner -->
+  <div class="status-banner" [ngClass]="trade.status.toLowerCase()">
+    <mat-icon *ngIf="trade.status === TradeStatus.PendingPayment">schedule</mat-icon>
+    <mat-icon *ngIf="trade.status === TradeStatus.Paid">hourglass_top</mat-icon>
+    <mat-icon *ngIf="trade.status === TradeStatus.Released">check_circle</mat-icon>
+    <mat-icon *ngIf="trade.status === TradeStatus.Disputed">gavel</mat-icon>
+    <mat-icon *ngIf="trade.status === TradeStatus.Cancelled || trade.status === TradeStatus.Expired">cancel</mat-icon>
+
+    <div class="status-copy">
+      <span *ngIf="trade.status === TradeStatus.PendingPayment">
+        Waiting for {{ trade.isBuyer ? 'you' : trade.buyer.username }} to pay
+        <b *ngIf="countdownLabel"> &middot; {{ countdownLabel }}</b>
+      </span>
+      <span *ngIf="trade.status === TradeStatus.Paid">
+        Payment marked as sent &middot; waiting for {{ trade.isBuyer ? trade.seller.username : 'you' }} to release
+      </span>
+      <span *ngIf="trade.status === TradeStatus.Released">Crypto released. Trade complete.</span>
+      <span *ngIf="trade.status === TradeStatus.Disputed">This trade is under review by support.</span>
+      <span *ngIf="trade.status === TradeStatus.Cancelled">This trade was cancelled.</span>
+      <span *ngIf="trade.status === TradeStatus.Expired">This trade expired before payment was made.</span>
+    </div>
+  </div>
+
+  <!-- Trade summary -->
+  <div class="summary-grid">
+    <div class="summary-row">
+      <span class="label">Counterparty</span>
+      <span class="value">&#64;{{ counterpartyName }}</span>
+    </div>
+    <div class="summary-row">
+      <span class="label">Amount</span>
+      <span class="value">{{ trade.coinAmount }} {{ trade.order.coin }}</span>
+    </div>
+    <div class="summary-row">
+      <span class="label">Price</span>
+      <span class="value">&#8358;{{ trade.order.pricePerUnit | number: '1.2-2' }} / {{ trade.order.coin }}</span>
+    </div>
+    <div class="summary-row highlight">
+      <span class="label">Total to pay</span>
+      <span class="value">&#8358;{{ trade.fiatAmount | number: '1.2-2' }}</span>
+    </div>
+    <div class="summary-row" *ngIf="trade.paymentMethod">
+      <span class="label">Payment method</span>
+      <span class="value">{{ trade.paymentMethod }}</span>
+    </div>
+  </div>
+
+  <!-- Step tracker -->
+  <div class="step-tracker">
+    <div class="step" [class.done]="true">
+      <div class="dot"></div>
+      <span>Trade started</span>
+    </div>
+    <div class="step" [class.done]="trade.status !== TradeStatus.PendingPayment">
+      <div class="dot"></div>
+      <span>Payment sent</span>
+    </div>
+    <div class="step" [class.done]="trade.status === TradeStatus.Released">
+      <div class="dot"></div>
+      <span>Crypto released</span>
+    </div>
+  </div>
+
+  <!-- Mark paid -->
+  <div class="action-block" *ngIf="canMarkPaid">
+    <p class="action-hint">
+      Send exactly <b>&#8358;{{ trade.fiatAmount | number: '1.2-2' }}</b> using the payment method above, then confirm below.
+      Never mark a trade as paid before the funds have actually left your account.
+    </p>
+    <button mat-flat-button color="primary" class="fw-bold w-100" [disabled]="actionLoading" (click)="markPaid()">
+      {{ actionLoading ? 'Confirming...' : "I've made the payment" }}
+    </button>
+  </div>
+
+  <!-- Release -->
+  <div class="action-block" *ngIf="canRelease && !showReleasePin">
+    <p class="action-hint">
+      Only release once you've confirmed the funds have landed in your account.
+    </p>
+    <button mat-flat-button color="primary" class="fw-bold w-100" (click)="openReleasePin()">
+      Release Crypto
+    </button>
+  </div>
+
+  <form class="action-block" *ngIf="canRelease && showReleasePin" [formGroup]="releaseForm">
+    <mat-label class="f-w-600 m-b-8 d-block">Confirm Transaction PIN</mat-label>
+    <mat-form-field appearance="outline" class="w-100">
+      <input matInput type="password" inputmode="numeric" maxlength="6" formControlName="transactionPin" />
+    </mat-form-field>
+    <button
+      mat-flat-button
+      color="primary"
+      class="fw-bold w-100"
+      type="button"
+      [disabled]="actionLoading"
+      (click)="confirmRelease()"
+    >
+      {{ actionLoading ? 'Releasing...' : 'Confirm Release' }}
+    </button>
+  </form>
+
+  <!-- Dispute -->
+  <div class="action-block dispute-block" *ngIf="canDispute && !showDisputeForm">
+    <button mat-stroked-button color="warn" class="w-100" type="button" (click)="openDisputeForm()">
+      Something wrong? Open a dispute
+    </button>
+  </div>
+
+  <form class="action-block" *ngIf="showDisputeForm" [formGroup]="disputeForm">
+    <mat-label class="f-w-600 m-b-8 d-block">Tell us what happened</mat-label>
+    <mat-form-field appearance="outline" class="w-100">
+      <textarea matInput rows="3" formControlName="reason" placeholder="Minimum 10 characters"></textarea>
+    </mat-form-field>
+    <button
+      mat-flat-button
+      color="warn"
+      class="fw-bold w-100"
+      type="button"
+      [disabled]="actionLoading"
+      (click)="submitDispute()"
+    >
+      {{ actionLoading ? 'Submitting...' : 'Submit Dispute' }}
+    </button>
+  </form>
+
+  <div *ngIf="errorMessage" class="alert alert-danger m-t-2">
+    <b>{{ errorMessage }}</b>
+  </div>
+</mat-dialog-content>

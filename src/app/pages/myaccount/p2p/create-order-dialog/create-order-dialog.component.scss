@@ -1,0 +1,64 @@
+.dialog-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-weight: 700;
+}
+
+.close-btn {
+  margin-left: auto;
+}
+
+.type-toggle {
+  display: inline-flex;
+  background: #f1f3f5;
+  border-radius: 10px;
+  padding: 4px;
+  margin-bottom: 18px;
+  width: 100%;
+}
+
+.toggle-btn {
+  flex: 1;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 10px 0;
+  font-size: 0.9rem;
+  font-weight: 700;
+  border-radius: 8px;
+  color: rgba(0, 0, 0, 0.55);
+  transition: all 0.2s;
+
+  &.buy.active {
+    background: #2e7d32;
+    color: #fff;
+  }
+
+  &.sell.active {
+    background: #c62828;
+    color: #fff;
+  }
+}
+
+.field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.prefix {
+  color: rgba(0, 0, 0, 0.5);
+}
+
+.field-error {
+  font-size: 0.78rem;
+  color: #c62828;
+  margin-top: -8px;
+  margin-bottom: 12px;
+}
+
+.submit-btn {
+  margin-top: 8px;
+  height: 44px;
+}

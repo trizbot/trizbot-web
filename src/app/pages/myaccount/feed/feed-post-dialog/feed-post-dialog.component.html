@@ -1,0 +1,75 @@
+<h2 mat-dialog-title class="fpd-title">{{ dialogTitle }}</h2>
+
+<form [formGroup]="form" (ngSubmit)="save()">
+  <div mat-dialog-content class="fpd-content">
+
+    <mat-form-field appearance="outline" class="fpd-field">
+      <mat-label>Title</mat-label>
+      <input matInput formControlName="title" maxlength="300" />
+      <mat-error *ngIf="form.get('title')?.hasError('required')">Title is required</mat-error>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="fpd-field">
+      <mat-label>Summary</mat-label>
+      <textarea matInput formControlName="summary" rows="2" maxlength="500"></textarea>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="fpd-field">
+      <mat-label>Content</mat-label>
+      <textarea matInput formControlName="content" rows="6"></textarea>
+      <mat-error *ngIf="form.get('content')?.hasError('required')">Content is required</mat-error>
+    </mat-form-field>
+
+    <div class="fpd-row">
+      <mat-form-field appearance="outline" class="fpd-field">
+        <mat-label>Category</mat-label>
+        <mat-select formControlName="category">
+          <mat-option value="">None</mat-option>
+          <mat-option *ngFor="let c of categoryOptions" [value]="c">
+            {{ categoryLabels[c] }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="fpd-field">
+        <mat-label>Coin symbol</mat-label>
+        <input matInput formControlName="coinSymbol" placeholder="e.g. BTC" />
+      </mat-form-field>
+    </div>
+
+    <div class="fpd-row">
+      <mat-form-field appearance="outline" class="fpd-field">
+        <mat-label>Source</mat-label>
+        <input matInput formControlName="source" maxlength="200" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="fpd-field">
+        <mat-label>Source URL</mat-label>
+        <input matInput formControlName="sourceUrl" placeholder="https://..." />
+      </mat-form-field>
+    </div>
+
+    <mat-form-field appearance="outline" class="fpd-field">
+      <mat-label>Image URL</mat-label>
+      <input matInput formControlName="imageUrl" placeholder="https://..." />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="fpd-field">
+      <mat-label>Tags</mat-label>
+      <input matInput formControlName="tagsRaw" placeholder="comma, separated, tags" />
+    </mat-form-field>
+
+    <mat-checkbox formControlName="isPublished" class="fpd-checkbox">
+      Publish immediately
+    </mat-checkbox>
+
+    <p class="fpd-error" *ngIf="error">{{ error }}</p>
+  </div>
+
+  <div mat-dialog-actions align="end" class="fpd-actions">
+    <button mat-button type="button" (click)="close()" [disabled]="saving">Cancel</button>
+    <button mat-flat-button color="primary" type="submit" [disabled]="saving">
+      {{ saving ? 'Saving...' : (isEdit ? 'Save Changes' : 'Create Post') }}
+    </button>
+  </div>
+</form>

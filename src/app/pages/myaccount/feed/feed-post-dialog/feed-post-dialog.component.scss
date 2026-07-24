@@ -1,0 +1,39 @@
+.fpd-title {
+  font-weight: 800;
+  margin-bottom: 4px;
+}
+
+.fpd-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-width: 520px;
+  width: 100%;
+}
+
+.fpd-field {
+  width: 100%;
+}
+
+.fpd-row {
+  display: flex;
+  gap: 12px;
+
+  .fpd-field {
+    flex: 1;
+  }
+}
+
+.fpd-checkbox {
+  margin: 4px 0 8px;
+}
+
+.fpd-error {
+  color: #d32f2f;
+  font-size: 0.85rem;
+  margin: 0 0 8px;
+}
+
+.fpd-actions {
+  padding-top: 8px;
+}

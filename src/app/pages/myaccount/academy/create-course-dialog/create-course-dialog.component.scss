@@ -1,0 +1,29 @@
+
+.dialog-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-weight: 700;
+}
+
+.close-btn {
+  margin-left: auto;
+}
+
+.field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.char-count {
+  float: right;
+  font-weight: 400;
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.45);
+}
+
+.submit-btn {
+  margin-top: 8px;
+  height: 44px;
+}

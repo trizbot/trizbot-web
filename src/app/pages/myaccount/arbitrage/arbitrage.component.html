@@ -1,0 +1,127 @@
+
+<div class="arb-wrapper">
+
+  <div class="arb-header">
+    <div>
+      <h2 class="arb-title">Arbitrage Opportunities</h2>
+      <p class="arb-subtitle">Live cross-exchange spreads &middot; refreshes every {{ 20 }}s</p>
+    </div>
+    <div class="arb-header-actions">
+      <span class="last-updated" *ngIf="lastUpdated">
+        Updated {{ lastUpdated | date: 'HH:mm:ss' }}
+      </span>
+      <button mat-stroked-button type="button" class="refresh-btn" (click)="refreshNow()">
+        <mat-icon [class.spin]="loading">refresh</mat-icon>
+        Refresh &middot; {{ secondsToRefresh }}s
+      </button>
+    </div>
+  </div>
+
+  <!-- Exchange tabs -->
+  <div class="exchange-tabs">
+    <button
+      *ngFor="let id of exchangeIds"
+      type="button"
+      class="exchange-tab"
+      [class.active]="activeExchange === id"
+      [style.--tab-color]="exchangeConfig[id].colorPrimary"
+      [style.--tab-color-dark]="exchangeConfig[id].colorSecondary"
+      (click)="selectExchange(id)"
+    >
+      <span class="tab-dot"></span>
+      {{ exchangeConfig[id].label }}
+    </button>
+  </div>
+
+  <!-- Filters -->
+  <form class="filters-bar" [formGroup]="filterForm">
+    <mat-form-field appearance="outline" class="filter-field">
+      <mat-select formControlName="token" (selectionChange)="applyFilters()">
+        <mat-option value="">All tokens</mat-option>
+        <mat-option *ngFor="let t of tokenOptions" [value]="t">{{ t }}</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="filter-field">
+      <input
+        matInput
+        type="number"
+        min="0"
+        placeholder="Min spread %"
+        formControlName="minSpreadPercent"
+        (change)="applyFilters()"
+      />
+    </mat-form-field>
+  </form>
+
+  <!-- Panel themed to the active exchange -->
+  <div class="exchange-panel" [style.--panel-color]="activeConfig.colorPrimary" [style.--panel-color-dark]="activeConfig.colorSecondary">
+
+    <div class="panel-header">
+      <span class="panel-exchange-name">{{ activeConfig.label }}</span>
+      <span class="panel-count">{{ visibleOpportunities.length }} opportunities</span>
+    </div>
+
+    <div class="table-loading" *ngIf="loading">
+      <img src="./assets/images/loading.gif" alt="Loading..." style="width: 26px; height: 26px;" />
+    </div>
+
+    <div class="table-empty" *ngIf="!loading && visibleOpportunities.length === 0">
+      No arbitrage opportunities found for {{ activeConfig.label }} right now.
+    </div>
+
+    <table class="opp-table" *ngIf="!loading && visibleOpportunities.length > 0">
+      <thead>
+        <tr>
+          <th>Token</th>
+          <th>{{ activeConfig.label }}</th>
+          <th>Counterparty</th>
+          <th>Spread</th>
+          <th>Est. Profit</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let o of visibleOpportunities">
+          <td class="token-cell">{{ o.token }}</td>
+
+          <td>
+            <span class="leg-badge" [ngClass]="isActiveBuyLeg(o) ? 'buy' : 'sell'">
+              {{ isActiveBuyLeg(o) ? 'BUY' : 'SELL' }}
+            </span>
+            <span class="price-val">&#36;{{ activePriceFor(o) | number: '1.2-6' }}</span>
+          </td>
+
+          <!-- <td>
+            <div class="counterparty-cell">
+              <span class="counterparty-name">{{ counterpartyFor(o) }}</span>
+              <span class="price-val muted">&#36;{{ counterpartyPriceFor(o) | number: '1.2-6' }}</span>
+            </div>
+          </td> -->
+
+          <td>
+            <span class="spread-pill" [ngClass]="spreadTier(o.spreadPercent)">
+              {{ o.spreadPercent | number: '1.2-2' }}%
+            </span>
+          </td>
+
+          <td class="profit-cell">&#36;{{ o.estimatedProfit | number: '1.2-2' }}</td>
+
+          <td class="action-cell">
+            <button
+              mat-flat-button
+              type="button"
+              class="fw-bold trade-btn"
+              [style.background]="activeConfig.colorPrimary"
+              [style.color]="activeConfig.textOnPrimary"
+              (click)="openTradeDialog(o)"
+            >
+              Trade
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>

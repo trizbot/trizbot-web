@@ -33,11 +33,10 @@ export class LoginComponent {
             next: (response) => {
           this.router.navigate(['/dashboard']);
           this.loading = false;
-            }
-            ,
+            },
             error:(err)=>{
-              const message = err?.error.message|| err?.error?.message || 'An unexpected error occurred.';
-              this.errorMessage = message;
+            const message = err?.error.message|| err?.error?.message || ' An unexpected error occurred. Please contact support';
+            this.errorMessage = message;
             this.loading=false;
             }
           });
