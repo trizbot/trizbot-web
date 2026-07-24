@@ -27,6 +27,9 @@ import { TransferComponent } from './transfer/transfer.component';
 import { P2pComponent } from './p2p/p2p.component';
 import { ArbitrageComponent } from './arbitrage/arbitrage.component';
 import { AcademyComponent } from './academy/academy.component';
+import { FeedComponent } from './feed/feed.component';
+import { SignalsComponent } from './signals/signals.component';
+import { KycComponent } from './kyc/kyc.component';
 
 export const UiComponentsRoutes: Routes = [
   {
@@ -149,6 +152,19 @@ export const UiComponentsRoutes: Routes = [
       {
         path: 'academy',
         component: AcademyComponent
+      },      
+      {
+        path: 'feed',
+        component: FeedComponent
+      },      
+ 
+      {
+        path: 'signals',
+        component: SignalsComponent
+      },      
+      {
+        path: 'kyc',
+        component: KycComponent
       },      
  
 

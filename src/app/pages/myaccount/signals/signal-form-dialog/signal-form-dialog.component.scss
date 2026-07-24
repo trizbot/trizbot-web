@@ -1,0 +1,44 @@
+.dialog-title {
+  font-weight: 800;
+  font-size: 1.15rem;
+  margin: 0;
+  padding: 20px 24px 0;
+}
+
+.dialog-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 24px 0;
+  max-height: 70vh;
+}
+
+.full-field {
+  width: 100%;
+}
+
+.field-row {
+  display: flex;
+  gap: 12px;
+}
+
+.field-row.three {
+  gap: 10px;
+}
+
+.half-field {
+  flex: 1;
+  min-width: 0;
+}
+
+.third-field {
+  flex: 1;
+  min-width: 0;
+}
+
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 12px 24px 20px;
+}

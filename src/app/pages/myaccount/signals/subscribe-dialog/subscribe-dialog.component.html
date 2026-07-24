@@ -1,0 +1,23 @@
+<h2 mat-dialog-title class="dialog-title">Subscribe</h2>
+
+<form [formGroup]="form" (ngSubmit)="confirm()">
+  <div mat-dialog-content class="dialog-content">
+    <div class="plan-summary">
+      <span class="plan-summary-name">{{ planLabels[data.plan.plan] }} plan</span>
+      <span class="plan-summary-price">${{ data.plan.price }} / {{ data.plan.durationDays }} days</span>
+    </div>
+
+    <mat-form-field appearance="outline" class="full-field">
+      <mat-label>Transaction PIN</mat-label>
+      <input matInput type="password" formControlName="transactionPin" maxlength="6" />
+      <mat-error *ngIf="form.get('transactionPin')?.hasError('required')">PIN is required</mat-error>
+    </mat-form-field>
+  </div>
+
+  <div mat-dialog-actions class="dialog-actions">
+    <button mat-stroked-button type="button" (click)="close()" [disabled]="saving">Cancel</button>
+    <button mat-flat-button color="primary" type="submit" [disabled]="saving">
+      {{ saving ? 'Processing...' : 'Confirm & subscribe' }}
+    </button>
+  </div>
+</form>

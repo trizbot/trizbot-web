@@ -92,12 +92,12 @@
             <span class="price-val">&#36;{{ activePriceFor(o) | number: '1.2-6' }}</span>
           </td>
 
-          <td>
+          <!-- <td>
             <div class="counterparty-cell">
               <span class="counterparty-name">{{ counterpartyFor(o) }}</span>
               <span class="price-val muted">&#36;{{ counterpartyPriceFor(o) | number: '1.2-6' }}</span>
             </div>
-          </td>
+          </td> -->
 
           <td>
             <span class="spread-pill" [ngClass]="spreadTier(o.spreadPercent)">

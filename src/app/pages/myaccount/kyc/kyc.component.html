@@ -1,0 +1,221 @@
+<mat-card class="cardWithShadow theme-card">
+  <mat-card-header>
+    <mat-card-title class="m-b-0">Identity Verification (KYC)</mat-card-title>
+  </mat-card-header>
+  <mat-card-content class="b-t-1">
+
+      <!-- Loading state -->
+  <div class="kyc-loading" *ngIf="statusLoading">
+    <img src="./assets/images/loading.gif" alt="Loading..." style="width: 28px; height: 28px;" />
+    <p>Checking verification status...</p>
+  </div>
+
+  <!-- Status check failed (not just "no record") -->
+  <div class="kyc-status-banner rejected" *ngIf="!statusLoading && statusError">
+    <mat-icon>error_outline</mat-icon>
+    <div class="kyc-status-text">
+      <strong>Couldn't load your verification status</strong>
+      <p>You can still submit your documents below.</p>
+    </div>
+  </div>
+
+  
+
+    <div
+      class="kyc-status-banner"
+      *ngIf="!statusLoading && myStatus"
+      [ngClass]="myStatus.status.toLowerCase()"
+    >
+      <mat-icon>
+        {{ myStatus.status === KycStatusEnum.Approved ? 'verified' :
+           myStatus.status === KycStatusEnum.Pending ? 'hourglass_empty' :
+           myStatus.status === KycStatusEnum.Rejected ? 'error_outline' : 'info' }}
+      </mat-icon>
+      <div class="kyc-status-text">
+        <strong>Status: {{ myStatus.status }}</strong>
+        <p *ngIf="myStatus.status === KycStatusEnum.Pending">
+          Your documents are under review. We'll notify you once verified.
+        </p>
+        <p *ngIf="myStatus.status === KycStatusEnum.Approved">
+          Your identity has been verified.
+        </p>
+        <p *ngIf="myStatus.status === KycStatusEnum.Rejected">
+          Rejected{{ myStatus.rejectionReason ? ': ' + myStatus.rejectionReason : '' }}. Please resubmit below.
+        </p>
+      </div>
+    </div>
+
+    <form class="mt-3" (submit)="onSubmitKyc()" #kycForm="ngForm" *ngIf="canSubmit">
+      <div class="row">
+
+        <div class="col-lg-6">
+          <mat-label class="f-w-600 m-b-8 d-block">Document Type *</mat-label>
+          <mat-form-field appearance="outline" class="w-100" color="primary">
+            <mat-select
+              placeholder="Select Document Type"
+              name="documentType"
+              [(ngModel)]="kycData.documentType"
+              required
+            >
+              <mat-option *ngFor="let type of documentTypeOptions" [value]="type">
+                {{ documentTypeLabels[type] }}
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+
+        <div class="col-lg-6">
+          <mat-label class="f-w-600 m-b-8 d-block">Document Number *</mat-label>
+          <mat-form-field appearance="outline" class="w-100">
+            <input
+              matInput
+              placeholder="Enter Document Number"
+              name="documentNumber"
+              [(ngModel)]="kycData.documentNumber"
+              required
+            />
+          </mat-form-field>
+        </div>
+
+        <div class="col-lg-6">
+          <mat-label class="f-w-600 m-b-8 d-block">Full Name</mat-label>
+          <mat-form-field appearance="outline" class="w-100">
+            <input
+              matInput
+              placeholder="Enter Full Name (as on document)"
+              name="fullName"
+              [(ngModel)]="kycData.fullName"
+            />
+          </mat-form-field>
+        </div>
+
+        <div class="col-lg-6">
+          <mat-label class="f-w-600 m-b-8 d-block">Date of Birth</mat-label>
+          <mat-form-field appearance="outline" class="w-100">
+            <input matInput type="date" name="dateOfBirth" [(ngModel)]="kycData.dateOfBirth" />
+          </mat-form-field>
+        </div>
+
+        <div class="col-lg-12">
+          <mat-label class="f-w-600 m-b-8 d-block">Address</mat-label>
+          <mat-form-field appearance="outline" class="w-100">
+            <input
+              matInput
+              placeholder="Enter Residential Address"
+              name="address"
+              [(ngModel)]="kycData.address"
+            />
+          </mat-form-field>
+        </div>
+
+        <!-- Document Front -->
+        <div class="col-lg-6">
+          <mat-label class="f-w-600 m-b-8 d-block">Document Front *</mat-label>
+
+          <ngx-dropzone
+            class="kyc-dropzone"
+            [class.has-preview]="frontPreviewUrl"
+            (change)="onSelectFront($event)"
+          >
+            <ng-container *ngIf="!frontPreviewUrl">
+              <mat-icon class="dz-icon">cloud_upload</mat-icon>
+              <ngx-dropzone-label>
+                <span class="dz-title">Click or drag to upload</span>
+                <span class="dz-sub">Front of your ID document (JPG, PNG)</span>
+              </ngx-dropzone-label>
+            </ng-container>
+
+            <ngx-dropzone-preview
+              *ngFor="let f of frontFiles"
+              [removable]="true"
+              (removed)="onRemoveFront()"
+            >
+              <ngx-dropzone-label>{{ f.name }}</ngx-dropzone-label>
+            </ngx-dropzone-preview>
+          </ngx-dropzone>
+
+          <img *ngIf="frontPreviewUrl" class="kyc-preview-img" [src]="frontPreviewUrl" alt="Document front preview" />
+        </div>
+
+        <!-- Document Back -->
+        <div class="col-lg-6">
+          <mat-label class="f-w-600 m-b-8 d-block">Document Back (optional)</mat-label>
+
+          <ngx-dropzone
+            class="kyc-dropzone"
+            [class.has-preview]="backPreviewUrl"
+            (change)="onSelectBack($event)"
+          >
+            <ng-container *ngIf="!backPreviewUrl">
+              <mat-icon class="dz-icon">cloud_upload</mat-icon>
+              <ngx-dropzone-label>
+                <span class="dz-title">Click or drag to upload</span>
+                <span class="dz-sub">Back of your ID document (JPG, PNG)</span>
+              </ngx-dropzone-label>
+            </ng-container>
+
+            <ngx-dropzone-preview
+              *ngFor="let f of backFiles"
+              [removable]="true"
+              (removed)="onRemoveBack()"
+            >
+              <ngx-dropzone-label>{{ f.name }}</ngx-dropzone-label>
+            </ngx-dropzone-preview>
+          </ngx-dropzone>
+
+          <img *ngIf="backPreviewUrl" class="kyc-preview-img" [src]="backPreviewUrl" alt="Document back preview" />
+        </div>
+
+        <!-- Selfie -->
+        <div class="col-lg-12">
+          <mat-label class="f-w-600 m-b-8 d-block">Selfie (holding document) *</mat-label>
+
+          <ngx-dropzone
+            class="kyc-dropzone selfie"
+            [class.has-preview]="selfiePreviewUrl"
+            (change)="onSelectSelfie($event)"
+          >
+            <ng-container *ngIf="!selfiePreviewUrl">
+              <mat-icon class="dz-icon">add_a_photo</mat-icon>
+              <ngx-dropzone-label>
+                <span class="dz-title">Click or drag to upload</span>
+                <span class="dz-sub">A clear selfie of you holding the document</span>
+              </ngx-dropzone-label>
+            </ng-container>
+
+            <ngx-dropzone-preview
+              *ngFor="let f of selfieFiles"
+              [removable]="true"
+              (removed)="onRemoveSelfie()"
+            >
+              <ngx-dropzone-label>{{ f.name }}</ngx-dropzone-label>
+            </ngx-dropzone-preview>
+          </ngx-dropzone>
+
+          <img *ngIf="selfiePreviewUrl" class="kyc-preview-img selfie" [src]="selfiePreviewUrl" alt="Selfie preview" />
+        </div>
+
+      </div>
+
+      <div class="m-t-6">
+        <button
+          mat-flat-button
+          color="primary"
+          class="w-100 py-2 fw-bold"
+          type="submit"
+          [disabled]="loading || !kycForm.form.valid"
+        >
+          <b *ngIf="loading">
+            <img src="./assets/images/loading.gif" alt="Loading..." style="width: 26px; height: 26px;" />
+          </b>
+          Submit for Verification
+        </button>
+      </div>
+
+      <div *ngIf="errorMessage" class="alert alert-danger">
+        <b>{{ errorMessage }}</b>
+      </div>
+    </form>
+
+  </mat-card-content>
+</mat-card>
