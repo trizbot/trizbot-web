@@ -19,7 +19,7 @@ import {
 } from './model/arbitrage.model';
 
 const AUTO_REFRESH_SECONDS = 20;
-const PAGE_SIZE_OPTIONS = [10, 25, 50] as const;
+const PAGE_SIZE_OPTIONS = [5,10,15, 25,20,30,35,40, 50] as const;
 
 @Component({
   selector: 'app-arbitrage',
@@ -37,9 +37,7 @@ export class ArbitrageComponent implements OnInit, OnDestroy {
   readonly refreshIntervalSeconds = AUTO_REFRESH_SECONDS;
   readonly pageSizeOptions = PAGE_SIZE_OPTIONS;
 
-  // Populated from live opportunity data instead of a hardcoded list.
-  // Accumulates across loads (union, not replace) so filtering by one
-  // token doesn't shrink the dropdown down to just that token.
+
   tokenOptions: string[] = [];
   private knownTokens = new Set<string>();
 

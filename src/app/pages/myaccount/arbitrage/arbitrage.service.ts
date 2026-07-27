@@ -12,8 +12,7 @@ import {
   PlaceTradeResBody,
 } from './model/arbitrage.model';
 
-// --- Shape actually returned by GET /arbitrage/opportunities ---
-// This does NOT match ArbitrageOpportunity. It's the raw wire format.
+
 interface RawPricePoint {
   exchange: string;
   price: number;
@@ -44,8 +43,7 @@ interface RawApiResponse {
   meta: RawApiMeta;
 }
 
-// What getOpportunities() actually resolves to: the mapped rows plus
-// the meta info the component needs to show data-quality warnings.
+
 export interface OpportunitiesResult {
   opportunities: ArbitrageOpportunity[];
   meta: RawApiMeta;
@@ -57,14 +55,7 @@ export interface OpportunitiesResult {
 export class ArbitrageService {
   constructor(private http: HttpClient, private router: Router) {}
 
-  /**
-   * NOTE: the backend response has no `id`, `estimatedProfit`,
-   * `spreadAmount`, per-row `updatedAt`, or volume/liquidity fields.
-   * Those are synthesized here. `estimatedProfit` in particular is
-   * NOT a real profit figure — it's the raw per-unit spread with no
-   * fees, slippage, or size applied. Treat it as illustrative only,
-   * never as a number to auto-execute trades against.
-   */
+
   getOpportunities(params: GetOpportunitiesParams): Observable<ArbitrageOpportunity[]> {
     let httpParams = new HttpParams();
     if (params.token) httpParams = httpParams.set('token', params.token);
@@ -81,17 +72,12 @@ export class ArbitrageService {
         map((res) => this.mapOpportunities(res)),
         tap((data) => console.log('[ArbitrageService] getOpportunities response:', data)),
         catchError((err) => {
-          console.error('[ArbitrageService] getOpportunities error:', err);
           return throwError(() => err);
         })
       );
   }
 
-  /**
-   * Same call as getOpportunities(), but also returns `meta` so the
-   * component can surface errors (e.g. "Kraken: fetch failed") and
-   * caveats (e.g. Coinbase USD vs USDT) instead of silently dropping them.
-   */
+
   getOpportunitiesWithMeta(params: GetOpportunitiesParams): Observable<OpportunitiesResult> {
     let httpParams = new HttpParams();
     if (params.token) httpParams = httpParams.set('token', params.token);
@@ -111,7 +97,6 @@ export class ArbitrageService {
         })),
         tap((result) => console.log('[ArbitrageService] getOpportunitiesWithMeta response:', result)),
         catchError((err) => {
-          console.error('[ArbitrageService] getOpportunitiesWithMeta error:', err);
           return throwError(() => err);
         })
       );
@@ -142,9 +127,8 @@ export class ArbitrageService {
 
   placeTrade(payload: PlaceTradeReqBody): Observable<PlaceTradeResBody> {
     return this.http.post<PlaceTradeResBody>(`${environment.apiBaseUrl}/arbitrage/trade`, payload).pipe(
-      tap((data) => console.log('[ArbitrageService] placeTrade response:', data)),
+      tap((data) => data),
       catchError((err) => {
-        console.error('[ArbitrageService] placeTrade error:', err);
         return throwError(() => err);
       })
     );
