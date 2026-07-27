@@ -40,9 +40,11 @@ export class FeedComponent implements OnInit, OnDestroy {
 
   activeTab: FeedTab = 'feed';
 
+  /** Currently selected category from the button navigation ('' = All) */
+  activeCategory: FeedCategoryEnum | '' = '';
+
   filterForm = new FormGroup({
     search: new FormControl<string>(''),
-    category: new FormControl<FeedCategoryEnum | ''>(''),
     coinSymbol: new FormControl<string>(''),
   });
 
@@ -65,10 +67,8 @@ export class FeedComponent implements OnInit, OnDestroy {
 
   constructor(private feedService: FeedService, private dialog: MatDialog) {}
 
-  // Sourced from TraderService.entityName rather than SharedService.
-  // Adjust the comparison string ('Admin') if your entityName values differ from EntityRole.
   get isAdmin(): boolean {
-    const entityName=  localStorage.getItem('entity');
+    const entityName = localStorage.getItem('entity');
     return entityName === 'Admin';
   }
 
@@ -108,13 +108,13 @@ export class FeedComponent implements OnInit, OnDestroy {
 
   loadItems(): void {
     this.itemsLoading = true;
-    const { search, category, coinSymbol } = this.filterForm.getRawValue();
+    const { search, coinSymbol } = this.filterForm.getRawValue();
 
     this.feedService
       .getFeed({
         search: search || undefined,
-        category: category || undefined,
         coinSymbol: coinSymbol || undefined,
+        category: this.activeCategory || undefined,
         page: this.page,
         limit: this.limit,
       })
@@ -126,17 +126,22 @@ export class FeedComponent implements OnInit, OnDestroy {
           this.itemsLoading = false;
         },
         error: () => {
+          this.items = [];
           this.itemsLoading = false;
         },
       });
   }
 
   clearFilters(): void {
-    this.filterForm.reset({ search: '', category: '', coinSymbol: '' });
+    this.activeCategory = '';
+    this.filterForm.reset({ search: '', coinSymbol: '' });
   }
 
-  filterByCategory(category: FeedCategoryEnum): void {
-    this.filterForm.patchValue({ category });
+  /** Button-based category navigation. Pass '' to select "All". */
+  filterByCategory(category: FeedCategoryEnum | string): void {
+    this.activeCategory = (category as FeedCategoryEnum) || '';
+    this.page = 1;
+    this.loadItems();
   }
 
   openSource(item: FeedItem, event: Event): void {
@@ -165,7 +170,8 @@ export class FeedComponent implements OnInit, OnDestroy {
     return range;
   }
 
-  timeAgo(date: string | Date): string {
+  timeAgo(item: FeedItem): string {
+    const date = item.publishedAt || item.createdAt;
     const then = new Date(date).getTime();
     const seconds = Math.max(0, Math.floor((Date.now() - then) / 1000));
 
@@ -195,6 +201,10 @@ export class FeedComponent implements OnInit, OnDestroy {
     return `${value} ${unitLabel}${value === 1 ? '' : 's'} ago`;
   }
 
+  trackByItemId(_index: number, item: FeedItem): string {
+    return item.id;
+  }
+
   // ─── Trending ──────────────────────────────────────────────
 
   loadTrending(): void {
@@ -208,6 +218,7 @@ export class FeedComponent implements OnInit, OnDestroy {
           this.trendingLoading = false;
         },
         error: () => {
+          this.trending = [];
           this.trendingLoading = false;
         },
       });
@@ -244,6 +255,7 @@ export class FeedComponent implements OnInit, OnDestroy {
           this.manageLoading = false;
         },
         error: () => {
+          this.manageItems = [];
           this.manageLoading = false;
         },
       });

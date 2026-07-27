@@ -1,10 +1,9 @@
-
 <div class="arb-wrapper">
 
   <div class="arb-header">
     <div>
       <h2 class="arb-title">Arbitrage Opportunities</h2>
-      <p class="arb-subtitle">Live cross-exchange spreads &middot; refreshes every {{ 20 }}s</p>
+      <p class="arb-subtitle">Live cross-exchange spreads &middot; refreshes every {{ refreshIntervalSeconds }}s</p>
     </div>
     <div class="arb-header-actions">
       <span class="last-updated" *ngIf="lastUpdated">
@@ -82,7 +81,7 @@
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let o of visibleOpportunities">
+        <tr *ngFor="let o of pagedOpportunities; trackBy: trackByOpportunity">
           <td class="token-cell">{{ o.token }}</td>
 
           <td>
@@ -92,12 +91,12 @@
             <span class="price-val">&#36;{{ activePriceFor(o) | number: '1.2-6' }}</span>
           </td>
 
-          <!-- <td>
+          <td>
             <div class="counterparty-cell">
-              <span class="counterparty-name">{{ counterpartyFor(o) }}</span>
+              <span class="counterparty-name">{{ counterpartyLabel(o) }}</span>
               <span class="price-val muted">&#36;{{ counterpartyPriceFor(o) | number: '1.2-6' }}</span>
             </div>
-          </td> -->
+          </td>
 
           <td>
             <span class="spread-pill" [ngClass]="spreadTier(o.spreadPercent)">
@@ -122,6 +121,64 @@
         </tr>
       </tbody>
     </table>
+
+    <!-- Bottom navigation / pagination -->
+    <div class="pagination-bar" *ngIf="!loading && visibleOpportunities.length > 0">
+      <div class="pagination-info">
+        Showing {{ pageRangeStart }}&ndash;{{ pageRangeEnd }} of {{ visibleOpportunities.length }}
+      </div>
+
+      <div class="pagination-controls">
+        <button
+          mat-icon-button
+          type="button"
+          class="page-nav-btn"
+          [disabled]="currentPage === 1"
+          (click)="prevPage()"
+          aria-label="Previous page"
+        >
+          <mat-icon>chevron_left</mat-icon>
+        </button>
+
+        <ng-container *ngFor="let p of pageNumbers">
+          <button
+            *ngIf="p !== '…'; else ellipsis"
+            mat-button
+            type="button"
+            class="page-num-btn"
+            [class.active]="p === currentPage"
+            (click)="goToPage(p)"
+          >
+            {{ p }}
+          </button>
+          <ng-template #ellipsis>
+            <span class="page-ellipsis">&hellip;</span>
+          </ng-template>
+        </ng-container>
+
+        <button
+          mat-icon-button
+          type="button"
+          class="page-nav-btn"
+          [disabled]="currentPage === totalPages"
+          (click)="nextPage()"
+          aria-label="Next page"
+        >
+          <mat-icon>chevron_right</mat-icon>
+        </button>
+      </div>
+
+      <mat-form-field appearance="outline" class="page-size-field">
+        <mat-select
+          [value]="pageSize"
+          (selectionChange)="changePageSize($event.value)"
+        >
+          <mat-option *ngFor="let size of pageSizeOptions" [value]="size">
+            {{ size }} / page
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
   </div>
 
 </div>

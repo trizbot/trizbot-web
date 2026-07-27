@@ -2,8 +2,8 @@
 //
 // Palette continues the app's existing indigo (#3f51b5) for primary actions,
 // and adds a warm amber (#f5a623) as the single accent reserved for
-// "trending" / heat signals — kept out of everything else so it stays
-// meaningful.
+// "trending" / heat signals. Gains/losses use a dedicated green/red pair
+// so market data reads instantly instead of blending into body copy.
 
 .feed-wrapper {
   max-width: 1160px;
@@ -63,7 +63,7 @@
 
 .feed-subtitle {
   font-size: 0.95rem;
-  color: rgba(255, 255, 255, 0.65);
+  color: rgba(255, 255, 255, 0.68);
   margin: 6px 0 0;
 }
 
@@ -123,7 +123,7 @@
   align-items: center;
   gap: 12px;
   flex-wrap: wrap;
-  margin-bottom: 22px;
+  margin-bottom: 16px;
 }
 
 .search-field {
@@ -187,6 +187,40 @@
 
 .clear-filters-btn:hover {
   text-decoration: underline;
+}
+
+/* ─── CATEGORY BUTTON NAVIGATION ──────────────────────────── */
+.category-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 22px;
+}
+
+.category-nav-btn {
+  --cat-color: #3f51b5;
+
+  border: 1px solid #e9ecef;
+  background: #fff;
+  color: rgba(0, 0, 0, 0.6);
+  font-size: 0.82rem;
+  font-weight: 700;
+  padding: 7px 16px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+
+.category-nav-btn:hover {
+  border-color: var(--cat-color);
+  color: var(--cat-color);
+}
+
+.category-nav-btn.active {
+  background: var(--cat-color);
+  border-color: var(--cat-color);
+  color: #fff;
 }
 
 /* ─── LOADING / EMPTY ─────────────────────────────────────── */
@@ -279,9 +313,9 @@
   font-weight: 800;
   padding: 4px 9px;
   border-radius: 999px;
-  background: rgba(20, 20, 31, 0.78);
+  background: rgba(20, 20, 31, 0.82);
   color: #fff;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.03em;
 }
 
 .coin-badge.inline {
@@ -296,21 +330,77 @@
 }
 
 .feed-card-title {
-  font-size: 1.02rem;
-  font-weight: 750;
+  font-size: 1.05rem;
+  font-weight: 780;
   line-height: 1.35;
   color: #14141f;
-  margin: 0 0 6px;
+  margin: 0 0 8px;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
 
-.feed-card-summary {
-  font-size: 0.85rem;
-  color: rgba(0, 0, 0, 0.55);
+/* ─── STAT CHIPS (price / % change / rank) ───────────────── */
+.stat-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.stat-chip {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.78rem;
+  font-weight: 800;
+  padding: 3px 9px;
+  border-radius: 7px;
   line-height: 1.5;
+
+  mat-icon {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+    margin-right: -2px;
+  }
+}
+
+.stat-chip.small {
+  font-size: 0.74rem;
+  padding: 2px 7px;
+}
+
+.price-chip {
+  background: rgba(20, 20, 31, 0.06);
+  color: #14141f;
+  font-variant-numeric: tabular-nums;
+}
+
+.rank-chip {
+  background: rgba(63, 81, 181, 0.08);
+  color: #3f51b5;
+}
+
+.change-chip {
+  font-variant-numeric: tabular-nums;
+}
+
+.change-chip.up {
+  background: rgba(46, 125, 50, 0.1);
+  color: #2e7d32;
+}
+
+.change-chip.down {
+  background: rgba(211, 47, 47, 0.1);
+  color: #d32f2f;
+}
+
+.feed-card-summary {
+  font-size: 0.86rem;
+  color: rgba(0, 0, 0, 0.6);
+  line-height: 1.55;
   margin: 0 0 12px;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -347,7 +437,7 @@
 
 .feed-source {
   font-weight: 700;
-  color: rgba(0, 0, 0, 0.6);
+  color: rgba(0, 0, 0, 0.62);
 }
 
 .feed-dot {
@@ -493,8 +583,8 @@
 }
 
 .trending-title {
-  font-size: 0.92rem;
-  font-weight: 700;
+  font-size: 0.94rem;
+  font-weight: 750;
   color: #14141f;
   margin: 0;
   white-space: nowrap;
@@ -502,10 +592,16 @@
   text-overflow: ellipsis;
 }
 
+.trending-stats {
+  display: flex;
+  gap: 6px;
+  margin-top: 6px;
+}
+
 .trending-meta {
   font-size: 0.76rem;
   color: rgba(0, 0, 0, 0.45);
-  margin-top: 3px;
+  margin-top: 4px;
   display: flex;
   gap: 6px;
 }
@@ -620,6 +716,18 @@
   .filter-field,
   .coin-field {
     width: 100%;
+  }
+
+  .category-nav {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .category-nav::-webkit-scrollbar {
+    display: none;
   }
 
   .manage-table {
