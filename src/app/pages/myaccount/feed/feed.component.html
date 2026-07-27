@@ -56,19 +56,10 @@
         <input
           type="text"
           formControlName="search"
-          placeholder="Search headlines, coins, sources..."
+          placeholder="Search headlines or content..."
           class="search-input"
         />
       </div>
-
-      <mat-form-field appearance="outline" class="filter-field">
-        <mat-select formControlName="category">
-          <mat-option value="">All categories</mat-option>
-          <mat-option *ngFor="let c of categoryOptions" [value]="c">
-            {{ categoryLabels[c] }}
-          </mat-option>
-        </mat-select>
-      </mat-form-field>
 
       <mat-form-field appearance="outline" class="filter-field coin-field">
         <input matInput formControlName="coinSymbol" placeholder="Coin, e.g. BTC" />
@@ -77,12 +68,34 @@
       <button
         type="button"
         class="clear-filters-btn"
-        *ngIf="filterForm.get('search')?.value || filterForm.get('category')?.value || filterForm.get('coinSymbol')?.value"
+        *ngIf="filterForm.get('search')?.value || filterForm.get('coinSymbol')?.value || activeCategory"
         (click)="clearFilters()"
       >
         Clear
       </button>
     </form>
+
+    <!-- ─── Button-based category navigation ─── -->
+    <div class="category-nav">
+      <button
+        type="button"
+        class="category-nav-btn"
+        [class.active]="!activeCategory"
+        (click)="filterByCategory('')"
+      >
+        All
+      </button>
+      <button
+        type="button"
+        class="category-nav-btn"
+        *ngFor="let c of categoryOptions"
+        [class.active]="activeCategory === c"
+        [style.--cat-color]="categoryColors[c] || '#3f51b5'"
+        (click)="filterByCategory(c)"
+      >
+        {{ categoryLabels[c] || c }}
+      </button>
+    </div>
 
     <div class="feed-loading" *ngIf="itemsLoading">
       <img src="./assets/images/loading.gif" alt="Loading..." style="width: 28px; height: 28px;" />
@@ -94,26 +107,42 @@
     </div>
 
     <div class="feed-grid" *ngIf="!itemsLoading && items.length > 0">
-      <article class="feed-card" *ngFor="let item of items">
+      <article class="feed-card" *ngFor="let item of items; trackBy: trackByItemId">
         <div class="feed-card-media" [class.no-image]="!item.imageUrl">
-          <img *ngIf="item.imageUrl" [src]="item.imageUrl" [alt]="item.title" />
+          <img *ngIf="item.imageUrl" [src]="item.imageUrl" [alt]="item.title" loading="lazy" />
           <mat-icon *ngIf="!item.imageUrl">insights</mat-icon>
 
           <span
             class="category-badge"
             *ngIf="item.category"
-            [style.background]="categoryColors[item.category] + '1a'"
-            [style.color]="categoryColors[item.category]"
+            [style.background]="(categoryColors[item.category] || '#3f51b5') + '1a'"
+            [style.color]="categoryColors[item.category] || '#3f51b5'"
             (click)="filterByCategory(item.category)"
           >
-            {{ categoryLabels[item.category] }}
+            {{ categoryLabels[item.category] || item.category }}
           </span>
 
           <span class="coin-badge" *ngIf="item.coinSymbol">{{ item.coinSymbol }}</span>
         </div>
 
         <div class="feed-card-body">
-          <h3 class="feed-card-title">{{ item.title }}</h3>
+          <h3 class="feed-card-title" [title]="item.title">{{ item.title }}</h3>
+
+          <!-- Parsed market stats shown as clean chips instead of raw text -->
+          <div class="stat-row" *ngIf="item.stats?.price || item.stats?.changePercent !== undefined || item.stats?.rank">
+            <span class="stat-chip price-chip" *ngIf="item.stats?.price">${{ item.stats?.price }}</span>
+            <span
+              class="stat-chip change-chip"
+              *ngIf="item.stats?.changePercent !== undefined"
+              [class.up]="(item.stats?.changePercent ?? 0) >= 0"
+              [class.down]="(item.stats?.changePercent ?? 0) < 0"
+            >
+              <mat-icon>{{ (item.stats?.changePercent ?? 0) >= 0 ? 'arrow_drop_up' : 'arrow_drop_down' }}</mat-icon>
+              {{ item.stats?.changePercent }}%
+            </span>
+            <span class="stat-chip rank-chip" *ngIf="item.stats?.rank">Rank #{{ item.stats?.rank }}</span>
+          </div>
+
           <p class="feed-card-summary" *ngIf="item.summary">{{ item.summary }}</p>
 
           <div class="feed-card-tags" *ngIf="item.tags && item.tags.length">
@@ -123,7 +152,7 @@
           <div class="feed-card-footer">
             <span class="feed-source" *ngIf="item.source">{{ item.source }}</span>
             <span class="feed-dot" *ngIf="item.source">&middot;</span>
-            <span class="feed-time">{{ timeAgo(item.createdAt) }}</span>
+            <span class="feed-time">{{ timeAgo(item) }}</span>
 
             <button
               class="read-more-btn"
@@ -154,8 +183,7 @@
         type="button"
         *ngFor="let p of pageRange()"
         [class.active]="p === page"
-        (click)="goToPage(p)"
-      >
+        (click)="goToPage(p)">
         {{ p }}
       </button>
 
@@ -200,18 +228,32 @@
     </div>
 
     <ol class="trending-list" *ngIf="!trendingLoading && trending.length > 0">
-      <li class="trending-row" *ngFor="let item of trending; let i = index">
+      <li class="trending-row" *ngFor="let item of trending; let i = index; trackBy: trackByItemId">
         <span class="trending-rank" [class.top-rank]="i < 3">{{ i + 1 }}</span>
 
         <div class="trending-info">
           <div class="trending-title-row">
             <span class="coin-badge inline" *ngIf="item.coinSymbol">{{ item.coinSymbol }}</span>
-            <h4 class="trending-title">{{ item.title }}</h4>
+            <h4 class="trending-title" [title]="item.title">{{ item.title }}</h4>
           </div>
+
+          <div class="trending-stats" *ngIf="item.stats?.price || item.stats?.changePercent !== undefined">
+            <span class="stat-chip price-chip small" *ngIf="item.stats?.price">${{ item.stats?.price }}</span>
+            <span
+              class="stat-chip change-chip small"
+              *ngIf="item.stats?.changePercent !== undefined"
+              [class.up]="(item.stats?.changePercent ?? 0) >= 0"
+              [class.down]="(item.stats?.changePercent ?? 0) < 0"
+            >
+              <mat-icon>{{ (item.stats?.changePercent ?? 0) >= 0 ? 'arrow_drop_up' : 'arrow_drop_down' }}</mat-icon>
+              {{ item.stats?.changePercent }}%
+            </span>
+          </div>
+
           <div class="trending-meta">
             <span *ngIf="item.source">{{ item.source }}</span>
             <span *ngIf="item.source">&middot;</span>
-            <span>{{ timeAgo(item.createdAt) }}</span>
+            <span>{{ timeAgo(item) }}</span>
           </div>
         </div>
 
@@ -253,16 +295,16 @@
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let item of manageItems">
-          <td class="manage-title-cell">{{ item.title }}</td>
+        <tr *ngFor="let item of manageItems; trackBy: trackByItemId">
+          <td class="manage-title-cell" [title]="item.title">{{ item.title }}</td>
           <td>
             <span
               class="category-badge table"
               *ngIf="item.category"
-              [style.background]="categoryColors[item.category] + '1a'"
-              [style.color]="categoryColors[item.category]"
+              [style.background]="(categoryColors[item.category] || '#3f51b5') + '1a'"
+              [style.color]="categoryColors[item.category] || '#3f51b5'"
             >
-              {{ categoryLabels[item.category] }}
+              {{ categoryLabels[item.category] || item.category }}
             </span>
             <span class="muted" *ngIf="!item.category">&mdash;</span>
           </td>
