@@ -16,10 +16,10 @@ import {
   EXCHANGE_CONFIG,
   EXCHANGE_IDS,
   ExchangeConfig,
-  TOKEN_OPTIONS,
 } from './model/arbitrage.model';
 
 const AUTO_REFRESH_SECONDS = 20;
+const PAGE_SIZE_OPTIONS = [10, 25, 50] as const;
 
 @Component({
   selector: 'app-arbitrage',
@@ -34,9 +34,14 @@ export class ArbitrageComponent implements OnInit, OnDestroy {
 
   readonly exchangeIds = EXCHANGE_IDS;
   readonly exchangeConfig = EXCHANGE_CONFIG;
-  readonly tokenOptions = TOKEN_OPTIONS;
-  // Exposed so the template no longer hardcodes the refresh interval.
   readonly refreshIntervalSeconds = AUTO_REFRESH_SECONDS;
+  readonly pageSizeOptions = PAGE_SIZE_OPTIONS;
+
+  // Populated from live opportunity data instead of a hardcoded list.
+  // Accumulates across loads (union, not replace) so filtering by one
+  // token doesn't shrink the dropdown down to just that token.
+  tokenOptions: string[] = [];
+  private knownTokens = new Set<string>();
 
   activeExchange: string = EXCHANGE_IDS[0];
 
@@ -50,6 +55,10 @@ export class ArbitrageComponent implements OnInit, OnDestroy {
   error: string | null = null;
   lastUpdated: Date | null = null;
   secondsToRefresh = AUTO_REFRESH_SECONDS;
+
+  // --- Pagination state ---
+  currentPage = 1;
+  pageSize: number = PAGE_SIZE_OPTIONS[1]; // default 25
 
   constructor(private arbitrageService: ArbitrageService, private dialog: MatDialog) {}
 
@@ -66,7 +75,6 @@ export class ArbitrageComponent implements OnInit, OnDestroy {
         }
       });
 
-    // React to filter changes without requiring a manual (change) handler on every field.
     this.filterForm.valueChanges
       .pipe(debounceTime(250), takeUntil(this.destroy$))
       .subscribe(() => this.loadOpportunities());
@@ -82,11 +90,12 @@ export class ArbitrageComponent implements OnInit, OnDestroy {
   }
 
   selectExchange(id: string): void {
+    if (this.activeExchange === id) return;
     this.activeExchange = id;
+    this.currentPage = 1;
   }
 
-  // Opportunities where the active exchange appears on either leg,
-  // best spread first.
+  // Filtered + sorted, but NOT yet paginated — used to compute totals.
   get visibleOpportunities(): ArbitrageOpportunity[] {
     return this.allOpportunities
       .filter(
@@ -95,7 +104,67 @@ export class ArbitrageComponent implements OnInit, OnDestroy {
       .sort((a, b) => b.spreadPercent - a.spreadPercent);
   }
 
-  // Whether, for the current row, the active exchange is the cheaper (buy) leg.
+  // What the table actually renders: one page's worth of visibleOpportunities.
+  get pagedOpportunities(): ArbitrageOpportunity[] {
+    const start = (this.currentPage - 1) * this.pageSize;
+    return this.visibleOpportunities.slice(start, start + this.pageSize);
+  }
+
+  get totalPages(): number {
+    return Math.max(1, Math.ceil(this.visibleOpportunities.length / this.pageSize));
+  }
+
+  get pageRangeStart(): number {
+    if (this.visibleOpportunities.length === 0) return 0;
+    return (this.currentPage - 1) * this.pageSize + 1;
+  }
+
+  get pageRangeEnd(): number {
+    return Math.min(this.currentPage * this.pageSize, this.visibleOpportunities.length);
+  }
+
+  // Compact page-number list with ellipses, e.g. [1, '…', 4, 5, 6, '…', 12]
+  get pageNumbers(): (number | '…')[] {
+    const total = this.totalPages;
+    const current = this.currentPage;
+    if (total <= 7) {
+      return Array.from({ length: total }, (_, i) => i + 1);
+    }
+
+    const pages = new Set<number>([1, total, current, current - 1, current + 1]);
+    const sorted = Array.from(pages)
+      .filter((p) => p >= 1 && p <= total)
+      .sort((a, b) => a - b);
+
+    const result: (number | '…')[] = [];
+    let prev = 0;
+    for (const p of sorted) {
+      if (prev && p - prev > 1) result.push('…');
+      result.push(p);
+      prev = p;
+    }
+    return result;
+  }
+
+  goToPage(page: number): void {
+    if (page < 1 || page > this.totalPages || page === this.currentPage) return;
+    this.currentPage = page;
+  }
+
+  nextPage(): void {
+    this.goToPage(this.currentPage + 1);
+  }
+
+  prevPage(): void {
+    this.goToPage(this.currentPage - 1);
+  }
+
+  changePageSize(size: number): void {
+    if (size === this.pageSize) return;
+    this.pageSize = size;
+    this.currentPage = 1;
+  }
+
   isActiveBuyLeg(o: ArbitrageOpportunity): boolean {
     return o.buyExchange === this.activeExchange;
   }
@@ -104,8 +173,6 @@ export class ArbitrageComponent implements OnInit, OnDestroy {
     return this.isActiveBuyLeg(o) ? o.sellExchange : o.buyExchange;
   }
 
-  // Human-readable label for the counterparty exchange (was previously
-  // rendered as the raw exchange id, e.g. "kraken" instead of "Kraken").
   counterpartyLabel(o: ArbitrageOpportunity): string {
     const id = this.counterpartyId(o);
     return this.exchangeConfig[id]?.label ?? id;
@@ -149,6 +216,12 @@ export class ArbitrageComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (res) => {
           this.allOpportunities = res;
+          this.updateTokenOptions(res);
+          // Filters/refresh can shrink the result set — clamp back onto
+          // a valid page instead of showing an empty table on a stale page.
+          if (this.currentPage > this.totalPages) {
+            this.currentPage = this.totalPages;
+          }
           this.loading = false;
           this.error = null;
           this.lastUpdated = new Date();
@@ -160,12 +233,26 @@ export class ArbitrageComponent implements OnInit, OnDestroy {
       });
   }
 
+  private updateTokenOptions(opportunities: ArbitrageOpportunity[]): void {
+    let changed = false;
+    for (const o of opportunities) {
+      if (!this.knownTokens.has(o.token)) {
+        this.knownTokens.add(o.token);
+        changed = true;
+      }
+    }
+    if (changed) {
+      this.tokenOptions = Array.from(this.knownTokens).sort();
+    }
+  }
+
   refreshNow(): void {
     this.secondsToRefresh = AUTO_REFRESH_SECONDS;
     this.loadOpportunities();
   }
 
   applyFilters(): void {
+    this.currentPage = 1;
     this.loadOpportunities();
   }
 
