@@ -65,7 +65,7 @@
 /* ─── MARKET CONTROLS ─────────────────────────────────────── */
 .market-controls {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 16px;
@@ -77,6 +77,7 @@
   background: #f1f3f5;
   border-radius: 10px;
   padding: 4px;
+  flex-shrink: 0;
 }
 
 .toggle-btn {
@@ -103,8 +104,39 @@
   box-shadow: 0 2px 8px rgba(198, 40, 40, 0.3);
 }
 
-.method-filter {
-  width: 220px;
+/* Filter row — coin / currency / payment method / amount.
+   None of these fields restrict what can be typed; the coin and
+   currency inputs are plain text fields with an autocomplete of
+   suggestions layered on top. */
+.filters-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.filter-field {
+  width: 150px;
+}
+
+.filter-field.coin-field,
+.filter-field.fiat-field {
+  width: 130px;
+}
+
+.filter-field.method-filter {
+  width: 190px;
+}
+
+.filter-field.amount-field {
+  width: 160px;
+}
+
+.amount-suffix {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: rgba(0, 0, 0, 0.45);
+  padding-left: 4px;
 }
 
 /* ─── ORDER LIST ──────────────────────────────────────────── */
@@ -268,14 +300,20 @@
   min-width: 120px;
 }
 
-/* My Ads row variants */
-.my-ad-row,
-.trade-row {
-  grid-template-columns: 100px 1fr 1.6fr 120px auto;
+/* My Ads row — badge | price | limit | status | action */
+.order-row.my-ad-row {
+  grid-template-columns: 90px 1.2fr 1.8fr 120px auto;
 }
 
-.trade-row {
+/* Trade row — merchant | price | status | action | chevron */
+.order-row.trade-row {
+  grid-template-columns: 2fr 1.2fr 120px auto 20px;
   cursor: pointer;
+}
+
+.order-row.trade-row.active-row {
+  border-color: #3f51b5;
+  box-shadow: 0 0 0 1px rgba(63, 81, 181, 0.15);
 }
 
 .ad-type-badge {
@@ -285,6 +323,7 @@
   text-transform: uppercase;
   padding: 4px 10px;
   border-radius: 999px;
+  width: fit-content;
 
   &.buy {
     background: #e3f2e4;
@@ -304,6 +343,7 @@
   font-size: 0.75rem;
   font-weight: 700;
   text-transform: capitalize;
+  width: fit-content;
 
   &.active,
   &.pending_payment {
@@ -339,18 +379,35 @@
 
 .chevron {
   color: rgba(0, 0, 0, 0.35);
+  justify-self: end;
 }
 
 /* ─── RESPONSIVE ──────────────────────────────────────────── */
 @media (max-width: 900px) {
   .order-row,
-  .my-ad-row,
-  .trade-row {
+  .order-row.my-ad-row,
+  .order-row.trade-row {
     grid-template-columns: 1fr;
     gap: 10px;
   }
 
   .action-col {
     justify-content: flex-start;
+  }
+
+  .chevron {
+    display: none;
+  }
+
+  .filters-row {
+    width: 100%;
+  }
+
+  .filter-field,
+  .filter-field.coin-field,
+  .filter-field.fiat-field,
+  .filter-field.method-filter,
+  .filter-field.amount-field {
+    width: calc(50% - 5px);
   }
 }

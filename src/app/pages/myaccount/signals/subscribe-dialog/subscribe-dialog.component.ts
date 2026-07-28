@@ -6,7 +6,7 @@ import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { MaterialModule } from '../../../../material.module';
 import { SharedService } from '../../../../shared/shared.service';
 import { SignalsService } from '../signals.service';
-import { PLAN_LABELS, PlanOption } from '../model/signal.model';
+import { MySubscription, PLAN_LABELS, PlanOption } from '../model/signal.model';
 
 export interface SubscribeDialogData {
   plan: PlanOption;
@@ -19,7 +19,6 @@ export interface SubscribeDialogData {
   templateUrl: './subscribe-dialog.component.html',
   styleUrls: ['./subscribe-dialog.component.scss'],
 })
-
 export class SubscribeDialogComponent {
   readonly planLabels = PLAN_LABELS;
 
@@ -33,14 +32,14 @@ export class SubscribeDialogComponent {
   });
 
   constructor(
-    private dialogRef: MatDialogRef<SubscribeDialogComponent>,
+    private dialogRef: MatDialogRef<SubscribeDialogComponent, MySubscription | null>,
     private signalsService: SignalsService,
     private sharedService: SharedService,
     @Inject(MAT_DIALOG_DATA) public data: SubscribeDialogData
   ) {}
 
   close(): void {
-    this.dialogRef.close(false);
+    this.dialogRef.close(null);
   }
 
   confirm(): void {
@@ -59,9 +58,9 @@ export class SubscribeDialogComponent {
         reference,
       })
       .subscribe({
-        next: () => {
+        next: (subscription) => {
           this.saving = false;
-          this.dialogRef.close(true);
+          this.dialogRef.close(subscription);
         },
         error: (err) => {
           this.saving = false;

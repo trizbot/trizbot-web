@@ -1,8 +1,6 @@
 <div class="signals-wrapper">
 
-  <!-- ===================================================================== -->
   <!-- HERO HEADER -->
-  <!-- ===================================================================== -->
   <div class="signals-hero">
     <div class="signals-hero-text">
       <span class="signals-eyebrow">Trade Signals</span>
@@ -10,7 +8,7 @@
       <p class="signals-subtitle">Entry, target and stop-loss calls from the desk — subscribe to unlock.</p>
     </div>
     <button
-      *ngIf="isAdmin"
+      *ngIf="canManageSignals"
       mat-flat-button
       color="primary"
       class="fw-bold new-signal-btn"
@@ -22,9 +20,7 @@
     </button>
   </div>
 
-  <!-- ===================================================================== -->
-  <!-- TABS -->
-  <!-- ===================================================================== -->
+  <!-- TABS (desktop) -->
   <div class="signals-tabs">
     <button class="signals-tab" [class.active]="activeTab === 'signals'" (click)="selectTab('signals')">
       <mat-icon>show_chart</mat-icon>
@@ -45,9 +41,7 @@
     </button>
   </div>
 
-  <!-- ===================================================================== -->
   <!-- SIGNALS -->
-  <!-- ===================================================================== -->
   <section *ngIf="activeTab === 'signals'" class="signals-section">
 
     <div class="subscription-banner" *ngIf="!subscriptionLoading && !isSubscribed">
@@ -61,117 +55,108 @@
       </button>
     </div>
 
-    <form class="signals-filters" [formGroup]="filterForm">
-      <div class="search-field">
-        <mat-icon class="search-icon">search</mat-icon>
-        <input
-          type="text"
-          formControlName="pair"
-          placeholder="Search pair, e.g. BTC/USDT"
-          class="search-input"
-        />
+    <ng-container *ngIf="!subscriptionLoading">
+      <form class="signals-filters" [formGroup]="filterForm">
+        <div class="search-field">
+          <mat-icon class="search-icon">search</mat-icon>
+          <input
+            type="text"
+            formControlName="pair"
+            placeholder="Search pair, e.g. BTC/USDT"
+            class="search-input"
+          />
+        </div>
+
+        <button
+          type="button"
+          class="clear-filters-btn"
+          *ngIf="filterForm.get('pair')?.value"
+          (click)="clearFilters()"
+        >
+          Clear
+        </button>
+      </form>
+
+      <div class="signals-loading" *ngIf="signalsLoading">
+        <img src="./assets/images/loading.gif" alt="Loading..." style="width: 28px; height: 28px;" />
       </div>
 
-      <button
-        type="button"
-        class="clear-filters-btn"
-        *ngIf="filterForm.get('pair')?.value"
-        (click)="clearFilters()"
-      >
-        Clear
-      </button>
-    </form>
+      <div class="signals-empty" *ngIf="!signalsLoading && signals.length === 0">
+        <mat-icon class="signals-empty-icon">show_chart</mat-icon>
+        <p>No signals match your filters right now.</p>
+      </div>
 
-    <div class="signals-loading" *ngIf="signalsLoading">
-      <img src="./assets/images/loading.gif" alt="Loading..." style="width: 28px; height: 28px;" />
-    </div>
-
-    <div class="signals-empty" *ngIf="!signalsLoading && signals.length === 0">
-      <mat-icon class="signals-empty-icon">show_chart</mat-icon>
-      <p>No signals match your filters right now.</p>
-    </div>
-
-    <div class="signals-grid" *ngIf="!signalsLoading && signals.length > 0">
-      <article class="signal-card" *ngFor="let item of signals">
-        <div class="signal-card-top">
-          <span class="pair-name">{{ item.pair }}</span>
-          <span
-            class="type-badge"
-            [style.background]="typeColors[item.type] + '1a'"
-            [style.color]="typeColors[item.type]"
-          >
-            {{ typeLabels[item.type] }}
-          </span>
-        </div>
-
-        <div class="signal-card-prices">
-          <div class="price-cell">
-            <span class="price-label">Entry</span>
-            <span class="price-value">{{ item.entryPrice }}</span>
+      <!-- Signals grid — same card layout/style as the Plans grid -->
+      <div class="signals-grid" *ngIf="!signalsLoading && signals.length > 0">
+        <div class="signal-card" *ngFor="let item of signals">
+          <div class="signal-card-top">
+            <span class="pair-name">{{ item.pair }}</span>
+            <span
+              class="type-badge"
+              [style.background]="typeColors[item.type] + '1a'"
+              [style.color]="typeColors[item.type]"
+            >
+              {{ typeLabels[item.type] }}
+            </span>
           </div>
-          <div class="price-cell" *ngIf="item.targetPrice != null">
-            <span class="price-label">Target</span>
-            <span class="price-value target">{{ item.targetPrice }}</span>
+
+          <div class="signal-card-prices">
+            <div class="price-cell">
+              <span class="price-label">Entry</span>
+              <span class="price-value">{{ item.entryPrice }}</span>
+            </div>
+            <div class="price-cell">
+              <span class="price-label">Target</span>
+              <span class="price-value target">{{ item.targetPrice ?? '—' }}</span>
+            </div>
+            <div class="price-cell">
+              <span class="price-label">Stop</span>
+              <span class="price-value stop">{{ item.stopLoss ?? '—' }}</span>
+            </div>
           </div>
-          <div class="price-cell" *ngIf="item.stopLoss != null">
-            <span class="price-label">Stop</span>
-            <span class="price-value stop">{{ item.stopLoss }}</span>
+
+          <p class="signal-analysis" *ngIf="item.analysis">{{ item.analysis }}</p>
+
+          <div class="signal-card-footer">
+            <span class="rr-chip" *ngIf="riskReward(item)">R:R {{ riskReward(item) }}</span>
+            <span class="signal-time">{{ timeAgo(item.createdAt) }}</span>
+            <span class="status-dot" [class.inactive]="!item.isActive">
+              {{ item.isActive ? 'Active' : 'Closed' }}
+            </span>
           </div>
         </div>
+      </div>
 
-        <p class="signal-analysis" *ngIf="item.analysis">{{ item.analysis }}</p>
+      <div class="signals-pagination" *ngIf="!signalsLoading && totalPages > 1">
+        <button class="page-nav-btn" type="button" [disabled]="page === 1" (click)="goToPage(page - 1)">
+          <mat-icon>chevron_left</mat-icon>
+        </button>
 
-        <div class="signal-card-footer">
-          <span class="rr-chip" *ngIf="riskReward(item) as rr">R:R {{ rr }}</span>
-          <span class="signal-time">{{ timeAgo(item.createdAt) }}</span>
-          <span class="status-dot" [class.inactive]="!item.isActive">
-            {{ item.isActive ? 'Active' : 'Closed' }}
-          </span>
-        </div>
-      </article>
-    </div>
+        <button
+          class="page-btn"
+          type="button"
+          *ngFor="let p of pageRange()"
+          [class.active]="p === page"
+          (click)="goToPage(p)"
+        >
+          {{ p }}
+        </button>
 
-    <div class="signals-pagination" *ngIf="!signalsLoading && totalPages > 1">
-      <button
-        class="page-nav-btn"
-        type="button"
-        [disabled]="page === 1"
-        (click)="goToPage(page - 1)"
-      >
-        <mat-icon>chevron_left</mat-icon>
-      </button>
-
-      <button
-        class="page-btn"
-        type="button"
-        *ngFor="let p of pageRange()"
-        [class.active]="p === page"
-        (click)="goToPage(p)"
-      >
-        {{ p }}
-      </button>
-
-      <button
-        class="page-nav-btn"
-        type="button"
-        [disabled]="page === totalPages"
-        (click)="goToPage(page + 1)"
-      >
-        <mat-icon>chevron_right</mat-icon>
-      </button>
-    </div>
+        <button class="page-nav-btn" type="button" [disabled]="page === totalPages" (click)="goToPage(page + 1)">
+          <mat-icon>chevron_right</mat-icon>
+        </button>
+      </div>
+    </ng-container>
   </section>
 
-  <!-- ===================================================================== -->
   <!-- PLANS -->
-  <!-- ===================================================================== -->
   <section *ngIf="activeTab === 'plans'" class="signals-section">
 
     <div class="current-plan-banner" *ngIf="isSubscribed && subscription">
       <mat-icon>verified</mat-icon>
       <span>
         You're on the <strong>{{ planLabels[subscription.plan] }}</strong> plan, active until
-        {{ subscription.endDate | date: 'mediumDate' }}.
+        {{ subscription.expiresAt | date: 'mediumDate' }}.
       </span>
     </div>
 
@@ -183,7 +168,7 @@
       <div class="plan-card" *ngFor="let plan of plans">
         <span class="plan-name">{{ planLabels[plan.plan] }}</span>
         <div class="plan-price">
-          <span class="plan-amount">${{ plan.price }}</span>
+          <span class="plan-amount">{{ plan.amount }} {{ plan.currency }}</span>
           <span class="plan-duration">/ {{ plan.durationDays }} days</span>
         </div>
         <button
@@ -197,15 +182,74 @@
         </button>
       </div>
     </div>
+
+    <!-- Subscription history: loaded in ngOnInit, always visible here. -->
+    <div class="sub-history">
+      <h3 class="sub-history-title">My Subscriptions ({{ visibleSubscriptionHistory.length }})</h3>
+
+      <div class="signals-loading" *ngIf="subscriptionHistoryLoading">
+        <img src="./assets/images/loading.gif" alt="Loading..." style="width: 28px; height: 28px;" />
+      </div>
+
+      <div class="signals-empty" *ngIf="!subscriptionHistoryLoading && visibleSubscriptionHistory.length === 0">
+        <mat-icon class="signals-empty-icon">history</mat-icon>
+        <p>You haven't got an active or upcoming subscription right now.</p>
+      </div>
+
+      <table class="manage-table" *ngIf="!subscriptionHistoryLoading && visibleSubscriptionHistory.length > 0">
+        <thead>
+          <tr>
+            <th>Plan</th>
+            <th>Amount</th>
+            <th>Reference</th>
+            <th>Payment</th>
+            <th>Starts</th>
+            <th>Expires</th>
+            <th>Period</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let sub of visibleSubscriptionHistory">
+            <td class="manage-pair-cell">{{ planLabels[sub.plan] }}</td>
+            <td>{{ sub.amount }}</td>
+            <td>{{ sub.reference }}</td>
+            <td>
+              <span class="status-pill" [ngClass]="sub.status === 'Completed' ? 'active' : 'closed'">
+                {{ statusLabels[sub.status] }}
+              </span>
+            </td>
+            <td>{{ sub.startsAt | date: 'mediumDate' }}</td>
+            <td>{{ sub.expiresAt | date: 'mediumDate' }}</td>
+            <td>
+              <span
+                class="status-pill"
+                [ngClass]="{
+                  active: getPeriodStatus(sub) === 'active',
+                  upcoming: getPeriodStatus(sub) === 'upcoming',
+                  closed: getPeriodStatus(sub) === 'expired'
+                }"
+              >
+                {{ periodLabels[getPeriodStatus(sub)] }}
+              </span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </section>
 
-  <!-- ===================================================================== -->
   <!-- MANAGE (admin) -->
-  <!-- ===================================================================== -->
   <section *ngIf="activeTab === 'manage' && isAdmin" class="signals-section">
     <div class="manage-header">
       <p class="manage-caption">{{ manageSignals.length }} signal(s)</p>
-      <button mat-flat-button color="primary" class="fw-bold" type="button" (click)="openCreateDialog()">
+      <button
+        *ngIf="canManageSignals"
+        mat-flat-button
+        color="primary"
+        class="fw-bold"
+        type="button"
+        (click)="openCreateDialog()"
+      >
         <mat-icon>add</mat-icon>
         New Signal
       </button>
@@ -230,7 +274,7 @@
           <th>Stop</th>
           <th>Status</th>
           <th>Date</th>
-          <th></th>
+          <th *ngIf="canManageSignals"></th>
         </tr>
       </thead>
       <tbody>
@@ -254,7 +298,7 @@
             </span>
           </td>
           <td>{{ item.createdAt | date: 'mediumDate' }}</td>
-          <td class="manage-actions">
+          <td class="manage-actions" *ngIf="canManageSignals">
             <button mat-icon-button type="button" (click)="openEditDialog(item)" aria-label="Edit signal">
               <mat-icon>edit</mat-icon>
             </button>
@@ -274,4 +318,7 @@
     </table>
   </section>
 
+  <!-- Spacer so bottom nav never overlaps content -->
+  <div class="bottom-nav-spacer"></div>
 </div>
+

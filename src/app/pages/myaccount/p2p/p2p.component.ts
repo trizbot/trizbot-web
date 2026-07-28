@@ -5,6 +5,7 @@ import { RouterModule } from '@angular/router';
 
 import { MatDialog } from '@angular/material/dialog';
 import { MatTabsModule } from '@angular/material/tabs';
+import { MatAutocompleteModule } from '@angular/material/autocomplete';
 
 import { MaterialModule } from '../../../material.module';
 import { SharedService } from '../../../shared/shared.service';
@@ -30,6 +31,7 @@ type MainTab = 'market' | 'my-orders' | 'my-trades';
     RouterModule,
     MaterialModule,
     MatTabsModule,
+    MatAutocompleteModule,
     FormsModule,
     ReactiveFormsModule,
   ],
@@ -44,16 +46,35 @@ export class P2pComponent implements OnInit {
   readonly TradeStatus = TradeStatus;
   readonly paymentMethodOptions = PAYMENT_METHODS;
 
+  // ---------------------------------------------------------------------
+  // Coin / fiat suggestions — these are NOT enforced. They only power the
+  // autocomplete dropdown so typing/selecting is fast. A merchant can type
+  // any ticker or currency code they want, for both the market filter and
+  // (once you wire the same pattern into CreateOrderDialogComponent) when
+  // posting an ad. Nothing here validates against this list.
+  // ---------------------------------------------------------------------
+  readonly coinSuggestions: string[] = [
+    'USDT', 'USDC', 'BTC', 'ETH', 'BNB', 'SOL', 'XRP', 'TON', 'TRX', 'DOGE',
+    'ADA', 'MATIC', 'LTC', 'DOT', 'SHIB', 'AVAX', 'LINK', 'ATOM', 'BCH', 'ETC',
+  ];
+
+  readonly fiatSuggestions: string[] = [
+    'NGN', 'USD', 'EUR', 'GBP', 'GHS', 'KES', 'ZAR', 'INR', 'CNY', 'AED',
+    'CAD', 'AUD', 'JPY', 'BRL', 'TRY', 'PKR', 'EGP', 'UGX', 'TZS', 'XOF',
+  ];
+
   activeTab: MainTab = 'market';
 
   // ---------------------------------------------------------------------
   // Market
   // ---------------------------------------------------------------------
   marketType: P2POrderType = P2POrderType.Buy;
+
   filterForm = new FormGroup({
     coin: new FormControl('USDT'),
     fiatCurrency: new FormControl('NGN'),
     paymentMethod: new FormControl<string>(''),
+    amount: new FormControl<number | null>(null),
   });
 
   orders: P2POrder[] = [];
@@ -100,12 +121,14 @@ export class P2pComponent implements OnInit {
     this.p2pService
       .listOrders({
         type: this.marketType,
-        coin: coin || undefined,
-        fiatCurrency: fiatCurrency || undefined,
+        // Freeform: whatever the merchant typed/selected is sent as-is —
+        // no whitelist, no enum restriction.
+        coin: coin?.trim() ? coin.trim().toUpperCase() : undefined,
+        fiatCurrency: fiatCurrency?.trim() ? fiatCurrency.trim().toUpperCase() : undefined,
       })
       .subscribe({
         next: (res) => {
-          this.orders = this.applyPaymentMethodFilter(res);
+          this.orders = res;
           this.ordersLoading = false;
         },
         error: () => {
@@ -114,10 +137,26 @@ export class P2pComponent implements OnInit {
       });
   }
 
-  private applyPaymentMethodFilter(orders: P2POrder[]): P2POrder[] {
-    const method = this.filterForm.getRawValue().paymentMethod;
-    if (!method) return orders;
-    return orders.filter((o) => o.paymentMethods.includes(method));
+  /** Client-side refinement on top of the server results: payment method + amount. */
+  filteredOrders(): P2POrder[] {
+    const { paymentMethod, amount } = this.filterForm.getRawValue();
+    return this.orders.filter((o) => {
+      if (paymentMethod && !o.paymentMethods.includes(paymentMethod)) return false;
+      if (amount != null && amount > 0 && (amount < o.minLimit || amount > o.maxLimit)) return false;
+      return true;
+    });
+  }
+
+  filteredCoinOptions(): string[] {
+    const v = (this.filterForm.get('coin')?.value || '').toString().trim().toUpperCase();
+    if (!v) return this.coinSuggestions;
+    return this.coinSuggestions.filter((c) => c.includes(v));
+  }
+
+  filteredFiatOptions(): string[] {
+    const v = (this.filterForm.get('fiatCurrency')?.value || '').toString().trim().toUpperCase();
+    if (!v) return this.fiatSuggestions;
+    return this.fiatSuggestions.filter((c) => c.includes(v));
   }
 
   // The action verb on each row is the OPPOSITE of the ad's type:
@@ -156,7 +195,13 @@ export class P2pComponent implements OnInit {
     const ref = this.dialog.open(CreateOrderDialogComponent, {
       width: '520px',
       maxWidth: '95vw',
-      data: { defaultType },
+      data: {
+        defaultType,
+        // Pass suggestions through so the dialog can offer the same
+        // autocomplete pattern without hard-restricting what can be typed.
+        coinSuggestions: this.coinSuggestions,
+        fiatSuggestions: this.fiatSuggestions,
+      },
     });
 
     ref.afterClosed().subscribe((created) => {
