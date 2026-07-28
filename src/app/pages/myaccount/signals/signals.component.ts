@@ -12,6 +12,9 @@ import { SharedService } from '../../../shared/shared.service';
 import { SignalsService } from './signals.service';
 import { SignalFormDialogComponent } from './signal-form-dialog/signal-form-dialog.component';
 import { SubscribeDialogComponent } from './subscribe-dialog/subscribe-dialog.component';
+
+import { TraderService } from '../../../../app/appstate/trader.service';
+import { GetTraderResBody } from '../../../../app/services/auth.type';
 import {
   MySubscription,
   PLAN_LABELS,
@@ -19,7 +22,10 @@ import {
   SIGNAL_TYPE_COLORS,
   SIGNAL_TYPE_LABELS,
   SignalItem,
-  SubscriptionStatusEnum,
+  SUBSCRIPTION_PERIOD_LABELS,
+  SUBSCRIPTION_STATUS_LABELS,
+  SubscriptionPeriodStatus,
+  getSubscriptionPeriodStatus,
 } from './model/signal.model';
 
 type SignalsTab = 'signals' | 'plans' | 'manage';
@@ -33,13 +39,24 @@ type SignalsTab = 'signals' | 'plans' | 'manage';
 })
 export class SignalsComponent implements OnInit, OnDestroy {
   private sharedService = inject(SharedService);
+  private traderService = inject(TraderService);
   private destroy$ = new Subject<void>();
 
   readonly typeLabels = SIGNAL_TYPE_LABELS;
   readonly typeColors = SIGNAL_TYPE_COLORS;
   readonly planLabels = PLAN_LABELS;
+  readonly statusLabels = SUBSCRIPTION_STATUS_LABELS;
+  readonly periodLabels = SUBSCRIPTION_PERIOD_LABELS;
+  readonly getPeriodStatus = getSubscriptionPeriodStatus;
+  readonly PeriodStatus = SubscriptionPeriodStatus;
 
   activeTab: SignalsTab = 'signals';
+
+  readonly navItems: { tab: SignalsTab; label: string; icon: string; adminOnly?: boolean }[] = [
+    { tab: 'signals', label: 'Signals', icon: 'show_chart' },
+    { tab: 'plans', label: 'Plans', icon: 'workspace_premium' },
+    { tab: 'manage', label: 'Manage', icon: 'settings', adminOnly: true },
+  ];
 
   filterForm = new FormGroup({
     pair: new FormControl<string>(''),
@@ -48,13 +65,19 @@ export class SignalsComponent implements OnInit, OnDestroy {
   // Signals list
   signals: SignalItem[] = [];
   signalsLoading = false;
+  isSuperAdmin = false;
   page = 1;
   limit = 12;
   total = 0;
+  totalPages = 1;
 
-  // Subscription state
+  // Current active-by-date subscription (derived from history)
   subscription: MySubscription | null = null;
   subscriptionLoading = false;
+
+  // Subscription history ("my subscriptions") — always loaded up front
+  subscriptionHistory: MySubscription[] = [];
+  subscriptionHistoryLoading = false;
 
   // Plans
   plans: PlanOption[] = [];
@@ -72,23 +95,52 @@ export class SignalsComponent implements OnInit, OnDestroy {
     return entityName === 'Admin';
   }
 
-  get isSubscribed(): boolean {
-    return !!this.subscription && this.subscription.status === SubscriptionStatusEnum.Active;
+  /** Only true super-admins may create/edit/delete signals. */
+  get canManageSignals(): boolean {
+    return this.isSuperAdmin;
   }
 
-  get totalPages(): number {
-    return Math.max(1, Math.ceil(this.total / this.limit));
+  get isSubscribed(): boolean {
+    return !!this.subscription && this.getPeriodStatus(this.subscription) === SubscriptionPeriodStatus.Active;
+  }
+
+  get visibleSubscriptionHistory(): MySubscription[] {
+    const startOfToday = (d: Date) => {
+      const c = new Date(d);
+      c.setHours(0, 0, 0, 0);
+      return c.getTime();
+    };
+
+    const today = startOfToday(new Date());
+
+    return this.subscriptionHistory.filter((s) => {
+      const expiry = startOfToday(new Date(s.expiresAt));
+      return expiry !== today;
+    });
   }
 
   ngOnInit(): void {
-    this.loadSubscription();
+    this.loadSubscriptions();
     this.loadSignals();
+    this.loadPlans();
 
     this.filterForm.valueChanges
       .pipe(debounceTime(300), takeUntil(this.destroy$))
       .subscribe(() => {
         this.page = 1;
         this.loadSignals();
+      });
+
+    this.traderService
+      .getTrader()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (res: GetTraderResBody) => {
+          this.isSuperAdmin = !!res.data?.isSuperAdmin;
+        },
+        error: (err) => {
+          console.error('[SignalsComponent] getTrader failed:', err.status, err.error ?? err.message);
+        },
       });
   }
 
@@ -98,10 +150,13 @@ export class SignalsComponent implements OnInit, OnDestroy {
   }
 
   selectTab(tab: SignalsTab): void {
+    if (tab === 'manage' && !this.isAdmin) return;
+
     this.activeTab = tab;
 
-    if (tab === 'plans' && this.plans.length === 0) {
+    if (tab === 'plans') {
       this.loadPlans();
+      this.loadSubscriptions();
     }
 
     if (tab === 'manage' && this.isAdmin && this.manageSignals.length === 0) {
@@ -111,19 +166,32 @@ export class SignalsComponent implements OnInit, OnDestroy {
 
   // ─── Subscription ────────────────────────────────────────
 
-  loadSubscription(): void {
+  loadSubscriptions(): void {
     this.subscriptionLoading = true;
+    this.subscriptionHistoryLoading = true;
+
     this.signalsService
-      .mySubscription()
+      .getMySubscriptions()
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (res) => {
-          this.subscription = res;
+        next: (history) => {
+          const sorted = [...history].sort(
+            (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          );
+
+          this.subscriptionHistory = sorted;
+          this.subscription =
+            sorted.find((s) => this.getPeriodStatus(s) === SubscriptionPeriodStatus.Active) ?? null;
+
           this.subscriptionLoading = false;
+          this.subscriptionHistoryLoading = false;
+
+          this.loadSignals();
         },
-        error: () => {
-          this.subscription = null;
+        error: (err) => {
+          console.error('[SignalsComponent] loadSubscriptions failed:', err.status, err.error ?? err.message);
           this.subscriptionLoading = false;
+          this.subscriptionHistoryLoading = false;
         },
       });
   }
@@ -141,6 +209,7 @@ export class SignalsComponent implements OnInit, OnDestroy {
         next: (res) => {
           this.signals = res.items;
           this.total = res.total;
+          this.totalPages = res.totalPages;
           this.signalsLoading = false;
         },
         error: () => {
@@ -235,12 +304,18 @@ export class SignalsComponent implements OnInit, OnDestroy {
       data: { plan },
     });
 
-    ref.afterClosed().subscribe((subscribed) => {
-      if (subscribed) {
-        this.sharedService.showToast({ title: 'Subscription activated.' });
-        this.loadSubscription();
-        this.loadSignals();
+    ref.afterClosed().subscribe((created: MySubscription | null | undefined) => {
+      if (!created) return;
+
+      this.sharedService.showToast({ title: 'Subscription activated.' });
+
+      this.subscriptionHistory = [created, ...this.subscriptionHistory];
+
+      if (this.getPeriodStatus(created) === SubscriptionPeriodStatus.Active) {
+        this.subscription = created;
       }
+
+      this.loadSignals();
     });
   }
 
@@ -263,38 +338,49 @@ export class SignalsComponent implements OnInit, OnDestroy {
   }
 
   openCreateDialog(): void {
+    if (!this.canManageSignals) return;
+
     const ref = this.dialog.open(SignalFormDialogComponent, {
       width: '560px',
       maxWidth: '95vw',
       data: { mode: 'create' },
     });
 
-    ref.afterClosed().subscribe((saved) => {
-      if (saved) {
-        this.sharedService.showToast({ title: 'Signal created successfully.' });
-        this.loadSignals();
-        if (this.isAdmin) this.loadManageSignals();
+    ref.afterClosed().subscribe((created: SignalItem | null | undefined) => {
+      if (!created) return;
+
+      this.sharedService.showToast({ title: 'Signal created successfully.' });
+
+      this.signals = [created, ...this.signals];
+      this.total += 1;
+
+      if (this.isAdmin) {
+        this.manageSignals = [created, ...this.manageSignals];
       }
     });
   }
 
   openEditDialog(item: SignalItem): void {
+    if (!this.canManageSignals) return;
+
     const ref = this.dialog.open(SignalFormDialogComponent, {
       width: '560px',
       maxWidth: '95vw',
       data: { mode: 'edit', item },
     });
 
-    ref.afterClosed().subscribe((saved) => {
-      if (saved) {
-        this.sharedService.showToast({ title: 'Signal updated successfully.' });
-        this.loadSignals();
-        this.loadManageSignals();
-      }
+    ref.afterClosed().subscribe((updated: SignalItem | null | undefined) => {
+      if (!updated) return;
+
+      this.sharedService.showToast({ title: 'Signal updated successfully.' });
+
+      this.signals = this.signals.map((s) => (s.id === updated.id ? updated : s));
+      this.manageSignals = this.manageSignals.map((s) => (s.id === updated.id ? updated : s));
     });
   }
 
   deleteSignal(item: SignalItem): void {
+    if (!this.canManageSignals) return;
     if (!confirm(`Delete "${item.pair}" signal? This cannot be undone.`)) return;
 
     this.deletingId = item.id;
@@ -305,8 +391,9 @@ export class SignalsComponent implements OnInit, OnDestroy {
         next: () => {
           this.deletingId = null;
           this.manageSignals = this.manageSignals.filter((i) => i.id !== item.id);
+          this.signals = this.signals.filter((i) => i.id !== item.id);
+          this.total = Math.max(0, this.total - 1);
           this.sharedService.showToast({ title: 'Signal deleted.' });
-          this.loadSignals();
         },
         error: () => {
           this.deletingId = null;

@@ -568,4 +568,51 @@
     display: block;
     overflow-x: auto;
   }
+
+
+  .sub-history {
+  margin-top: 32px;
+}
+
+.sub-history-title {
+  font-size: 1rem;
+  font-weight: 800;
+  margin: 0 0 14px;
+  color: #14141f;
+}
+
+
+@media (max-width: 640px) {
+  .signals-hero {
+    padding: 22px 20px;
+  }
+
+  .signals-grid,
+  .plans-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .signals-filters {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .manage-table {
+    display: block;
+    overflow-x: auto;
+  }
+}
+
+.sub-history {
+  margin-top: 32px;
+}
+
+.sub-history-title {
+  font-size: 1rem;
+  font-weight: 800;
+  margin: 0 0 14px;
+  color: #14141f;
+}
+
+
 }
