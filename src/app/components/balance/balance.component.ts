@@ -249,9 +249,7 @@ export class WalletBalanceComponent implements OnInit, OnDestroy {
           this.isTradersDashBoardType = true;
         }
 
-        if (!this.isKycVerified && this.isTradersDashBoardType == true) {
-          this.router.navigate(['/myaccount/kyc']);
-        }
+       
       },
       error: (err) => {
         this.errorMessage = '';

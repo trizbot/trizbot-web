@@ -16,6 +16,8 @@ import { CoreService } from '../../../services/core.service';
 import { SharedService } from '../../../shared/shared.service';
 import { TraderService } from '../../../../app/appstate/trader.service';
 import { GetTraderResBody } from '../../../../app/services/auth.type';
+import { Observable } from 'rxjs';
+import { Trader } from '../../../../app/appstate/appstate-model';
 
 @Component({
   selector: 'app-crypto',
@@ -42,7 +44,38 @@ export class CryptoComponent implements OnInit {
   private sharedService = inject(SharedService);
 
   creatorName: string = '';
+walletBalance: string = '0.00';
+  tradeRewardCashWalletBalance: string = '0.00';
+  amountInvested: string = '0.00';
+  profit: string = '0.00';
+  depositBalance: string = '0.00';
+  userRevenue: string = '';
+  lastName: string = '';
+  phoneNumber: string = '';
+  walletAddress: string = '';
+  userProfit: string = '';
+  imageSecureUrl: string = '';
+  errorMessage: string = '';
+  trader$: Observable<Trader | null>;
+  loading$: Observable<boolean>;
+  error$: Observable<any>;
 
+  totalUsers: string;
+  totalActiveUsers: number;
+  totalWeeklyFunds: number;
+  totalWeeklyProfits: number;
+
+  entityName: string;
+  isSuperAdmin: boolean;
+  isKycVerified: boolean;
+  isCryptoAvailableStatus: boolean;
+  payoutStatus: boolean;
+  isCryptoAvailableDescription: string;
+  isTradersDashBoardType: boolean;
+  isAdminDashBoardType: boolean;
+  isNormalEntityType: boolean;
+  isSuperEntityType: boolean;
+  
    cryptoData = {
     maxAmount: '9000000000000000000',
     minAmount: '',
@@ -55,7 +88,7 @@ export class CryptoComponent implements OnInit {
   };
   
 
-  errorMessage: string = '';
+
   loading: boolean = false;
   imageUrl: string;
 
@@ -77,8 +110,42 @@ export class CryptoComponent implements OnInit {
       next: (res: GetTraderResBody) => {
         this.creatorName = `${res.data.firstName} ${res.data.lastName}`;
         this.cryptoData.creatorName = this.creatorName;
+        
+         this.profit = res.data.profit;
+               this.userRevenue = res.data.firstName;
+               this.lastName = res.data.lastName;
+               this.imageSecureUrl = res.data.imageSecureUrl;
+               this.entityName = res.data.entityName;
+               this.isSuperAdmin = res.data.isSuperAdmin;
+               this.isKycVerified = res.data.isKycVerified ?? false;
+       
+               if (this.entityName == 'Admin' && this.isSuperAdmin) {
+                 this.isSuperEntityType = true;
+                 this.isAdminDashBoardType = true;
+                 this.isTradersDashBoardType = false;
+               } else if (this.entityName == 'Admin' && !this.isSuperAdmin) {
+                 this.isSuperEntityType = false;
+                 this.isAdminDashBoardType = true;
+                 this.isTradersDashBoardType = false;
+               } else if (this.entityName == 'Trader' && this.isSuperAdmin) {
+                 this.isNormalEntityType = false;
+                 this.isAdminDashBoardType = true;
+                 this.isTradersDashBoardType = false;
+               } else if (this.entityName == 'Trader' && !this.isSuperAdmin) {
+                 this.isNormalEntityType = false;
+                 this.isAdminDashBoardType = false;
+                 this.isTradersDashBoardType = true;
+               } else {
+                 this.isNormalEntityType = false;
+                 this.isAdminDashBoardType = false;
+                 this.isTradersDashBoardType = true;
+               }
+       
+           
       },
     });
+
+      
   }
 
   files: File[] = []; 

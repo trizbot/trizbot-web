@@ -20,6 +20,10 @@ import {
 } from './p2p.model';
 import { CreateOrderDialogComponent } from './create-order-dialog/create-order-dialog.component';
 import { TradeDetailDialogComponent } from './trade-detail-dialog/trade-detail-dialog.component';
+import { Observable } from 'rxjs';
+import { Trader } from '../../../../app/appstate/appstate-model';
+import { GetTraderResBody } from '../../../../app/services/auth.type';
+import { TraderService } from '../../../../app/appstate/trader.service';
 
 type MainTab = 'market' | 'my-orders' | 'my-trades';
 
@@ -46,13 +50,40 @@ export class P2pComponent implements OnInit {
   readonly TradeStatus = TradeStatus;
   readonly paymentMethodOptions = PAYMENT_METHODS;
 
-  // ---------------------------------------------------------------------
-  // Coin / fiat suggestions — these are NOT enforced. They only power the
-  // autocomplete dropdown so typing/selecting is fast. A merchant can type
-  // any ticker or currency code they want, for both the market filter and
-  // (once you wire the same pattern into CreateOrderDialogComponent) when
-  // posting an ad. Nothing here validates against this list.
-  // ---------------------------------------------------------------------
+  walletBalance: string = '0.00';
+  tradeRewardCashWalletBalance: string = '0.00';
+  amountInvested: string = '0.00';
+  profit: string = '0.00';
+  depositBalance: string = '0.00';
+  userRevenue: string = '';
+  lastName: string = '';
+  phoneNumber: string = '';
+  walletAddress: string = '';
+  userProfit: string = '';
+  imageSecureUrl: string = '';
+  errorMessage: string = '';
+  trader$: Observable<Trader | null>;
+  loading$: Observable<boolean>;
+  error$: Observable<any>;
+
+  totalUsers: string;
+  totalActiveUsers: number;
+  totalWeeklyFunds: number;
+  totalWeeklyProfits: number;
+
+  entityName: string;
+  isSuperAdmin: boolean;
+  isKycVerified: boolean;
+  isCryptoAvailableStatus: boolean;
+  payoutStatus: boolean;
+  isCryptoAvailableDescription: string;
+  isTradersDashBoardType: boolean;
+  isAdminDashBoardType: boolean;
+  isNormalEntityType: boolean;
+  isSuperEntityType: boolean;
+  isLoading = true;
+
+  
   readonly coinSuggestions: string[] = [
     'USDT', 'USDC', 'BTC', 'ETH', 'BNB', 'SOL', 'XRP', 'TON', 'TRX', 'DOGE',
     'ADA', 'MATIC', 'LTC', 'DOT', 'SHIB', 'AVAX', 'LINK', 'ATOM', 'BCH', 'ETC',
@@ -93,11 +124,73 @@ export class P2pComponent implements OnInit {
   myTrades: P2PTrade[] = [];
   myTradesLoading = false;
 
-  constructor(private p2pService: P2pService, private dialog: MatDialog) {}
+  constructor( private traderService: TraderService,private p2pService: P2pService, private dialog: MatDialog) {}
 
   ngOnInit(): void {
     this.loadOrders();
+    this.getCurrentTrader();
+
   }
+
+
+  getCurrentTrader() {
+      this.isLoading = true;
+      this.traderService.getTrader().subscribe({
+        next: (res: GetTraderResBody) => {
+          this.isLoading = false;
+          this.phoneNumber = res.data.phoneNumber;
+          this.walletBalance = res.data.walletBalance;
+          this.amountInvested = res.data.amountInvested;
+          this.walletAddress = res.data.walletAddress;
+          this.depositBalance = res.data.depositBalance;
+          this.isCryptoAvailableStatus = res.data.isCryptoAvailableStatus;
+          this.isCryptoAvailableDescription = res.data.isCryptoAvailableDescription;
+          this.payoutStatus = res.data.payoutStatus;
+          if (res.data.tradeRewardCashWalletBalance >= 1) {
+            this.tradeRewardCashWalletBalance = res.data.tradeRewardCashWalletBalance;
+          }
+          if (res.data.tradeRewardCashWalletBalance <= 0) {
+            this.tradeRewardCashWalletBalance = '0.0';
+          }
+  
+          this.profit = res.data.profit;
+          this.userRevenue = res.data.firstName;
+          this.lastName = res.data.lastName;
+          this.imageSecureUrl = res.data.imageSecureUrl;
+          this.entityName = res.data.entityName;
+          this.isSuperAdmin = res.data.isSuperAdmin;
+          this.isKycVerified = res.data.isKycVerified ?? false;
+  
+          if (this.entityName == 'Admin' && this.isSuperAdmin) {
+            this.isSuperEntityType = true;
+            this.isAdminDashBoardType = true;
+            this.isTradersDashBoardType = false;
+          } else if (this.entityName == 'Admin' && !this.isSuperAdmin) {
+            this.isSuperEntityType = false;
+            this.isAdminDashBoardType = true;
+            this.isTradersDashBoardType = false;
+          } else if (this.entityName == 'Trader' && this.isSuperAdmin) {
+            this.isNormalEntityType = false;
+            this.isAdminDashBoardType = true;
+            this.isTradersDashBoardType = false;
+          } else if (this.entityName == 'Trader' && !this.isSuperAdmin) {
+            this.isNormalEntityType = false;
+            this.isAdminDashBoardType = false;
+            this.isTradersDashBoardType = true;
+          } else {
+            this.isNormalEntityType = false;
+            this.isAdminDashBoardType = false;
+            this.isTradersDashBoardType = true;
+          }
+  
+         
+        },
+        error: (err) => {
+          this.errorMessage = '';
+          this.isLoading = false;
+        },
+      });
+    }
 
   selectTab(tab: MainTab): void {
     this.activeTab = tab;

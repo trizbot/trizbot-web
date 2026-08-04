@@ -5,7 +5,7 @@ import { Component, OnInit, inject } from '@angular/core';
 import { FormControl, FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 
-import { Subject } from 'rxjs';
+import { Observable, Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
 
 import { MatDialog } from '@angular/material/dialog';
@@ -22,6 +22,9 @@ import {
   CourseSale,
   LEVEL_OPTIONS,
 } from './model/academy.model';
+import { TraderService } from '../../../../app/appstate/trader.service';
+import { GetTraderResBody } from '../../../../app/services/auth.type';
+import { Trader } from '../../../../app/appstate/appstate-model';
 
 type MainTab = 'browse' | 'my-courses' | 'purchased' | 'sales';
 
@@ -40,6 +43,38 @@ export class AcademyComponent implements OnInit {
   readonly levelOptions = LEVEL_OPTIONS;
 
   activeTab: MainTab = 'browse';
+ walletBalance: string = '0.00';
+  tradeRewardCashWalletBalance: string = '0.00';
+  amountInvested: string = '0.00';
+  profit: string = '0.00';
+  depositBalance: string = '0.00';
+  userRevenue: string = '';
+  lastName: string = '';
+  phoneNumber: string = '';
+  walletAddress: string = '';
+  userProfit: string = '';
+  imageSecureUrl: string = '';
+  errorMessage: string = '';
+  trader$: Observable<Trader | null>;
+  loading$: Observable<boolean>;
+  error$: Observable<any>;
+
+  totalUsers: string;
+  totalActiveUsers: number;
+  totalWeeklyFunds: number;
+  totalWeeklyProfits: number;
+
+  entityName: string;
+  isSuperAdmin: boolean;
+  isKycVerified: boolean;
+  isCryptoAvailableStatus: boolean;
+  payoutStatus: boolean;
+  isCryptoAvailableDescription: string;
+  isTradersDashBoardType: boolean;
+  isAdminDashBoardType: boolean;
+  isNormalEntityType: boolean;
+  isSuperEntityType: boolean;
+  isLoading = true;
 
   // ---- Browse ----
   filterForm = new FormGroup({
@@ -64,15 +99,75 @@ export class AcademyComponent implements OnInit {
   sales: CourseSale[] = [];
   salesLoading = false;
 
-  constructor(private academyService: AcademyService, private dialog: MatDialog) {}
+  constructor( private traderService: TraderService,private academyService: AcademyService, private dialog: MatDialog) {}
 
   ngOnInit(): void {
     this.loadCourses();
+    this.getCurrentTrader();
 
     this.filterForm.controls.search.valueChanges
       .pipe(debounceTime(400), distinctUntilChanged(), takeUntil(this.destroy$))
       .subscribe(() => this.loadCourses());
   }
+
+  getCurrentTrader() {
+      this.isLoading = true;
+      this.traderService.getTrader().subscribe({
+        next: (res: GetTraderResBody) => {
+          this.isLoading = false;
+          this.phoneNumber = res.data.phoneNumber;
+          this.walletBalance = res.data.walletBalance;
+          this.amountInvested = res.data.amountInvested;
+          this.walletAddress = res.data.walletAddress;
+          this.depositBalance = res.data.depositBalance;
+          this.isCryptoAvailableStatus = res.data.isCryptoAvailableStatus;
+          this.isCryptoAvailableDescription = res.data.isCryptoAvailableDescription;
+          this.payoutStatus = res.data.payoutStatus;
+          if (res.data.tradeRewardCashWalletBalance >= 1) {
+            this.tradeRewardCashWalletBalance = res.data.tradeRewardCashWalletBalance;
+          }
+          if (res.data.tradeRewardCashWalletBalance <= 0) {
+            this.tradeRewardCashWalletBalance = '0.0';
+          }
+  
+          this.profit = res.data.profit;
+          this.userRevenue = res.data.firstName;
+          this.lastName = res.data.lastName;
+          this.imageSecureUrl = res.data.imageSecureUrl;
+          this.entityName = res.data.entityName;
+          this.isSuperAdmin = res.data.isSuperAdmin;
+          this.isKycVerified = res.data.isKycVerified ?? false;
+  
+          if (this.entityName == 'Admin' && this.isSuperAdmin) {
+            this.isSuperEntityType = true;
+            this.isAdminDashBoardType = true;
+            this.isTradersDashBoardType = false;
+          } else if (this.entityName == 'Admin' && !this.isSuperAdmin) {
+            this.isSuperEntityType = false;
+            this.isAdminDashBoardType = true;
+            this.isTradersDashBoardType = false;
+          } else if (this.entityName == 'Trader' && this.isSuperAdmin) {
+            this.isNormalEntityType = false;
+            this.isAdminDashBoardType = true;
+            this.isTradersDashBoardType = false;
+          } else if (this.entityName == 'Trader' && !this.isSuperAdmin) {
+            this.isNormalEntityType = false;
+            this.isAdminDashBoardType = false;
+            this.isTradersDashBoardType = true;
+          } else {
+            this.isNormalEntityType = false;
+            this.isAdminDashBoardType = false;
+            this.isTradersDashBoardType = true;
+          }
+  
+         
+        },
+        error: (err) => {
+          this.errorMessage = '';
+          this.isLoading = false;
+        },
+      });
+    }
 
   selectTab(tab: MainTab): void {
     this.activeTab = tab;
