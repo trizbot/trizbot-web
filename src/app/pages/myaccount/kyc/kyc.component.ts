@@ -317,8 +317,8 @@ export class KycComponent implements OnInit, OnDestroy {
           if (err?.slot) {
             this.errorMessage = `${this.slotLabel(err.slot)} upload failed. Please try again.`;
           } else {
-            this.errorMessage ='Could not submit KYC. Please try again.';
-              // err?.error?.message || err?.message || 'Could not submit KYC. Please try again.';
+            this.errorMessage =
+              err?.error?.message || err?.message || 'Could not submit KYC. Please try again.';
           }
           this.loading = false;
         },
