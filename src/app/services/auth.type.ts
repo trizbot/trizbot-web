@@ -117,6 +117,7 @@ export type GetTraderResBody = {
  
 
   isDepositDisabled?: boolean;
+  isKycVerified?: boolean;
 
   };
 };

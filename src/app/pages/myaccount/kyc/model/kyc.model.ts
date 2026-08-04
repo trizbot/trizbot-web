@@ -25,6 +25,7 @@ export interface KycRecord {
   address?: string;
   status: KycStatusEnum;
   rejectionReason?: string;
+  data?: any;
   createdAt: string;
   updatedAt?: string;
 }

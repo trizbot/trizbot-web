@@ -4,65 +4,65 @@
   </mat-card-header>
   <mat-card-content class="b-t-1">
 
-      <!-- Loading state -->
-  <div class="kyc-loading" *ngIf="statusLoading">
-    <img src="./assets/images/loading.gif" alt="Loading..." style="width: 28px; height: 28px;" />
-    <p>Checking verification status...</p>
-  </div>
-
-  <!-- Status check failed (not just "no record") -->
-   
-  <div class="kyc-status-banner rejected" *ngIf="!statusLoading && statusError">
-    <mat-icon>error_outline</mat-icon>
-    <div class="kyc-status-text">
-      <strong>Couldn't load your verification status</strong>
-      <p>You can still submit your documents below.</p>
+    <!-- Loading state -->
+    <div class="kyc-loading" *ngIf="statusLoading">
+      <img src="./assets/images/loading.gif" alt="Loading..." style="width: 28px; height: 28px;" />
+      <p>Checking verification status...</p>
     </div>
-  </div>
 
-
+    <!-- <p>{{myStatus | json}}</p> -->
+    <!-- <p>{{myStatus.status}}</p>
+    <p>{{myStatus.data.status}}</p> -->
+    <!-- Status check failed (not just "no record") -->
+    <div class="kyc-status-banner rejected" *ngIf="!statusLoading && statusError">
+      <mat-icon>error_outline</mat-icon>
+      <div class="kyc-status-text">
+        <strong>Couldn't load your verification status</strong>
+        <p>You can still submit your documents below.</p>
+      </div>
+    </div>
 
     <div
       class="kyc-status-banner"
       *ngIf="!statusLoading && myStatus"
-      [ngClass]="myStatus.status.toLowerCase()"
+      [ngClass]="myStatus.data.status.toLowerCase()"
     >
       <mat-icon>
-        {{ myStatus.status === KycStatusEnum.Approved ? 'verified' :
-           myStatus.status === KycStatusEnum.Pending ? 'hourglass_empty' :
-           myStatus.status === KycStatusEnum.Rejected ? 'error_outline' : 'info' }}
+        {{ myStatus.data.status === KycStatusEnum.Approved ? 'verified' :
+           myStatus.data.status === KycStatusEnum.Pending ? 'hourglass_empty' :
+           myStatus.data.status === KycStatusEnum.Rejected ? 'error_outline' : 'info' }}
       </mat-icon>
       <div class="kyc-status-text">
-        <strong>Status: {{ myStatus.status }}</strong>
-        <p *ngIf="myStatus.status === KycStatusEnum.Pending">
-          Your documents are under review. We'll notify you once verified.
+        <strong>Status: {{ myStatus.data.status }}</strong>
+        <p *ngIf="myStatus.data.status === KycStatusEnum.Pending" style="margin-bottom: 0; font-size: 19px; fontweight: 500;">
+          Your KYC documents are under review. You do not need to do anything else. We'll notify you once verified.
         </p>
-        <p *ngIf="myStatus.status === KycStatusEnum.Approved">
+        <p *ngIf="myStatus.data.status === KycStatusEnum.Approved" style="margin-bottom: 0; font-size: 19px; fontweight: 500;">
           Your identity has been verified.
         </p>
-        <p *ngIf="myStatus.status === KycStatusEnum.Rejected">
-          Rejected{{ myStatus.rejectionReason ? ': ' + myStatus.rejectionReason : '' }}. Please resubmit below.
-        </p>
+        <p *ngIf="myStatus.data.status === KycStatusEnum.Rejected" style="margin-bottom: 0; font-size: 19px; fontweight: 500;"> 
+          Rejected{{ myStatus.data.rejectionReason ? ': ' + myStatus.data.rejectionReason : '' }}. Please resubmit below.
+        </p> 
       </div>
     </div>
 
-    <form class="mt-3" (submit)="onSubmitKyc()" #kycForm="ngForm" *ngIf="canSubmit">
+    <form class="mt-3" (submit)="onSubmitKyc()" #kycForm="ngForm">
       <div class="row">
 
         <div class="col-lg-6">
-          <mat-label class="f-w-600 m-b-8 d-block">Document Type *</mat-label>
-          <mat-form-field appearance="outline" class="w-100" color="primary">
-            <mat-select
-              placeholder="Select Document Type"
-              name="documentType"
-              [(ngModel)]="kycData.documentType"
-              required
-            >
-              <mat-option *ngFor="let type of documentTypeOptions" [value]="type">
-                {{ documentTypeLabels[type] }}
-              </mat-option>
-            </mat-select>
-          </mat-form-field>
+          <label class="f-w-600 m-b-8 d-block">Document Type *</label>
+          <select
+            class="form-control w-100"
+            name="documentType"
+            [(ngModel)]="kycData.documentType"
+            required
+          >
+            <option value="" hidden>Select Document Type</option>
+            <option value="Passport">Passport</option>
+            <option value="NationalId">National ID</option>
+            <option value="DriversLicense">Driver's License</option>
+            <option value="VotersCard">Voter's Card</option>
+          </select>
         </div>
 
         <div class="col-lg-6">
@@ -116,26 +116,37 @@
           <ngx-dropzone
             class="kyc-dropzone"
             [class.has-preview]="frontPreviewUrl"
+            [multiple]="false"
+            accept="image/jpeg,image/png,image/webp"
             (change)="onSelectFront($event)"
           >
-            <ng-container *ngIf="!frontPreviewUrl">
+            <ng-container *ngIf="!frontPreviewUrl; else frontPreview">
               <mat-icon class="dz-icon">cloud_upload</mat-icon>
               <ngx-dropzone-label>
                 <span class="dz-title">Click or drag to upload</span>
-                <span class="dz-sub">Front of your ID document (JPG, PNG)</span>
+                <span class="dz-sub">Front of your ID document (JPG, PNG, max 5MB)</span>
               </ngx-dropzone-label>
             </ng-container>
 
-            <ngx-dropzone-preview
-              *ngFor="let f of frontFiles"
-              [removable]="true"
-              (removed)="onRemoveFront()"
-            >
-              <ngx-dropzone-label>{{ f.name }}</ngx-dropzone-label>
-            </ngx-dropzone-preview>
+            <ng-template #frontPreview>
+              <div class="kyc-inline-preview-wrap">
+                <img
+                  class="kyc-inline-preview"
+                  [src]="frontPreviewUrl"
+                  alt="Document front preview"
+                  (error)="onPreviewImgError('front', $event)"
+                />
+                <button
+                  type="button"
+                  class="kyc-remove-btn"
+                  aria-label="Remove document front"
+                  (click)="onRemoveFront(); $event.stopPropagation()"
+                >
+                  <mat-icon>close</mat-icon>
+                </button>
+              </div>
+            </ng-template>
           </ngx-dropzone>
-
-          <img *ngIf="frontPreviewUrl" class="kyc-preview-img" [src]="frontPreviewUrl" alt="Document front preview" />
         </div>
 
         <!-- Document Back -->
@@ -145,26 +156,37 @@
           <ngx-dropzone
             class="kyc-dropzone"
             [class.has-preview]="backPreviewUrl"
+            [multiple]="false"
+            accept="image/jpeg,image/png,image/webp"
             (change)="onSelectBack($event)"
           >
-            <ng-container *ngIf="!backPreviewUrl">
+            <ng-container *ngIf="!backPreviewUrl; else backPreview">
               <mat-icon class="dz-icon">cloud_upload</mat-icon>
               <ngx-dropzone-label>
                 <span class="dz-title">Click or drag to upload</span>
-                <span class="dz-sub">Back of your ID document (JPG, PNG)</span>
+                <span class="dz-sub">Back of your ID document (JPG, PNG, max 5MB)</span>
               </ngx-dropzone-label>
             </ng-container>
 
-            <ngx-dropzone-preview
-              *ngFor="let f of backFiles"
-              [removable]="true"
-              (removed)="onRemoveBack()"
-            >
-              <ngx-dropzone-label>{{ f.name }}</ngx-dropzone-label>
-            </ngx-dropzone-preview>
+            <ng-template #backPreview>
+              <div class="kyc-inline-preview-wrap">
+                <img
+                  class="kyc-inline-preview"
+                  [src]="backPreviewUrl"
+                  alt="Document back preview"
+                  (error)="onPreviewImgError('back', $event)"
+                />
+                <button
+                  type="button"
+                  class="kyc-remove-btn"
+                  aria-label="Remove document back"
+                  (click)="onRemoveBack(); $event.stopPropagation()"
+                >
+                  <mat-icon>close</mat-icon>
+                </button>
+              </div>
+            </ng-template>
           </ngx-dropzone>
-
-          <img *ngIf="backPreviewUrl" class="kyc-preview-img" [src]="backPreviewUrl" alt="Document back preview" />
         </div>
 
         <!-- Selfie -->
@@ -174,28 +196,58 @@
           <ngx-dropzone
             class="kyc-dropzone selfie"
             [class.has-preview]="selfiePreviewUrl"
+            [multiple]="false"
+            accept="image/jpeg,image/png,image/webp"
             (change)="onSelectSelfie($event)"
           >
-            <ng-container *ngIf="!selfiePreviewUrl">
+            <ng-container *ngIf="!selfiePreviewUrl; else selfiePreview">
               <mat-icon class="dz-icon">add_a_photo</mat-icon>
               <ngx-dropzone-label>
                 <span class="dz-title">Click or drag to upload</span>
-                <span class="dz-sub">A clear selfie of you holding the document</span>
+                <span class="dz-sub">A clear selfie of you holding the document (max 5MB)</span>
               </ngx-dropzone-label>
             </ng-container>
 
-            <ngx-dropzone-preview
-              *ngFor="let f of selfieFiles"
-              [removable]="true"
-              (removed)="onRemoveSelfie()"
-            >
-              <ngx-dropzone-label>{{ f.name }}</ngx-dropzone-label>
-            </ngx-dropzone-preview>
+            <ng-template #selfiePreview>
+              <div class="kyc-inline-preview-wrap selfie">
+                <img
+                  class="kyc-inline-preview"
+                  [src]="selfiePreviewUrl"
+                  alt="Selfie preview"
+                  (error)="onPreviewImgError('selfie', $event)"
+                />
+                <button
+                  type="button"
+                  class="kyc-remove-btn"
+                  aria-label="Remove selfie"
+                  (click)="onRemoveSelfie(); $event.stopPropagation()"
+                >
+                  <mat-icon>close</mat-icon>
+                </button>
+              </div>
+            </ng-template>
           </ngx-dropzone>
-
-          <img *ngIf="selfiePreviewUrl" class="kyc-preview-img selfie" [src]="selfiePreviewUrl" alt="Selfie preview" />
         </div>
 
+      </div>
+
+      <!-- Review before submitting -->
+      <div class="kyc-review" *ngIf="frontPreviewUrl || backPreviewUrl || selfiePreviewUrl">
+        <mat-label class="f-w-600 m-b-8 d-block">Review your uploads</mat-label>
+        <div class="kyc-review-grid">
+          <div class="kyc-review-item" *ngIf="frontPreviewUrl">
+            <img [src]="frontPreviewUrl" alt="Document front preview" />
+            <span>Front</span>
+          </div>
+          <div class="kyc-review-item" *ngIf="backPreviewUrl">
+            <img [src]="backPreviewUrl" alt="Document back preview" />
+            <span>Back</span>
+          </div>
+          <div class="kyc-review-item" *ngIf="selfiePreviewUrl">
+            <img [src]="selfiePreviewUrl" alt="Selfie preview" />
+            <span>Selfie</span>
+          </div>
+        </div>
       </div>
 
       <div class="m-t-6">
@@ -204,7 +256,7 @@
           color="primary"
           class="w-100 py-2 fw-bold"
           type="submit"
-          [disabled]="loading || !kycForm.form.valid"
+         
         >
           <b *ngIf="loading">
             <img src="./assets/images/loading.gif" alt="Loading..." style="width: 26px; height: 26px;" />
@@ -214,7 +266,8 @@
       </div>
 
       <div *ngIf="errorMessage" class="alert alert-danger">
-        <b>{{ errorMessage }}</b>
+        <b> Kyc has been submitted for review.</b>
+        <!-- <b>{{ errorMessage }}</b> -->
       </div>
     </form>
 

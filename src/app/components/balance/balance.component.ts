@@ -51,6 +51,7 @@ export class WalletBalanceComponent implements OnInit {
 
   entityName: string ;
   isSuperAdmin: boolean ;
+  isKycVerified: boolean ;
   isCryptoAvailableStatus: boolean;
   payoutStatus: boolean;
   isCryptoAvailableDescription: string;
@@ -59,6 +60,7 @@ export class WalletBalanceComponent implements OnInit {
   isNormalEntityType: boolean ;
   isSuperEntityType: boolean ;
   isLoading = true;
+  
 
   countdowns: { [key: string]: string } = {}; // Track countdown per trade
   private timerSub: Subscription;
@@ -161,6 +163,7 @@ this.traderService.getAllTraders({ page: 1, limit: 100001 }).subscribe({
         this.imageSecureUrl = res.data.imageSecureUrl;
         this.entityName = res.data.entityName;
         this.isSuperAdmin = res.data.isSuperAdmin;
+        this.isKycVerified = res.data.isKycVerified ?? false;
    
 
         if (this.entityName=="Admin"  &&this.isSuperAdmin) {
@@ -186,6 +189,12 @@ this.traderService.getAllTraders({ page: 1, limit: 100001 }).subscribe({
             this.isNormalEntityType =false;
             this.isAdminDashBoardType=false;
             this.isTradersDashBoardType=true;
+          }
+
+
+          // redirect to 
+          if(this.isKycVerified==false && this.isTradersDashBoardType==true){
+            this.router.navigate(['/myaccount/kyc']);
           }
   
       },
