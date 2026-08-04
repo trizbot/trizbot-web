@@ -30,6 +30,7 @@ import { AcademyComponent } from './academy/academy.component';
 import { FeedComponent } from './feed/feed.component';
 import { SignalsComponent } from './signals/signals.component';
 import { KycComponent } from './kyc/kyc.component';
+import { ViewKycComponent } from './view-kyc/view-kyc.component';
 
 export const UiComponentsRoutes: Routes = [
   {
@@ -165,6 +166,10 @@ export const UiComponentsRoutes: Routes = [
       {
         path: 'kyc',
         component: KycComponent
+      },      
+      {
+        path: 'view-kyc',
+        component: ViewKycComponent
       },      
  
 

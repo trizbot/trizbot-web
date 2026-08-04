@@ -1,0 +1,418 @@
+/* ─── Status banner ───────────────────────────────────────── */
+.kyc-status-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 10px;
+  margin-bottom: 20px;
+
+  mat-icon {
+    flex-shrink: 0;
+  }
+
+  .kyc-status-text p {
+    margin: 4px 0 0;
+    font-size: 0.95rem;
+  }
+
+  &.pending {
+    background: rgba(245, 166, 35, 0.1);
+    color: #b5730c;
+  }
+
+  &.approved {
+    background: rgba(46, 125, 50, 0.1);
+    color: #2e7d32;
+  }
+
+  &.rejected {
+    background: rgba(220, 53, 69, 0.1);
+    color: #dc3545;
+  }
+
+  &.notsubmitted {
+    background: rgba(63, 81, 181, 0.08);
+    color: #3f51b5;
+  }
+}
+
+/* ─── Dropzone ────────────────────────────────────────────── */
+.kyc-dropzone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 140px;
+  border: 2px dashed rgba(63, 81, 181, 0.35);
+  border-radius: 10px;
+  background: #f8f9fd;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+  text-align: center;
+  padding: 16px;
+  overflow: hidden;
+
+  &:hover {
+    border-color: #3f51b5;
+    background: #f2f3fc;
+  }
+
+  &.selfie {
+    min-height: 170px;
+  }
+
+  &.has-preview {
+    border-style: solid;
+    padding: 0;
+    background: #f0f0f0;
+  }
+
+  .dz-icon {
+    font-size: 32px;
+    width: 32px;
+    height: 32px;
+    color: #3f51b5;
+    margin-bottom: 6px;
+  }
+
+  ::ng-deep .dz-title {
+    display: block;
+    font-weight: 700;
+    font-size: 1rem;
+    color: #14141f;
+  }
+
+  ::ng-deep .dz-sub {
+    display: block;
+    font-size: 0.86rem;
+    color: rgba(0, 0, 0, 0.5);
+    margin-top: 2px;
+  }
+}
+
+/* ─── Inline preview shown INSIDE the dropzone right after selection ───── */
+.kyc-inline-preview-wrap {
+  position: relative;
+  width: 100%;
+  height: 140px;
+  line-height: 0;
+
+  &.selfie {
+    height: 170px;
+  }
+}
+
+.kyc-inline-preview {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.kyc-remove-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 2;
+  transition: background 0.15s;
+
+  mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+  }
+
+  &:hover {
+    background: rgba(220, 53, 69, 0.9);
+  }
+}
+
+/* ─── Review strip ────────────────────────────────────────── */
+.kyc-review {
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.kyc-review-grid {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.kyc-review-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+
+  img {
+    width: 100px;
+    height: 100px;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 1px solid rgba(0, 0, 0, 0.12);
+  }
+
+  span {
+    font-size: 13px;
+    font-weight: 600;
+    opacity: 0.7;
+  }
+}
+
+/* ─── Admin: pending KYC list card ───────────────────────────
+   Elegant, airy styling — soft blush/lavender accent palette,
+   generous spacing, refined typography, gentle shadows. ───── */
+
+.kyc-admin-loading,
+.kyc-admin-empty {
+  padding: 32px 16px;
+  text-align: center;
+  color: #8b8b9e;
+  font-size: 1rem;
+  font-style: italic;
+}
+
+.kyc-admin-item {
+  background: #fffdfc;
+  border: 1px solid rgba(196, 165, 197, 0.25);
+  border-radius: 14px;
+  padding: 20px 22px;
+  margin-bottom: 22px;
+  box-shadow: 0 2px 10px rgba(157, 108, 158, 0.06);
+  transition: box-shadow 0.2s ease;
+
+  &:hover {
+    box-shadow: 0 6px 18px rgba(157, 108, 158, 0.12);
+  }
+}
+
+.kyc-admin-item-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(196, 165, 197, 0.2);
+
+  strong {
+    font-size: 1.15rem;
+    color: #3a2e4d;
+    font-weight: 700;
+  }
+
+  .kyc-admin-sub {
+    color: #9b8aa8;
+    font-size: 0.95rem;
+  }
+
+  .kyc-admin-date {
+    font-size: 0.88rem;
+    color: #b39cb8;
+    white-space: nowrap;
+  }
+}
+
+/* Details table */
+.kyc-admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 18px;
+
+  th,
+  td {
+    padding: 8px 12px;
+    text-align: left;
+    border-bottom: 1px solid rgba(196, 165, 197, 0.18);
+    font-size: 0.96rem;
+    color: #4a3f57;
+  }
+
+  th {
+    width: 15%;
+    color: #a084a8;
+    font-weight: 600;
+    white-space: nowrap;
+    letter-spacing: 0.02em;
+  }
+}
+
+/* Previously-recorded rejection reason (e.g. on resubmission) */
+.kyc-admin-rejection-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  background: rgba(220, 53, 69, 0.06);
+  border: 1px solid rgba(220, 53, 69, 0.18);
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin-bottom: 16px;
+  font-size: 0.95rem;
+  color: #a3324a;
+
+  mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  strong {
+    font-weight: 700;
+  }
+}
+
+/* Images table: one column per image */
+.kyc-image-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 20px 8px;
+  margin-bottom: 18px;
+
+  th {
+    text-align: center;
+    font-size: 0.9rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #a687ab;
+    padding-bottom: 10px;
+  }
+
+  td {
+    vertical-align: top;
+    text-align: center;
+  }
+}
+
+.kyc-zoom-box {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.kyc-zoom-viewport {
+  width: 240px;
+  height: 240px;
+  overflow: auto;
+  border: 2px solid #e4cfe6;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fbf7fc;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.6), 0 1px 4px rgba(157, 108, 158, 0.08);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+
+  &:hover {
+    border-color: #c9a0cd;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.6), 0 3px 10px rgba(157, 108, 158, 0.15);
+  }
+}
+
+.kyc-zoom-image {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  border-radius: 6px;
+  transition: transform 0.15s ease;
+  transform-origin: center center;
+  cursor: zoom-in;
+}
+
+.kyc-zoom-controls {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  background: #fbf7fc;
+  border: 1px solid rgba(196, 165, 197, 0.3);
+  border-radius: 20px;
+  padding: 2px 4px;
+
+  button {
+    color: #9c6fa0;
+  }
+}
+
+.kyc-zoom-level {
+  font-size: 0.88rem;
+  min-width: 46px;
+  text-align: center;
+  color: #a687ab;
+  font-weight: 600;
+}
+
+/* Actions */
+.kyc-admin-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 6px;
+
+  button {
+    border-radius: 24px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    letter-spacing: 0.01em;
+    padding: 0 20px;
+  }
+}
+
+.kyc-admin-reject-form {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+  padding: 16px;
+  background: rgba(220, 53, 69, 0.04);
+  border: 1px dashed rgba(220, 53, 69, 0.25);
+  border-radius: 10px;
+  font-size: 0.95rem;
+
+  mat-form-field {
+    flex: 1;
+    min-width: 240px;
+  }
+
+  button {
+    border-radius: 24px;
+    margin-top: 4px;
+    font-size: 0.95rem;
+  }
+}
+
+/* Responsive: stack image columns on narrow screens */
+@media (max-width: 900px) {
+  .kyc-image-table,
+  .kyc-image-table tbody,
+  .kyc-image-table tr,
+  .kyc-image-table td {
+    display: block;
+    width: 100%;
+  }
+
+  .kyc-zoom-box {
+    width: 100%;
+    margin-bottom: 16px;
+  }
+
+  .kyc-admin-item-header {
+    flex-direction: column;
+  }
+}

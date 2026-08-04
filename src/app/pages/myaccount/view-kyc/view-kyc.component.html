@@ -1,0 +1,193 @@
+<mat-card class="cardWithShadow theme-card">
+  <mat-card-header>
+    <mat-card-title class="m-b-0">Pending KYC Reviews</mat-card-title>
+  </mat-card-header>
+
+  <mat-card-content class="b-t-1">
+
+    <div class="kyc-admin-loading" *ngIf="loading">
+      Loading pending submissions&hellip;
+    </div>
+
+    <div class="kyc-admin-list" *ngIf="!loading">
+
+      <div class="kyc-admin-empty" *ngIf="pendingList.length === 0">
+        No pending KYC submissions.
+      </div>
+
+      <div class="kyc-admin-item" *ngFor="let record of pendingList; trackBy: trackById">
+
+        <!-- Record details table -->
+        <table class="kyc-admin-table">
+          <tbody>
+            <tr>
+              <th>Name</th>
+              <td>{{ record.fullName || 'Unnamed' }}</td>
+              <th>Entity ID</th>
+              <td>{{ record.entityId }}</td>
+            </tr>
+            <tr>
+              <th>Document Type</th>
+              <td>{{ documentTypeLabels[record.documentType] }}</td>
+              <th>Document Number</th>
+              <td>{{ record.documentNumber }}</td>
+            </tr>
+            <tr>
+              <th>Submitted</th>
+              <td>{{ record.createdAt | date: 'medium' }}</td>
+              <th>DOB</th>
+              <td>{{ record.dateOfBirth ? (record.dateOfBirth | date: 'mediumDate') : '—' }}</td>
+            </tr>
+            <tr *ngIf="record.address">
+              <th>Address</th>
+              <td colspan="3">{{ record.address }}</td>
+            </tr>
+          </tbody>
+        </table>
+
+
+        <div class="kyc-admin-rejection-note" *ngIf="record.rejectionReason">
+  <mat-icon>error_outline</mat-icon>
+  <span><strong>Previously rejected:</strong> {{ record.rejectionReason }}</span>
+</div>
+
+
+        <!-- Images table: one column per image, each 500x500 with its own zoom controls -->
+        <table class="kyc-image-table">
+          <thead>
+            <tr>
+              <th>Front</th>
+              <th *ngIf="record.documentBackUrl">Back</th>
+              <th>Selfie</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <!-- Front -->
+              <td>
+                <div class="kyc-zoom-box">
+                  <div class="kyc-zoom-viewport">
+                    <img
+                      [src]="record.documentFrontUrl"
+                      alt="Document front"
+                      class="kyc-zoom-image"
+                      [style.transform]="'scale(' + getZoom(record._id, 'front') + ')'"
+                    />
+                  </div>
+                  <div class="kyc-zoom-controls">
+                    <button mat-icon-button (click)="zoomOut(record._id, 'front')">
+                      <mat-icon>zoom_out</mat-icon>
+                    </button>
+                    <span class="kyc-zoom-level">{{ (getZoom(record._id, 'front') * 100) | number: '1.0-0' }}%</span>
+                    <button mat-icon-button (click)="zoomIn(record._id, 'front')">
+                      <mat-icon>zoom_in</mat-icon>
+                    </button>
+                    <button mat-icon-button (click)="resetZoom(record._id, 'front')">
+                      <mat-icon>restart_alt</mat-icon>
+                    </button>
+                  </div>
+                </div>
+              </td>
+
+              <!-- Back -->
+              <td *ngIf="record.documentBackUrl">
+                <div class="kyc-zoom-box">
+                  <div class="kyc-zoom-viewport">
+                    <img
+                      [src]="record.documentBackUrl"
+                      alt="Document back"
+                      class="kyc-zoom-image"
+                      [style.transform]="'scale(' + getZoom(record._id, 'back') + ')'"
+                    />
+                  </div>
+                  <div class="kyc-zoom-controls">
+                    <button mat-icon-button (click)="zoomOut(record._id, 'back')">
+                      <mat-icon>zoom_out</mat-icon>
+                    </button>
+                    <span class="kyc-zoom-level">{{ (getZoom(record._id, 'back') * 100) | number: '1.0-0' }}%</span>
+                    <button mat-icon-button (click)="zoomIn(record._id, 'back')">
+                      <mat-icon>zoom_in</mat-icon>
+                    </button>
+                    <button mat-icon-button (click)="resetZoom(record._id, 'back')">
+                      <mat-icon>restart_alt</mat-icon>
+                    </button>
+                  </div>
+                </div>
+              </td>
+
+              <!-- Selfie -->
+              <td>
+                <div class="kyc-zoom-box">
+                  <div class="kyc-zoom-viewport">
+                    <img
+                      [src]="record.selfieUrl"
+                      alt="Selfie"
+                      class="kyc-zoom-image"
+                      [style.transform]="'scale(' + getZoom(record._id, 'selfie') + ')'"
+                    />
+                  </div>
+                  <div class="kyc-zoom-controls">
+                    <button mat-icon-button (click)="zoomOut(record._id, 'selfie')">
+                      <mat-icon>zoom_out</mat-icon>
+                    </button>
+                    <span class="kyc-zoom-level">{{ (getZoom(record._id, 'selfie') * 100) | number: '1.0-0' }}%</span>
+                    <button mat-icon-button (click)="zoomIn(record._id, 'selfie')">
+                      <mat-icon>zoom_in</mat-icon>
+                    </button>
+                    <button mat-icon-button (click)="resetZoom(record._id, 'selfie')">
+                      <mat-icon>restart_alt</mat-icon>
+                    </button>
+                  </div>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="kyc-admin-actions">
+          <button
+            mat-flat-button
+            color="primary"
+            [disabled]="reviewingId === record._id"
+            (click)="approve(record)"
+          >
+            <mat-icon>check_circle</mat-icon>
+            Approve
+          </button>
+
+          <button
+            mat-stroked-button
+            color="warn"
+            [disabled]="reviewingId === record._id"
+            (click)="toggleRejectForm(record._id)"
+          >
+            <mat-icon>cancel</mat-icon>
+            Reject
+          </button>
+        </div>
+
+        <div class="kyc-admin-reject-form" *ngIf="showRejectFormId === record._id">
+          <mat-form-field appearance="outline" class="w-100">
+            <mat-label>Rejection reason</mat-label>
+            <input
+              matInput
+              placeholder="e.g. Document image is blurry"
+              [(ngModel)]="rejectionReasons[record._id]"
+              name="rejectionReason-{{ record._id }}"
+            />
+          </mat-form-field>
+          <button
+            mat-flat-button
+            color="warn"
+            [disabled]="reviewingId === record._id"
+            (click)="reject(record)"
+          >
+            Confirm Rejection
+          </button>
+        </div>
+
+      </div>
+    </div>
+
+  </mat-card-content>
+</mat-card>
