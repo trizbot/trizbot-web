@@ -1,11 +1,12 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy, Inject, inject } from '@angular/core';
 import { MaterialModule } from '../../material.module';
 import { NgApexchartsModule } from 'ng-apexcharts';
 import { TablerIconsModule } from 'angular-tabler-icons';
 
-import { interval, Subscription } from 'rxjs';
+import { interval, Subscription, Subject } from 'rxjs';
+import { debounceTime, takeUntil } from 'rxjs/operators';
 import { TraderService } from '../../../app/appstate/trader.service';
-import { GetTraderResBody,GetCryptoResBody,GetWeeklyStatisticsResBody } from '../../../app/services/auth.type';
+import { GetTraderResBody, GetCryptoResBody, GetWeeklyStatisticsResBody } from '../../../app/services/auth.type';
 import { CommonModule } from '@angular/common';
 import { Store } from '@ngrx/store';
 import { Observable } from 'rxjs';
@@ -15,17 +16,41 @@ import { CryptoService } from '../../../app/pages/myaccount/crypto/crypto.servic
 import { Router, RouterModule } from '@angular/router';
 import { InvestmentService } from '../../../app/pages/myaccount/invest/investment.service';
 import { AuthService } from '../../../app/services/auth.service';
+import { FormControl, FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { MatDialog } from '@angular/material/dialog';
 
+import { ArbitrageService } from '../../../app/pages/myaccount/arbitrage/arbitrage.service';
+import { PlaceTradeDialogComponent } from '../../../app/pages/myaccount/arbitrage/place-trade-dialog/place-trade-dialog.component';
+import {
+  ArbitrageOpportunity,
+  EXCHANGE_CONFIG,
+  EXCHANGE_IDS,
+  ExchangeConfig,
+} from '../../../app/pages/myaccount/arbitrage/model/arbitrage.model';
+import { SharedService } from '../../../app/shared/shared.service';
+
+const AUTO_REFRESH_SECONDS = 20;
+const PAGE_SIZE_OPTIONS = [5, 10, 15, 25, 20, 30, 35, 40, 50] as const;
 
 @Component({
   selector: 'app-sales-overview',
-
   standalone: true,
-  imports: [MaterialModule, TablerIconsModule, CommonModule,RouterModule, NgApexchartsModule],
+  imports: [
+    MaterialModule,
+    TablerIconsModule,
+    CommonModule,
+    RouterModule,
+    NgApexchartsModule,
+    FormsModule,
+    ReactiveFormsModule,
+  ],
   templateUrl: './balance.component.html',
   styleUrl: './balance.component.scss',
 })
-export class WalletBalanceComponent implements OnInit {
+export class WalletBalanceComponent implements OnInit, OnDestroy {
+  // ---------------------------------------------------------------------
+  // Wallet / trader state
+  // ---------------------------------------------------------------------
   walletBalance: string = '0.00';
   tradeRewardCashWalletBalance: string = '0.00';
   amountInvested: string = '0.00';
@@ -42,35 +67,70 @@ export class WalletBalanceComponent implements OnInit {
   loading$: Observable<boolean>;
   error$: Observable<any>;
 
-
   totalUsers: string;
-    totalActiveUsers: number;
-    totalWeeklyFunds: number;
-    totalWeeklyProfits: number;
+  totalActiveUsers: number;
+  totalWeeklyFunds: number;
+  totalWeeklyProfits: number;
 
-
-  entityName: string ;
-  isSuperAdmin: boolean ;
-  isKycVerified: boolean ;
+  entityName: string;
+  isSuperAdmin: boolean;
+  isKycVerified: boolean;
   isCryptoAvailableStatus: boolean;
   payoutStatus: boolean;
   isCryptoAvailableDescription: string;
-  isTradersDashBoardType: boolean ;
-  isAdminDashBoardType: boolean ;
-  isNormalEntityType: boolean ;
-  isSuperEntityType: boolean ;
+  isTradersDashBoardType: boolean;
+  isAdminDashBoardType: boolean;
+  isNormalEntityType: boolean;
+  isSuperEntityType: boolean;
   isLoading = true;
-  
 
-  countdowns: { [key: string]: string } = {}; // Track countdown per trade
+  countdowns: { [key: string]: string } = {};
   private timerSub: Subscription;
 
-  constructor(private store: Store,private traderService: TraderService,private authService:AuthService, private cryptoService: CryptoService, private investService:InvestmentService, private router: Router) {
+  // ---------------------------------------------------------------------
+  // Arbitrage state (merged from ArbitrageComponent)
+  // ---------------------------------------------------------------------
+  private destroy$ = new Subject<void>();
+
+  readonly exchangeIds = EXCHANGE_IDS;
+  readonly exchangeConfig = EXCHANGE_CONFIG;
+  readonly refreshIntervalSeconds = AUTO_REFRESH_SECONDS;
+  readonly pageSizeOptions = PAGE_SIZE_OPTIONS;
+
+  arbTokenOptions: string[] = [];
+  private knownArbTokens = new Set<string>();
+
+  activeExchange: string = EXCHANGE_IDS[0];
+
+  arbFilterForm = new FormGroup({
+    token: new FormControl<string>(''),
+    minSpreadPercent: new FormControl<number | null>(null),
+  });
+
+  allOpportunities: ArbitrageOpportunity[] = [];
+  arbLoading = false;
+  arbError: string | null = null;
+  arbLastUpdated: Date | null = null;
+  secondsToRefresh = AUTO_REFRESH_SECONDS;
+
+  arbCurrentPage = 1;
+  arbPageSize: number = PAGE_SIZE_OPTIONS[1]; // default 25
+
+  constructor(
+    private store: Store,
+    private traderService: TraderService,
+    private authService: AuthService,
+    private cryptoService: CryptoService,
+    private investService: InvestmentService,
+    private router: Router,
+    private arbitrageService: ArbitrageService,
+    private dialog: MatDialog,
+    private sharedService: SharedService
+  ) {
     this.trader$ = this.store.select(selectTrader);
     this.loading$ = this.store.select(selectTraderLoading);
     this.error$ = this.store.select(selectTraderError);
   }
-
 
   ngOnInit(): void {
     this.getCurrentTrader();
@@ -82,66 +142,68 @@ export class WalletBalanceComponent implements OnInit {
     this.getCompletedInvestments();
     this.getWeeklyStatistics();
     this.startCountdown();
-    
+
+    // Arbitrage bootstrap
+    this.loadOpportunities();
+
+    interval(1000)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => {
+        this.secondsToRefresh -= 1;
+        if (this.secondsToRefresh <= 0) {
+          this.secondsToRefresh = AUTO_REFRESH_SECONDS;
+          this.loadOpportunities(true);
+        }
+      });
+
+    this.arbFilterForm.valueChanges
+      .pipe(debounceTime(250), takeUntil(this.destroy$))
+      .subscribe(() => this.applyArbFilters());
   }
 
+  getWeeklyStatistics() {
+    this.traderService.getAllTraders({ page: 1, limit: 100001 }).subscribe({
+      next: (res: any) => {
+        this.totalWeeklyProfits = 0;
+        this.totalWeeklyFunds = 0;
+        this.totalActiveUsers = 0;
 
-  
-getWeeklyStatistics(){
-this.traderService.getAllTraders({ page: 1, limit: 100001 }).subscribe({
-  next: (res: any) => {
-    this.totalWeeklyProfits = 0;
-    this.totalWeeklyFunds = 0;
-    this.totalActiveUsers = 0;
+        res.data.forEach((trader: any) => {
+          const profit = trader.profit || 0;
+          const depositBalance = trader.depositBalance || 0;
+          const walletBalance = trader.walletBalance || 0;
 
-    res.data.forEach((trader: any) => {
-      const profit = trader.profit || 0;
-      const depositBalance = trader.depositBalance || 0;
-      const walletBalance = trader.walletBalance || 0;
+          if (profit < 0) {
+            this.totalWeeklyProfits += 0;
+          } else {
+            this.totalWeeklyProfits += profit;
+          }
+          if (depositBalance < 0) {
+            this.totalWeeklyFunds += 0;
+          } else {
+            this.totalWeeklyFunds += depositBalance;
+          }
 
-      
-
-      if(profit<0){
-        this.totalWeeklyProfits +=0;
-      }
-     else{
-      this.totalWeeklyProfits += profit;
-      }
-      if(depositBalance<0){
-        this.totalWeeklyFunds +=0;
-      }
-     else{
-      this.totalWeeklyFunds += depositBalance;
-      }
-
-      if (walletBalance >= 1) {
-        this.totalActiveUsers += 1;
-      }
+          if (walletBalance >= 1) {
+            this.totalActiveUsers += 1;
+          }
+        });
+      },
+      error: () => {},
     });
-  },
-  error: () => {}
-});
-
-
-
 
     this.traderService.getWeeklyStatistics().subscribe({
-      next:(res:GetWeeklyStatisticsResBody)=>{
-    this.totalUsers= res.data.totalUsers;
-    // this.totalActiveUsers = res.data.totalActiveUsers;
-    // this.totalWeeklyFunds=res.data.totalWeeklyFunds;
-    // this.totalWeeklyProfits=res.data.totalWeeklyProfits;
-      }
-    })
-    
+      next: (res: GetWeeklyStatisticsResBody) => {
+        this.totalUsers = res.data.totalUsers;
+      },
+    });
   }
-  
 
-  getCurrentTrader(){
-    this. isLoading = true;
+  getCurrentTrader() {
+    this.isLoading = true;
     this.traderService.getTrader().subscribe({
       next: (res: GetTraderResBody) => {
-         this.isLoading = false;
+        this.isLoading = false;
         this.phoneNumber = res.data.phoneNumber;
         this.walletBalance = res.data.walletBalance;
         this.amountInvested = res.data.amountInvested;
@@ -150,325 +212,481 @@ this.traderService.getAllTraders({ page: 1, limit: 100001 }).subscribe({
         this.isCryptoAvailableStatus = res.data.isCryptoAvailableStatus;
         this.isCryptoAvailableDescription = res.data.isCryptoAvailableDescription;
         this.payoutStatus = res.data.payoutStatus;
-        if(res.data.tradeRewardCashWalletBalance>=1){
-        this.tradeRewardCashWalletBalance = res.data.tradeRewardCashWalletBalance;
+        if (res.data.tradeRewardCashWalletBalance >= 1) {
+          this.tradeRewardCashWalletBalance = res.data.tradeRewardCashWalletBalance;
         }
-        if(res.data.tradeRewardCashWalletBalance<=0){
-        this.tradeRewardCashWalletBalance = "0.0";
+        if (res.data.tradeRewardCashWalletBalance <= 0) {
+          this.tradeRewardCashWalletBalance = '0.0';
         }
 
         this.profit = res.data.profit;
-        this.userRevenue =res.data.firstName;
+        this.userRevenue = res.data.firstName;
         this.lastName = res.data.lastName;
         this.imageSecureUrl = res.data.imageSecureUrl;
         this.entityName = res.data.entityName;
         this.isSuperAdmin = res.data.isSuperAdmin;
         this.isKycVerified = res.data.isKycVerified ?? false;
-   
 
-        if (this.entityName=="Admin"  &&this.isSuperAdmin) {
-          this.isSuperEntityType=true;
-          this.isAdminDashBoardType=true;
-          this.isTradersDashBoardType=false;
-       } else  if (this.entityName=="Admin"  && !this.isSuperAdmin) {
-          this.isSuperEntityType=false;
-          this.isAdminDashBoardType=true;
-          this.isTradersDashBoardType=false;
-          }
-          else if (this.entityName=="Trader" &&this.isSuperAdmin) {
-          this.isNormalEntityType=false;
-          this.isAdminDashBoardType=true;
-          this.isTradersDashBoardType=false;
-          }
-          else if (this.entityName=="Trader" &&!this.isSuperAdmin) {
-          this.isNormalEntityType=false;
-          this.isAdminDashBoardType=false;
-          this.isTradersDashBoardType=true;
-          }
-          else{
-            this.isNormalEntityType =false;
-            this.isAdminDashBoardType=false;
-            this.isTradersDashBoardType=true;
-          }
+        if (this.entityName == 'Admin' && this.isSuperAdmin) {
+          this.isSuperEntityType = true;
+          this.isAdminDashBoardType = true;
+          this.isTradersDashBoardType = false;
+        } else if (this.entityName == 'Admin' && !this.isSuperAdmin) {
+          this.isSuperEntityType = false;
+          this.isAdminDashBoardType = true;
+          this.isTradersDashBoardType = false;
+        } else if (this.entityName == 'Trader' && this.isSuperAdmin) {
+          this.isNormalEntityType = false;
+          this.isAdminDashBoardType = true;
+          this.isTradersDashBoardType = false;
+        } else if (this.entityName == 'Trader' && !this.isSuperAdmin) {
+          this.isNormalEntityType = false;
+          this.isAdminDashBoardType = false;
+          this.isTradersDashBoardType = true;
+        } else {
+          this.isNormalEntityType = false;
+          this.isAdminDashBoardType = false;
+          this.isTradersDashBoardType = true;
+        }
 
-
-          // redirect to 
-          if(this.isKycVerified==false && this.isTradersDashBoardType==true){
-            this.router.navigate(['/myaccount/kyc']);
-          }
-  
+        if (!this.isKycVerified && this.isTradersDashBoardType == true) {
+          this.router.navigate(['/myaccount/kyc']);
+        }
       },
       error: (err) => {
         this.errorMessage = '';
-        this. isLoading = false;
-      }
+        this.isLoading = false;
+      },
     });
-
   }
 
+  // -----------------------------------------------------------------------
+  // Available cryptos
+  // -----------------------------------------------------------------------
+  availableCryptoList: any[] = [];
+  pagedCryptoList: any[] = [];
+  currentPage = 1;
+  pageSize = 1000;
+  selectedCryptoId: string = '';
 
-  // get available cryptos
-// ###############################################################
-availableCryptoList: any[] = [];
-pagedCryptoList: any[] = [];
-currentPage = 1;
-pageSize = 1000;
-selectedCryptoId: string = ''; 
+  getAvailableCryptos() {
+    this.cryptoService.getAvailableCryptos().subscribe({
+      next: (res: any[]) => {
+        this.availableCryptoList = res
+          .filter((item) => item.operationStatus === true)
+          .map((item) => ({
+            title: item.title,
+            minAmount: item.minAmount,
+            profit: item.profit,
+            id: item._id,
+            category: item.category,
+            operationStatus: item.operationStatus,
+            imageUrl: item.imageSecureUrl,
+            expiry: item.expiry,
+            percentage: item.percentage,
+            buyExchange: item.buyExchange,
+            sellExchange: item.sellExchange,
+            tradeStatus: item.tradeStatus,
+            status: item.status,
+            description: item.description,
+            createdAt: item.createdAt,
+            updatedAt: item.updatedAt,
+          }))
+          .sort((a: any, b: any) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
 
-getAvailableCryptos() {
-  this.cryptoService.getAvailableCryptos().subscribe({
-    next: (res: any[]) => {
-      this.availableCryptoList = res
-        .filter(item => item.operationStatus === true) // only include items with true operationStatus
-        .map(item => ({
-          title: item.title,
-          minAmount: item.minAmount,
-          profit: item.profit,
-          id: item._id,
-          category: item.category,
-          operationStatus: item.operationStatus,
-          imageUrl: item.imageSecureUrl,
-          expiry: item.expiry,
-          percentage: item.percentage,
-          buyExchange: item.buyExchange,
-          sellExchange: item.sellExchange,
-          tradeStatus: item.tradeStatus,
-          status: item.status,
-          description: item.description,
-          createdAt: item.createdAt,
-          updatedAt: item.updatedAt
-        })).sort((a:any, b:any) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
-        
+        this.updatePagedList();
+      },
+      error: (err) => {},
+    });
+  }
 
-      this.updatePagedList();
-    },
-    error: (err) => {}
-  });
-}
+  updatePagedList() {
+    const startIndex = (this.currentPage - 1) * this.pageSize;
+    const endIndex = startIndex + this.pageSize;
+    this.pagedCryptoList = this.availableCryptoList.slice(startIndex, endIndex);
+  }
 
+  changePage(page: any) {
+    if (page < 1 || page > this.totalPages.length) return;
+    this.currentPage = page;
+    this.updatePagedList();
+  }
 
+  get totalPages(): any[] {
+    return Array(Math.ceil(this.availableCryptoList.length / this.pageSize))
+      .fill(0)
+      .map((_, i) => i + 1);
+  }
 
-updatePagedList() {
-  const startIndex = (this.currentPage - 1) * this.pageSize;
-  const endIndex = startIndex + this.pageSize;
-  this.pagedCryptoList = this.availableCryptoList.slice(startIndex, endIndex);
-}
+  onSetupTrade(id: string) {
+    this.selectedCryptoId = id;
+    const encodedId = btoa(id);
+    this.router.navigate(['/myaccount/invest', encodedId]);
+  }
 
-changePage(page: any) {
-  if (page < 1 || page > this.totalPages.length) return;
-  this.currentPage = page;
-  this.updatePagedList();
-}
-
-get totalPages(): any[] {
-  return Array(Math.ceil(this.availableCryptoList.length / this.pageSize)).fill(0).map((_, i) => i + 1);
-}
-// end of available cryptos
-
-
-
-onSetupTrade(id: string) {
-  this.selectedCryptoId = id;
-  const encodedId = btoa(id); 
-  this.router.navigate(['/myaccount/invest', encodedId]);
-}
-
-// end of available crypto services
-// ###############################################################
-
-
-
-
-
-
-
-// ###############################################################
-  // get running trades
+  // -----------------------------------------------------------------------
+  // Running trades
+  // -----------------------------------------------------------------------
   investmentList: any[] = [];
   pagedInvestmentList: any[] = [];
   currentInvestPage = 1;
   pageInvestSize = 30;
-  selectedInvestId: string = ''; 
+  selectedInvestId: string = '';
   runningOperation: boolean = false;
+
   getInvestments() {
     this.investService.getInvestments().subscribe({
       next: (res: any) => {
-        this.investmentList = res.data.map((item: any) => {
+        this.investmentList = res.data
+          .map((item: any) => {
+            const investmentItem = {
+              amount: item.amount,
+              traderEmail: item.traderEmail,
+              curBalance: item.curBalance,
+              prevBalance: item.prevBalance,
+              transactionType: item.transactionType,
+              investmentStatus: item.investmentStatus,
+              transactionStatus: item.transactionStatus,
+              imageUrl: item.imageUrl,
+              cryptoId: item.cryptoId,
+              cryptoName: item.cryptoName,
+              description: item.description,
+              traderId: item.traderId,
+              traderName: item.traderName,
+              profit: item.profit,
+              expiry: item.expiry,
+              operationStatus: item.operationStatus,
+              createdAt: item.createdAt,
+              updatedAt: item.updatedAt,
+            };
 
-          const investmentItem = {
-            amount: item.amount,
-            traderEmail: item.traderEmail,
-            curBalance: item.curBalance,
-            prevBalance: item.prevBalance,
-            transactionType: item.transactionType,
-            investmentStatus: item.investmentStatus,
-            transactionStatus: item.transactionStatus,
-            imageUrl: item.imageUrl,
-            cryptoId: item.cryptoId,
-            cryptoName: item.cryptoName,
-            description: item.description,
-            traderId: item.traderId,
-            traderName: item.traderName,
-            profit: item.profit,
-            expiry: item.expiry,
-            operationStatus: item.operationStatus,
-            createdAt: item.createdAt,
-            updatedAt:item.updatedAt
-          };
-  
-          if (item.operationStatus === true  &&item.transactionType=="Debit" && item.transactionStatus=="Pending") {
-            this.runningOperation = true;
-          }else{
-            this.runningOperation=false;
-          }
+            if (item.operationStatus === true && item.transactionType == 'Debit' && item.transactionStatus == 'Pending') {
+              this.runningOperation = true;
+            } else {
+              this.runningOperation = false;
+            }
 
-          return investmentItem;
-        }).sort((a:any, b:any) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
-  
+            return investmentItem;
+          })
+          .sort((a: any, b: any) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+
         this.updateInvestPagedList();
       },
-      error: (err) => {
-      }
+      error: (err) => {},
     });
   }
-    
-   
+
   updateInvestPagedList() {
     const startIndex = (this.currentInvestPage - 1) * this.pageInvestSize;
     const endIndex = startIndex + this.pageInvestSize;
     this.pagedInvestmentList = this.investmentList.slice(startIndex, endIndex);
   }
-  
+
   changeInvestPage(page: any) {
     if (page < 1 || page > this.totalInvestPages.length) return;
     this.currentInvestPage = page;
     this.updateInvestPagedList();
   }
-  
+
   get totalInvestPages(): any[] {
-    return Array(Math.ceil(this.investmentList.length / this.pageInvestSize)).fill(0).map((_, i) => i + 1);
+    return Array(Math.ceil(this.investmentList.length / this.pageInvestSize))
+      .fill(0)
+      .map((_, i) => i + 1);
   }
-  // end of running trades
-  // ###############################################################
-  
-  
 
-  
-
-// ###############################################################
-  // get completed investments
+  // -----------------------------------------------------------------------
+  // Completed investments
+  // -----------------------------------------------------------------------
   completedInvestmentList: any[] = [];
   pagedCompletedInvestmentList: any[] = [];
   currentCompletedInvestPage = 1;
   pageCompletedInvestSize = 6;
-  selectedCompletedInvestId: string = ''; 
+  selectedCompletedInvestId: string = '';
+
   getCompletedInvestments() {
     this.investService.getCompletedInvestments().subscribe({
       next: (res: any) => {
-        this.completedInvestmentList = res.data.map((item: any) => {
+        this.completedInvestmentList = res.data
+          .map((item: any) => {
+            const completedInvestmentItem = {
+              amount: item.amount,
+              traderEmail: item.traderEmail,
+              curBalance: item.curBalance,
+              prevBalance: item.prevBalance,
+              transactionType: item.transactionType,
+              transactionStatus: item.investmentStatus,
+              imageUrl: item.imageUrl,
+              cryptoId: item.cryptoId,
+              cryptoName: item.cryptoName,
+              description: item.description,
+              traderId: item.traderId,
+              traderName: item.traderName,
+              profit: item.profit,
+              expiry: item.expiry,
+              updatedAt: item.updatedAt,
+              createdAt: item.createdAt,
+            };
 
-          const completedInvestmentItem = {
-            amount: item.amount,
-            traderEmail: item.traderEmail,
-            curBalance: item.curBalance,
-            prevBalance: item.prevBalance,
-            transactionType: item.transactionType,
-            transactionStatus: item.investmentStatus,
-            imageUrl: item.imageUrl,
-            cryptoId: item.cryptoId,
-            cryptoName: item.cryptoName,
-            description: item.description,
-            traderId: item.traderId,
-            traderName: item.traderName,
-            profit: item.profit,
-            expiry: item.expiry,
-            updatedAt: item.updatedAt,
-            createdAt: item.createdAt
-          };
-  
-  
-          return completedInvestmentItem;
-        }).sort((a:any, b:any) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
-  
+            return completedInvestmentItem;
+          })
+          .sort((a: any, b: any) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+
         this.updateCompletedInvestPagedList();
       },
-      error: (err) => {
-      }
+      error: (err) => {},
     });
   }
-    
-   
+
   updateCompletedInvestPagedList() {
     const startIndex = (this.currentCompletedInvestPage - 1) * this.pageCompletedInvestSize;
     const endIndex = startIndex + this.pageCompletedInvestSize;
     this.pagedCompletedInvestmentList = this.completedInvestmentList.slice(startIndex, endIndex);
   }
-  
+
   changeCompletedInvestPage(page: any) {
     if (page < 1 || page > this.totalCompletedInvestPages.length) return;
     this.currentCompletedInvestPage = page;
     this.updateCompletedInvestPagedList();
   }
-  
+
   get totalCompletedInvestPages(): any[] {
-    return Array(Math.ceil(this.completedInvestmentList.length / this.pageCompletedInvestSize)).fill(0).map((_, i) => i + 1);
+    return Array(Math.ceil(this.completedInvestmentList.length / this.pageCompletedInvestSize))
+      .fill(0)
+      .map((_, i) => i + 1);
   }
-  // end of  Completed investement cryptos
-// ###############################################################  
-  
 
+  // -----------------------------------------------------------------------
+  // Countdown
+  // -----------------------------------------------------------------------
+  startCountdown() {
+    this.timerSub = interval(1000).subscribe(() => {
+      const now = new Date().getTime();
 
+      this.pagedInvestmentList.forEach((invest) => {
+        const expiryTime = new Date(invest.expiry).getTime();
+        const remaining = expiryTime - now;
 
+        if (remaining > 0) {
+          const hours = Math.floor((remaining / (1000 * 60 * 60)) % 24);
+          const minutes = Math.floor((remaining / (1000 * 60)) % 60);
+          const seconds = Math.floor((remaining / 1000) % 60);
+          this.countdowns[invest.expiry] = `${this.pad(hours)}h ${this.pad(minutes)}m ${this.pad(seconds)}s`;
+        } else {
+          if (invest.transactionStatus !== 'Expired') {
+            invest.transactionStatus = invest.investmentStatus;
 
+            this.investService.autoRevertFunds().subscribe({
+              next: (res: any) => {
+                this.countdowns[invest.expiry] = '00h 00m 00s';
+              },
+            });
+          }
+        }
+      });
+    });
+  }
 
+  pad(num: number): string {
+    return num < 10 ? '0' + num : num.toString();
+  }
 
-// count down 
+  // =========================================================================
+  // ARBITRAGE (merged from ArbitrageComponent)
+  // =========================================================================
 
+  get activeConfig(): ExchangeConfig {
+    return this.exchangeConfig[this.activeExchange];
+  }
 
+  selectExchange(id: string): void {
+    if (this.activeExchange === id) return;
+    this.activeExchange = id;
+    this.arbCurrentPage = 1;
+  }
 
-startCountdown() {
-  this.timerSub = interval(1000).subscribe(() => {
-    const now = new Date().getTime();
+  // Filtered + sorted, but NOT yet paginated — used to compute totals.
+  get visibleOpportunities(): ArbitrageOpportunity[] {
+    return this.allOpportunities
+      .filter((o) => o.buyExchange === this.activeExchange || o.sellExchange === this.activeExchange)
+      .sort((a, b) => b.spreadPercent - a.spreadPercent);
+  }
 
-    this.pagedInvestmentList.forEach(invest => {
-      const expiryTime = new Date(invest.expiry).getTime();
-      const remaining = expiryTime - now;
+  // What the table actually renders: one page's worth of visibleOpportunities.
+  get pagedOpportunities(): ArbitrageOpportunity[] {
+    const start = (this.arbCurrentPage - 1) * this.arbPageSize;
+    return this.visibleOpportunities.slice(start, start + this.arbPageSize);
+  }
 
-      if (remaining > 0) {
-        const hours = Math.floor((remaining / (1000 * 60 * 60)) % 24);
-        const minutes = Math.floor((remaining / (1000 * 60)) % 60);
-        const seconds = Math.floor((remaining / 1000) % 60);
-        this.countdowns[invest.expiry] = `${this.pad(hours)}h ${this.pad(minutes)}m ${this.pad(seconds)}s`;
-      } else {
-      
-        if (invest.transactionStatus !== 'Expired') {
-          invest.transactionStatus = invest.investmentStatus;
-      
-          // auto-revert-funds 
-    this.investService.autoRevertFunds().subscribe({
-      next: (res: any) => {
-        this.countdowns[invest.expiry] = '00h 00m 00s';
+  get arbTotalPages(): number {
+    return Math.max(1, Math.ceil(this.visibleOpportunities.length / this.arbPageSize));
+  }
+
+  get arbPageRangeStart(): number {
+    if (this.visibleOpportunities.length === 0) return 0;
+    return (this.arbCurrentPage - 1) * this.arbPageSize + 1;
+  }
+
+  get arbPageRangeEnd(): number {
+    return Math.min(this.arbCurrentPage * this.arbPageSize, this.visibleOpportunities.length);
+  }
+
+  // Compact page-number list with ellipses, e.g. [1, '…', 4, 5, 6, '…', 12]
+  get arbPageNumbers(): (number | '…')[] {
+    const total = this.arbTotalPages;
+    const current = this.arbCurrentPage;
+    if (total <= 7) {
+      return Array.from({ length: total }, (_, i) => i + 1);
+    }
+
+    const pages = new Set<number>([1, total, current, current - 1, current + 1]);
+    const sorted = Array.from(pages)
+      .filter((p) => p >= 1 && p <= total)
+      .sort((a, b) => a - b);
+
+    const result: (number | '…')[] = [];
+    let prev = 0;
+    for (const p of sorted) {
+      if (prev && p - prev > 1) result.push('…');
+      result.push(p);
+      prev = p;
+    }
+    return result;
+  }
+
+  goToArbPage(page: number): void {
+    if (page < 1 || page > this.arbTotalPages || page === this.arbCurrentPage) return;
+    this.arbCurrentPage = page;
+  }
+
+  nextArbPage(): void {
+    this.goToArbPage(this.arbCurrentPage + 1);
+  }
+
+  prevArbPage(): void {
+    this.goToArbPage(this.arbCurrentPage - 1);
+  }
+
+  changeArbPageSize(size: number): void {
+    if (size === this.arbPageSize) return;
+    this.arbPageSize = size;
+    this.arbCurrentPage = 1;
+  }
+
+  isActiveBuyLeg(o: ArbitrageOpportunity): boolean {
+    return o.buyExchange === this.activeExchange;
+  }
+
+  counterpartyId(o: ArbitrageOpportunity): string {
+    return this.isActiveBuyLeg(o) ? o.sellExchange : o.buyExchange;
+  }
+
+  counterpartyLabel(o: ArbitrageOpportunity): string {
+    const id = this.counterpartyId(o);
+    return this.exchangeConfig[id]?.label ?? id;
+  }
+
+  counterpartyColor(o: ArbitrageOpportunity): string {
+    const id = this.counterpartyId(o);
+    return this.exchangeConfig[id]?.colorPrimary ?? '#999999';
+  }
+
+  activePriceFor(o: ArbitrageOpportunity): number {
+    return this.isActiveBuyLeg(o) ? o.buyPrice : o.sellPrice;
+  }
+
+  counterpartyPriceFor(o: ArbitrageOpportunity): number {
+    return this.isActiveBuyLeg(o) ? o.sellPrice : o.buyPrice;
+  }
+
+  spreadTier(spreadPercent: number): 'high' | 'medium' | 'low' {
+    if (spreadPercent >= 1.5) return 'high';
+    if (spreadPercent >= 0.5) return 'medium';
+    return 'low';
+  }
+
+  trackByOpportunity(_index: number, o: ArbitrageOpportunity): string {
+    return `${o.token}-${o.buyExchange}-${o.sellExchange}`;
+  }
+
+  loadOpportunities(silent = false): void {
+    if (!silent) this.arbLoading = true;
+    this.arbError = null;
+    const { token, minSpreadPercent } = this.arbFilterForm.getRawValue();
+
+    this.arbitrageService
+      .getOpportunities({
+        token: token || undefined,
+        minSpreadPercent: minSpreadPercent ?? undefined,
+        limit: 100,
+      })
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (res:any) => {
+          this.allOpportunities = res;
+          this.updateArbTokenOptions(res);
+          if (this.arbCurrentPage > this.arbTotalPages) {
+            this.arbCurrentPage = this.arbTotalPages;
+          }
+          this.arbLoading = false;
+          this.arbError = null;
+          this.arbLastUpdated = new Date();
+        },
+        error: () => {
+          this.arbLoading = false;
+          this.arbError = 'Could not load arbitrage opportunities. Please try again.';
+        },
+      });
+  }
+
+  private updateArbTokenOptions(opportunities: ArbitrageOpportunity[]): void {
+    let changed = false;
+    for (const o of opportunities) {
+      if (!this.knownArbTokens.has(o.token)) {
+        this.knownArbTokens.add(o.token);
+        changed = true;
       }
     }
-  );
-  // end of counter
-        }
+    if (changed) {
+      this.arbTokenOptions = Array.from(this.knownArbTokens).sort();
+    }
+  }
+
+  refreshArbNow(): void {
+    this.secondsToRefresh = AUTO_REFRESH_SECONDS;
+    this.loadOpportunities();
+  }
+
+  applyArbFilters(): void {
+    this.arbCurrentPage = 1;
+    this.loadOpportunities();
+  }
+
+  openTradeDialog(o: ArbitrageOpportunity): void {
+    const ref = this.dialog.open(PlaceTradeDialogComponent, {
+      width: '480px',
+      maxWidth: '95vw',
+      panelClass: 'bybit-dialog-panel',
+      data: {
+        opportunity: o,
+        activeExchange: this.activeExchange,
+        buyConfig: this.exchangeConfig[o.buyExchange],
+        sellConfig: this.exchangeConfig[o.sellExchange],
+      },
+    });
+
+    ref.afterClosed().subscribe((placed) => {
+      if (placed) {
+        this.sharedService.showToast({ title: 'Trade executed successfully.' });
+        this.loadOpportunities(true);
       }
     });
-  });
-}
-
-pad(num: number): string {
-  return num < 10 ? '0' + num : num.toString();
-}
-
-
-
-
-
-ngOnDestroy() {
-  if (this.timerSub) {
-    this.timerSub.unsubscribe();
   }
-}
+
+  ngOnDestroy() {
+    if (this.timerSub) {
+      this.timerSub.unsubscribe();
+    }
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
 }

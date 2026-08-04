@@ -144,8 +144,6 @@ onViewProfile(id: string) {
 
 
 
-
-
   openFeatureModal(user: any) {
     const dialogRef = this.dialog.open(UserFeatureModalComponent, {
       width: '400px',
