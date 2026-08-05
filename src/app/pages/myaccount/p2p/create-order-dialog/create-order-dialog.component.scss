@@ -3,6 +3,7 @@
   align-items: center;
   justify-content: space-between;
   font-weight: 700;
+  font-size: 1.15rem;
 }
 
 .close-btn {
@@ -33,11 +34,13 @@
   &.buy.active {
     background: #2e7d32;
     color: #fff;
+    box-shadow: 0 2px 8px rgba(46, 125, 50, 0.3);
   }
 
   &.sell.active {
     background: #c62828;
     color: #fff;
+    box-shadow: 0 2px 8px rgba(198, 40, 40, 0.3);
   }
 }
 
@@ -61,4 +64,12 @@
 .submit-btn {
   margin-top: 8px;
   height: 44px;
+}
+
+.alert.alert-danger {
+  background: rgba(198, 40, 40, 0.08);
+  color: #c62828;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 0.85rem;
 }

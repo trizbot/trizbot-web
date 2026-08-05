@@ -1,0 +1,94 @@
+<h2 mat-dialog-title class="dialog-title">
+  {{ actionVerb }} {{ order.coin }}
+  <button mat-icon-button class="close-btn" type="button" (click)="close()">
+    <mat-icon>close</mat-icon>
+  </button>
+</h2>
+
+<mat-dialog-content [formGroup]="form">
+
+  <div class="merchant-strip">
+    <div class="merchant-avatar">
+      <img *ngIf="order.merchant.avatarUrl" [src]="order.merchant.avatarUrl" alt="" />
+      <span *ngIf="!order.merchant.avatarUrl">{{ order.merchant.username.charAt(0).toUpperCase() }}</span>
+    </div>
+    <div>
+      <div class="merchant-name">
+        &#64;{{ order.merchant.username }}
+        <mat-icon *ngIf="order.merchant.isVerified" class="verified-icon">verified</mat-icon>
+      </div>
+      <div class="merchant-stats">
+        {{ order.merchant.totalTrades }} trades &middot; {{ order.merchant.completionRate }}% completion
+      </div>
+    </div>
+    <div class="price-tag">
+      &#8358;{{ order.pricePerUnit | number: '1.2-2' }}
+      <span>per {{ order.coin }}</span>
+    </div>
+  </div>
+
+  <p class="limit-hint">{{ limitHint }}</p>
+
+  <mat-label class="f-w-600 m-b-8 d-block">Amount</mat-label>
+  <mat-form-field appearance="outline" class="w-100">
+    <input matInput type="number" formControlName="coinAmount" placeholder="0.00" />
+    <span matSuffix>{{ order.coin }}</span>
+  </mat-form-field>
+  <div class="field-error" *ngIf="amountError">{{ amountError }}</div>
+
+  <div class="fiat-total" *ngIf="form.value.coinAmount">
+    You will {{ actionVerb === 'Buy' ? 'pay' : 'receive' }} <b>&#8358;{{ fiatAmount | number: '1.2-2' }}</b>
+  </div>
+
+  <mat-label class="f-w-600 m-b-8 d-block">Payment method</mat-label>
+  <mat-form-field appearance="outline" class="w-100">
+    <mat-select formControlName="paymentMethod">
+      <mat-option *ngFor="let method of order.paymentMethods" [value]="method">{{ method }}</mat-option>
+    </mat-select>
+  </mat-form-field>
+
+  <ng-container *ngIf="requiresPin">
+    <mat-label class="f-w-600 m-b-8 d-block">Transaction PIN</mat-label>
+    <mat-form-field appearance="outline" class="w-100">
+      <input matInput type="password" inputmode="numeric" maxlength="6" formControlName="transactionPin" />
+      <mat-hint>You're selling {{ order.coin }} — this locks it in escrow until the trade completes.</mat-hint>
+    </mat-form-field>
+  </ng-container>
+
+
+<!--   
+  <div class="action-block" *ngIf="canMarkPaid">
+    <p class="action-hint" *ngIf="!countdownExpired">
+      Send exactly <b>&#8358;{{ trade.fiatAmount | number: '1.2-2' }}</b> using the payment method above, then confirm below.
+      Never mark a trade as paid before the funds have actually left your account.
+    </p>
+    <p class="action-hint expired-hint" *ngIf="countdownExpired">
+      The payment window has closed. If you already sent the funds, open a dispute below.
+    </p>
+    <button
+      mat-flat-button
+      color="primary"
+      class="fw-bold w-100"
+      [disabled]="actionLoading || countdownExpired"
+      (click)="markPaid()"
+    >
+      {{ actionLoading ? 'Confirming...' : "I've made the payment" }}
+    </button>
+  </div> -->
+
+
+  <div *ngIf="errorMessage" class="alert alert-danger m-t-2">
+    <b>{{ errorMessage }}</b>
+  </div>
+
+  <button
+    mat-flat-button
+    [color]="actionVerb === 'Buy' ? 'primary' : 'warn'"
+    class="fw-bold w-100 submit-btn"
+    type="button"
+    [disabled]="loading"
+    (click)="submit()"
+  >
+    {{ loading ? 'Starting trade...' : actionVerb + ' ' + order.coin }}
+  </button>
+</mat-dialog-content>

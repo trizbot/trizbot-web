@@ -251,4 +251,9 @@ onCreateUploadAvatar(){
 }
 
 
+onUpdateKyc() {
+  this.router.navigate(['/myaccount/kyc']);
+}
+
+
 }

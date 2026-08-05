@@ -19,7 +19,7 @@ import {
   TradeStatus,
 } from './p2p.model';
 import { CreateOrderDialogComponent } from './create-order-dialog/create-order-dialog.component';
-import { TradeDetailDialogComponent } from './trade-detail-dialog/trade-detail-dialog.component';
+import { InitiateTradeDialogComponent } from './initiate-trade-dialog/initiate-trade-dialog.component';
 import { Observable } from 'rxjs';
 import { Trader } from '../../../../app/appstate/appstate-model';
 import { GetTraderResBody } from '../../../../app/services/auth.type';
@@ -83,7 +83,6 @@ export class P2pComponent implements OnInit {
   isSuperEntityType: boolean;
   isLoading = true;
 
-  
   readonly coinSuggestions: string[] = [
     'USDT', 'USDC', 'BTC', 'ETH', 'BNB', 'SOL', 'XRP', 'TON', 'TRX', 'DOGE',
     'ADA', 'MATIC', 'LTC', 'DOT', 'SHIB', 'AVAX', 'LINK', 'ATOM', 'BCH', 'ETC',
@@ -124,73 +123,73 @@ export class P2pComponent implements OnInit {
   myTrades: P2PTrade[] = [];
   myTradesLoading = false;
 
-  constructor( private traderService: TraderService,private p2pService: P2pService, private dialog: MatDialog) {}
+  constructor(
+    private traderService: TraderService,
+    private p2pService: P2pService,
+    private dialog: MatDialog
+  ) {}
 
   ngOnInit(): void {
     this.loadOrders();
     this.getCurrentTrader();
-
   }
 
-
   getCurrentTrader() {
-      this.isLoading = true;
-      this.traderService.getTrader().subscribe({
-        next: (res: GetTraderResBody) => {
-          this.isLoading = false;
-          this.phoneNumber = res.data.phoneNumber;
-          this.walletBalance = res.data.walletBalance;
-          this.amountInvested = res.data.amountInvested;
-          this.walletAddress = res.data.walletAddress;
-          this.depositBalance = res.data.depositBalance;
-          this.isCryptoAvailableStatus = res.data.isCryptoAvailableStatus;
-          this.isCryptoAvailableDescription = res.data.isCryptoAvailableDescription;
-          this.payoutStatus = res.data.payoutStatus;
-          if (res.data.tradeRewardCashWalletBalance >= 1) {
-            this.tradeRewardCashWalletBalance = res.data.tradeRewardCashWalletBalance;
-          }
-          if (res.data.tradeRewardCashWalletBalance <= 0) {
-            this.tradeRewardCashWalletBalance = '0.0';
-          }
-  
-          this.profit = res.data.profit;
-          this.userRevenue = res.data.firstName;
-          this.lastName = res.data.lastName;
-          this.imageSecureUrl = res.data.imageSecureUrl;
-          this.entityName = res.data.entityName;
-          this.isSuperAdmin = res.data.isSuperAdmin;
-          this.isKycVerified = res.data.isKycVerified ?? false;
-  
-          if (this.entityName == 'Admin' && this.isSuperAdmin) {
-            this.isSuperEntityType = true;
-            this.isAdminDashBoardType = true;
-            this.isTradersDashBoardType = false;
-          } else if (this.entityName == 'Admin' && !this.isSuperAdmin) {
-            this.isSuperEntityType = false;
-            this.isAdminDashBoardType = true;
-            this.isTradersDashBoardType = false;
-          } else if (this.entityName == 'Trader' && this.isSuperAdmin) {
-            this.isNormalEntityType = false;
-            this.isAdminDashBoardType = true;
-            this.isTradersDashBoardType = false;
-          } else if (this.entityName == 'Trader' && !this.isSuperAdmin) {
-            this.isNormalEntityType = false;
-            this.isAdminDashBoardType = false;
-            this.isTradersDashBoardType = true;
-          } else {
-            this.isNormalEntityType = false;
-            this.isAdminDashBoardType = false;
-            this.isTradersDashBoardType = true;
-          }
-  
-         
-        },
-        error: (err) => {
-          this.errorMessage = '';
-          this.isLoading = false;
-        },
-      });
-    }
+    this.isLoading = true;
+    this.traderService.getTrader().subscribe({
+      next: (res: GetTraderResBody) => {
+        this.isLoading = false;
+        this.phoneNumber = res.data.phoneNumber;
+        this.walletBalance = res.data.walletBalance;
+        this.amountInvested = res.data.amountInvested;
+        this.walletAddress = res.data.walletAddress;
+        this.depositBalance = res.data.depositBalance;
+        this.isCryptoAvailableStatus = res.data.isCryptoAvailableStatus;
+        this.isCryptoAvailableDescription = res.data.isCryptoAvailableDescription;
+        this.payoutStatus = res.data.payoutStatus;
+        if (res.data.tradeRewardCashWalletBalance >= 1) {
+          this.tradeRewardCashWalletBalance = res.data.tradeRewardCashWalletBalance;
+        }
+        if (res.data.tradeRewardCashWalletBalance <= 0) {
+          this.tradeRewardCashWalletBalance = '0.0';
+        }
+
+        this.profit = res.data.profit;
+        this.userRevenue = res.data.firstName;
+        this.lastName = res.data.lastName;
+        this.imageSecureUrl = res.data.imageSecureUrl;
+        this.entityName = res.data.entityName;
+        this.isSuperAdmin = res.data.isSuperAdmin;
+        this.isKycVerified = res.data.isKycVerified ?? false;
+
+        if (this.entityName == 'Admin' && this.isSuperAdmin) {
+          this.isSuperEntityType = true;
+          this.isAdminDashBoardType = true;
+          this.isTradersDashBoardType = false;
+        } else if (this.entityName == 'Admin' && !this.isSuperAdmin) {
+          this.isSuperEntityType = false;
+          this.isAdminDashBoardType = true;
+          this.isTradersDashBoardType = false;
+        } else if (this.entityName == 'Trader' && this.isSuperAdmin) {
+          this.isNormalEntityType = false;
+          this.isAdminDashBoardType = true;
+          this.isTradersDashBoardType = false;
+        } else if (this.entityName == 'Trader' && !this.isSuperAdmin) {
+          this.isNormalEntityType = false;
+          this.isAdminDashBoardType = false;
+          this.isTradersDashBoardType = true;
+        } else {
+          this.isNormalEntityType = false;
+          this.isAdminDashBoardType = false;
+          this.isTradersDashBoardType = true;
+        }
+      },
+      error: (err) => {
+        this.errorMessage = '';
+        this.isLoading = false;
+      },
+    });
+  }
 
   selectTab(tab: MainTab): void {
     this.activeTab = tab;
@@ -214,8 +213,6 @@ export class P2pComponent implements OnInit {
     this.p2pService
       .listOrders({
         type: this.marketType,
-        // Freeform: whatever the merchant typed/selected is sent as-is —
-        // no whitelist, no enum restriction.
         coin: coin?.trim() ? coin.trim().toUpperCase() : undefined,
         fiatCurrency: fiatCurrency?.trim() ? fiatCurrency.trim().toUpperCase() : undefined,
       })
@@ -259,11 +256,18 @@ export class P2pComponent implements OnInit {
   }
 
   tradeOrder(order: P2POrder): void {
-    // In a full build this opens a "trade amount" dialog collecting coinAmount /
-    // paymentMethod (+ transactionPin when the taker is the seller), then calls
-    // p2pService.initiateTrade(...). Wired here to keep the flow explicit.
-    this.sharedService.showToast({
-      title: `Opening trade for ${order.merchant.username}'s ad — hook this up to your amount-entry dialog.`,
+    const ref = this.dialog.open(InitiateTradeDialogComponent, {
+      width: '460px',
+      maxWidth: '95vw',
+      data: { order },
+    });
+
+    ref.afterClosed().subscribe((trade: P2PTrade | undefined) => {
+      if (trade) {
+        this.activeTab = 'my-trades';
+        this.loadMyTrades();
+        this.openTrade(trade);
+      }
     });
   }
 
@@ -290,8 +294,6 @@ export class P2pComponent implements OnInit {
       maxWidth: '95vw',
       data: {
         defaultType,
-        // Pass suggestions through so the dialog can offer the same
-        // autocomplete pattern without hard-restricting what can be typed.
         coinSuggestions: this.coinSuggestions,
         fiatSuggestions: this.fiatSuggestions,
       },
@@ -341,7 +343,7 @@ export class P2pComponent implements OnInit {
   }
 
   openTrade(trade: P2PTrade): void {
-    const ref = this.dialog.open(TradeDetailDialogComponent, {
+    const ref = this.dialog.open(InitiateTradeDialogComponent, {
       width: '480px',
       maxWidth: '95vw',
       data: { trade },

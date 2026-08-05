@@ -1,0 +1,111 @@
+.dialog-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-weight: 700;
+  font-size: 1.15rem;
+}
+
+.close-btn {
+  margin-left: auto;
+}
+.expired-hint {
+  color: #c62828;
+}
+.merchant-strip {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 10px;
+  margin-bottom: 12px;
+}
+
+.merchant-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: #3f51b5;
+  color: #fff;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  overflow: hidden;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+.merchant-name {
+  font-weight: 700;
+  font-size: 0.92rem;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.verified-icon {
+  font-size: 15px;
+  width: 15px;
+  height: 15px;
+  color: #2e7d32;
+}
+
+.merchant-stats {
+  font-size: 0.78rem;
+  color: rgba(0, 0, 0, 0.5);
+}
+
+.price-tag {
+  margin-left: auto;
+  text-align: right;
+  font-weight: 800;
+  font-size: 1rem;
+
+  span {
+    display: block;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: rgba(0, 0, 0, 0.45);
+  }
+}
+
+.limit-hint {
+  font-size: 0.8rem;
+  color: rgba(0, 0, 0, 0.55);
+  margin: 0 0 12px;
+}
+
+.field-error {
+  font-size: 0.78rem;
+  color: #c62828;
+  margin-top: -8px;
+  margin-bottom: 12px;
+}
+
+.fiat-total {
+  font-size: 0.88rem;
+  margin-bottom: 14px;
+  padding: 8px 12px;
+  background: rgba(63, 81, 181, 0.06);
+  border-radius: 8px;
+}
+
+.submit-btn {
+  margin-top: 8px;
+  height: 44px;
+}
+
+.alert.alert-danger {
+  background: rgba(198, 40, 40, 0.08);
+  color: #c62828;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 0.85rem;
+}

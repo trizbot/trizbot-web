@@ -106,9 +106,6 @@ getCharges() {
 }
 
 
-onUpdateKyc() {
-  this.router.navigate(['/myaccount/kyc']);
-}
 
   onCreateSetting(){
       this.errorMessage = '';
