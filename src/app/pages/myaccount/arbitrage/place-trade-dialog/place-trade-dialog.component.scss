@@ -1,162 +1,212 @@
-.trade-dialog {
-  min-width: 340px;
+:host {
+  --bb-border: #e5e7eb;
+  --bb-text: #0f172a;
+  --bb-muted: #64748b;
+  --bb-primary: #2563eb;
+  --bb-primary-dark: #1d4ed8;
+  --bb-primary-bg: #eff6ff;
+  --bb-success: #16a34a;
+  --bb-success-bg: #ecfdf5;
+  --bb-danger: #dc2626;
+  --bb-danger-bg: #fef2f2;
+
+  display: block;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color: var(--bb-text);
 }
 
-/* ─── HEADER ───────────────────────────────────────────────── */
+::ng-deep .mat-mdc-dialog-surface {
+  border-radius: 14px !important;
+  background: #fff !important;
+}
+
 .dialog-title {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin: 0 0 4px;
-  font-size: 1.1rem;
-  font-weight: 800;
-  color: #14141f;
+  font-size: 16px;
+  font-weight: 700;
+  padding: 18px 20px;
+  margin: 0;
+  border-bottom: 1px solid var(--bb-border);
 }
 
 .close-btn {
-  color: rgba(0, 0, 0, 0.45);
+  color: var(--bb-muted);
+  width: 32px;
+  height: 32px;
+  line-height: 32px;
+
+  mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+  }
 }
 
-/* ─── ROUTE BANNER ─────────────────────────────────────────── */
+mat-dialog-content {
+  padding: 20px !important;
+  max-width: 420px;
+}
+
+/* ---------- Route banner ---------- */
+
 .route-banner {
   display: flex;
   align-items: center;
-  gap: 14px;
-  background: #f7f8fa;
-  border: 1px solid #eef0f2;
-  border-radius: 12px;
+  justify-content: space-between;
+  gap: 10px;
+  border: 1px solid var(--bb-border);
+  border-radius: 10px;
   padding: 14px 16px;
-  margin: 12px 0 16px;
+  margin-bottom: 16px;
 }
 
 .route-leg {
-  flex: 1;
   display: flex;
   align-items: center;
   gap: 10px;
+  flex: 1;
   min-width: 0;
 }
 
 .leg-dot {
-  flex-shrink: 0;
-  width: 10px;
-  height: 10px;
+  width: 9px;
+  height: 9px;
   border-radius: 50%;
-  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.05);
+  flex-shrink: 0;
 }
 
 .leg-exchange {
-  font-weight: 800;
-  font-size: 0.92rem;
-  color: #14141f;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  font-weight: 700;
+  font-size: 13.5px;
 }
 
 .leg-role {
-  font-size: 0.78rem;
-  color: rgba(0, 0, 0, 0.55);
-  font-family: 'Courier New', monospace;
-}
+  font-size: 12px;
+  color: var(--bb-muted);
 
-.route-arrow {
-  flex-shrink: 0;
-  color: rgba(0, 0, 0, 0.3);
-}
+  &.buy {
+    color: var(--bb-success);
+  }
 
-/* ─── SPREAD SUMMARY ───────────────────────────────────────── */
-.spread-summary {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 0.85rem;
-  color: rgba(0, 0, 0, 0.6);
-  margin-bottom: 18px;
-
-  b {
-    color: #2e7d32;
-    font-size: 0.95rem;
+  &.sell {
+    color: var(--bb-danger);
   }
 }
 
-/* ─── AMOUNT INPUT ─────────────────────────────────────────── */
-.mat-mdc-form-field {
-  width: 100%;
+.route-arrow {
+  color: var(--bb-muted);
+  flex-shrink: 0;
+  font-size: 18px;
 }
 
-/* ─── ESTIMATE BREAKDOWN ───────────────────────────────────── */
+/* ---------- Spread summary ---------- */
+
+.spread-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--bb-primary-bg);
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin-bottom: 20px;
+  font-size: 13px;
+  color: var(--bb-muted);
+
+  b {
+    color: var(--bb-primary);
+    font-size: 15px;
+  }
+}
+
+/* ---------- Estimate ---------- */
+
 .estimate-grid {
-  background: #f7f8fa;
-  border-radius: 12px;
-  padding: 4px 16px;
-  margin: 4px 0 12px;
+  border: 1px solid var(--bb-border);
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin: 4px 0 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .estimate-row {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 10px 0;
-  font-size: 0.85rem;
-  color: rgba(0, 0, 0, 0.6);
-
-  & + .estimate-row {
-    border-top: 1px solid #eef0f2;
-  }
+  justify-content: space-between;
+  font-size: 13px;
 
   .label {
-    font-weight: 500;
+    color: var(--bb-muted);
   }
 
   .value {
-    font-family: 'Courier New', monospace;
-    font-weight: 700;
-    color: #14141f;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
   }
 
   &.highlight {
-    .label {
-      font-weight: 700;
-      color: rgba(0, 0, 0, 0.7);
-    }
+    padding-top: 8px;
+    border-top: 1px dashed var(--bb-border);
+
     .value {
-      color: #2e7d32;
-      font-size: 0.95rem;
-      font-weight: 800;
+      color: var(--bb-success);
+      font-weight: 700;
+      font-size: 14px;
     }
   }
 }
 
-/* ─── DISCLAIMER ───────────────────────────────────────────
-   Deliberately subdued — this is fine-print context, not a
-   warning the user needs to act on, so it should recede rather
-   than compete with the amount field / submit button. */
+/* ---------- Disclaimer ---------- */
+
 .disclaimer {
-  font-size: 0.7rem;
-  line-height: 1.4;
-  color: rgba(0, 0, 0, 0.32);
-  margin: 4px 0 14px;
-  letter-spacing: 0.01em;
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--bb-muted);
+  line-height: 1.5;
+  margin: 4px 0 16px;
 }
 
-/* ─── ERROR ────────────────────────────────────────────────── */
+.disclaimer-icon {
+  font-size: 15px;
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+  margin-top: 1px;
+  color: var(--bb-muted);
+}
+
+/* ---------- Alerts ---------- */
+
 .alert-danger {
-  display: block;
-  padding: 10px 12px;
+  background: var(--bb-danger-bg);
+  color: var(--bb-danger);
   border-radius: 8px;
-  background: rgba(198, 40, 40, 0.08);
-  color: #c62828;
-  font-size: 0.85rem;
-  margin: 4px 0 14px;
+  padding: 10px 14px;
+  font-size: 13px;
 }
 
-/* ─── SUBMIT ───────────────────────────────────────────────── */
+/* ---------- Submit ---------- */
+
 .submit-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 44px;
-  font-size: 0.92rem;
-  letter-spacing: 0.02em;
+  gap: 8px;
+  font-size: 13.5px;
+  padding: 11px 0;
+  border-radius: 8px;
+  margin-top: 4px;
+}
+
+.btn-spinner {
+  display: inline-block;
+
+  ::ng-deep circle {
+    stroke: #fff;
+  }
 }

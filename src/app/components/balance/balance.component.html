@@ -1,8 +1,7 @@
-
 <div *ngIf="isLoading" class="bb-loading">
   <div class="bb-loading-card">
-    <mat-spinner diameter="52" strokeWidth="4" class="bb-spinner"></mat-spinner>
-    <h5>Loading dashboard…</h5>
+    <mat-spinner diameter="44" strokeWidth="3" class="bb-spinner"></mat-spinner>
+    <h5>Loading dashboard&hellip;</h5>
   </div>
 </div>
 
@@ -16,38 +15,33 @@
     <div class="bb-stat-grid">
 
       <div class="bb-stat-card bb-stat-primary">
-        <div class="bb-stat-glow"></div>
         <div class="bb-stat-top">
           <span class="bb-stat-icon"><i class="bi bi-wallet2"></i></span>
           <span class="bb-stat-label">Wallet Balance</span>
         </div>
         <div class="bb-stat-value">
-          <span class="bb-cur"></span><b class="text-success fw-bold mb-4">${{ walletBalance || 0.0 | number: '1.0-2' }}</b>
+          &#36;{{ walletBalance || 0.0 | number: '1.2-2' }}
         </div>
-        <div class="bb-stat-sub">
-
-            <br> <br> <h3 class="text-success fw-bold mb-4">Stake Booster: ${{ tradeRewardCashWalletBalance || 0.0 | number: '1.0-2' }} </h3> 
+        <div class="bb-stat-sub bb-stat-sub-row">
+          <span class="bb-stat-sub-label">Stake Booster</span>
+          <span class="bb-stat-sub-value">&#36;{{ tradeRewardCashWalletBalance || 0.0 | number: '1.2-2' }}</span>
         </div>
         <div class="bb-stat-actions">
-          <button [routerLink]="['/myaccount/deposit']" class="bb-btn bb-btn-ghost-up">
+          <button [routerLink]="['/myaccount/deposit']" class="bb-btn bb-btn-outline bb-btn-up">
             <i class="bi bi-arrow-down-circle"></i> Deposit
           </button>
-          <button [routerLink]="['/myaccount/withdraw']" class="bb-btn bb-btn-ghost-down">
+          <button [routerLink]="['/myaccount/withdraw']" class="bb-btn bb-btn-outline bb-btn-down">
             <i class="bi bi-arrow-up-circle"></i> Withdraw
           </button>
         </div>
       </div>
-
 
       <div class="bb-stat-card">
         <div class="bb-stat-top">
           <span class="bb-stat-icon up"><i class="bi bi-graph-up-arrow"></i></span>
           <span class="bb-stat-label">Weekly Earnings</span>
         </div>
-        <div class="bb-stat-value up">${{ profit || 0.0 | number: '1.0-2' }}</div>
-        <div class="bb-stat-spark bb-stat-spark-up" aria-hidden="true">
-          <span></span><span></span><span></span><span></span><span></span><span></span><span></span>
-        </div>
+        <div class="bb-stat-value up">&#36;{{ profit || 0.0 | number: '1.2-2' }}</div>
       </div>
 
       <div class="bb-stat-card">
@@ -55,10 +49,7 @@
           <span class="bb-stat-icon warn"><i class="bi bi-graph-down-arrow"></i></span>
           <span class="bb-stat-label">Weekly Deposit</span>
         </div>
-        <div class="bb-stat-value warn">${{ depositBalance || 0.0 | number: '1.0-2' }}</div>
-        <div class="bb-stat-spark bb-stat-spark-warn" aria-hidden="true">
-          <span></span><span></span><span></span><span></span><span></span><span></span><span></span>
-        </div>
+        <div class="bb-stat-value warn">&#36;{{ depositBalance || 0.0 | number: '1.2-2' }}</div>
       </div>
 
     </div>
@@ -83,7 +74,7 @@
             <span class="bb-live-dot"></span>
             Updated {{ arbLastUpdated | date: 'HH:mm:ss' }}
           </span>
-          <button type="button" class="bb-btn bb-btn-accent" (click)="refreshArbNow()">
+          <button type="button" class="bb-btn bb-btn-primary" (click)="refreshArbNow()">
             <i class="bi bi-arrow-clockwise" [class.bb-spin]="arbLoading"></i>
             Refresh &middot; {{ secondsToRefresh }}s
           </button>
@@ -98,7 +89,6 @@
           class="bb-exchange-tab"
           [class.active]="activeExchange === id"
           [style.--tab-color]="exchangeConfig[id].colorPrimary"
-          [style.--tab-color-dark]="exchangeConfig[id].colorSecondary"
           (click)="selectExchange(id)"
         >
           <span class="bb-tab-dot"></span>
@@ -126,19 +116,15 @@
         </mat-form-field>
       </form>
 
-      <!-- Themed opportunities panel -->
-      <div
-        class="bb-exchange-panel"
-        [style.--panel-color]="activeConfig.colorPrimary"
-        [style.--panel-color-dark]="activeConfig.colorSecondary"
-      >
+      <!-- Opportunities panel -->
+      <div class="bb-exchange-panel">
         <div class="bb-arb-panel-header">
           <span class="bb-panel-exchange-name">{{ activeConfig.label }}</span>
           <span class="bb-panel-count">{{ visibleOpportunities.length }} opportunities</span>
         </div>
 
         <div class="bb-table-loading" *ngIf="arbLoading">
-          <mat-spinner diameter="30" strokeWidth="3"></mat-spinner>
+          <mat-spinner diameter="28" strokeWidth="3"></mat-spinner>
         </div>
 
         <div class="bb-table-error" *ngIf="!arbLoading && arbError">
@@ -149,8 +135,6 @@
           <i class="bi bi-inboxes"></i>
           No arbitrage opportunities found for {{ activeConfig.label }} right now.
         </div>
-
-        <!-- 08135523343  -->
 
         <div class="bb-table-scroll" *ngIf="!arbLoading && !arbError && visibleOpportunities.length > 0">
           <table class="bb-opp-table">
@@ -198,8 +182,6 @@
                   <button
                     type="button"
                     class="bb-trade-btn"
-                    [style.background]="activeConfig.colorPrimary"
-                    [style.color]="activeConfig.textOnPrimary"
                     (click)="openTradeDialog(o)"
                   >
                     Trade
@@ -271,10 +253,13 @@
     <!-- TRADE TABS — Available / Running / Executed                       -->
     <!-- ================================================================ -->
     <section class="bb-panel bb-trade-tabs-panel">
-      <mat-tab-group animationDuration="250ms" class="bb-mat-tabs">
+      <mat-tab-group animationDuration="200ms" class="bb-mat-tabs">
 
         <!-- Available trades -->
-        <mat-tab label="📈 Available Staking">
+        <mat-tab>
+          <ng-template mat-tab-label>
+            <i class="bi bi-graph-up-arrow bb-tab-icon"></i> Available Staking
+          </ng-template>
           <div class="bb-tab-content">
 
             <p class="bb-muted-note" *ngIf="!isCryptoAvailableStatus">
@@ -303,7 +288,7 @@
                         <div class="bb-crypto-meta">
                           <div class="bb-meta-row">
                             <span class="bb-meta-label">Min Amount</span>
-                            <span class="bb-meta-value">${{ crypto.minAmount }}</span>
+                            <span class="bb-meta-value">&#36;{{ crypto.minAmount }}</span>
                           </div>
                           <div class="bb-meta-row">
                             <span class="bb-meta-label">Percentage</span>
@@ -323,7 +308,7 @@
                           </div>
                         </div>
 
-                        <button class="bb-btn bb-btn-accent bb-full-w" (click)="onSetupTrade(crypto.id)">
+                        <button class="bb-btn bb-btn-primary bb-full-w" (click)="onSetupTrade(crypto.id)">
                           Setup Trade
                         </button>
                       </div>
@@ -368,7 +353,10 @@
         </mat-tab>
 
         <!-- Running staking -->
-        <mat-tab label="🔁 Running Staking">
+        <mat-tab>
+          <ng-template mat-tab-label>
+            <i class="bi bi-arrow-repeat bb-tab-icon"></i> Running Staking
+          </ng-template>
           <div class="bb-tab-content">
             <div *ngIf="investmentList.length > 0; else noRunningData">
               <div class="bb-crypto-grid bb-crypto-grid-3">
@@ -394,7 +382,7 @@
                         <div class="bb-crypto-meta">
                           <div class="bb-meta-row">
                             <span class="bb-meta-label">Amount</span>
-                            <span class="bb-meta-value">${{ runningTrade.amount }}</span>
+                            <span class="bb-meta-value">&#36;{{ runningTrade.amount }}</span>
                           </div>
                           <div class="bb-meta-row">
                             <span class="bb-meta-label">Created</span>
@@ -455,7 +443,10 @@
         </mat-tab>
 
         <!-- Executed staking -->
-        <mat-tab label="✅ Executed Staking">
+        <mat-tab>
+          <ng-template mat-tab-label>
+            <i class="bi bi-check-circle-fill bb-tab-icon"></i> Executed Staking
+          </ng-template>
           <div class="bb-tab-content">
             <div *ngIf="completedInvestmentList.length > 0; else noCompletedData">
               <div class="bb-crypto-grid bb-crypto-grid-3">
@@ -481,11 +472,11 @@
                         <div class="bb-crypto-meta">
                           <div class="bb-meta-row">
                             <span class="bb-meta-label">Amount</span>
-                            <span class="bb-meta-value">${{ invest.amount }}</span>
+                            <span class="bb-meta-value">&#36;{{ invest.amount }}</span>
                           </div>
                           <div class="bb-meta-row">
                             <span class="bb-meta-label">Profit</span>
-                            <span class="bb-meta-value bb-accent-text">${{ invest.profit }}</span>
+                            <span class="bb-meta-value bb-accent-text">&#36;{{ invest.profit }}</span>
                           </div>
                           <div class="bb-meta-row">
                             <span class="bb-meta-label">Created</span>
@@ -564,18 +555,18 @@
 
     <div class="bb-stat-card">
       <div class="bb-stat-top">
-        <span class="bb-stat-icon danger"><i class="bi bi-bar-chart-line"></i></span>
+        <span class="bb-stat-icon warn"><i class="bi bi-bar-chart-line"></i></span>
         <span class="bb-stat-label">Weekly Deposit</span>
       </div>
-      <div class="bb-stat-value warn">${{ totalWeeklyFunds | number: '1.2-2' }}</div>
+      <div class="bb-stat-value warn">&#36;{{ totalWeeklyFunds | number: '1.2-2' }}</div>
     </div>
 
     <div class="bb-stat-card">
       <div class="bb-stat-top">
-        <span class="bb-stat-icon warn"><i class="bi bi-bar-chart-line"></i></span>
+        <span class="bb-stat-icon up"><i class="bi bi-bar-chart-line"></i></span>
         <span class="bb-stat-label">Total Weekly Profit</span>
       </div>
-      <div class="bb-stat-value warn">${{ totalWeeklyProfits || 0.0 | number: '1.0-2' }}</div>
+      <div class="bb-stat-value up">&#36;{{ totalWeeklyProfits || 0.0 | number: '1.2-2' }}</div>
     </div>
 
   </div>

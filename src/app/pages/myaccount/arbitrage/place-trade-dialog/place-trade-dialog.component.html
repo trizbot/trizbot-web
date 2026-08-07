@@ -1,4 +1,3 @@
-
 <h2 mat-dialog-title class="dialog-title">
   Execute Arbitrage Trade
   <button mat-icon-button class="close-btn" type="button" (click)="close()">
@@ -13,7 +12,7 @@
       <span class="leg-dot" [style.background]="buyConfig.colorPrimary"></span>
       <div>
         <div class="leg-exchange">{{ buyConfig.label }}</div>
-        <div class="leg-role">Buy &middot; &#36;{{ opportunity.buyPrice | number: '1.2-6' }}</div>
+        <div class="leg-role buy">Buy &middot; &#36;{{ opportunity.buyPrice | number: '1.2-6' }}</div>
       </div>
     </div>
 
@@ -23,7 +22,7 @@
       <span class="leg-dot" [style.background]="sellConfig.colorPrimary"></span>
       <div>
         <div class="leg-exchange">{{ sellConfig.label }}</div>
-        <div class="leg-role">Sell &middot; &#36;{{ opportunity.sellPrice | number: '1.2-6' }}</div>
+        <div class="leg-role sell">Sell &middot; &#36;{{ opportunity.sellPrice | number: '1.2-6' }}</div>
       </div>
     </div>
   </div>
@@ -36,7 +35,7 @@
   <mat-label class="f-w-600 m-b-8 d-block">Amount to commit ({{ opportunity.token }} quote)</mat-label>
   <mat-form-field appearance="outline" class="w-100">
     <span matPrefix>&#36;&nbsp;</span>
-    <input matInput type="number" formControlName="quoteAmount" placeholder="0.00" />
+    <input matInput type="number" min="0" formControlName="quoteAmount" placeholder="0.00" />
   </mat-form-field>
 
   <div class="estimate-grid" *ngIf="form.value.quoteAmount">
@@ -51,6 +50,7 @@
   </div>
 
   <p class="disclaimer">
+    <mat-icon class="disclaimer-icon">info</mat-icon>
     Trade executes at the live market rate. If the spread drops below
     {{ opportunity.spreadPercent | number: '1.2-2' }}% before execution, the trade will be rejected.
   </p>
@@ -64,9 +64,16 @@
     color="primary"
     class="fw-bold w-100 submit-btn"
     type="button"
-    [disabled]="loading"
+    [disabled]="loading || form.invalid || !form.value.quoteAmount"
     (click)="submit()"
   >
+    <mat-progress-spinner
+      *ngIf="loading"
+      diameter="18"
+      strokeWidth="3"
+      mode="indeterminate"
+      class="btn-spinner"
+    ></mat-progress-spinner>
     {{ loading ? 'Executing...' : 'Confirm Trade' }}
   </button>
 </mat-dialog-content>
