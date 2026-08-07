@@ -1,0 +1,211 @@
+/* ==========================================================================
+   Sidebar — plain background, standard professional nav
+   Flat white surface, neutral grays, one blue accent for active state.
+   ========================================================================== */
+
+:host {
+  --bg: #ffffff;
+  --border: #e3e5ea;
+
+  --text-primary: #16181d;
+  --text-secondary: #565a63;
+  --text-muted: #8a8f99;
+
+  --accent: #1856d6;
+  --accent-soft: #eaf0fd;
+
+  --danger: #d5392f;
+
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--bg);
+  font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  padding: 16px 12px 20px;
+  box-sizing: border-box;
+}
+
+/* ==========================================================================
+   TOP BAR
+   ========================================================================== */
+
+.sidebar-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.close-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  color: var(--text-muted);
+  text-decoration: none;
+  transition: background 0.15s ease, color 0.15s ease;
+
+  &:hover {
+    background: var(--accent-soft);
+    color: var(--accent);
+  }
+}
+
+/* ==========================================================================
+   USER SUMMARY
+   ========================================================================== */
+
+.sidebar-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  margin-bottom: 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #fafbfc;
+}
+
+.sidebar-user-avatar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.sidebar-user-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.sidebar-user-name {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sidebar-user-role {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+/* ==========================================================================
+   MENU STRUCTURE
+   ========================================================================== */
+
+.menu-section {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.menu-group-label {
+  margin: 16px 8px 6px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+
+  &:first-child {
+    margin-top: 4px;
+  }
+}
+
+.menu-divider {
+  height: 1px;
+  margin: 12px 8px;
+  background: var(--border);
+}
+
+/* Buttons rendered with mat-menu-item — restyle to plain nav rows */
+::ng-deep .mat-mdc-menu-item.mat-menu-item,
+button.mat-menu-item {
+  display: flex !important;
+  align-items: center;
+  width: 100%;
+  height: 38px;
+  padding: 0 10px !important;
+  margin-bottom: 2px;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 13.5px;
+  font-weight: 600;
+  line-height: 1;
+  text-transform: none;
+  box-shadow: none !important;
+  transition: background 0.15s ease, color 0.15s ease;
+
+  i-tabler {
+    color: var(--text-muted);
+    transition: color 0.15s ease;
+  }
+
+  &:hover {
+    background: #f2f4f7;
+    color: var(--text-primary);
+
+    i-tabler {
+      color: var(--text-primary);
+    }
+  }
+}
+
+.active-link button.mat-menu-item,
+button.mat-menu-item.active-link {
+  background: var(--accent-soft) !important;
+  color: var(--accent) !important;
+
+  i-tabler {
+    color: var(--accent) !important;
+  }
+}
+
+.logout-btn {
+  color: var(--danger) !important;
+
+  i-tabler {
+    color: var(--danger) !important;
+  }
+
+  &:hover {
+    background: rgba(213, 57, 47, 0.08) !important;
+  }
+}
+
+.icon-20 {
+  font-size: 20px;
+  width: 20px;
+  height: 20px;
+}
+
+.icon-16 {
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+}
+
+.me-2 {
+  margin-right: 8px;
+}
+
+.d-flex {
+  display: flex;
+}

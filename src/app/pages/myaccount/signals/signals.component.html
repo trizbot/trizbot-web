@@ -3,7 +3,7 @@
   <!-- HERO HEADER -->
   <div class="signals-hero">
     <div class="signals-hero-text">
-      <span class="signals-eyebrow">Trade Signals</span>
+      <span class="signals-eyebrow">Desk Calls · Live</span>
       <h1 class="signals-title">Signals</h1>
       <p class="signals-subtitle">Entry, target and stop-loss calls from the desk — subscribe to unlock.</p>
     </div>
@@ -20,19 +20,21 @@
     </button>
   </div>
 
-  <!-- TABS (desktop) -->
-  <div class="signals-tabs">
-    <button class="signals-tab" [class.active]="activeTab === 'signals'" (click)="selectTab('signals')">
+  <!-- TABS -->
+  <div class="signals-tabs" role="tablist">
+    <button class="signals-tab" role="tab" [attr.aria-selected]="activeTab === 'signals'" [class.active]="activeTab === 'signals'" (click)="selectTab('signals')">
       <mat-icon>show_chart</mat-icon>
       Signals
     </button>
-    <button class="signals-tab" [class.active]="activeTab === 'plans'" (click)="selectTab('plans')">
+    <button class="signals-tab" role="tab" [attr.aria-selected]="activeTab === 'plans'" [class.active]="activeTab === 'plans'" (click)="selectTab('plans')">
       <mat-icon>workspace_premium</mat-icon>
       Plans
     </button>
     <button
       *ngIf="isAdmin"
       class="signals-tab"
+      role="tab"
+      [attr.aria-selected]="activeTab === 'manage'"
       [class.active]="activeTab === 'manage'"
       (click)="selectTab('manage')"
     >
@@ -78,7 +80,7 @@
       </form>
 
       <div class="signals-loading" *ngIf="signalsLoading">
-        <img src="./assets/images/loading.gif" alt="Loading..." style="width: 28px; height: 28px;" />
+        <div class="spinner" aria-label="Loading signals"></div>
       </div>
 
       <div class="signals-empty" *ngIf="!signalsLoading && signals.length === 0">
@@ -86,19 +88,19 @@
         <p>No signals match your filters right now.</p>
       </div>
 
-      <!-- Signals grid — same card layout/style as the Plans grid -->
       <div class="signals-grid" *ngIf="!signalsLoading && signals.length > 0">
-        <div class="signal-card" *ngFor="let item of signals">
-          <div class="signal-card-top">
+        <article class="signal-card" *ngFor="let item of signals" [class.closed]="!item.isActive">
+          <header class="signal-card-top">
             <span class="pair-name">{{ item.pair }}</span>
             <span
               class="type-badge"
               [style.background]="typeColors[item.type] + '1a'"
               [style.color]="typeColors[item.type]"
             >
+              <span class="type-dot" [style.background]="typeColors[item.type]"></span>
               {{ typeLabels[item.type] }}
             </span>
-          </div>
+          </header>
 
           <div class="signal-card-prices">
             <div class="price-cell">
@@ -117,18 +119,18 @@
 
           <p class="signal-analysis" *ngIf="item.analysis">{{ item.analysis }}</p>
 
-          <div class="signal-card-footer">
+          <footer class="signal-card-footer">
             <span class="rr-chip" *ngIf="riskReward(item)">R:R {{ riskReward(item) }}</span>
             <span class="signal-time">{{ timeAgo(item.createdAt) }}</span>
             <span class="status-dot" [class.inactive]="!item.isActive">
               {{ item.isActive ? 'Active' : 'Closed' }}
             </span>
-          </div>
-        </div>
+          </footer>
+        </article>
       </div>
 
       <div class="signals-pagination" *ngIf="!signalsLoading && totalPages > 1">
-        <button class="page-nav-btn" type="button" [disabled]="page === 1" (click)="goToPage(page - 1)">
+        <button class="page-nav-btn" type="button" [disabled]="page === 1" (click)="goToPage(page - 1)" aria-label="Previous page">
           <mat-icon>chevron_left</mat-icon>
         </button>
 
@@ -142,7 +144,7 @@
           {{ p }}
         </button>
 
-        <button class="page-nav-btn" type="button" [disabled]="page === totalPages" (click)="goToPage(page + 1)">
+        <button class="page-nav-btn" type="button" [disabled]="page === totalPages" (click)="goToPage(page + 1)" aria-label="Next page">
           <mat-icon>chevron_right</mat-icon>
         </button>
       </div>
@@ -161,7 +163,7 @@
     </div>
 
     <div class="signals-loading" *ngIf="plansLoading">
-      <img src="./assets/images/loading.gif" alt="Loading..." style="width: 28px; height: 28px;" />
+      <div class="spinner" aria-label="Loading plans"></div>
     </div>
 
     <div class="plans-grid" *ngIf="!plansLoading && plans.length > 0">
@@ -183,12 +185,12 @@
       </div>
     </div>
 
-    <!-- Subscription history: loaded in ngOnInit, always visible here. -->
+    <!-- Subscription history: member view — reference / internal payment id is never shown here -->
     <div class="sub-history">
       <h3 class="sub-history-title">My Subscriptions ({{ visibleSubscriptionHistory.length }})</h3>
 
       <div class="signals-loading" *ngIf="subscriptionHistoryLoading">
-        <img src="./assets/images/loading.gif" alt="Loading..." style="width: 28px; height: 28px;" />
+        <div class="spinner" aria-label="Loading subscription history"></div>
       </div>
 
       <div class="signals-empty" *ngIf="!subscriptionHistoryLoading && visibleSubscriptionHistory.length === 0">
@@ -201,7 +203,6 @@
           <tr>
             <th>Plan</th>
             <th>Amount</th>
-            <th>Reference</th>
             <th>Payment</th>
             <th>Starts</th>
             <th>Expires</th>
@@ -211,8 +212,7 @@
         <tbody>
           <tr *ngFor="let sub of visibleSubscriptionHistory">
             <td class="manage-pair-cell">{{ planLabels[sub.plan] }}</td>
-            <td>{{ sub.amount }}</td>
-            <td>{{ sub.reference }}</td>
+            <td class="mono-num">{{ sub.amount | number: '1.2-2' }}</td>
             <td>
               <span class="status-pill" [ngClass]="sub.status === 'Completed' ? 'active' : 'closed'">
                 {{ statusLabels[sub.status] }}
@@ -256,7 +256,7 @@
     </div>
 
     <div class="signals-loading" *ngIf="manageLoading">
-      <img src="./assets/images/loading.gif" alt="Loading..." style="width: 28px; height: 28px;" />
+      <div class="spinner" aria-label="Loading signals"></div>
     </div>
 
     <div class="signals-empty" *ngIf="!manageLoading && manageSignals.length === 0">
@@ -289,9 +289,9 @@
               {{ typeLabels[item.type] }}
             </span>
           </td>
-          <td>{{ item.entryPrice }}</td>
-          <td>{{ item.targetPrice ?? '—' }}</td>
-          <td>{{ item.stopLoss ?? '—' }}</td>
+          <td class="mono-num">{{ item.entryPrice }}</td>
+          <td class="mono-num">{{ item.targetPrice ?? '—' }}</td>
+          <td class="mono-num">{{ item.stopLoss ?? '—' }}</td>
           <td>
             <span class="status-pill" [ngClass]="item.isActive ? 'active' : 'closed'">
               {{ item.isActive ? 'Active' : 'Closed' }}
@@ -318,7 +318,5 @@
     </table>
   </section>
 
-  <!-- Spacer so bottom nav never overlaps content -->
   <div class="bottom-nav-spacer"></div>
 </div>
-

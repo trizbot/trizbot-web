@@ -1,42 +1,344 @@
-.dialog-title {
-  font-weight: 800;
-  font-size: 1.15rem;
-  margin: 0;
-  padding: 20px 24px 0;
+// ─── Token system ──────────────────────────────────────────────
+// Palette: deep ledger navy, restrained emerald for confirmed value,
+// amber for shortfall. Numeric figures use a mono face throughout
+// to read like statement/ledger figures rather than UI copy.
+:host {
+  --wd-ink: #0b1220;
+  --wd-panel: #121a2b;
+  --wd-panel-raised: #17203a;
+  --wd-line: #263254;
+  --wd-text: #e8ecf6;
+  --wd-muted: #8a93ad;
+  --wd-accent: #1fa97a;
+  --wd-accent-soft: rgba(31, 169, 122, 0.14);
+  --wd-warn: #e2a63b;
+  --wd-warn-soft: rgba(226, 166, 59, 0.14);
+  --wd-danger: #e2585a;
+
+  --wd-font-display: 'Space Grotesk', 'Inter', -apple-system, sans-serif;
+  --wd-font-body: 'Inter', -apple-system, sans-serif;
+  --wd-font-mono: 'IBM Plex Mono', 'Roboto Mono', monospace;
+
+  display: block;
 }
 
-.dialog-content {
+.mono-num {
+  font-family: var(--wd-font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+// ─── Shell ──────────────────────────────────────────────────────
+.wallet-dialog {
+  width: 100%;
+  max-width: 440px;
+  background: var(--wd-ink);
+  color: var(--wd-text);
+  font-family: var(--wd-font-body);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.wd-header {
+  padding: 24px 24px 4px;
+}
+
+.wd-eyebrow {
+  display: block;
+  font-family: var(--wd-font-mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--wd-accent);
+  margin-bottom: 6px;
+}
+
+.wd-title {
+  font-family: var(--wd-font-display);
+  font-size: 21px;
+  font-weight: 600;
+  color: var(--wd-text);
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.wd-content {
+  padding: 16px 24px 8px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  padding: 16px 24px 0;
+  gap: 20px;
 }
 
-.plan-summary {
+// ─── Signature element: the transfer slip ─────────────────────
+.wd-slip {
+  background: var(--wd-panel);
+  border: 1px solid var(--wd-line);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.wd-slip-section {
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.wd-slip-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+
+  &.muted {
+    opacity: 0.75;
+  }
+
+  &.total {
+    padding-top: 10px;
+    margin-top: 2px;
+    border-top: 1px dashed var(--wd-line);
+  }
+}
+
+.wd-slip-label {
+  font-size: 13px;
+  color: var(--wd-muted);
+}
+
+.wd-slip-value {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--wd-text);
+  text-align: right;
+
+  &.amount {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--wd-accent);
+  }
+}
+
+// Perforated tear-line between "what you're buying" and "what it costs"
+.wd-slip-tear {
+  position: relative;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  background: #f8f9fc;
-  border-radius: 10px;
-  padding: 14px 16px;
-  font-weight: 700;
+  height: 0;
 }
 
-.plan-summary-name {
-  color: #14141f;
+.wd-slip-dashes {
+  flex: 1;
+  border-top: 1px dashed var(--wd-line);
+  margin: 0 4px;
 }
 
-.plan-summary-price {
-  color: #3f51b5;
+.wd-slip-notch {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--wd-ink);
+  flex-shrink: 0;
+
+  &.left {
+    margin-left: -7px;
+  }
+
+  &.right {
+    margin-right: -7px;
+  }
 }
 
-.full-field {
+// ─── Balance meter ──────────────────────────────────────────────
+.wd-meter {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.wd-meter-track {
+  position: relative;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--wd-panel-raised);
+  overflow: visible;
+}
+
+.wd-meter-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--wd-accent);
+  transition: width 0.4s ease;
+}
+
+.wd-meter.insufficient .wd-meter-fill {
+  background: var(--wd-danger);
+}
+
+.wd-meter-marker {
+  position: absolute;
+  top: -3px;
+  width: 2px;
+  height: 14px;
+  background: var(--wd-text);
+  opacity: 0.5;
+  transform: translateX(-1px);
+}
+
+.wd-meter-caption {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  color: var(--wd-muted);
+}
+
+.wd-meter-icon {
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+
+  &.ok {
+    color: var(--wd-accent);
+  }
+
+  &.warn {
+    color: var(--wd-warn);
+  }
+}
+
+// ─── PIN field ──────────────────────────────────────────────────
+.wd-auth {
+  display: flex;
+  flex-direction: column;
+}
+
+.wd-pin-field {
   width: 100%;
+
+  ::ng-deep .mat-mdc-text-field-wrapper {
+    background: var(--wd-panel);
+  }
+
+  ::ng-deep input {
+    font-family: var(--wd-font-mono);
+    letter-spacing: 0.5em;
+    color: var(--wd-text);
+  }
+
+  ::ng-deep .mat-mdc-form-field-hint,
+  ::ng-deep .mdc-text-field--outlined .mdc-notched-outline__leading,
+  ::ng-deep .mdc-text-field--outlined .mdc-notched-outline__notch,
+  ::ng-deep .mdc-text-field--outlined .mdc-notched-outline__trailing {
+    border-color: var(--wd-line);
+  }
+
+  ::ng-deep .mat-mdc-form-field-hint {
+    color: var(--wd-muted);
+  }
 }
 
-.dialog-actions {
+// ─── Error / skeleton ────────────────────────────────────────────
+.wd-error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: rgba(226, 88, 90, 0.1);
+  color: #f2989a;
+  font-size: 13px;
+
+  mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+  }
+}
+
+.skeleton-row {
+  height: 18px;
+}
+
+.wd-skeleton {
+  display: block;
+  width: 60%;
+  height: 12px;
+  border-radius: 4px;
+  background: linear-gradient(
+    90deg,
+    var(--wd-panel-raised) 25%,
+    rgba(255, 255, 255, 0.06) 37%,
+    var(--wd-panel-raised) 63%
+  );
+  background-size: 400% 100%;
+  animation: wd-shimmer 1.4s ease infinite;
+}
+
+@keyframes wd-shimmer {
+  0% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0 50%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wd-skeleton {
+    animation: none;
+  }
+  .wd-meter-fill {
+    transition: none;
+  }
+}
+
+// ─── Actions ──────────────────────────────────────────────────────
+.wd-actions {
+  padding: 16px 24px 24px;
   display: flex;
   justify-content: flex-end;
   gap: 10px;
-  padding: 16px 24px 20px;
+}
+
+.wd-btn-ghost {
+  color: var(--wd-muted);
+  border-color: var(--wd-line);
+}
+
+.wd-btn-primary {
+  min-width: 148px;
+  background: var(--wd-accent) !important;
+  color: #06140f !important;
+  font-weight: 600;
+}
+
+.wd-btn-loading {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.wd-btn-spinner {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid rgba(6, 20, 15, 0.35);
+  border-top-color: #06140f;
+  animation: wd-spin 0.7s linear infinite;
+}
+
+@keyframes wd-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 480px) {
+  .wallet-dialog {
+    max-width: 100%;
+    border-radius: 12px;
+  }
 }

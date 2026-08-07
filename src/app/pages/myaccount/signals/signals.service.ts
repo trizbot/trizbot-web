@@ -19,6 +19,20 @@ import {
   UpdateSignalPayload,
 } from './model/signal.model';
 
+/**
+ * Payload for the wallet-based subscribe flow. Kept local to the service
+ * (rather than in signal.model.ts) since it's a thin superset of
+ * SubscribePayload — move it into the shared model file if other
+ * consumers end up needing it too.
+ */
+export interface SubscribeWithWalletPayload extends SubscribePayload {
+  transactionPin: string;
+}
+
+export interface WalletBalanceResponse {
+  balance: number;
+}
+
 @Injectable({
   providedIn: 'root',
 })
@@ -71,20 +85,42 @@ export class SignalsService {
       );
   }
 
-  // ---- Signals ----
+  // ---- Wallet ----
 
   /**
-   * Confirmed backend shape:
-   * {
-   *   "message": "Success",
-   *   "data": [ { "_id": "...", "pair": "USDT", "type": "Buy", ... } ],
-   *   "meta": { "total": 5, "page": 1, "limit": 20, "totalPages": 1 }
-   * }
-   *
-   * Note the pagination lives in `meta`, not on `data`, and each raw item
-   * uses `_id` / capitalized `type` — normalizeSignal() maps that to the
-   * SignalItem shape the rest of the UI expects.
+   * TODO: confirm against your actual wallet endpoint. Assumed shape:
+   * GET {baseUrl}/wallet/balance -> { message, data: { balance: number } }
+   * Adjust the URL and/or the `res.data.balance` accessor to match your
+   * backend contract (e.g. if your wallet lives outside the signals
+   * module, point this at `${environment.apiBaseUrl}/wallet/balance`
+   * instead).
    */
+  getWalletBalance(): Observable<number> {
+    return this.http
+      .get<ApiResponse<WalletBalanceResponse>>(`${this.baseUrl}/wallet/balance`)
+      .pipe(
+        map((res) => res.data?.balance ?? 0),
+        catchError((err: HttpErrorResponse) => {
+          console.error('[SignalsService] getWalletBalance failed:', err.status, err.error ?? err.message);
+          return throwError(() => err);
+        })
+      );
+  }
+
+  subscribeWithWallet(payload: SubscribeWithWalletPayload): Observable<MySubscription> {
+    return this.http
+      .post<ApiResponse<MySubscription>>(`${this.baseUrl}/subscribe/wallet`, payload)
+      .pipe(
+        map((res) => res.data),
+        catchError((err: HttpErrorResponse) => {
+          return throwError(() => err);
+        })
+      );
+  }
+
+  // ---- Signals ----
+
+
   getSignals(params: GetSignalsParams): Observable<SignalListResponse> {
     let httpParams = new HttpParams();
     if (params.pair) httpParams = httpParams.set('pair', params.pair);

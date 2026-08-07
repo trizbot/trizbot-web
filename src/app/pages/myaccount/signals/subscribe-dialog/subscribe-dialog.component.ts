@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, Inject } from '@angular/core';
+import { Component, Inject, OnInit } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 
@@ -12,6 +12,8 @@ export interface SubscribeDialogData {
   plan: PlanOption;
 }
 
+const PIN_LENGTH = 4;
+
 @Component({
   selector: 'app-subscribe-dialog',
   standalone: true,
@@ -19,15 +21,31 @@ export interface SubscribeDialogData {
   templateUrl: './subscribe-dialog.component.html',
   styleUrls: ['./subscribe-dialog.component.scss'],
 })
-export class SubscribeDialogComponent {
+export class SubscribeDialogComponent implements OnInit {
   readonly planLabels = PLAN_LABELS;
 
   saving = false;
+  errorMessage = '';
+
+  /**
+   * Member-facing wallet balance only. This dialog performs a standard
+   * internal wallet transfer (debit member -> credit plan). There is no
+   * gateway reference, transaction id, or payment rail exposed to the
+   * member at any point in this flow — that detail is strictly server-side
+   * bookkeeping and is intentionally never rendered here.
+   */
+  walletBalance = 0;
+  walletLoading = true;
 
   form = new FormGroup({
     transactionPin: new FormControl<string>('', {
       nonNullable: true,
-      validators: [Validators.required, Validators.minLength(4), Validators.maxLength(6)],
+      validators: [
+        Validators.required,
+        Validators.minLength(PIN_LENGTH),
+        Validators.maxLength(PIN_LENGTH),
+        Validators.pattern(/^\d+$/),
+      ],
     }),
   });
 
@@ -38,24 +56,68 @@ export class SubscribeDialogComponent {
     @Inject(MAT_DIALOG_DATA) public data: SubscribeDialogData
   ) {}
 
+  ngOnInit(): void {
+    this.loadWalletBalance();
+  }
+
+  private loadWalletBalance(): void {
+    this.walletLoading = true;
+    this.signalsService.getWalletBalance().subscribe({
+      next: (balance) => {
+        this.walletBalance = balance;
+        this.walletLoading = false;
+      },
+      error: () => {
+        this.walletBalance = 0;
+        this.walletLoading = false;
+        this.sharedService.showToast({ title: 'Could not load wallet balance.' });
+      },
+    });
+  }
+
+  get hasSufficientBalance(): boolean {
+    return this.walletBalance >= this.data.plan.amount;
+  }
+
+  get balanceAfter(): number {
+    return Math.max(this.walletBalance - this.data.plan.amount, 0);
+  }
+
+  get shortfall(): number {
+    return Math.max(this.data.plan.amount - this.walletBalance, 0);
+  }
+
+  /** 0–100 fill for the balance meter, capped so an oversized balance doesn't overflow the bar. */
+  get meterFillPercent(): number {
+    if (this.data.plan.amount <= 0) return 0;
+    const usedPortion = Math.min(this.walletBalance / this.data.plan.amount, 1.5);
+    return Math.min((usedPortion / 1.5) * 100, 100);
+  }
+
   close(): void {
-    this.dialogRef.close(null);
+    if (!this.saving) {
+      this.dialogRef.close(null);
+    }
   }
 
   confirm(): void {
-    if (this.form.invalid || this.saving) {
+    if (this.form.invalid || !this.hasSufficientBalance || this.saving) {
       this.form.markAllAsTouched();
       return;
     }
 
     this.saving = true;
-    const reference = `SUB-${this.data.plan.plan.toUpperCase()}-${Date.now()}`;
+    this.errorMessage = '';
 
+    // Standard wallet transfer: debit the member's wallet, credit the plan,
+    // activate the subscription. The PIN authorizes the debit; any internal
+    // transaction reference stays server-side and is never surfaced here.
     this.signalsService
-      .subscribe({
+      .subscribeWithWallet({
         plan: this.data.plan.plan,
+        amount: this.data.plan.amount,
         transactionPin: this.form.getRawValue().transactionPin,
-        reference,
+        reference: ''
       })
       .subscribe({
         next: (subscription) => {
@@ -64,10 +126,29 @@ export class SubscribeDialogComponent {
         },
         error: (err) => {
           this.saving = false;
-          this.sharedService.showToast({
-            title: err?.error?.message || 'Could not complete subscription.',
-          });
+          this.errorMessage = this.resolveError(err);
         },
       });
+  }
+
+  private resolveError(err: any): string {
+    const code = err?.error?.code;
+    switch (code) {
+      case 'INVALID_PIN':
+        return 'Incorrect transaction PIN. Please try again.';
+      case 'INSUFFICIENT_BALANCE':
+        this.loadWalletBalance();
+        return 'Your wallet balance is no longer sufficient for this plan.';
+      case 'PIN_LOCKED':
+        return 'Your PIN has been locked after too many attempts. Contact support to reset it.';
+      default:
+        return err?.error?.message || 'Could not complete the transfer. Please try again.';
+    }
+  }
+
+  fundWallet(): void {
+    this.dialogRef.close(null);
+    // Route to your wallet funding page/dialog, e.g.:
+    // this.router.navigate(['/myaccount/wallet/fund']);
   }
 }

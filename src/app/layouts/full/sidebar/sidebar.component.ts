@@ -27,6 +27,7 @@ import { Router, RouterModule } from '@angular/router';
   selector: 'app-sidebar',
   imports: [BrandingComponent, TablerIconsModule, MaterialModule, RouterModule,CommonModule],
   templateUrl:'./sidebar.component.html',
+    styleUrls: ['./sidebar.component.scss'],
 })
 export class SidebarComponent implements OnInit {
    constructor(private traderService: TraderService,private logoutService: LogoutService,public router: Router,) {}

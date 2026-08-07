@@ -137,6 +137,7 @@ export interface PlanOption {
 
 export interface SubscribePayload {
   plan: SubscriptionPlanEnum;
+  amount?: number;
   transactionPin: string;
   reference: string;
 }

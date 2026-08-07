@@ -1,20 +1,43 @@
-<!-- Top Bar: Branding and Toggle -->
-<div class="d-flex align-items-center justify-content-between mb-3">
+<!-- ============================================================= -->
+<!-- Top Bar: Branding and Toggle                                  -->
+<!-- ============================================================= -->
+<div class="sidebar-topbar">
   <div class="branding">
     <app-branding></app-branding>
   </div>
 
   <ng-container *ngIf="showToggle">
-    <a href="javascript:void(0)"
-       (click)="toggleMobileNav.emit()"
-       class="d-flex justify-content-center align-items-center icon-40">
+    <a
+      href="javascript:void(0)"
+      (click)="toggleMobileNav.emit()"
+      class="close-btn"
+      aria-label="Close menu"
+    >
       <i-tabler name="x" class="icon-20 d-flex">Close</i-tabler>
     </a>
   </ng-container>
 </div>
 
-<!-- Navigation Menu -->
-<div class="menu-section mt-4">
+<!-- ============================================================= -->
+<!-- User summary                                                   -->
+<!-- ============================================================= -->
+<div class="sidebar-user" *ngIf="firstName">
+  <div class="sidebar-user-avatar">{{ firstName.charAt(0) }}{{ lastName ? lastName.charAt(0) : '' }}</div>
+  <div class="sidebar-user-info">
+    <span class="sidebar-user-name">{{ firstName }} {{ lastName }}</span>
+    <span class="sidebar-user-role" *ngIf="entityName === 'Admin'">
+      {{ isSuperAdmin ? 'Super Admin' : 'Admin' }}
+    </span>
+    <span class="sidebar-user-role" *ngIf="entityName === 'Trader'">
+      {{ isSuperAdmin ? 'Super Admin' : 'Trader' }}
+    </span>
+  </div>
+</div>
+
+<!-- ============================================================= -->
+<!-- Navigation Menu                                                -->
+<!-- ============================================================= -->
+<div class="menu-section">
 
   <!-- Admin - Super Admin -->
   <ng-container *ngIf="entityName === 'Admin' && isSuperAdmin">
@@ -37,227 +60,200 @@
 
 </div>
 
-<!-- Admin Super Admin Menu -->
+<!-- ============================================================= -->
+<!-- Admin Super Admin Menu                                         -->
+<!-- ============================================================= -->
 <ng-template #adminSuperMenu>
-  <button mat-menu-item class="text-center text-primary" style="font-size:12px;">
-    <i-tabler name="shield-lock" class="icon-16 me-2"></i-tabler>
-    Super Admin
-  </button>
-  
 
-  <button mat-menu-item [routerLink]="['/dashboard']">
+  <p class="menu-group-label">Overview</p>
+  <button mat-menu-item [routerLink]="['/dashboard']" routerLinkActive="active-link">
     <i-tabler name="layout-dashboard" class="icon-20 me-2"></i-tabler>
     Dashboard
   </button>
 
-  <button mat-menu-item [routerLink]="['/myaccount/users']">
+  <p class="menu-group-label">Administration</p>
+  <button mat-menu-item [routerLink]="['/myaccount/users']" routerLinkActive="active-link">
     <i-tabler name="users" class="icon-20 me-2"></i-tabler>
     Users
   </button>
-  
-  <button mat-menu-item [routerLink]="['/myaccount/admin']">
-    <i-tabler name="shield" class="icon-20 me-2"></i-tabler>
+
+  <button mat-menu-item [routerLink]="['/myaccount/admin']" routerLinkActive="active-link">
+    <i-tabler name="shield-check" class="icon-20 me-2"></i-tabler>
     Admins
   </button>
-  
 
-  <button mat-menu-item [routerLink]="['/myaccount/crypto']">
-    <i-tabler name="repeat" class="icon-20 me-2"></i-tabler>
-    List Staking
-  </button>
-
-  <button mat-menu-item [routerLink]="['/myaccount/available']">
-    <i-tabler name="box" class="icon-20 me-2"></i-tabler>
-    Available Staking
-  </button>
-
-  <button mat-menu-item [routerLink]="['/myaccount/payouts']">
-    <i-tabler name="wallet" class="icon-20 me-2"></i-tabler>
-    Withdrawals
-  </button>
-
-  <button mat-menu-item [routerLink]="['/myaccount/notification']">
-    <i-tabler name="send" class="icon-20 me-2"></i-tabler>
-    Notification
-  </button>
-
-  <button mat-menu-item [routerLink]="['/myaccount/setting']">
-    <i-tabler name="key" class="icon-20 me-2"></i-tabler>
-    Charges
-  </button>
-  <button mat-menu-item [routerLink]="['/myaccount/cash-reward']">
-    <i-tabler name="shield-lock" class="icon-16 me-2"></i-tabler>
-    Trade Booster
-  </button>
-
-   <button mat-menu-item [routerLink]="['/myaccount/view-kyc']">
-    <i-tabler name="key" class="icon-20 me-2"></i-tabler>
+  <button mat-menu-item [routerLink]="['/myaccount/view-kyc']" routerLinkActive="active-link">
+    <i-tabler name="file-check" class="icon-20 me-2"></i-tabler>
     View KYCs
   </button>
 
-<!-- 
-  <button mat-menu-item [routerLink]="['/myaccount/p2p']">
-    <i-tabler name="wallet" class="icon-20 me-2"></i-tabler>
-    P2P Trading
-  </button>
-  <button mat-menu-item [routerLink]="['/myaccount/transfer']">
-    <i-tabler name="wallet" class="icon-20 me-2"></i-tabler>
-    Transfer
-  </button>
-  <button mat-menu-item [routerLink]="['/myaccount/arbitrage']">
-    <i-tabler name="wallet" class="icon-20 me-2"></i-tabler>
-    Arbitrage
-  </button>
-  <button mat-menu-item [routerLink]="['/myaccount/academy']">
-    <i-tabler name="wallet" class="icon-20 me-2"></i-tabler>
-    Courses
-  </button> -->
-  <button mat-menu-item [routerLink]="['/myaccount/feed']">
-    <i-tabler name="wallet" class="icon-20 me-2"></i-tabler>
-    Feed
-  </button>
-  
-  <button mat-menu-item [routerLink]="['/myaccount/signals']">
-    <i-tabler name="wallet" class="icon-20 me-2"></i-tabler>
-    Signals
-  </button>
-  
- 
-
-
-
-  <button mat-menu-item (click)="onLogout()">
-    <i-tabler name="logout" class="w-100 icon-20 me-2"></i-tabler>
-    Logout
-  </button>
-</ng-template>
-
-<!-- Admin Regular Menu -->
-<ng-template #adminRegularMenu>
-  <button mat-menu-item class="text-center text-danger" style="font-size:12px;">
-    <i-tabler name="shield-lock" class="icon-16 me-2"></i-tabler>
-    Regular Admin
-  </button>
-  
-  
-
-  <button mat-menu-item [routerLink]="['/dashboard']">
-    <i-tabler name="layout-dashboard" class="icon-20 me-2"></i-tabler>
-    Dashboard
-  </button>
-
-  <button mat-menu-item [routerLink]="['/myaccount/crypto']">
-    <i-tabler name="repeat" class="icon-20 me-2"></i-tabler>
+  <p class="menu-group-label">Staking</p>
+  <button mat-menu-item [routerLink]="['/myaccount/crypto']" routerLinkActive="active-link">
+    <i-tabler name="coin" class="icon-20 me-2"></i-tabler>
     List Staking
   </button>
 
-  <button mat-menu-item [routerLink]="['/myaccount/available']">
-    <i-tabler name="box" class="icon-20 me-2"></i-tabler>
+  <button mat-menu-item [routerLink]="['/myaccount/available']" routerLinkActive="active-link">
+    <i-tabler name="database" class="icon-20 me-2"></i-tabler>
     Available Staking
   </button>
 
-  <button mat-menu-item [routerLink]="['/myaccount/payouts']">
-    <i-tabler name="wallet" class="icon-20 me-2"></i-tabler>
+  <button mat-menu-item [routerLink]="['/myaccount/cash-reward']" routerLinkActive="active-link">
+    <i-tabler name="gift" class="icon-20 me-2"></i-tabler>
+    Trade Booster
+  </button>
+
+  <p class="menu-group-label">Finance</p>
+  <button mat-menu-item [routerLink]="['/myaccount/payouts']" routerLinkActive="active-link">
+    <i-tabler name="cash" class="icon-20 me-2"></i-tabler>
     Withdrawals
   </button>
 
-  <button mat-menu-item [routerLink]="['/myaccount/notification']">
-    <i-tabler name="send" class="icon-20 me-2"></i-tabler>
+  <button mat-menu-item [routerLink]="['/myaccount/setting']" routerLinkActive="active-link">
+    <i-tabler name="receipt-2" class="icon-20 me-2"></i-tabler>
+    Charges
+  </button>
+
+  <p class="menu-group-label">Content</p>
+  <button mat-menu-item [routerLink]="['/myaccount/feed']" routerLinkActive="active-link">
+    <i-tabler name="rss" class="icon-20 me-2"></i-tabler>
+    Feed
+  </button>
+
+  <button mat-menu-item [routerLink]="['/myaccount/signals']" routerLinkActive="active-link">
+    <i-tabler name="chart-line" class="icon-20 me-2"></i-tabler>
+    Signals
+  </button>
+
+  <button mat-menu-item [routerLink]="['/myaccount/notification']" routerLinkActive="active-link">
+    <i-tabler name="bell" class="icon-20 me-2"></i-tabler>
     Notification
   </button>
- 
-  <button mat-menu-item (click)="onLogout()">
-    <i-tabler name="logout" class="w-100 icon-20 me-2"></i-tabler>
+
+  <div class="menu-divider"></div>
+  <button mat-menu-item class="logout-btn" (click)="onLogout()">
+    <i-tabler name="logout" class="icon-20 me-2"></i-tabler>
     Logout
   </button>
-
-  <!-- <button (click)="onLogout()" mat-stroked-button class="w-100 mt-2">
-    Logout
-  </button> -->
 </ng-template>
 
-<!-- Trader Menu -->
-<ng-template #traderMenu>
-  <!-- <button mat-menu-item class="text-center text-success" style="font-size:12px;">
-    <i-tabler name="shield-lock" class="icon-16 me-2"></i-tabler>
-    Traders
-  </button> -->
-  
-  <button mat-menu-item [routerLink]="['/dashboard']">
+<!-- ============================================================= -->
+<!-- Admin Regular Menu                                             -->
+<!-- ============================================================= -->
+<ng-template #adminRegularMenu>
+
+  <p class="menu-group-label">Overview</p>
+  <button mat-menu-item [routerLink]="['/dashboard']" routerLinkActive="active-link">
     <i-tabler name="layout-dashboard" class="icon-20 me-2"></i-tabler>
     Dashboard
   </button>
 
-  <button mat-menu-item [routerLink]="['/myaccount/wallets']">
+  <p class="menu-group-label">Staking</p>
+  <button mat-menu-item [routerLink]="['/myaccount/crypto']" routerLinkActive="active-link">
+    <i-tabler name="coin" class="icon-20 me-2"></i-tabler>
+    List Staking
+  </button>
+
+  <button mat-menu-item [routerLink]="['/myaccount/available']" routerLinkActive="active-link">
+    <i-tabler name="database" class="icon-20 me-2"></i-tabler>
+    Available Staking
+  </button>
+
+  <p class="menu-group-label">Finance</p>
+  <button mat-menu-item [routerLink]="['/myaccount/payouts']" routerLinkActive="active-link">
+    <i-tabler name="cash" class="icon-20 me-2"></i-tabler>
+    Withdrawals
+  </button>
+
+  <button mat-menu-item [routerLink]="['/myaccount/notification']" routerLinkActive="active-link">
+    <i-tabler name="bell" class="icon-20 me-2"></i-tabler>
+    Notification
+  </button>
+
+  <div class="menu-divider"></div>
+  <button mat-menu-item class="logout-btn" (click)="onLogout()">
+    <i-tabler name="logout" class="icon-20 me-2"></i-tabler>
+    Logout
+  </button>
+</ng-template>
+
+<!-- ============================================================= -->
+<!-- Trader Menu                                                    -->
+<!-- ============================================================= -->
+<ng-template #traderMenu>
+
+  <p class="menu-group-label">Overview</p>
+  <button mat-menu-item [routerLink]="['/dashboard']" routerLinkActive="active-link">
+    <i-tabler name="layout-dashboard" class="icon-20 me-2"></i-tabler>
+    Dashboard
+  </button>
+
+  <button mat-menu-item [routerLink]="['/myaccount/wallets']" routerLinkActive="active-link">
     <i-tabler name="wallet" class="icon-20 me-2"></i-tabler>
     Wallet
   </button>
 
-  <button mat-menu-item [routerLink]="['/myaccount/history']">
+  <p class="menu-group-label">Trading</p>
+  <button mat-menu-item [routerLink]="['/myaccount/history']" routerLinkActive="active-link">
     <i-tabler name="repeat" class="icon-20 me-2"></i-tabler>
     My Stakes
   </button>
 
-
-  <button mat-menu-item [routerLink]="['/myaccount/payouts']">
-    <i-tabler name="wallet" class="icon-20 me-2"></i-tabler>
-    Withdrawals
-  </button>
-  
-  <button mat-menu-item [routerLink]="['/myaccount/p2p']">
-    <i-tabler name="wallet" class="icon-20 me-2"></i-tabler>
+  <button mat-menu-item [routerLink]="['/myaccount/p2p']" routerLinkActive="active-link">
+    <i-tabler name="arrows-exchange" class="icon-20 me-2"></i-tabler>
     P2P
   </button>
-  <button mat-menu-item [routerLink]="['/myaccount/transfer']">
-    <i-tabler name="wallet" class="icon-20 me-2"></i-tabler>
+
+  <button mat-menu-item [routerLink]="['/myaccount/transfer']" routerLinkActive="active-link">
+    <i-tabler name="send" class="icon-20 me-2"></i-tabler>
     Transfer
   </button>
-  <!-- <button mat-menu-item [routerLink]="['/myaccount/arbitrage']">
-    <i-tabler name="wallet" class="icon-20 me-2"></i-tabler>
-    Arbitrage
-  </button> -->
-   <button mat-menu-item [routerLink]="['/myaccount/academy']">
-    <i-tabler name="wallet" class="icon-20 me-2"></i-tabler>
+
+  <button mat-menu-item [routerLink]="['/myaccount/payouts']" routerLinkActive="active-link">
+    <i-tabler name="cash" class="icon-20 me-2"></i-tabler>
+    Withdrawals
+  </button>
+
+  <p class="menu-group-label">Learn &amp; Grow</p>
+  <button mat-menu-item [routerLink]="['/myaccount/academy']" routerLinkActive="active-link">
+    <i-tabler name="school" class="icon-20 me-2"></i-tabler>
     Courses
-  </button> 
-  <button mat-menu-item [routerLink]="['/myaccount/feed']">
-    <i-tabler name="wallet" class="icon-20 me-2"></i-tabler>
+  </button>
+
+  <button mat-menu-item [routerLink]="['/myaccount/feed']" routerLinkActive="active-link">
+    <i-tabler name="rss" class="icon-20 me-2"></i-tabler>
     Feed
   </button>
-  <!-- <button mat-menu-item [routerLink]="['/myaccount/kyc']">
-    <i-tabler name="wallet" class="icon-20 me-2"></i-tabler>
-    KYC
-  </button> -->
-  
-  <button mat-menu-item [routerLink]="['/myaccount/signals']">
-    <i-tabler name="wallet" class="icon-20 me-2"></i-tabler>
+
+  <button mat-menu-item [routerLink]="['/myaccount/signals']" routerLinkActive="active-link">
+    <i-tabler name="chart-line" class="icon-20 me-2"></i-tabler>
     Signals
   </button>
 
-
-
-  <button mat-menu-item [routerLink]="['/myaccount/password']">
-    <i-tabler name="key" class="icon-20 me-2"></i-tabler>
-    Password
-  </button>
-
-  <button mat-menu-item [routerLink]="['/myaccount/profile']">
+  <p class="menu-group-label">Account</p>
+  <button mat-menu-item [routerLink]="['/myaccount/profile']" routerLinkActive="active-link">
     <i-tabler name="settings" class="icon-20 me-2"></i-tabler>
     Settings
   </button>
 
-  <button mat-menu-item [routerLink]="['/myaccount/refer']">
-    <i-tabler name="users" class="icon-20 me-2"></i-tabler>
+  <button mat-menu-item [routerLink]="['/myaccount/password']" routerLinkActive="active-link">
+    <i-tabler name="lock" class="icon-20 me-2"></i-tabler>
+    Password
+  </button>
+
+  <button mat-menu-item [routerLink]="['/myaccount/refer']" routerLinkActive="active-link">
+    <i-tabler name="user-plus" class="icon-20 me-2"></i-tabler>
     Referrals
   </button>
- 
-  <button mat-menu-item [routerLink]="['/myaccount/chat']">
+
+  <button mat-menu-item [routerLink]="['/myaccount/chat']" routerLinkActive="active-link">
     <i-tabler name="message-circle" class="icon-20 me-2"></i-tabler>
     Contact Support
   </button>
 
-  <button mat-menu-item (click)="onLogout()">
-    <i-tabler name="logout" class="w-100 icon-20 me-2"></i-tabler>
+  <div class="menu-divider"></div>
+  <button mat-menu-item class="logout-btn" (click)="onLogout()">
+    <i-tabler name="logout" class="icon-20 me-2"></i-tabler>
     Logout
   </button>
 </ng-template>

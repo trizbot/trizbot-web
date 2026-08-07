@@ -1,23 +1,121 @@
-<h2 mat-dialog-title class="dialog-title">Subscribe</h2>
+<div class="wallet-dialog">
 
-<form [formGroup]="form" (ngSubmit)="confirm()">
-  <div mat-dialog-content class="dialog-content">
-    <div class="plan-summary">
-      <span class="plan-summary-name">{{ planLabels[data.plan.plan] }} plan</span>
-      <span class="plan-summary-price">${{ data.plan.amount }} / {{ data.plan.durationDays }} days</span>
+  <header class="wd-header">
+    <span class="wd-eyebrow">Wallet transfer</span>
+    <h2 mat-dialog-title class="wd-title">Confirm subscription</h2>
+  </header>
+
+  <form [formGroup]="form" (ngSubmit)="confirm()">
+    <div mat-dialog-content class="wd-content">
+
+      <!-- Transfer slip: plan side -->
+      <div class="wd-slip">
+        <div class="wd-slip-section">
+          <div class="wd-slip-row">
+            <span class="wd-slip-label">Plan</span>
+            <span class="wd-slip-value">{{ planLabels[data.plan.plan] }}</span>
+          </div>
+          <div class="wd-slip-row">
+            <span class="wd-slip-label">Duration</span>
+            <span class="wd-slip-value">{{ data.plan.durationDays }} days</span>
+          </div>
+        </div>
+
+        <div class="wd-slip-tear" aria-hidden="true">
+          <span class="wd-slip-notch left"></span>
+          <span class="wd-slip-dashes"></span>
+          <span class="wd-slip-notch right"></span>
+        </div>
+
+        <!-- Transfer slip: wallet side -->
+        <div class="wd-slip-section">
+          <div class="wd-slip-row muted" *ngIf="!walletLoading">
+            <span class="wd-slip-label">Wallet balance</span>
+            <span class="wd-slip-value mono-num">{{ walletBalance | number: '1.2-2' }} {{ data.plan.currency }}</span>
+          </div>
+          <div class="wd-slip-row skeleton-row" *ngIf="walletLoading">
+            <span class="wd-skeleton"></span>
+          </div>
+
+          <div class="wd-slip-row total">
+            <span class="wd-slip-label">Amount to transfer</span>
+            <span class="wd-slip-value amount mono-num">{{ data.plan.amount | number: '1.2-2' }} {{ data.plan.currency }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Balance meter -->
+      <div class="wd-meter" *ngIf="!walletLoading" [class.insufficient]="!hasSufficientBalance">
+        <div class="wd-meter-track">
+          <div class="wd-meter-fill" [style.width.%]="meterFillPercent"></div>
+          <div class="wd-meter-marker" [style.left.%]="hasSufficientBalance ? (100 / 1.5) : 100"></div>
+        </div>
+        <div class="wd-meter-caption">
+          <ng-container *ngIf="hasSufficientBalance">
+            <mat-icon class="wd-meter-icon ok">task_alt</mat-icon>
+            <span>{{ balanceAfter | number: '1.2-2' }} {{ data.plan.currency }} remaining after this transfer</span>
+          </ng-container>
+          <ng-container *ngIf="!hasSufficientBalance">
+            <mat-icon class="wd-meter-icon warn">error_outline</mat-icon>
+            <span>Short by {{ shortfall | number: '1.2-2' }} {{ data.plan.currency }}</span>
+          </ng-container>
+        </div>
+      </div>
+
+      <!-- PIN authorization -->
+      <div class="wd-auth" *ngIf="hasSufficientBalance && !walletLoading">
+        <mat-form-field appearance="outline" class="wd-pin-field">
+          <mat-label>Transaction PIN</mat-label>
+          <input
+            matInput
+            type="password"
+            inputmode="numeric"
+            formControlName="transactionPin"
+            maxlength="4"
+            autocomplete="off"
+            placeholder="••••"
+          />
+          <mat-hint>Enter your 4-digit PIN to authorize this transfer</mat-hint>
+          <mat-error *ngIf="form.get('transactionPin')?.hasError('required')">PIN is required</mat-error>
+          <mat-error *ngIf="form.get('transactionPin')?.hasError('minlength') || form.get('transactionPin')?.hasError('pattern')">
+            Enter all 4 digits
+          </mat-error>
+        </mat-form-field>
+      </div>
+
+      <p class="wd-error" *ngIf="errorMessage">
+        <mat-icon>error_outline</mat-icon>
+        {{ errorMessage }}
+      </p>
     </div>
 
-    <mat-form-field appearance="outline" class="full-field">
-      <mat-label>Transaction PIN</mat-label>
-      <input matInput type="password" formControlName="transactionPin" maxlength="6" />
-      <mat-error *ngIf="form.get('transactionPin')?.hasError('required')">PIN is required</mat-error>
-    </mat-form-field>
-  </div>
+    <div mat-dialog-actions class="wd-actions">
+      <button mat-stroked-button type="button" class="wd-btn-ghost" (click)="close()" [disabled]="saving">
+        Cancel
+      </button>
 
-  <div mat-dialog-actions class="dialog-actions">
-    <button mat-stroked-button type="button" (click)="close()" [disabled]="saving">Cancel</button>
-    <button mat-flat-button color="primary" type="submit" [disabled]="saving">
-      {{ saving ? 'Processing...' : 'Confirm & subscribe' }}
-    </button>
-  </div>
-</form>
+      <button
+        *ngIf="hasSufficientBalance"
+        mat-flat-button
+        color="primary"
+        class="wd-btn-primary"
+        type="submit"
+        [disabled]="saving || form.invalid || walletLoading"
+      >
+        <span *ngIf="!saving">Confirm transfer</span>
+        <span *ngIf="saving" class="wd-btn-loading"><span class="wd-btn-spinner"></span> Processing…</span>
+      </button>
+
+      <button
+        *ngIf="!hasSufficientBalance && !walletLoading"
+        mat-flat-button
+        color="primary"
+        class="wd-btn-primary"
+        type="button"
+        (click)="fundWallet()"
+      >
+        Fund wallet
+      </button>
+    </div>
+  </form>
+</div>
