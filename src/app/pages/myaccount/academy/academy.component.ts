@@ -1,11 +1,9 @@
-// academy.component.ts
-
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject } from '@angular/core';
 import { FormControl, FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 
-import { Observable, Subject } from 'rxjs';
+import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
 
 import { MatDialog } from '@angular/material/dialog';
@@ -22,9 +20,6 @@ import {
   CourseSale,
   LEVEL_OPTIONS,
 } from './model/academy.model';
-import { TraderService } from '../../../../app/appstate/trader.service';
-import { GetTraderResBody } from '../../../../app/services/auth.type';
-import { Trader } from '../../../../app/appstate/appstate-model';
 
 type MainTab = 'browse' | 'my-courses' | 'purchased' | 'sales';
 
@@ -35,7 +30,7 @@ type MainTab = 'browse' | 'my-courses' | 'purchased' | 'sales';
   templateUrl: './academy.component.html',
   styleUrls: ['./academy.component.scss'],
 })
-export class AcademyComponent implements OnInit {
+export class AcademyComponent implements OnInit, OnDestroy {
   private sharedService = inject(SharedService);
   private destroy$ = new Subject<void>();
 
@@ -43,138 +38,55 @@ export class AcademyComponent implements OnInit {
   readonly levelOptions = LEVEL_OPTIONS;
 
   activeTab: MainTab = 'browse';
- walletBalance: string = '0.00';
-  tradeRewardCashWalletBalance: string = '0.00';
-  amountInvested: string = '0.00';
-  profit: string = '0.00';
-  depositBalance: string = '0.00';
-  userRevenue: string = '';
-  lastName: string = '';
-  phoneNumber: string = '';
-  walletAddress: string = '';
-  userProfit: string = '';
-  imageSecureUrl: string = '';
-  errorMessage: string = '';
-  trader$: Observable<Trader | null>;
-  loading$: Observable<boolean>;
-  error$: Observable<any>;
 
-  totalUsers: string;
-  totalActiveUsers: number;
-  totalWeeklyFunds: number;
-  totalWeeklyProfits: number;
-
-  entityName: string;
-  isSuperAdmin: boolean;
-  isKycVerified: boolean;
-  isCryptoAvailableStatus: boolean;
-  payoutStatus: boolean;
-  isCryptoAvailableDescription: string;
-  isTradersDashBoardType: boolean;
-  isAdminDashBoardType: boolean;
-  isNormalEntityType: boolean;
-  isSuperEntityType: boolean;
-  isLoading = true;
-
-  // ---- Browse ----
   filterForm = new FormGroup({
     search: new FormControl(''),
     category: new FormControl<string>(''),
     level: new FormControl<string>(''),
   });
 
+  // ---- Browse ----
   courses: Course[] = [];
   coursesLoading = false;
+  coursesError = false;
 
   // ---- My Courses (created) ----
   myCourses: Course[] = [];
   myCoursesLoading = false;
+  myCoursesError = false;
   deletingCourseId: string | null = null;
 
   // ---- Purchased ----
   purchases: CoursePurchase[] = [];
   purchasesLoading = false;
+  purchasesError = false;
 
   // ---- Sales ----
   sales: CourseSale[] = [];
   salesLoading = false;
+  salesError = false;
 
-  constructor( private traderService: TraderService,private academyService: AcademyService, private dialog: MatDialog) {}
+  constructor(private academyService: AcademyService, private dialog: MatDialog) {}
 
   ngOnInit(): void {
     this.loadCourses();
-    this.getCurrentTrader();
 
     this.filterForm.controls.search.valueChanges
       .pipe(debounceTime(400), distinctUntilChanged(), takeUntil(this.destroy$))
       .subscribe(() => this.loadCourses());
   }
 
-  getCurrentTrader() {
-      this.isLoading = true;
-      this.traderService.getTrader().subscribe({
-        next: (res: GetTraderResBody) => {
-          this.isLoading = false;
-          this.phoneNumber = res.data.phoneNumber;
-          this.walletBalance = res.data.walletBalance;
-          this.amountInvested = res.data.amountInvested;
-          this.walletAddress = res.data.walletAddress;
-          this.depositBalance = res.data.depositBalance;
-          this.isCryptoAvailableStatus = res.data.isCryptoAvailableStatus;
-          this.isCryptoAvailableDescription = res.data.isCryptoAvailableDescription;
-          this.payoutStatus = res.data.payoutStatus;
-          if (res.data.tradeRewardCashWalletBalance >= 1) {
-            this.tradeRewardCashWalletBalance = res.data.tradeRewardCashWalletBalance;
-          }
-          if (res.data.tradeRewardCashWalletBalance <= 0) {
-            this.tradeRewardCashWalletBalance = '0.0';
-          }
-  
-          this.profit = res.data.profit;
-          this.userRevenue = res.data.firstName;
-          this.lastName = res.data.lastName;
-          this.imageSecureUrl = res.data.imageSecureUrl;
-          this.entityName = res.data.entityName;
-          this.isSuperAdmin = res.data.isSuperAdmin;
-          this.isKycVerified = res.data.isKycVerified ?? false;
-  
-          if (this.entityName == 'Admin' && this.isSuperAdmin) {
-            this.isSuperEntityType = true;
-            this.isAdminDashBoardType = true;
-            this.isTradersDashBoardType = false;
-          } else if (this.entityName == 'Admin' && !this.isSuperAdmin) {
-            this.isSuperEntityType = false;
-            this.isAdminDashBoardType = true;
-            this.isTradersDashBoardType = false;
-          } else if (this.entityName == 'Trader' && this.isSuperAdmin) {
-            this.isNormalEntityType = false;
-            this.isAdminDashBoardType = true;
-            this.isTradersDashBoardType = false;
-          } else if (this.entityName == 'Trader' && !this.isSuperAdmin) {
-            this.isNormalEntityType = false;
-            this.isAdminDashBoardType = false;
-            this.isTradersDashBoardType = true;
-          } else {
-            this.isNormalEntityType = false;
-            this.isAdminDashBoardType = false;
-            this.isTradersDashBoardType = true;
-          }
-  
-         
-        },
-        error: (err) => {
-          this.errorMessage = '';
-          this.isLoading = false;
-        },
-      });
-    }
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
 
   selectTab(tab: MainTab): void {
     this.activeTab = tab;
     if (tab === 'browse' && this.courses.length === 0) this.loadCourses();
-    if (tab === 'my-courses') this.loadMyCourses();
-    if (tab === 'purchased') this.loadPurchases();
-    if (tab === 'sales') this.loadSales();
+    if (tab === 'my-courses' && this.myCourses.length === 0) this.loadMyCourses();
+    if (tab === 'purchased' && this.purchases.length === 0) this.loadPurchases();
+    if (tab === 'sales' && this.sales.length === 0) this.loadSales();
   }
 
   // ---------------------------------------------------------------------
@@ -183,6 +95,7 @@ export class AcademyComponent implements OnInit {
 
   loadCourses(): void {
     this.coursesLoading = true;
+    this.coursesError = false;
     const { search, category, level } = this.filterForm.getRawValue();
 
     this.academyService
@@ -199,7 +112,9 @@ export class AcademyComponent implements OnInit {
           this.coursesLoading = false;
         },
         error: () => {
+          this.courses = [];
           this.coursesLoading = false;
+          this.coursesError = true;
         },
       });
   }
@@ -210,6 +125,16 @@ export class AcademyComponent implements OnInit {
 
   levelLabel(value?: string): string {
     return this.levelOptions.find((l) => l.value === value)?.label || '';
+  }
+
+  initials(course: Course): string {
+    const f = course.instructor.firstName?.charAt(0) || '';
+    const l = course.instructor.lastName?.charAt(0) || '';
+    return (f + l).toUpperCase() || '?';
+  }
+
+  trackByCourseId(_index: number, course: Course): string {
+    return course.id;
   }
 
   openPurchaseDialog(course: Course): void {
@@ -233,13 +158,16 @@ export class AcademyComponent implements OnInit {
 
   loadMyCourses(): void {
     this.myCoursesLoading = true;
+    this.myCoursesError = false;
     this.academyService.myCourses().subscribe({
       next: (res) => {
         this.myCourses = res;
         this.myCoursesLoading = false;
       },
       error: () => {
+        this.myCourses = [];
         this.myCoursesLoading = false;
+        this.myCoursesError = true;
       },
     });
   }
@@ -263,6 +191,7 @@ export class AcademyComponent implements OnInit {
   }
 
   deleteCourse(course: Course): void {
+    if (!course?.id || this.deletingCourseId) return;
     this.deletingCourseId = course.id;
     this.academyService.deleteCourse(course.id).subscribe({
       next: () => {
@@ -284,26 +213,32 @@ export class AcademyComponent implements OnInit {
 
   loadPurchases(): void {
     this.purchasesLoading = true;
+    this.purchasesError = false;
     this.academyService.myPurchases().subscribe({
       next: (res) => {
         this.purchases = res;
         this.purchasesLoading = false;
       },
       error: () => {
+        this.purchases = [];
         this.purchasesLoading = false;
+        this.purchasesError = true;
       },
     });
   }
 
   loadSales(): void {
     this.salesLoading = true;
+    this.salesError = false;
     this.academyService.mySales().subscribe({
       next: (res) => {
         this.sales = res;
         this.salesLoading = false;
       },
       error: () => {
+        this.sales = [];
         this.salesLoading = false;
+        this.salesError = true;
       },
     });
   }

@@ -1,5 +1,3 @@
-// purchase-course-dialog/purchase-course-dialog.component.ts
-
 import { CommonModule } from '@angular/common';
 import { Component, Inject } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -14,6 +12,8 @@ export interface PurchaseCourseDialogData {
   course: Course;
 }
 
+const PIN_PATTERN = /^\d{4,6}$/;
+
 @Component({
   selector: 'app-purchase-course-dialog',
   standalone: true,
@@ -23,11 +23,12 @@ export interface PurchaseCourseDialogData {
 })
 export class PurchaseCourseDialogComponent {
   course: Course;
+  isFree: boolean;
   loading = false;
   errorMessage = '';
 
   form = new FormGroup({
-    transactionPin: new FormControl('', [Validators.required, Validators.minLength(4)]),
+    transactionPin: new FormControl('', [Validators.required, Validators.pattern(PIN_PATTERN)]),
     reference: new FormControl({ value: '', disabled: true }, [Validators.required]),
   });
 
@@ -38,7 +39,21 @@ export class PurchaseCourseDialogComponent {
     @Inject(MAT_DIALOG_DATA) public data: PurchaseCourseDialogData
   ) {
     this.course = data.course;
+    this.isFree = !this.course?.price || this.course.price <= 0;
+
+    // Free courses don't need a transaction PIN at all — drop the
+    // requirement instead of asking users to enter one for nothing.
+    if (this.isFree) {
+      this.form.controls.transactionPin.clearValidators();
+      this.form.controls.transactionPin.disable();
+      this.form.controls.transactionPin.updateValueAndValidity();
+    }
+
     this.generateReference();
+
+    // Prevent accidental dismissal (Escape / backdrop click) while a
+    // purchase request is actually in flight.
+    this.dialogRef.disableClose = false;
   }
 
   generateReference(): void {
@@ -57,28 +72,41 @@ export class PurchaseCourseDialogComponent {
 
     this.errorMessage = '';
     this.loading = true;
+    this.dialogRef.disableClose = true;
+
     const { transactionPin, reference } = this.form.getRawValue();
 
     this.academyService
       .purchaseCourse({
         courseId: this.course.id,
-        transactionPin: transactionPin!,
         reference: reference!,
+        ...(this.isFree ? {} : { transactionPin: transactionPin! }),
       })
       .subscribe({
         next: () => {
           this.loading = false;
+          this.dialogRef.disableClose = false;
           this.dialogRef.close(true);
         },
         error: (err) => {
           this.loading = false;
+          this.dialogRef.disableClose = false;
           const message = err?.error?.message || 'Could not complete this purchase. Please try again.';
           this.errorMessage = Array.isArray(message) ? message.join(', ') : message;
+
+          // Issue a fresh reference so a retry isn't rejected as a
+          // duplicate of the failed attempt.
+          this.generateReference();
+
+          if (!this.isFree) {
+            this.form.controls.transactionPin.reset();
+          }
         },
       });
   }
 
   close(): void {
+    if (this.loading) return;
     this.dialogRef.close(false);
   }
 }

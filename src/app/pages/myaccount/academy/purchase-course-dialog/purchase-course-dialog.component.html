@@ -1,6 +1,6 @@
 <h2 mat-dialog-title class="dialog-title">
   Confirm Enrollment
-  <button mat-icon-button class="close-btn" type="button" (click)="close()">
+  <button mat-icon-button class="close-btn" type="button" [disabled]="loading" (click)="close()">
     <mat-icon>close</mat-icon>
   </button>
 </h2>
@@ -15,15 +15,30 @@
   <div class="summary-row highlight">
     <span class="label">Total to pay</span>
     <span class="value">
-      <ng-container *ngIf="course.price > 0">&#36;{{ course.price | number: '1.2-2' }}</ng-container>
-      <ng-container *ngIf="course.price === 0">Free</ng-container>
+      <ng-container *ngIf="!isFree">&#36;{{ course.price | number: '1.2-2' }}</ng-container>
+      <ng-container *ngIf="isFree">Free</ng-container>
     </span>
   </div>
 
-  <mat-label class="f-w-600 m-b-8 d-block m-t-3">Transaction PIN</mat-label>
-  <mat-form-field appearance="outline" class="w-100">
-    <input matInput type="password" inputmode="numeric" maxlength="6" formControlName="transactionPin" />
-  </mat-form-field>
+  <ng-container *ngIf="!isFree">
+    <mat-label class="f-w-600 m-b-8 d-block m-t-3">Transaction PIN</mat-label>
+    <mat-form-field appearance="outline" class="w-100">
+      <input
+        matInput
+        type="password"
+        inputmode="numeric"
+        autocomplete="off"
+        maxlength="6"
+        formControlName="transactionPin"
+      />
+      <mat-error *ngIf="form.controls.transactionPin.hasError('required')">
+        Transaction PIN is required.
+      </mat-error>
+      <mat-error *ngIf="form.controls.transactionPin.hasError('pattern')">
+        Enter a 4–6 digit numeric PIN.
+      </mat-error>
+    </mat-form-field>
+  </ng-container>
 
   <mat-label class="f-w-600 m-b-8 d-block">Reference</mat-label>
   <mat-form-field appearance="outline" class="w-100">
@@ -39,9 +54,9 @@
     color="primary"
     class="fw-bold w-100 submit-btn"
     type="button"
-    [disabled]="loading"
+    [disabled]="loading || form.invalid"
     (click)="submit()"
   >
-    {{ loading ? 'Processing...' : (course.price === 0 ? 'Confirm Free Enrollment' : 'Confirm Payment') }}
+    {{ loading ? 'Processing...' : (isFree ? 'Confirm Free Enrollment' : 'Confirm Payment') }}
   </button>
 </mat-dialog-content>
