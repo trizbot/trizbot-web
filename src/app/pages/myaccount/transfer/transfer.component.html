@@ -2,113 +2,184 @@
 
   <mat-card class="cardWithShadow theme-card transfer-card">
     <mat-card-header>
-      <mat-card-title class="m-b-0">Send Money</mat-card-title>
-      <p class="transfer-subtitle">Transfer funds instantly to any user by username or email</p>
+      <mat-card-title class="m-b-0">Member Wallet Transfer</mat-card-title>
+      <p class="transfer-subtitle">Send funds instantly to another member's wallet by username or email</p>
     </mat-card-header>
 
+    <!-- Step indicator -->
+    <div class="step-indicator">
+      <ng-container *ngFor="let step of steps; let i = index; let last = last">
+        <button
+          type="button"
+          class="step-dot"
+          [class.active]="currentStep === step.key"
+          [class.complete]="isStepComplete(step.key)"
+          [disabled]="!isStepComplete(step.key)"
+          (click)="jumpToStep(step.key)"
+        >
+          <span class="step-number" *ngIf="!isStepComplete(step.key)">{{ i + 1 }}</span>
+          <mat-icon class="step-check" *ngIf="isStepComplete(step.key)">check</mat-icon>
+        </button>
+        <span class="step-label">{{ step.label }}</span>
+        <span class="step-connector" *ngIf="!last" [class.complete]="isStepComplete(steps[i + 1].key)"></span>
+      </ng-container>
+    </div>
+
     <mat-card-content class="b-t-1">
-      <form class="mt-3" [formGroup]="transferForm" (ngSubmit)="onSubmit()">
-        <div class="row">
+      <form [formGroup]="transferForm" (ngSubmit)="onSubmit()">
 
-          <!-- Recipient -->
-          <div class="col-12">
-            <mat-label class="f-w-600 m-b-8 d-block">Recipient (Username or Email)</mat-label>
-            <mat-form-field appearance="outline" class="w-100">
-              <input
-                matInput
-                placeholder="e.g. johndoe or john@example.com"
-                formControlName="recipientIdentifier"
-              />
-              <mat-icon matSuffix *ngIf="lookupLoading" class="spin-icon">autorenew</mat-icon>
-              <mat-icon matSuffix *ngIf="!lookupLoading && beneficiary" class="success-icon">check_circle</mat-icon>
-            </mat-form-field>
+        <!-- Step 1: Recipient -->
+        <div class="step-panel" *ngIf="currentStep === 'recipient'">
+          <mat-label class="f-w-600 m-b-8 d-block">Recipient (Username or Email)</mat-label>
+          <mat-form-field appearance="outline" class="w-100">
+            <input
+              matInput
+              placeholder="e.g. johndoe or john@example.com"
+              formControlName="recipientIdentifier"
+              autofocus
+            />
+            <mat-progress-spinner
+              matSuffix
+              *ngIf="lookupLoading"
+              diameter="18"
+              mode="indeterminate"
+            ></mat-progress-spinner>
+            <mat-icon matSuffix *ngIf="!lookupLoading && beneficiary" class="success-icon">check_circle</mat-icon>
+          </mat-form-field>
 
-            <!-- Beneficiary preview card -->
-            <div class="beneficiary-card" *ngIf="beneficiary">
-              <div class="beneficiary-avatar">
-                <img *ngIf="beneficiary.avatarUrl" [src]="beneficiary.avatarUrl" alt="avatar" />
-                <span *ngIf="!beneficiary.avatarUrl">
-                  {{ beneficiary.firstName.charAt(0) }}{{ beneficiary.lastName.charAt(0) }}
-                </span>
-              </div>
-              <div class="beneficiary-info">
-                <div class="beneficiary-name">{{ beneficiary.firstName }} {{ beneficiary.lastName }}</div>
-                <div class="beneficiary-handle">&#64;{{ beneficiary.username }}</div>
-              </div>
-              <mat-icon class="verified-badge">verified</mat-icon>
+          <div class="beneficiary-card" *ngIf="beneficiary">
+            <div class="beneficiary-avatar">
+              <img *ngIf="beneficiary.avatarUrl" [src]="beneficiary.avatarUrl" alt="avatar" />
+              <span *ngIf="!beneficiary.avatarUrl">
+                {{ beneficiaryInitials }}
+              </span>
             </div>
-
-            <div class="lookup-error" *ngIf="lookupError">
-              <mat-icon>error_outline</mat-icon>
-              <span>{{ lookupError }}</span>
+            <div class="beneficiary-info">
+              <div class="beneficiary-name">{{ beneficiaryDisplayName }}</div>
+              <div class="beneficiary-handle" *ngIf="beneficiary.username">&#64;{{ beneficiary.username }}</div>
             </div>
+            <mat-icon class="verified-badge">verified</mat-icon>
           </div>
 
-          <!-- Amount -->
-          <div class="col-lg-6">
-            <mat-label class="f-w-600 m-b-8 d-block">Amount</mat-label>
-            <mat-form-field appearance="outline" class="w-100">
-              <span matPrefix>&#36;&nbsp;</span>
-              <input matInput type="number" min="1" placeholder="0.00" formControlName="amount" />
-            </mat-form-field>
+          <div class="lookup-error" *ngIf="lookupError">
+            <mat-icon>error_outline</mat-icon>
+            <span>{{ lookupError }}</span>
           </div>
 
-          <!-- Transaction PIN -->
-          <div class="col-lg-6">
-            <mat-label class="f-w-600 m-b-8 d-block">Transaction PIN</mat-label>
-            <mat-form-field appearance="outline" class="w-100">
-              <input
-                matInput
-                type="password"
-                inputmode="numeric"
-                maxlength="6"
-                placeholder="Enter your PIN"
-                formControlName="transactionPin"
-              />
-            </mat-form-field>
+          <div class="step-actions">
+            <button
+              mat-flat-button
+              color="primary"
+              type="button"
+              class="next-btn"
+              [disabled]="lookupLoading || !beneficiary"
+              (click)="goToNextStep()"
+            >
+              Continue
+              <mat-icon>arrow_forward</mat-icon>
+            </button>
           </div>
-
-          <!-- Reference (auto-generated, read-only) -->
-          <div class="col-lg-6">
-            <mat-label class="f-w-600 m-b-8 d-block">Reference</mat-label>
-            <mat-form-field appearance="outline" class="w-100">
-              <input matInput formControlName="reference" readonly />
-              <button
-                mat-icon-button
-                matSuffix
-                type="button"
-                (click)="generateReference()"
-                matTooltip="Generate a new reference"
-              >
-                <mat-icon>refresh</mat-icon>
-              </button>
-            </mat-form-field>
-          </div>
-
-          <!-- Narration -->
-          <div class="col-lg-6">
-            <mat-label class="f-w-600 m-b-8 d-block">Narration (Optional)</mat-label>
-            <mat-form-field appearance="outline" class="w-100">
-              <input matInput placeholder="What's this transfer for?" formControlName="narration" />
-            </mat-form-field>
-          </div>
-
         </div>
 
-        <div class="m-t-6">
-          <button
-            mat-flat-button
-            color="primary"
-            class="w-100 py-2 fw-bold send-btn"
-            type="submit"
-            [disabled]="submitLoading || transferForm.invalid || !beneficiary"
-          >
-            <mat-icon *ngIf="!submitLoading" class="send-icon">send</mat-icon>
-            <b *ngIf="submitLoading">
-              <img src="./assets/images/loading.gif" alt="Loading..." style="width: 22px; height: 22px;" />
-            </b>
-            {{ submitLoading ? 'Processing...' : 'Send Transfer' }}
-          </button>
+        <!-- Step 2: Amount & narration -->
+        <div class="step-panel" *ngIf="currentStep === 'details'">
+          <div class="recipient-summary">
+            <span>Sending to</span>
+            <strong>{{ beneficiaryDisplayName }}<ng-container *ngIf="beneficiary?.username"> &middot; &#64;{{ beneficiary?.username }}</ng-container></strong>
+            <button mat-button type="button" class="change-link" (click)="jumpToStep('recipient')">Change</button>
+          </div>
+
+          <mat-label class="f-w-600 m-b-8 d-block">Amount</mat-label>
+          <mat-form-field appearance="outline" class="w-100">
+            <span matPrefix>&#36;&nbsp;</span>
+            <input matInput type="number" min="1" placeholder="0.00" formControlName="amount" autofocus />
+          </mat-form-field>
+
+          <mat-label class="f-w-600 m-b-8 d-block">Narration (Optional)</mat-label>
+          <mat-form-field appearance="outline" class="w-100">
+            <input matInput placeholder="What's this transfer for?" formControlName="narration" />
+          </mat-form-field>
+
+          <div class="step-actions split">
+            <button mat-stroked-button type="button" class="back-btn" (click)="goToPreviousStep()">
+              <mat-icon>arrow_back</mat-icon>
+              Back
+            </button>
+            <button
+              mat-flat-button
+              color="primary"
+              type="button"
+              class="next-btn"
+              [disabled]="!canLeaveDetailsStep()"
+              (click)="goToNextStep()"
+            >
+              Review Transfer
+              <mat-icon>arrow_forward</mat-icon>
+            </button>
+          </div>
+        </div>
+
+        <!-- Step 3: Confirm & authorize -->
+        <div class="step-panel" *ngIf="currentStep === 'confirm'">
+          <div class="confirm-summary">
+            <div class="confirm-row">
+              <span>Recipient</span>
+              <strong>{{ beneficiaryDisplayName }}<ng-container *ngIf="beneficiary?.username"> (&#64;{{ beneficiary?.username }})</ng-container></strong>
+            </div>
+            <div class="confirm-row">
+              <span>Amount</span>
+              <strong class="confirm-amount">&#36;{{ transferForm.controls.amount.value | number: '1.2-2' }}</strong>
+            </div>
+            <div class="confirm-row" *ngIf="transferForm.controls.narration.value">
+              <span>Narration</span>
+              <strong>{{ transferForm.controls.narration.value }}</strong>
+            </div>
+          </div>
+
+          <mat-label class="f-w-600 m-b-8 d-block">Enter Transaction PIN to Authorize</mat-label>
+          <mat-form-field appearance="outline" class="w-100">
+            <input
+              matInput
+              [type]="pinVisible ? 'text' : 'password'"
+              inputmode="numeric"
+              maxlength="6"
+              placeholder="&#8226;&#8226;&#8226;&#8226;"
+              formControlName="transactionPin"
+              autofocus
+            />
+            <button
+              mat-icon-button
+              matSuffix
+              type="button"
+              (click)="togglePinVisibility()"
+              [attr.aria-label]="pinVisible ? 'Hide PIN' : 'Show PIN'"
+            >
+              <mat-icon>{{ pinVisible ? 'visibility_off' : 'visibility' }}</mat-icon>
+            </button>
+          </mat-form-field>
+
+          <div class="step-actions split">
+            <button mat-stroked-button type="button" class="back-btn" [disabled]="submitLoading" (click)="goToPreviousStep()">
+              <mat-icon>arrow_back</mat-icon>
+              Back
+            </button>
+            <button
+              mat-flat-button
+              color="primary"
+              class="send-btn"
+              type="submit"
+              [disabled]="submitLoading || transferForm.invalid || !beneficiary"
+            >
+              <mat-progress-spinner
+                *ngIf="submitLoading"
+                diameter="18"
+                mode="indeterminate"
+                class="btn-spinner"
+              ></mat-progress-spinner>
+              <mat-icon *ngIf="!submitLoading">send</mat-icon>
+              {{ submitLoading ? 'Processing...' : 'Send Transfer' }}
+            </button>
+          </div>
         </div>
 
         <div *ngIf="errorMessage" class="alert alert-danger m-t-3">
@@ -126,10 +197,11 @@
 
     <mat-card-content class="b-t-1">
       <div class="history-loading" *ngIf="historyLoading">
-        <img src="./assets/images/loading.gif" alt="Loading..." style="width: 26px; height: 26px;" />
+        <mat-progress-spinner diameter="26" mode="indeterminate"></mat-progress-spinner>
       </div>
 
       <div class="history-empty" *ngIf="!historyLoading && history.length === 0">
+        <mat-icon class="empty-icon">receipt_long</mat-icon>
         No transfers yet. Your history will appear here.
       </div>
 
@@ -137,7 +209,6 @@
         <thead>
           <tr>
             <th>Counterparty</th>
-            <th>Reference</th>
             <th>Amount</th>
             <th>Status</th>
             <th>Date</th>
@@ -146,20 +217,19 @@
         <tbody>
           <tr *ngFor="let item of history">
             <td>
-              <span class="direction-badge" [ngClass]="item.direction">
-                {{ item.direction === 'credit' ? '↓' : '↑' }}
+              <span class="direction-badge" [ngClass]="isOutgoing(item) ? 'debit' : 'credit'">
+                {{ isOutgoing(item) ? '↑' : '↓' }}
               </span>
-              {{ item.counterpartyName }}
-              <span class="handle">&#64;{{ item.counterpartyUsername }}</span>
+              {{ counterpartyName(item) }}
+              <span class="handle">{{ counterpartyEmail(item) }}</span>
             </td>
-            <td class="ref-cell">{{ item.reference }}</td>
-            <td [ngClass]="item.direction === 'credit' ? 'amount-credit' : 'amount-debit'">
-              {{ item.direction === 'credit' ? '+' : '-' }}{{ item.amount | number: '1.2-2' }}
+            <td [ngClass]="isOutgoing(item) ? 'amount-debit' : 'amount-credit'">
+              {{ isOutgoing(item) ? '-' : '+' }}{{ item.amount | number: '1.2-2' }}
             </td>
             <td>
-              <span class="status-pill" [ngClass]="item.status">{{ item.status }}</span>
+              <span class="status-pill" [ngClass]="statusClass(item)">{{ item.status }}</span>
             </td>
-            <td>{{ item.createdAt | date: 'medium' }}</td>
+            <td>{{ historyDate(item) | date: 'medium' }}</td>
           </tr>
         </tbody>
       </table>
