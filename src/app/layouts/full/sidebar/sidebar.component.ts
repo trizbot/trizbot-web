@@ -21,8 +21,6 @@ import { TranslateModule } from '@ngx-translate/core';
 
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
-
-
 @Component({
   selector: 'app-sidebar',
   imports: [BrandingComponent, TablerIconsModule, MaterialModule, RouterModule,CommonModule],
