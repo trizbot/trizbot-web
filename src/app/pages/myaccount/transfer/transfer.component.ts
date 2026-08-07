@@ -223,13 +223,37 @@ export class TransferComponent implements OnInit, OnDestroy {
     this.historyLoading = true;
     this.transferService.getTransferHistory().subscribe({
       next: (res) => {
-        this.history = res;
+        this.history = this.normalizeHistoryResponse(res);
         this.historyLoading = false;
       },
       error: () => {
+        this.history = [];
         this.historyLoading = false;
       },
     });
+  }
+
+  /**
+   * The history endpoint has been observed returning a bare array in some
+   * environments and a wrapped payload (e.g. `{ data: [...] }`) in others.
+   * Normalizing here means the template's `history.length` checks never see
+   * `undefined` and silently render nothing — pin down the real shape on the
+   * backend and this can be simplified back to `res as TransferHistoryItem[]`.
+   */
+  private normalizeHistoryResponse(res: unknown): TransferHistoryItem[] {
+    if (Array.isArray(res)) {
+      return res as TransferHistoryItem[];
+    }
+    if (res && typeof res === 'object') {
+      const candidate = res as Record<string, unknown>;
+      for (const key of ['data', 'transfers', 'history', 'items', 'results']) {
+        if (Array.isArray(candidate[key])) {
+          return candidate[key] as TransferHistoryItem[];
+        }
+      }
+    }
+    console.warn('Unexpected transfer history response shape:', res);
+    return [];
   }
 
   /** Initials for the avatar circle. Falls back to a generic mark if the API omitted name fields. */

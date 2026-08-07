@@ -4,7 +4,7 @@ import { Router } from '@angular/router';
 
 import { Observable } from 'rxjs';
 import { environment } from '../../../../environments/environment';
-import { BeneficiaryLookupResBody, TransferHistoryItem, TransferReqBody, TransferResBody } from './transfer.type';
+import { BeneficiaryLookupResBody, TransferReqBody, TransferResBody } from './transfer.type';
 
 @Injectable({
   providedIn: 'root',
@@ -23,7 +23,9 @@ export class TransferService {
     return this.http.post<TransferResBody>(`${environment.apiBaseUrl}/transfer/send`, payload);
   }
 
-  getTransferHistory(): Observable<TransferHistoryItem[]> {
-    return this.http.get<TransferHistoryItem[]>(`${environment.apiBaseUrl}/transfer/history`);
+
+
+  getTransferHistory(): Observable<unknown> {
+    return this.http.get<unknown>(`${environment.apiBaseUrl}/transfer/history`);
   }
 }
