@@ -1,5 +1,3 @@
-// p2p.model.ts
-
 export enum P2POrderType {
   Buy = 'Buy',
   Sell = 'Sell',
@@ -111,18 +109,40 @@ export const SUPPORTED_COINS: string[] = [
 export const SUPPORTED_FIAT: string[] = ['NGN', 'USD', 'EUR', 'GBP', 'GHS', 'KES'];
 
 
+function extractId(raw: any): string {
+  if (!raw) return '';
+  if (typeof raw === 'string') return raw;
+  if (typeof raw === 'object' && raw.$oid) return raw.$oid;
+  return String(raw);
+}
+
+function extractDate(raw: any): string {
+  if (!raw) return '';
+  if (typeof raw === 'string') return raw;
+  if (typeof raw === 'object' && raw.$date) return raw.$date;
+  return String(raw);
+}
+
+function placeholderName(id?: string): string {
+  return id ? `Trader ${id.slice(-6).toUpperCase()}` : 'Merchant';
+}
+
 
 export function normalizeMerchant(raw: any, fallbackId?: string): P2PMerchant {
-  if (raw && typeof raw === 'object') {
+  const nested = raw && typeof raw === 'object' ? raw.merchant : null;
+  const source = nested && typeof nested === 'object' ? nested : raw;
+
+  if (source && typeof source === 'object' && (source.username || source.name)) {
     return {
-      id: raw.id || raw._id || fallbackId || '',
-      username: raw.username || raw.name || placeholderName(fallbackId),
-      avatarUrl: raw.avatarUrl ?? null,
-      isVerified: !!raw.isVerified,
-      totalTrades: raw.totalTrades ?? 0,
-      completionRate: raw.completionRate ?? 0,
+      id: extractId(source.id || source._id) || fallbackId || '',
+      username: source.username || source.name || placeholderName(fallbackId),
+      avatarUrl: source.avatarUrl ?? null,
+      isVerified: !!source.isVerified,
+      totalTrades: source.totalTrades ?? 0,
+      completionRate: source.completionRate ?? 0,
     };
   }
+
   return {
     id: fallbackId || '',
     username: placeholderName(fallbackId),
@@ -133,13 +153,10 @@ export function normalizeMerchant(raw: any, fallbackId?: string): P2PMerchant {
   };
 }
 
-function placeholderName(id?: string): string {
-  return id ? `Trader ${id.slice(-6).toUpperCase()}` : 'Merchant';
-}
-
 export function normalizeOrder(raw: any): P2POrder {
+  const traderId = extractId(raw.traderId);
   return {
-    id: raw.id || raw._id,
+    id: extractId(raw.id || raw._id),
     type: raw.type,
     coin: raw.coin,
     fiatCurrency: raw.fiatCurrency,
@@ -152,23 +169,23 @@ export function normalizeOrder(raw: any): P2POrder {
     terms: raw.terms,
     paymentWindowMinutes: raw.paymentWindowMinutes,
     status: raw.status,
-    merchant: normalizeMerchant(raw.merchant, raw.traderId),
-    createdAt: raw.createdAt,
+    merchant: normalizeMerchant(raw, traderId),
+    createdAt: extractDate(raw.createdAt),
   };
 }
 
 export function normalizeTrade(raw: any): P2PTrade {
   return {
-    id: raw.id || raw._id,
+    id: extractId(raw.id || raw._id),
     order: normalizeOrder(raw.order || {}),
-    buyer: normalizeMerchant(raw.buyer, raw.buyerId),
-    seller: normalizeMerchant(raw.seller, raw.sellerId),
+    buyer: normalizeMerchant(raw.buyer, extractId(raw.buyerId)),
+    seller: normalizeMerchant(raw.seller, extractId(raw.sellerId)),
     isBuyer: !!raw.isBuyer,
     coinAmount: raw.coinAmount,
     fiatAmount: raw.fiatAmount,
     paymentMethod: raw.paymentMethod,
     status: raw.status,
-    paymentDeadline: raw.paymentDeadline,
-    createdAt: raw.createdAt,
+    paymentDeadline: raw.paymentDeadline ? extractDate(raw.paymentDeadline) : undefined,
+    createdAt: extractDate(raw.createdAt),
   };
 }
