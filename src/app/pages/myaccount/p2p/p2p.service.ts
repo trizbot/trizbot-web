@@ -2,6 +2,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 
 import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { environment } from '../../../../environments/environment';
 import {
   CreateOrderReqBody,
@@ -9,7 +10,14 @@ import {
   ListOrdersParams,
   P2POrder,
   P2PTrade,
+  normalizeOrder,
+  normalizeTrade,
 } from './p2p.model';
+
+interface ApiEnvelope<T> {
+  message: string;
+  data: T;
+}
 
 @Injectable({
   providedIn: 'root',
@@ -29,19 +37,27 @@ export class P2pService {
     if (params.coin) httpParams = httpParams.set('coin', params.coin);
     if (params.fiatCurrency) httpParams = httpParams.set('fiatCurrency', params.fiatCurrency);
 
-    return this.http.get<P2POrder[]>(`${this.base}/orders`, { params: httpParams });
+    return this.http
+      .get<ApiEnvelope<any[]> | any[]>(`${this.base}/orders`, { params: httpParams })
+      .pipe(map((res) => this.unwrap(res).map(normalizeOrder)));
   }
 
   myOrders(): Observable<P2POrder[]> {
-    return this.http.get<P2POrder[]>(`${this.base}/orders/mine`);
+    return this.http
+      .get<ApiEnvelope<any[]> | any[]>(`${this.base}/orders/mine`)
+      .pipe(map((res) => this.unwrap(res).map(normalizeOrder)));
   }
 
   createOrder(payload: CreateOrderReqBody): Observable<P2POrder> {
-    return this.http.post<P2POrder>(`${this.base}/orders`, payload);
+    return this.http
+      .post<ApiEnvelope<any> | any>(`${this.base}/orders`, payload)
+      .pipe(map((res) => normalizeOrder(this.unwrapOne(res))));
   }
 
   cancelOrder(orderId: string): Observable<P2POrder> {
-    return this.http.post<P2POrder>(`${this.base}/orders/cancel`, { id: orderId });
+    return this.http
+      .post<ApiEnvelope<any> | any>(`${this.base}/orders/cancel`, { id: orderId })
+      .pipe(map((res) => normalizeOrder(this.unwrapOne(res))));
   }
 
   // ---------------------------------------------------------------------
@@ -49,22 +65,47 @@ export class P2pService {
   // ---------------------------------------------------------------------
 
   myTrades(): Observable<P2PTrade[]> {
-    return this.http.get<P2PTrade[]>(`${this.base}/trades/mine`);
+    return this.http
+      .get<ApiEnvelope<any[]> | any[]>(`${this.base}/trades/mine`)
+      .pipe(map((res) => this.unwrap(res).map(normalizeTrade)));
   }
 
   initiateTrade(payload: InitiateTradeReqBody): Observable<P2PTrade> {
-    return this.http.post<P2PTrade>(`${this.base}/trades`, payload);
+    return this.http
+      .post<ApiEnvelope<any> | any>(`${this.base}/trades`, payload)
+      .pipe(map((res) => normalizeTrade(this.unwrapOne(res))));
   }
 
   markPaid(tradeId: string): Observable<P2PTrade> {
-    return this.http.post<P2PTrade>(`${this.base}/trades/mark-paid`, { tradeId });
+    return this.http
+      .post<ApiEnvelope<any> | any>(`${this.base}/trades/mark-paid`, { tradeId })
+      .pipe(map((res) => normalizeTrade(this.unwrapOne(res))));
   }
 
   releaseTrade(tradeId: string, transactionPin: string): Observable<P2PTrade> {
-    return this.http.post<P2PTrade>(`${this.base}/trades/release`, { tradeId, transactionPin });
+    return this.http
+      .post<ApiEnvelope<any> | any>(`${this.base}/trades/release`, { tradeId, transactionPin })
+      .pipe(map((res) => normalizeTrade(this.unwrapOne(res))));
   }
 
   disputeTrade(tradeId: string, reason: string): Observable<P2PTrade> {
-    return this.http.post<P2PTrade>(`${this.base}/trades/dispute`, { tradeId, reason });
+    return this.http
+      .post<ApiEnvelope<any> | any>(`${this.base}/trades/dispute`, { tradeId, reason })
+      .pipe(map((res) => normalizeTrade(this.unwrapOne(res))));
+  }
+
+  // ---------------------------------------------------------------------
+  // Envelope handling — backend sometimes wraps in { message, data }
+  // (as your /orders sample shows) and sometimes may return the array
+  // directly. Handle both so a backend tweak doesn't break the page.
+  // ---------------------------------------------------------------------
+
+  private unwrap<T>(res: ApiEnvelope<T[]> | T[]): T[] {
+    if (Array.isArray(res)) return res;
+    return res?.data ?? [];
+  }
+
+  private unwrapOne<T>(res: ApiEnvelope<T> | T): T {
+    return (res as ApiEnvelope<T>)?.data !== undefined ? (res as ApiEnvelope<T>).data : (res as T);
   }
 }

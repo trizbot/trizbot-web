@@ -5,7 +5,6 @@ import { RouterModule } from '@angular/router';
 
 import { MatDialog } from '@angular/material/dialog';
 import { MatTabsModule } from '@angular/material/tabs';
-import { MatAutocompleteModule } from '@angular/material/autocomplete';
 
 import { MaterialModule } from '../../../material.module';
 import { SharedService } from '../../../shared/shared.service';
@@ -35,7 +34,6 @@ type MainTab = 'market' | 'my-orders' | 'my-trades';
     RouterModule,
     MaterialModule,
     MatTabsModule,
-    MatAutocompleteModule,
     FormsModule,
     ReactiveFormsModule,
   ],
@@ -83,6 +81,7 @@ export class P2pComponent implements OnInit {
   isSuperEntityType: boolean;
   isLoading = true;
 
+  // Dropdown source lists for the Coin / Currency filters (mat-select).
   readonly coinSuggestions: string[] = [
     'USDT', 'USDC', 'BTC', 'ETH', 'BNB', 'SOL', 'XRP', 'TON', 'TRX', 'DOGE',
     'ADA', 'MATIC', 'LTC', 'DOT', 'SHIB', 'AVAX', 'LINK', 'ATOM', 'BCH', 'ETC',
@@ -100,9 +99,11 @@ export class P2pComponent implements OnInit {
   // ---------------------------------------------------------------------
   marketType: P2POrderType = P2POrderType.Buy;
 
+  // Default coin/currency the market opens on. Both are now plain
+  // dropdown selections (mat-select) rather than free-text + autocomplete.
   filterForm = new FormGroup({
-    coin: new FormControl('USDT'),
-    fiatCurrency: new FormControl('NGN'),
+    coin: new FormControl<string>('USDT'),
+    fiatCurrency: new FormControl<string>('NGN'),
     paymentMethod: new FormControl<string>(''),
     amount: new FormControl<number | null>(null),
   });
@@ -213,8 +214,8 @@ export class P2pComponent implements OnInit {
     this.p2pService
       .listOrders({
         type: this.marketType,
-        coin: coin?.trim() ? coin.trim().toUpperCase() : undefined,
-        fiatCurrency: fiatCurrency?.trim() ? fiatCurrency.trim().toUpperCase() : undefined,
+        coin: coin ? coin.toUpperCase() : undefined,
+        fiatCurrency: fiatCurrency ? fiatCurrency.toUpperCase() : undefined,
       })
       .subscribe({
         next: (res) => {
@@ -222,6 +223,7 @@ export class P2pComponent implements OnInit {
           this.ordersLoading = false;
         },
         error: () => {
+          this.orders = [];
           this.ordersLoading = false;
         },
       });
@@ -235,18 +237,6 @@ export class P2pComponent implements OnInit {
       if (amount != null && amount > 0 && (amount < o.minLimit || amount > o.maxLimit)) return false;
       return true;
     });
-  }
-
-  filteredCoinOptions(): string[] {
-    const v = (this.filterForm.get('coin')?.value || '').toString().trim().toUpperCase();
-    if (!v) return this.coinSuggestions;
-    return this.coinSuggestions.filter((c) => c.includes(v));
-  }
-
-  filteredFiatOptions(): string[] {
-    const v = (this.filterForm.get('fiatCurrency')?.value || '').toString().trim().toUpperCase();
-    if (!v) return this.fiatSuggestions;
-    return this.fiatSuggestions.filter((c) => c.includes(v));
   }
 
   // The action verb on each row is the OPPOSITE of the ad's type:
@@ -354,5 +344,13 @@ export class P2pComponent implements OnInit {
 
   isActiveTrade(trade: P2PTrade): boolean {
     return trade.status === TradeStatus.PendingPayment || trade.status === TradeStatus.Paid;
+  }
+
+  trackByOrderId(_index: number, order: P2POrder): string {
+    return order.id;
+  }
+
+  trackByTradeId(_index: number, trade: P2PTrade): string {
+    return trade.id;
   }
 }

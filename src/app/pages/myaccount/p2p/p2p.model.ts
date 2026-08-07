@@ -97,7 +97,7 @@ export interface InitiateTradeReqBody {
 export const PAYMENT_METHODS: string[] = [
   'Bank Transfer',
   'Opay',
-  'Solidpyco', 
+  'Solidpyco',
   'PalmPay',
   'Kuda',
   'Moniepoint',
@@ -105,10 +105,70 @@ export const PAYMENT_METHODS: string[] = [
 
 export const PAYMENT_WINDOW_OPTIONS: number[] = [15, 30, 45, 60, 90, 120];
 
-// Fallback suggestion lists — the P2P page passes its own (larger) lists
-// into the create-order dialog; these only apply if it's ever opened
-// without that dialog data.
 export const SUPPORTED_COINS: string[] = [
   'USDT', 'USDC', 'BTC', 'ETH', 'BNB', 'SOL', 'XRP', 'TON', 'TRX', 'DOGE',
 ];
 export const SUPPORTED_FIAT: string[] = ['NGN', 'USD', 'EUR', 'GBP', 'GHS', 'KES'];
+
+
+
+export function normalizeMerchant(raw: any, fallbackId?: string): P2PMerchant {
+  if (raw && typeof raw === 'object') {
+    return {
+      id: raw.id || raw._id || fallbackId || '',
+      username: raw.username || raw.name || placeholderName(fallbackId),
+      avatarUrl: raw.avatarUrl ?? null,
+      isVerified: !!raw.isVerified,
+      totalTrades: raw.totalTrades ?? 0,
+      completionRate: raw.completionRate ?? 0,
+    };
+  }
+  return {
+    id: fallbackId || '',
+    username: placeholderName(fallbackId),
+    avatarUrl: null,
+    isVerified: false,
+    totalTrades: 0,
+    completionRate: 0,
+  };
+}
+
+function placeholderName(id?: string): string {
+  return id ? `Trader ${id.slice(-6).toUpperCase()}` : 'Merchant';
+}
+
+export function normalizeOrder(raw: any): P2POrder {
+  return {
+    id: raw.id || raw._id,
+    type: raw.type,
+    coin: raw.coin,
+    fiatCurrency: raw.fiatCurrency,
+    pricePerUnit: raw.pricePerUnit,
+    totalAmount: raw.totalAmount,
+    availableAmount: raw.availableAmount,
+    minLimit: raw.minLimit,
+    maxLimit: raw.maxLimit,
+    paymentMethods: raw.paymentMethods || [],
+    terms: raw.terms,
+    paymentWindowMinutes: raw.paymentWindowMinutes,
+    status: raw.status,
+    merchant: normalizeMerchant(raw.merchant, raw.traderId),
+    createdAt: raw.createdAt,
+  };
+}
+
+export function normalizeTrade(raw: any): P2PTrade {
+  return {
+    id: raw.id || raw._id,
+    order: normalizeOrder(raw.order || {}),
+    buyer: normalizeMerchant(raw.buyer, raw.buyerId),
+    seller: normalizeMerchant(raw.seller, raw.sellerId),
+    isBuyer: !!raw.isBuyer,
+    coinAmount: raw.coinAmount,
+    fiatAmount: raw.fiatAmount,
+    paymentMethod: raw.paymentMethod,
+    status: raw.status,
+    paymentDeadline: raw.paymentDeadline,
+    createdAt: raw.createdAt,
+  };
+}

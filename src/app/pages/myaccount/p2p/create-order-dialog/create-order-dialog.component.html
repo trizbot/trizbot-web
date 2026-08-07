@@ -30,31 +30,17 @@
     <div>
       <mat-label class="f-w-600 m-b-8 d-block">Asset</mat-label>
       <mat-form-field appearance="outline" class="w-100">
-        <input
-          type="text"
-          matInput
-          formControlName="coin"
-          [matAutocomplete]="coinAuto"
-          placeholder="e.g. USDT"
-        />
-        <mat-autocomplete #coinAuto="matAutocomplete">
-          <mat-option *ngFor="let c of filteredCoinOptions()" [value]="c">{{ c }}</mat-option>
-        </mat-autocomplete>
+        <mat-select formControlName="coin">
+          <mat-option *ngFor="let c of coinSuggestions" [value]="c">{{ c }}</mat-option>
+        </mat-select>
       </mat-form-field>
     </div>
     <div>
       <mat-label class="f-w-600 m-b-8 d-block">Fiat currency</mat-label>
       <mat-form-field appearance="outline" class="w-100">
-        <input
-          type="text"
-          matInput
-          formControlName="fiatCurrency"
-          [matAutocomplete]="fiatAuto"
-          placeholder="e.g. NGN"
-        />
-        <mat-autocomplete #fiatAuto="matAutocomplete">
-          <mat-option *ngFor="let f of filteredFiatOptions()" [value]="f">{{ f }}</mat-option>
-        </mat-autocomplete>
+        <mat-select formControlName="fiatCurrency">
+          <mat-option *ngFor="let f of fiatSuggestions" [value]="f">{{ f }}</mat-option>
+        </mat-select>
       </mat-form-field>
     </div>
   </div>

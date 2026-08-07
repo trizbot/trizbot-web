@@ -1,7 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, Inject } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 
 import { MaterialModule } from '../../../../material.module';
@@ -29,7 +28,6 @@ export interface CreateOrderDialogData {
     ReactiveFormsModule,
     MaterialModule,
     MatDialogModule,
-    MatAutocompleteModule,
   ],
   templateUrl: './create-order-dialog.component.html',
   styleUrls: ['./create-order-dialog.component.scss'],
@@ -90,18 +88,6 @@ export class CreateOrderDialogComponent {
     return this.form.value.type === P2POrderType.Sell;
   }
 
-  filteredCoinOptions(): string[] {
-    const v = (this.form.get('coin')?.value || '').toString().trim().toUpperCase();
-    if (!v) return this.coinSuggestions;
-    return this.coinSuggestions.filter((c) => c.includes(v));
-  }
-
-  filteredFiatOptions(): string[] {
-    const v = (this.form.get('fiatCurrency')?.value || '').toString().trim().toUpperCase();
-    if (!v) return this.fiatSuggestions;
-    return this.fiatSuggestions.filter((c) => c.includes(v));
-  }
-
   get limitError(): string | null {
     const { minLimit, maxLimit, totalAmount, pricePerUnit } = this.form.getRawValue();
     if (minLimit && maxLimit && minLimit > maxLimit) {
@@ -117,11 +103,6 @@ export class CreateOrderDialogComponent {
   }
 
   submit(): void {
-    this.form.get('coin')?.setValue((this.form.value.coin || '').toString().trim().toUpperCase());
-    this.form
-      .get('fiatCurrency')
-      ?.setValue((this.form.value.fiatCurrency || '').toString().trim().toUpperCase());
-
     if (this.form.invalid || this.limitError) {
       this.form.markAllAsTouched();
       return;

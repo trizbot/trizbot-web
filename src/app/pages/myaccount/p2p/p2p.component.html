@@ -6,31 +6,21 @@
   <div class="p2p-header">
     <div>
       <h1 class="p2p-title">P2P Trading</h1>
-      <p class="p2p-subtitle">Buy and sell crypto directly with verified merchants — any coin, any currency.</p>
+      <p class="p2p-subtitle">Buy and sell crypto directly with verified traders — any coin, any currency.</p>
     </div>
-    <button
-      mat-flat-button
-      color="primary"
-      class="post-ad-btn fw-bold"
-      type="button"
-      (click)="openCreateOrderDialog(marketType)"
-    >
-      <mat-icon>add</mat-icon>
-      Post New Ad
-    </button>
   </div>
 
   <!-- ===================================================================== -->
   <!-- VIEW TABS -->
   <!-- ===================================================================== -->
-  <div class="view-tabs">
-    <button class="view-tab-btn" [class.active]="activeTab === 'market'" (click)="selectTab('market')">
+  <div class="view-tabs" role="tablist">
+    <button class="view-tab-btn" [class.active]="activeTab === 'market'" (click)="selectTab('market')" role="tab">
       Market
     </button>
-    <button class="view-tab-btn" [class.active]="activeTab === 'my-orders'" (click)="selectTab('my-orders')">
+    <button class="view-tab-btn" [class.active]="activeTab === 'my-orders'" (click)="selectTab('my-orders')" role="tab">
       My Ads
     </button>
-    <button class="view-tab-btn" [class.active]="activeTab === 'my-trades'" (click)="selectTab('my-trades')">
+    <button class="view-tab-btn" [class.active]="activeTab === 'my-trades'" (click)="selectTab('my-trades')" role="tab">
       My Trades
     </button>
   </div>
@@ -61,36 +51,20 @@
       </div>
 
       <form class="filters-row" [formGroup]="filterForm">
-        <!-- Coin: free entry, autocomplete is just a suggestion list -->
         <mat-form-field appearance="outline" class="filter-field coin-field">
           <mat-label>Coin</mat-label>
-          <input
-            type="text"
-            matInput
-            formControlName="coin"
-            [matAutocomplete]="coinAuto"
-            (blur)="loadOrders()"
-            placeholder="Any coin, e.g. BTC"
-          />
-          <mat-autocomplete #coinAuto="matAutocomplete" (optionSelected)="loadOrders()">
-            <mat-option *ngFor="let c of filteredCoinOptions()" [value]="c">{{ c }}</mat-option>
-          </mat-autocomplete>
+          <mat-select formControlName="coin" (selectionChange)="loadOrders()">
+            <mat-option value="">All coins</mat-option>
+            <mat-option *ngFor="let c of coinSuggestions" [value]="c">{{ c }}</mat-option>
+          </mat-select>
         </mat-form-field>
 
-        <!-- Fiat currency: free entry, autocomplete is just a suggestion list -->
         <mat-form-field appearance="outline" class="filter-field fiat-field">
           <mat-label>Currency</mat-label>
-          <input
-            type="text"
-            matInput
-            formControlName="fiatCurrency"
-            [matAutocomplete]="fiatAuto"
-            (blur)="loadOrders()"
-            placeholder="Any currency, e.g. USD"
-          />
-          <mat-autocomplete #fiatAuto="matAutocomplete" (optionSelected)="loadOrders()">
-            <mat-option *ngFor="let f of filteredFiatOptions()" [value]="f">{{ f }}</mat-option>
-          </mat-autocomplete>
+          <mat-select formControlName="fiatCurrency" (selectionChange)="loadOrders()">
+            <mat-option value="">All currencies</mat-option>
+            <mat-option *ngFor="let f of fiatSuggestions" [value]="f">{{ f }}</mat-option>
+          </mat-select>
         </mat-form-field>
 
         <mat-form-field appearance="outline" class="filter-field method-filter">
@@ -116,24 +90,28 @@
     </div>
 
     <div class="order-empty" *ngIf="!ordersLoading && filteredOrders().length === 0">
-      No {{ marketType === P2POrderType.Buy ? 'buy' : 'sell' }} ads match your filters right now.
+      <span class="order-empty-title">No {{ marketType === P2POrderType.Buy ? 'buy' : 'sell' }} ads match your filters</span>
+      <span class="order-empty-sub">Try widening the coin, currency, or amount you're searching for.</span>
     </div>
 
     <div class="order-list" *ngIf="!ordersLoading && filteredOrders().length > 0">
-      <div class="order-row" *ngFor="let order of filteredOrders()">
-
+      <div
+        class="order-row"
+        [ngClass]="marketType === P2POrderType.Buy ? 'tick-buy' : 'tick-sell'"
+        *ngFor="let order of filteredOrders(); trackBy: trackByOrderId"
+      >
         <div class="merchant-col">
           <div class="merchant-avatar">
             <img *ngIf="order.merchant.avatarUrl" [src]="order.merchant.avatarUrl" alt="" />
-            <span *ngIf="!order.merchant.avatarUrl">{{ order.merchant.username.charAt(0).toUpperCase() }}</span>
+            <span *ngIf="!order.merchant.avatarUrl">{{ (order.merchant.username || 'M').charAt(0).toUpperCase() }}</span>
           </div>
           <div class="merchant-meta">
             <div class="merchant-name">
-              {{ order.merchant.username }}
+              {{ order.merchant.username || 'Merchant' }}
               <mat-icon *ngIf="order.merchant.isVerified" class="verified-icon">verified</mat-icon>
             </div>
             <div class="merchant-stats">
-              {{ order.merchant.totalTrades }} trades &middot; {{ order.merchant.completionRate }}% completion
+              {{ order.merchant.totalTrades || 0 }} trades &middot; {{ order.merchant.completionRate || 0 }}% completion
             </div>
           </div>
         </div>
@@ -156,7 +134,7 @@
 
         <div class="methods-col">
           <span class="method-chip" *ngFor="let m of order.paymentMethods.slice(0, 2)">{{ m }}</span>
-          <span class="method-chip" *ngIf="order.paymentMethods.length > 2">
+          <span class="method-chip more" *ngIf="order.paymentMethods.length > 2">
             +{{ order.paymentMethods.length - 2 }}
           </span>
         </div>
@@ -181,17 +159,42 @@
   <!-- ===================================================================== -->
   <ng-container *ngIf="activeTab === 'my-orders'">
 
+    <div class="my-ads-toolbar">
+      <div>
+        <h2 class="panel-title">My Ads</h2>
+        <p class="panel-subtitle">Ads you've posted for other traders to fill.</p>
+      </div>
+      <button
+        mat-flat-button
+        color="primary"
+        class="post-ad-btn fw-bold"
+        type="button"
+        (click)="openCreateOrderDialog(P2POrderType.Buy)"
+      >
+        <mat-icon>add</mat-icon>
+        Post New Ad
+      </button>
+    </div>
+
     <div class="order-loading" *ngIf="myOrdersLoading">
       <img src="./assets/images/loading.gif" alt="Loading..." style="width: 26px; height: 26px;" />
     </div>
 
     <div class="order-empty" *ngIf="!myOrdersLoading && myOrders.length === 0">
-      You haven't posted any ads yet — any coin, any currency, your call.
+      <span class="order-empty-title">You haven't posted any ads yet</span>
+      <span class="order-empty-sub">Post a buy or sell ad — any coin, any currency, your call.</span>
+      <button mat-stroked-button color="primary" class="fw-bold" type="button" (click)="openCreateOrderDialog(P2POrderType.Buy)">
+        <mat-icon>add</mat-icon>
+        Post your first ad
+      </button>
     </div>
 
     <div class="order-list" *ngIf="!myOrdersLoading && myOrders.length > 0">
-      <div class="order-row my-ad-row" *ngFor="let order of myOrders">
-
+      <div
+        class="order-row my-ad-row"
+        [ngClass]="order.type === P2POrderType.Buy ? 'tick-buy' : 'tick-sell'"
+        *ngFor="let order of myOrders; trackBy: trackByOrderId"
+      >
         <span class="ad-type-badge" [ngClass]="order.type.toLowerCase()">{{ order.type }}</span>
 
         <div class="price-col">
@@ -239,12 +242,17 @@
     </div>
 
     <div class="order-empty" *ngIf="!myTradesLoading && myTrades.length === 0">
-      No trades yet. Start one from the Market tab.
+      <span class="order-empty-title">No trades yet</span>
+      <span class="order-empty-sub">Start one from the Market tab.</span>
     </div>
 
     <div class="order-list" *ngIf="!myTradesLoading && myTrades.length > 0">
-      <div class="order-row trade-row" [class.active-row]="isActiveTrade(trade)" *ngFor="let trade of myTrades" (click)="openTrade(trade)">
-
+      <div
+        class="order-row trade-row"
+        [class.active-row]="isActiveTrade(trade)"
+        *ngFor="let trade of myTrades; trackBy: trackByTradeId"
+        (click)="openTrade(trade)"
+      >
         <div class="merchant-col">
           <div class="merchant-avatar">
             <span>{{ (trade.isBuyer ? trade.seller.username : trade.buyer.username).charAt(0).toUpperCase() }}</span>

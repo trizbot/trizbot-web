@@ -1,179 +1,268 @@
-.p2p-wrapper {
-  max-width: 1160px;
-  margin: 0 auto;
-  padding: 8px 0 40px;
+// ---------------------------------------------------------------------
+// Design tokens
+// ---------------------------------------------------------------------
+:host {
+  --p2p-bg: #f5f7fb;
+  --p2p-surface: #ffffff;
+  --p2p-surface-alt: #f0f2f8;
+  --p2p-border: #e4e7f0;
+  --p2p-ink: #151826;
+  --p2p-ink-muted: #6b7280;
+  --p2p-brand: #2a3aa0;
+  --p2p-brand-ink: #1d2670;
+  --p2p-buy: #12875b;
+  --p2p-buy-bg: #e7f6ef;
+  --p2p-sell: #c23b3b;
+  --p2p-sell-bg: #fbeaea;
+  --p2p-radius: 12px;
+
+  --font-display: 'Manrope', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'IBM Plex Mono', 'Roboto Mono', ui-monospace, SFMono-Regular, monospace;
+
+  display: block;
+  font-family: var(--font-body);
+  color: var(--p2p-ink);
 }
 
-/* ─── HEADER ──────────────────────────────────────────────── */
+.p2p-wrapper {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 28px 20px 64px;
+}
+
+// ---------------------------------------------------------------------
+// Header
+// ---------------------------------------------------------------------
 .p2p-header {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
-  flex-wrap: wrap;
   gap: 16px;
   margin-bottom: 24px;
 }
 
 .p2p-title {
-  font-size: 1.8rem;
+  font-family: var(--font-display);
+  font-size: 26px;
   font-weight: 800;
-  margin: 0;
-  color: #14141f;
+  letter-spacing: -0.01em;
+  margin: 0 0 4px;
+  color: var(--p2p-ink);
 }
 
 .p2p-subtitle {
-  font-size: 0.95rem;
-  color: rgba(0, 0, 0, 0.55);
-  margin: 4px 0 0;
+  margin: 0;
+  font-size: 14px;
+  color: var(--p2p-ink-muted);
+}
+
+// ---------------------------------------------------------------------
+// Tabs
+// ---------------------------------------------------------------------
+.view-tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--p2p-border);
+  margin-bottom: 20px;
+}
+
+.view-tab-btn {
+  appearance: none;
+  background: none;
+  border: none;
+  padding: 10px 4px;
+  margin-right: 24px;
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--p2p-ink-muted);
+  cursor: pointer;
+  position: relative;
+  transition: color 0.15s ease;
+
+  &::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -1px;
+    height: 2px;
+    background: var(--p2p-brand);
+    transform: scaleX(0);
+    transition: transform 0.15s ease;
+  }
+
+  &:hover {
+    color: var(--p2p-ink);
+  }
+
+  &.active {
+    color: var(--p2p-brand-ink);
+
+    &::after {
+      transform: scaleX(1);
+    }
+  }
+}
+
+// ---------------------------------------------------------------------
+// Market controls
+// ---------------------------------------------------------------------
+.market-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.buy-sell-toggle {
+  display: inline-flex;
+  background: var(--p2p-surface-alt);
+  border-radius: 999px;
+  padding: 4px;
+  flex-shrink: 0;
+}
+
+.toggle-btn {
+  appearance: none;
+  border: none;
+  background: none;
+  padding: 8px 22px;
+  border-radius: 999px;
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  color: var(--p2p-ink-muted);
+  transition: background 0.15s ease, color 0.15s ease;
+
+  &.buy.active {
+    background: var(--p2p-buy);
+    color: #fff;
+  }
+
+  &.sell.active {
+    background: var(--p2p-sell);
+    color: #fff;
+  }
+}
+
+.filters-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  flex: 1;
+}
+
+.filter-field {
+  flex: 1 1 140px;
+  min-width: 120px;
+
+  ::ng-deep .mat-mdc-text-field-wrapper {
+    background: var(--p2p-surface);
+  }
+}
+
+.amount-suffix {
+  font-size: 12px;
+  color: var(--p2p-ink-muted);
+  padding-right: 4px;
+}
+
+// ---------------------------------------------------------------------
+// My Ads toolbar
+// ---------------------------------------------------------------------
+.my-ads-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.panel-title {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 800;
+  margin: 0 0 2px;
+}
+
+.panel-subtitle {
+  margin: 0;
+  font-size: 13px;
+  color: var(--p2p-ink-muted);
 }
 
 .post-ad-btn {
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  border-radius: 10px !important;
 }
 
-/* ─── VIEW TABS ───────────────────────────────────────────── */
-.view-tabs {
-  display: flex;
-  gap: 4px;
-  border-bottom: 1px solid #e9ecef;
-  margin-bottom: 24px;
-}
-
-.view-tab-btn {
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 12px 18px;
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: rgba(0, 0, 0, 0.55);
-  border-bottom: 2px solid transparent;
-  transition: color 0.2s, border-color 0.2s;
-}
-
-.view-tab-btn:hover {
-  color: #14141f;
-}
-
-.view-tab-btn.active {
-  color: #3f51b5;
-  border-bottom-color: #3f51b5;
-}
-
-/* ─── MARKET CONTROLS ─────────────────────────────────────── */
-.market-controls {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 16px;
-  margin-bottom: 20px;
-}
-
-.buy-sell-toggle {
-  display: inline-flex;
-  background: #f1f3f5;
-  border-radius: 10px;
-  padding: 4px;
-  flex-shrink: 0;
-}
-
-.toggle-btn {
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 10px 24px;
-  font-size: 0.95rem;
-  font-weight: 700;
-  border-radius: 8px;
-  color: rgba(0, 0, 0, 0.55);
-  transition: all 0.2s;
-}
-
-.toggle-btn.buy.active {
-  background: #2e7d32;
-  color: #fff;
-  box-shadow: 0 2px 8px rgba(46, 125, 50, 0.3);
-}
-
-.toggle-btn.sell.active {
-  background: #c62828;
-  color: #fff;
-  box-shadow: 0 2px 8px rgba(198, 40, 40, 0.3);
-}
-
-/* Filter row — coin / currency / payment method / amount.
-   None of these fields restrict what can be typed; the coin and
-   currency inputs are plain text fields with an autocomplete of
-   suggestions layered on top. */
-.filters-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  align-items: flex-start;
-}
-
-.filter-field {
-  width: 150px;
-}
-
-.filter-field.coin-field,
-.filter-field.fiat-field {
-  width: 130px;
-}
-
-.filter-field.method-filter {
-  width: 190px;
-}
-
-.filter-field.amount-field {
-  width: 160px;
-}
-
-.amount-suffix {
-  font-size: 0.78rem;
-  font-weight: 700;
-  color: rgba(0, 0, 0, 0.45);
-  padding-left: 4px;
-}
-
-/* ─── ORDER LIST ──────────────────────────────────────────── */
-.order-loading,
-.order-empty {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 48px 0;
-  color: rgba(0, 0, 0, 0.5);
-  font-size: 0.95rem;
-}
-
+// ---------------------------------------------------------------------
+// Order / trade rows
+// ---------------------------------------------------------------------
 .order-list {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
 }
 
 .order-row {
+  position: relative;
   display: grid;
-  grid-template-columns: 2fr 1fr 1.6fr 1.6fr auto;
+  grid-template-columns: 2fr 1.1fr 1.4fr 1.4fr auto;
   align-items: center;
   gap: 16px;
-  background: #fff;
-  border: 1px solid #e9ecef;
-  border-radius: 12px;
-  padding: 18px 20px;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  background: var(--p2p-surface);
+  border: 1px solid var(--p2p-border);
+  border-radius: var(--p2p-radius);
+  padding: 16px 18px 16px 22px;
+
+  // Signature element: a colored ledger tick on the left edge that
+  // reads buy/sell at a glance, like a trading-order-book stripe.
+  &::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 10px;
+    bottom: 10px;
+    width: 4px;
+    border-radius: 3px;
+    background: var(--p2p-ink-muted);
+  }
+
+  &.tick-buy::before {
+    background: var(--p2p-buy);
+  }
+
+  &.tick-sell::before {
+    background: var(--p2p-sell);
+  }
 }
 
-.order-row:hover {
-  border-color: #c5cae9;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
+.my-ad-row {
+  grid-template-columns: auto 1.1fr 1.4fr auto auto;
 }
 
-/* Merchant column */
+.trade-row {
+  grid-template-columns: 2fr 1.2fr auto auto auto;
+  cursor: pointer;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+
+  &:hover {
+    border-color: var(--p2p-brand);
+  }
+
+  &.active-row {
+    border-color: var(--p2p-brand);
+    box-shadow: 0 0 0 1px var(--p2p-brand) inset;
+  }
+}
+
 .merchant-col {
   display: flex;
   align-items: center;
@@ -182,23 +271,25 @@
 }
 
 .merchant-avatar {
-  width: 40px;
-  height: 40px;
+  width: 38px;
+  height: 38px;
   border-radius: 50%;
-  background: #3f51b5;
-  color: #fff;
-  font-weight: 700;
+  background: var(--p2p-surface-alt);
+  color: var(--p2p-brand-ink);
   display: flex;
   align-items: center;
   justify-content: center;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 15px;
   flex-shrink: 0;
   overflow: hidden;
-}
 
-.merchant-avatar img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
 }
 
 .merchant-meta {
@@ -206,49 +297,50 @@
 }
 
 .merchant-name {
-  font-weight: 700;
-  font-size: 0.95rem;
-  color: #14141f;
   display: flex;
   align-items: center;
   gap: 4px;
-  white-space: nowrap;
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--p2p-ink);
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .verified-icon {
   font-size: 15px;
   width: 15px;
   height: 15px;
-  color: #2e7d32;
+  color: var(--p2p-brand);
 }
 
 .merchant-stats {
-  font-size: 0.8rem;
-  color: rgba(0, 0, 0, 0.5);
+  font-size: 12px;
+  color: var(--p2p-ink-muted);
   margin-top: 2px;
 }
 
-/* Price column */
 .price-col {
   display: flex;
   flex-direction: column;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
 }
 
 .price-val {
-  font-size: 1.15rem;
-  font-weight: 800;
-  color: #14141f;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--p2p-ink);
 }
 
 .price-currency {
-  font-size: 0.75rem;
-  color: rgba(0, 0, 0, 0.45);
-  font-weight: 600;
+  font-size: 11px;
+  color: var(--p2p-ink-muted);
+  font-family: var(--font-body);
+  margin-top: 2px;
 }
 
-/* Limit column */
 .limit-col {
   display: flex;
   flex-direction: column;
@@ -257,23 +349,21 @@
 
 .limit-row {
   display: flex;
-  flex-direction: column;
-  font-size: 0.82rem;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12.5px;
 }
 
 .limit-label {
-  color: rgba(0, 0, 0, 0.45);
-  font-size: 0.72rem;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
+  color: var(--p2p-ink-muted);
 }
 
 .limit-val {
-  font-weight: 600;
-  color: #14141f;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--p2p-ink);
 }
 
-/* Methods column */
 .methods-col {
   display: flex;
   flex-wrap: wrap;
@@ -281,133 +371,159 @@
 }
 
 .method-chip {
-  font-size: 0.75rem;
+  background: var(--p2p-surface-alt);
+  color: var(--p2p-ink);
+  font-size: 11.5px;
   font-weight: 600;
   padding: 4px 10px;
   border-radius: 999px;
-  background: #eef0ff;
-  color: #3f51b5;
-  white-space: nowrap;
+
+  &.more {
+    background: transparent;
+    color: var(--p2p-ink-muted);
+  }
 }
 
-/* Action column */
 .action-col {
   display: flex;
   justify-content: flex-end;
 }
 
 .trade-btn {
-  min-width: 120px;
+  border-radius: 8px !important;
+  min-width: 96px;
 }
 
-/* My Ads row — badge | price | limit | status | action */
-.order-row.my-ad-row {
-  grid-template-columns: 90px 1.2fr 1.8fr 120px auto;
-}
-
-/* Trade row — merchant | price | status | action | chevron */
-.order-row.trade-row {
-  grid-template-columns: 2fr 1.2fr 120px auto 20px;
-  cursor: pointer;
-}
-
-.order-row.trade-row.active-row {
-  border-color: #3f51b5;
-  box-shadow: 0 0 0 1px rgba(63, 81, 181, 0.15);
+.cancel-btn {
+  border-radius: 8px !important;
 }
 
 .ad-type-badge {
-  font-size: 0.72rem;
+  font-family: var(--font-display);
+  font-size: 12px;
   font-weight: 800;
-  letter-spacing: 0.06em;
+  padding: 5px 12px;
+  border-radius: 8px;
   text-transform: uppercase;
-  padding: 4px 10px;
-  border-radius: 999px;
-  width: fit-content;
+  letter-spacing: 0.03em;
+  justify-self: start;
 
   &.buy {
-    background: #e3f2e4;
-    color: #1b5e20;
+    background: var(--p2p-buy-bg);
+    color: var(--p2p-buy);
   }
 
   &.sell {
-    background: #fdeaea;
-    color: #b71c1c;
+    background: var(--p2p-sell-bg);
+    color: var(--p2p-sell);
   }
 }
 
 .status-pill {
-  display: inline-block;
-  padding: 4px 12px;
-  border-radius: 999px;
-  font-size: 0.75rem;
+  font-size: 11.5px;
   font-weight: 700;
-  text-transform: capitalize;
+  padding: 5px 12px;
+  border-radius: 999px;
+  text-align: center;
   width: fit-content;
+  justify-self: center;
+  text-transform: capitalize;
 
   &.active,
-  &.pending_payment {
-    background: rgba(237, 108, 2, 0.12);
-    color: #ed6c02;
+  &.paid {
+    background: var(--p2p-buy-bg);
+    color: var(--p2p-buy);
+  }
+
+  &.pendingpayment {
+    background: #fff4e0;
+    color: #b5750d;
   }
 
   &.completed,
   &.released {
-    background: rgba(46, 125, 50, 0.12);
-    color: #2e7d32;
+    background: var(--p2p-surface-alt);
+    color: var(--p2p-brand-ink);
   }
 
-  &.cancelled {
-    background: rgba(108, 117, 125, 0.14);
-    color: #6c757d;
+  &.cancelled,
+  &.disputed,
+  &.expired {
+    background: var(--p2p-sell-bg);
+    color: var(--p2p-sell);
   }
-
-  &.disputed {
-    background: rgba(198, 40, 40, 0.12);
-    color: #c62828;
-  }
-
-  &.paid {
-    background: rgba(63, 81, 181, 0.12);
-    color: #3f51b5;
-  }
-}
-
-.cancel-btn {
-  min-width: 96px;
 }
 
 .chevron {
-  color: rgba(0, 0, 0, 0.35);
-  justify-self: end;
+  color: var(--p2p-ink-muted);
 }
 
-/* ─── RESPONSIVE ──────────────────────────────────────────── */
-@media (max-width: 900px) {
+// ---------------------------------------------------------------------
+// Loading / empty states
+// ---------------------------------------------------------------------
+.order-loading {
+  display: flex;
+  justify-content: center;
+  padding: 40px 0;
+}
+
+.order-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  text-align: center;
+  padding: 48px 20px;
+  border: 1px dashed var(--p2p-border);
+  border-radius: var(--p2p-radius);
+  background: var(--p2p-surface);
+}
+
+.order-empty-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--p2p-ink);
+}
+
+.order-empty-sub {
+  font-size: 13px;
+  color: var(--p2p-ink-muted);
+  max-width: 340px;
+}
+
+// ---------------------------------------------------------------------
+// Responsive
+// ---------------------------------------------------------------------
+@media (max-width: 860px) {
   .order-row,
-  .order-row.my-ad-row,
-  .order-row.trade-row {
+  .my-ad-row,
+  .trade-row {
     grid-template-columns: 1fr;
+    align-items: flex-start;
     gap: 10px;
   }
 
   .action-col {
     justify-content: flex-start;
+    width: 100%;
+  }
+
+  .trade-btn {
+    width: 100%;
   }
 
   .chevron {
     display: none;
   }
 
-  .filters-row {
-    width: 100%;
+  .my-ads-toolbar {
+    flex-direction: column;
+    align-items: flex-start;
   }
 
-  .filter-field,
-  .filter-field.coin-field,
-  .filter-field.fiat-field,
-  .filter-field.method-filter,
-  .filter-field.amount-field {
-    width: calc(50% - 5px);
+  .post-ad-btn {
+    width: 100%;
+    justify-content: center;
   }
 }
