@@ -7,6 +7,8 @@ import { MaterialModule } from '../../../../material.module';
 import { SharedService } from '../../../../shared/shared.service';
 import { SignalsService } from '../signals.service';
 import { MySubscription, PLAN_LABELS, PlanOption } from '../model/signal.model';
+import { GetTraderResBody } from '../../../../../app/services/auth.type';
+import { TraderService } from '../../../../../app/appstate/trader.service';
 
 export interface SubscribeDialogData {
   plan: PlanOption;
@@ -53,6 +55,7 @@ export class SubscribeDialogComponent implements OnInit {
     private dialogRef: MatDialogRef<SubscribeDialogComponent, MySubscription | null>,
     private signalsService: SignalsService,
     private sharedService: SharedService,
+     private traderService: TraderService,
     @Inject(MAT_DIALOG_DATA) public data: SubscribeDialogData
   ) {}
 
@@ -62,15 +65,16 @@ export class SubscribeDialogComponent implements OnInit {
 
   private loadWalletBalance(): void {
     this.walletLoading = true;
-    this.signalsService.getWalletBalance().subscribe({
-      next: (balance) => {
-        this.walletBalance = balance;
+    this.traderService.getTrader().subscribe({
+        next: (res: GetTraderResBody) => {
+  
+        this.walletBalance = Number(res.data.walletBalance);
         this.walletLoading = false;
       },
-      error: () => {
+      error: (e) => {
         this.walletBalance = 0;
         this.walletLoading = false;
-        this.sharedService.showToast({ title: 'Could not load wallet balance.' });
+        this.sharedService.showToast({ title: `${e.message}`,});
       },
     });
   }
@@ -109,9 +113,7 @@ export class SubscribeDialogComponent implements OnInit {
     this.saving = true;
     this.errorMessage = '';
 
-    // Standard wallet transfer: debit the member's wallet, credit the plan,
-    // activate the subscription. The PIN authorizes the debit; any internal
-    // transaction reference stays server-side and is never surfaced here.
+  
     this.signalsService
       .subscribeWithWallet({
         plan: this.data.plan.plan,

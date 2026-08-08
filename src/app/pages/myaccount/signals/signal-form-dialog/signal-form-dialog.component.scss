@@ -1,13 +1,12 @@
-
 .sig-dialog {
-  --sig-bg:            #0B0F14;
-  --sig-surface:       #12171F;
-  --sig-elevated:      #171D26;
-  --sig-border:        #232B36;
-  --sig-border-soft:   #1B222C;
-  --sig-text:          #E8ECF1;
-  --sig-text-muted:    #8A94A3;
-  --sig-text-faint:    #5C6472;
+  --sig-bg:            #FFFFFF;
+  --sig-surface:       #FFFFFF;
+  --sig-elevated:      #F5F5F5;
+  --sig-border:        #D9D9D9;
+  --sig-border-soft:   #E5E5E5;
+  --sig-text:          #000000;
+  --sig-text-muted:    #4A4A4A;
+  --sig-text-faint:    #6B6B6B;
   --sig-gold:          #C9A227;
   --sig-gold-soft:     rgba(201, 162, 39, 0.12);
   --sig-buy:           #2FBF71;
@@ -95,8 +94,8 @@
 .btn-spinner {
   width: 14px;
   height: 14px;
-  border: 2px solid rgba(255, 255, 255, 0.35);
-  border-top-color: #fff;
+  border: 2px solid rgba(0, 0, 0, 0.15);
+  border-top-color: #000;
   border-radius: 50%;
   animation: sig-spin 0.7s linear infinite;
 }

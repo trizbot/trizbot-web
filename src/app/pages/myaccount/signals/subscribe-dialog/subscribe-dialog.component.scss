@@ -1,14 +1,15 @@
 // ─── Token system ──────────────────────────────────────────────
-// Palette: deep ledger navy, restrained emerald for confirmed value,
-// amber for shortfall. Numeric figures use a mono face throughout
-// to read like statement/ledger figures rather than UI copy.
+// Palette: plain white surface, black ink for figures. Restrained
+// emerald for confirmed value, amber for shortfall remain as accents.
+// Numeric figures use a mono face throughout to read like
+// statement/ledger figures rather than UI copy.
 :host {
-  --wd-ink: #0b1220;
-  --wd-panel: #121a2b;
-  --wd-panel-raised: #17203a;
-  --wd-line: #263254;
-  --wd-text: #e8ecf6;
-  --wd-muted: #8a93ad;
+  --wd-ink: #ffffff;
+  --wd-panel: #ffffff;
+  --wd-panel-raised: #f0f0f0;
+  --wd-line: #d9d9d9;
+  --wd-text: #000000;
+  --wd-muted: #4a4a4a;
   --wd-accent: #1fa97a;
   --wd-accent-soft: rgba(31, 169, 122, 0.14);
   --wd-warn: #e2a63b;
@@ -247,7 +248,7 @@
   padding: 10px 12px;
   border-radius: 8px;
   background: rgba(226, 88, 90, 0.1);
-  color: #f2989a;
+  color: #b3261e;
   font-size: 13px;
 
   mat-icon {
@@ -270,7 +271,7 @@
   background: linear-gradient(
     90deg,
     var(--wd-panel-raised) 25%,
-    rgba(255, 255, 255, 0.06) 37%,
+    rgba(0, 0, 0, 0.06) 37%,
     var(--wd-panel-raised) 63%
   );
   background-size: 400% 100%;
