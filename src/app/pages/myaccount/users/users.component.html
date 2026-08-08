@@ -26,7 +26,7 @@
 
   <div class="table-container mat-elevation-z2">
     <div class="loading-overlay" *ngIf="loading">
-      <mat-spinner diameter="42"></mat-spinner>
+      <mat-spinner diameter="46"></mat-spinner>
       <p>Loading users…</p>
     </div>
 
@@ -38,30 +38,30 @@
     <table mat-table [dataSource]="dataSource" matSort *ngIf="!loading && dataSource.data.length">
       <!-- Avatar -->
       <ng-container matColumnDef="imageUrl">
-        <th mat-header-cell *matHeaderCellDef></th>
-        <td mat-cell *matCellDef="let user">
-          <img class="avatar" [src]="user.imageSecureUrl" [alt]="user.userName" width="42" height="42" />
+        <th mat-header-cell *matHeaderCellDef class="col-avatar"></th>
+        <td mat-cell *matCellDef="let user" class="col-avatar">
+          <img class="avatar" [src]="user.imageSecureUrl" [alt]="user.userName" width="48" height="48" />
         </td>
       </ng-container>
 
       <!-- Username -->
       <ng-container matColumnDef="userName">
-        <th mat-header-cell *matHeaderCellDef mat-sort-header>Username</th>
-        <td mat-cell *matCellDef="let user">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header class="col-username">Username</th>
+        <td mat-cell *matCellDef="let user" class="col-username">
           <span class="username-link" (click)="onViewProfile(user._id)">{{ user.userName }}</span>
         </td>
       </ng-container>
 
       <!-- Country -->
       <ng-container matColumnDef="country">
-        <th mat-header-cell *matHeaderCellDef>Country</th>
-        <td mat-cell *matCellDef="let user">{{ user.country || '—' }}</td>
+        <th mat-header-cell *matHeaderCellDef class="col-country">Country</th>
+        <td mat-cell *matCellDef="let user" class="col-country">{{ user.country || '—' }}</td>
       </ng-container>
 
       <!-- Phone -->
       <ng-container matColumnDef="phoneNumber">
-        <th mat-header-cell *matHeaderCellDef>Phone</th>
-        <td mat-cell *matCellDef="let user">
+        <th mat-header-cell *matHeaderCellDef class="col-phone">Phone</th>
+        <td mat-cell *matCellDef="let user" class="col-phone">
           <span *ngIf="user.phoneNumber">+{{ user.countryCode }} {{ user.phoneNumber }}</span>
           <span *ngIf="!user.phoneNumber">—</span>
         </td>
@@ -69,33 +69,33 @@
 
       <!-- Email -->
       <ng-container matColumnDef="email">
-        <th mat-header-cell *matHeaderCellDef mat-sort-header>Email</th>
-        <td mat-cell *matCellDef="let user">{{ user.email }}</td>
+        <th mat-header-cell *matHeaderCellDef mat-sort-header class="col-email">Email</th>
+        <td mat-cell *matCellDef="let user" class="col-email">{{ user.email }}</td>
       </ng-container>
 
       <!-- Wallet -->
       <ng-container matColumnDef="walletBalance">
-        <th mat-header-cell *matHeaderCellDef mat-sort-header class="numeric-header">Wallet</th>
-        <td mat-cell *matCellDef="let user" class="numeric-cell">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header class="numeric-header col-money">Wallet</th>
+        <td mat-cell *matCellDef="let user" class="numeric-cell col-money">
           {{ user.walletBalance | currency: 'USD' : 'symbol' : '1.2-2' }}
         </td>
       </ng-container>
 
       <!-- Booster -->
       <ng-container matColumnDef="boosterBalance">
-        <th mat-header-cell *matHeaderCellDef mat-sort-header class="numeric-header">Booster</th>
-        <td mat-cell *matCellDef="let user" class="numeric-cell">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header class="numeric-header col-money">Booster</th>
+        <td mat-cell *matCellDef="let user" class="numeric-cell col-money">
           {{ user.tradeRewardCashWalletBalance | currency: 'USD' : 'symbol' : '1.2-2' }}
         </td>
       </ng-container>
 
       <!-- Profit -->
       <ng-container matColumnDef="profit">
-        <th mat-header-cell *matHeaderCellDef mat-sort-header class="numeric-header">Profit</th>
+        <th mat-header-cell *matHeaderCellDef mat-sort-header class="numeric-header col-money">Profit</th>
         <td
           mat-cell
           *matCellDef="let user"
-          class="numeric-cell"
+          class="numeric-cell col-money"
           [class.profit-positive]="user.profit > 0"
           [class.profit-negative]="user.profit < 0"
         >
@@ -105,14 +105,14 @@
 
       <!-- Referrals -->
       <ng-container matColumnDef="referralCount">
-        <th mat-header-cell *matHeaderCellDef mat-sort-header class="numeric-header">Referrals</th>
-        <td mat-cell *matCellDef="let user" class="numeric-cell">{{ user.referralCount }}</td>
+        <th mat-header-cell *matHeaderCellDef mat-sort-header class="numeric-header col-referrals">Referrals</th>
+        <td mat-cell *matCellDef="let user" class="numeric-cell col-referrals">{{ user.referralCount }}</td>
       </ng-container>
 
       <!-- Status -->
       <ng-container matColumnDef="status">
-        <th mat-header-cell *matHeaderCellDef>Status</th>
-        <td mat-cell *matCellDef="let user">
+        <th mat-header-cell *matHeaderCellDef class="col-status">Status</th>
+        <td mat-cell *matCellDef="let user" class="col-status">
           <mat-chip-set>
             <mat-chip *ngIf="userStatus(user) === 'Active'" class="chip chip-active">Active</mat-chip>
             <mat-chip *ngIf="userStatus(user) === 'Flagged'" class="chip chip-flagged"
@@ -125,20 +125,20 @@
 
       <!-- Created -->
       <ng-container matColumnDef="createdAt">
-        <th mat-header-cell *matHeaderCellDef mat-sort-header>Joined</th>
-        <td mat-cell *matCellDef="let user">{{ user.createdAt | date: 'mediumDate' }}</td>
+        <th mat-header-cell *matHeaderCellDef mat-sort-header class="col-date">Joined</th>
+        <td mat-cell *matCellDef="let user" class="col-date">{{ user.createdAt | date: 'mediumDate' }}</td>
       </ng-container>
 
       <!-- Actions -->
       <ng-container matColumnDef="actions">
-        <th mat-header-cell *matHeaderCellDef class="actions-header">Actions</th>
-        <td mat-cell *matCellDef="let user" class="actions-cell">
+        <th mat-header-cell *matHeaderCellDef class="col-actions">Actions</th>
+        <td mat-cell *matCellDef="let user" class="col-actions">
           <div class="action-buttons">
 
             <!-- Flag / Unflag -->
             <button
               *ngIf="!user.isFlagged"
-              mat-stroked-button
+              mat-flat-button
               class="action-btn flag-btn"
               matTooltip="Flag this account"
               (click)="onFlagUser(user)"
@@ -148,7 +148,7 @@
             </button>
             <button
               *ngIf="user.isFlagged"
-              mat-stroked-button
+              mat-flat-button
               class="action-btn unflag-btn"
               matTooltip="Remove flag"
               (click)="onUnflagUser(user)"
@@ -160,8 +160,7 @@
             <!-- Ban / Unban (Restore) -->
             <button
               *ngIf="!user.isBanned"
-              mat-raised-button
-              color="warn"
+              mat-flat-button
               class="action-btn ban-btn"
               matTooltip="Ban this account"
               (click)="onBanUser(user)"
@@ -171,8 +170,7 @@
             </button>
             <button
               *ngIf="user.isBanned"
-              mat-raised-button
-              color="primary"
+              mat-flat-button
               class="action-btn unban-btn"
               matTooltip="Restore this account"
               (click)="onRestoreUser(user)"

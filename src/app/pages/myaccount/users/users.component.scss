@@ -4,6 +4,7 @@
   flex-direction: column;
   gap: 20px;
   background: #fafbfc;
+  font-size: 16px; // establish a larger base for the whole page
 }
 
 // ---------- Header ----------
@@ -16,24 +17,25 @@
 
   .page-title {
     margin: 0;
-    font-size: 1.75rem;
-    font-weight: 700;
-    color: #1a1f36;
+    font-size: 2rem;
+    font-weight: 800;
+    color: #101323;
     letter-spacing: -0.02em;
   }
 
   .page-subtitle {
     margin: 6px 0 0;
-    color: #5c6474;
-    font-size: 1rem;
+    color: #4b5162;
+    font-size: 1.05rem;
+    font-weight: 500;
   }
 }
 
 .export-btn {
-  font-size: 0.95rem;
-  font-weight: 600;
-  height: 44px;
-  padding: 0 20px;
+  font-size: 1rem;
+  font-weight: 700;
+  height: 48px;
+  padding: 0 22px;
 
   mat-icon {
     margin-right: 6px;
@@ -44,8 +46,8 @@
 .status-tabs {
   ::ng-deep .mat-mdc-tab-label,
   ::ng-deep .mdc-tab__text-label {
-    font-size: 1rem;
-    font-weight: 600;
+    font-size: 1.05rem;
+    font-weight: 700;
   }
 }
 
@@ -56,8 +58,8 @@
   padding: 12px 0;
 
   .search-field {
-    width: 360px;
-    font-size: 1rem;
+    width: 380px;
+    font-size: 1.05rem;
   }
 }
 
@@ -66,48 +68,67 @@
   position: relative;
   overflow-x: auto;
   border-radius: 12px;
-  min-height: 240px;
+  min-height: 260px;
   background: #ffffff;
-  border: 1px solid #e5e8ee;
+  border: 1px solid #e2e5ec;
 }
 
 table {
   width: 100%;
-  min-width: 1100px;
+  min-width: 1400px; // wider now that columns don't compress/wrap
 }
 
+// ---------- Column widths (prevents wrapping seen in the screenshot) ----------
+.col-avatar { width: 72px; min-width: 72px; }
+.col-username { width: 170px; min-width: 170px; }
+.col-country { width: 110px; min-width: 110px; }
+.col-phone { width: 160px; min-width: 160px; }
+.col-email { width: 240px; min-width: 240px; }
+.col-money { width: 130px; min-width: 130px; }
+.col-referrals { width: 100px; min-width: 100px; }
+.col-status { width: 120px; min-width: 120px; }
+.col-date { width: 130px; min-width: 130px; }
+.col-actions { width: 320px; min-width: 320px; }
+
 ::ng-deep .mat-mdc-header-cell {
-  font-size: 0.95rem !important;
-  font-weight: 700 !important;
-  color: #1a1f36 !important;
-  background: #f5f6f9;
+  font-size: 1.05rem !important;
+  font-weight: 800 !important;
+  color: #101323 !important;
+  background: #f3f4f8;
   white-space: nowrap;
-  padding-top: 16px;
-  padding-bottom: 16px;
+  padding-top: 18px !important;
+  padding-bottom: 18px !important;
+  border-bottom: 2px solid #e2e5ec !important;
 }
 
 ::ng-deep .mat-mdc-cell {
-  font-size: 0.95rem !important;
-  color: #2b2f3a;
-  padding-top: 14px;
-  padding-bottom: 14px;
+  font-size: 1.05rem !important;
+  font-weight: 500;
+  color: #1a1f2e;
+  padding-top: 18px !important;
+  padding-bottom: 18px !important;
+  white-space: nowrap;
+}
+
+::ng-deep .mat-mdc-row {
+  min-height: 72px !important; // taller rows, matches the bigger type
 }
 
 ::ng-deep .mat-mdc-row:hover {
-  background: #f9fafc;
+  background: #f7f8fb;
 }
 
 .avatar {
   border-radius: 50%;
   object-fit: cover;
-  border: 2px solid #e5e8ee;
+  border: 2px solid #e2e5ec;
 }
 
 .username-link {
   cursor: pointer;
   color: #1a56db;
-  font-weight: 600;
-  font-size: 0.98rem;
+  font-weight: 700;
+  font-size: 1.05rem;
 
   &:hover {
     text-decoration: underline;
@@ -121,7 +142,7 @@ table {
 }
 
 .numeric-cell {
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .profit-positive {
@@ -134,30 +155,31 @@ table {
 
 // ---------- Status chips ----------
 .chip {
-  font-size: 0.85rem !important;
-  font-weight: 700 !important;
-  height: 28px !important;
-  border-radius: 6px !important;
+  font-size: 0.95rem !important;
+  font-weight: 800 !important;
+  height: 32px !important;
+  border-radius: 8px !important;
+  padding: 0 14px !important;
 }
 
 .chip-active {
-  background-color: #e3f8e9 !important;
-  color: #0e8a3e !important;
+  background-color: #dcf5e5 !important;
+  color: #0a7a35 !important;
 }
 
 .chip-flagged {
-  background-color: #fff4e5 !important;
-  color: #b54708 !important;
+  background-color: #ffedd1 !important;
+  color: #9a4d00 !important;
 }
 
 .chip-banned {
-  background-color: #fde8e8 !important;
-  color: #d92d20 !important;
+  background-color: #fbdada !important;
+  color: #c81e1e !important;
 }
 
 // ---------- Row highlighting ----------
 .row-banned {
-  background-color: #fef6f5;
+  background-color: #fef5f5;
 }
 
 .row-flagged {
@@ -165,52 +187,57 @@ table {
 }
 
 // ---------- Actions ----------
-.actions-header,
-.actions-cell {
-  text-align: left;
-}
-
 .action-buttons {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   flex-wrap: nowrap;
 }
 
 .action-btn {
-  font-size: 0.85rem !important;
-  font-weight: 600 !important;
-  height: 36px;
-  line-height: 36px;
-  padding: 0 14px !important;
+  font-size: 0.95rem !important;
+  font-weight: 800 !important;
+  height: 42px;
+  line-height: 42px;
+  padding: 0 16px !important;
   border-radius: 8px !important;
+  letter-spacing: 0.01em;
 
   mat-icon {
-    font-size: 18px;
-    height: 18px;
-    width: 18px;
-    margin-right: 4px;
+    font-size: 19px;
+    height: 19px;
+    width: 19px;
+    margin-right: 6px;
     vertical-align: middle;
   }
 }
 
+// Solid, high-contrast fills so status/action reads instantly (no more
+// pale outline buttons that wash out on smaller screens/screenshots)
 .flag-btn {
-  color: #b54708 !important;
-  border-color: #f0b429 !important;
+  background-color: #fff3d6 !important;
+  color: #8a5300 !important;
 }
 
 .unflag-btn {
-  color: #5c6474 !important;
-  border-color: #d0d5dd !important;
+  background-color: #eceef2 !important;
+  color: #3d4354 !important;
 }
 
-.ban-btn,
+.ban-btn {
+  background-color: #d92d20 !important;
+  color: #ffffff !important;
+}
+
 .unban-btn {
-  box-shadow: none !important;
+  background-color: #0e8a3e !important;
+  color: #ffffff !important;
 }
 
 .more-btn {
-  color: #5c6474;
+  color: #4b5162;
+  width: 42px;
+  height: 42px;
 }
 
 // ---------- Loading / empty states ----------
@@ -219,12 +246,13 @@ table {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 12px;
-  padding: 64px 0;
+  gap: 14px;
+  padding: 72px 0;
 
   p {
-    font-size: 1rem;
-    color: #5c6474;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #4b5162;
     margin: 0;
   }
 }
@@ -234,31 +262,39 @@ table {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 64px 0;
-  color: #8a92a3;
+  padding: 72px 0;
+  color: #7b8296;
 
   mat-icon {
-    font-size: 48px;
-    width: 48px;
-    height: 48px;
-    margin-bottom: 10px;
+    font-size: 52px;
+    width: 52px;
+    height: 52px;
+    margin-bottom: 12px;
   }
 
   p {
-    font-size: 1.05rem;
+    font-size: 1.15rem;
+    font-weight: 500;
   }
 }
 
 // ---------- Paginator ----------
 ::ng-deep .mat-mdc-paginator {
-  font-size: 0.95rem;
+  font-size: 1rem;
   background: transparent;
+
+  .mat-mdc-paginator-range-label,
+  .mat-mdc-paginator-page-size-label {
+    font-size: 1rem;
+    font-weight: 600;
+  }
 }
 
 // ---------- Responsive ----------
 @media (max-width: 900px) {
   .users-page {
     padding: 16px;
+    font-size: 15px;
   }
 
   .page-header {

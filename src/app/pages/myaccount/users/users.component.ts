@@ -128,6 +128,23 @@ export class UsersComponent implements OnInit {
     this.fetchUsers();
   }
 
+  /**
+   * Client-side safety net: even though each tab hits a dedicated endpoint
+   * (getAllTraders / listFlaggedAccounts / listBannedAccounts), we still
+   * enforce the correct status filter here. This guarantees a flagged-but-
+   * also-banned user can't accidentally show up under "Flagged" once
+   * they've been banned, and guards against any backend inconsistency.
+   */
+  private filterByTab(rows: any[], tab: UserTab): any[] {
+    if (tab === 'flagged') {
+      return rows.filter((u) => u?.isFlagged && !u?.isBanned);
+    }
+    if (tab === 'banned') {
+      return rows.filter((u) => u?.isBanned);
+    }
+    return rows; // 'all' → no filtering, show everything
+  }
+
   // ---------- Data loading ----------
   fetchUsers() {
     this.loading = true;
@@ -148,8 +165,17 @@ export class UsersComponent implements OnInit {
 
     request$.subscribe({
       next: (res: any) => {
-        this.dataSource.data = res.data ?? [];
-        this.totalUsers = res.total ?? 0;
+        const rawRows = res.data ?? [];
+        const filteredRows = this.filterByTab(rawRows, this.activeTab);
+
+        this.dataSource.data = filteredRows;
+
+        // If the backend returned an accurate paginated total, trust it.
+        // Otherwise (e.g. client-side filtering trimmed the page), fall
+        // back to the filtered row count so the paginator stays honest.
+        this.totalUsers =
+          filteredRows.length === rawRows.length ? res.total ?? filteredRows.length : filteredRows.length;
+
         this.loading = false;
       },
       error: () => {
