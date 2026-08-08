@@ -1,0 +1,275 @@
+.users-page {
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  background: #fafbfc;
+}
+
+// ---------- Header ----------
+.page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 8px;
+
+  .page-title {
+    margin: 0;
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #1a1f36;
+    letter-spacing: -0.02em;
+  }
+
+  .page-subtitle {
+    margin: 6px 0 0;
+    color: #5c6474;
+    font-size: 1rem;
+  }
+}
+
+.export-btn {
+  font-size: 0.95rem;
+  font-weight: 600;
+  height: 44px;
+  padding: 0 20px;
+
+  mat-icon {
+    margin-right: 6px;
+  }
+}
+
+// ---------- Tabs ----------
+.status-tabs {
+  ::ng-deep .mat-mdc-tab-label,
+  ::ng-deep .mdc-tab__text-label {
+    font-size: 1rem;
+    font-weight: 600;
+  }
+}
+
+// ---------- Toolbar ----------
+.user-table-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  padding: 12px 0;
+
+  .search-field {
+    width: 360px;
+    font-size: 1rem;
+  }
+}
+
+// ---------- Table container ----------
+.table-container {
+  position: relative;
+  overflow-x: auto;
+  border-radius: 12px;
+  min-height: 240px;
+  background: #ffffff;
+  border: 1px solid #e5e8ee;
+}
+
+table {
+  width: 100%;
+  min-width: 1100px;
+}
+
+::ng-deep .mat-mdc-header-cell {
+  font-size: 0.95rem !important;
+  font-weight: 700 !important;
+  color: #1a1f36 !important;
+  background: #f5f6f9;
+  white-space: nowrap;
+  padding-top: 16px;
+  padding-bottom: 16px;
+}
+
+::ng-deep .mat-mdc-cell {
+  font-size: 0.95rem !important;
+  color: #2b2f3a;
+  padding-top: 14px;
+  padding-bottom: 14px;
+}
+
+::ng-deep .mat-mdc-row:hover {
+  background: #f9fafc;
+}
+
+.avatar {
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #e5e8ee;
+}
+
+.username-link {
+  cursor: pointer;
+  color: #1a56db;
+  font-weight: 600;
+  font-size: 0.98rem;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.numeric-header,
+.numeric-cell {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.numeric-cell {
+  font-weight: 600;
+}
+
+.profit-positive {
+  color: #0e8a3e;
+}
+
+.profit-negative {
+  color: #d92d20;
+}
+
+// ---------- Status chips ----------
+.chip {
+  font-size: 0.85rem !important;
+  font-weight: 700 !important;
+  height: 28px !important;
+  border-radius: 6px !important;
+}
+
+.chip-active {
+  background-color: #e3f8e9 !important;
+  color: #0e8a3e !important;
+}
+
+.chip-flagged {
+  background-color: #fff4e5 !important;
+  color: #b54708 !important;
+}
+
+.chip-banned {
+  background-color: #fde8e8 !important;
+  color: #d92d20 !important;
+}
+
+// ---------- Row highlighting ----------
+.row-banned {
+  background-color: #fef6f5;
+}
+
+.row-flagged {
+  background-color: #fffaf0;
+}
+
+// ---------- Actions ----------
+.actions-header,
+.actions-cell {
+  text-align: left;
+}
+
+.action-buttons {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: nowrap;
+}
+
+.action-btn {
+  font-size: 0.85rem !important;
+  font-weight: 600 !important;
+  height: 36px;
+  line-height: 36px;
+  padding: 0 14px !important;
+  border-radius: 8px !important;
+
+  mat-icon {
+    font-size: 18px;
+    height: 18px;
+    width: 18px;
+    margin-right: 4px;
+    vertical-align: middle;
+  }
+}
+
+.flag-btn {
+  color: #b54708 !important;
+  border-color: #f0b429 !important;
+}
+
+.unflag-btn {
+  color: #5c6474 !important;
+  border-color: #d0d5dd !important;
+}
+
+.ban-btn,
+.unban-btn {
+  box-shadow: none !important;
+}
+
+.more-btn {
+  color: #5c6474;
+}
+
+// ---------- Loading / empty states ----------
+.loading-overlay {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 64px 0;
+
+  p {
+    font-size: 1rem;
+    color: #5c6474;
+    margin: 0;
+  }
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 64px 0;
+  color: #8a92a3;
+
+  mat-icon {
+    font-size: 48px;
+    width: 48px;
+    height: 48px;
+    margin-bottom: 10px;
+  }
+
+  p {
+    font-size: 1.05rem;
+  }
+}
+
+// ---------- Paginator ----------
+::ng-deep .mat-mdc-paginator {
+  font-size: 0.95rem;
+  background: transparent;
+}
+
+// ---------- Responsive ----------
+@media (max-width: 900px) {
+  .users-page {
+    padding: 16px;
+  }
+
+  .page-header {
+    flex-direction: column;
+  }
+
+  .user-table-toolbar .search-field {
+    width: 100%;
+  }
+
+  .action-buttons {
+    flex-wrap: wrap;
+  }
+}

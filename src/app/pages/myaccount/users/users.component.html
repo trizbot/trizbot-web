@@ -1,102 +1,219 @@
-<div class="user-table-toolbar">
-  <mat-form-field appearance="fill">
-    <mat-label>Filter users</mat-label>
-    <input matInput (keyup)="applyFilter($event)" placeholder="Ex. John">
-  </mat-form-field>
+<mat-card class="users-page">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">User Management</h1>
+      <p class="page-subtitle">View, credit, flag, ban, and manage trader accounts</p>
+    </div>
+    <button mat-raised-button color="primary" class="export-btn" (click)="exportToCSV()" [disabled]="!dataSource.data.length">
+      <mat-icon>file_download</mat-icon>
+      Export CSV
+    </button>
+  </div>
 
-  <button mat-raised-button color="primary" (click)="exportToCSV()">
-    Export
-  </button>
-</div>
+  <mat-tab-group class="status-tabs" (selectedIndexChange)="onTabChange($event)" animationDuration="150ms">
+    <mat-tab label="All Users"></mat-tab>
+    <mat-tab label="Flagged"></mat-tab>
+    <mat-tab label="Banned"></mat-tab>
+  </mat-tab-group>
 
-<table mat-table [dataSource]="dataSource" matSort class="mat-elevation-z8">
+  <div class="user-table-toolbar">
+    <mat-form-field appearance="outline" class="search-field">
+      <mat-label>Search users</mat-label>
+      <mat-icon matPrefix>search</mat-icon>
+      <input matInput (keyup)="applyFilter($event)" placeholder="Search by name, email, or phone" />
+    </mat-form-field>
+  </div>
 
-  <!-- Image Column -->
-  <ng-container matColumnDef="imageUrl">
-    <th mat-header-cell *matHeaderCellDef> Avatar </th>
-    <td mat-cell *matCellDef="let user">
-      <img [src]="user.imageSecureUrl" alt="" width="40" height="40" />
-    </td>
-  </ng-container>
+  <div class="table-container mat-elevation-z2">
+    <div class="loading-overlay" *ngIf="loading">
+      <mat-spinner diameter="42"></mat-spinner>
+      <p>Loading users…</p>
+    </div>
 
-  <!-- Username Column -->
-  <ng-container matColumnDef="userName">
-    <th mat-header-cell *matHeaderCellDef mat-sort-header> Username </th>
-    <td mat-cell *matCellDef="let user"> {{ user.userName }} </td>
-  </ng-container>
+    <div class="empty-state" *ngIf="!loading && dataSource.data.length === 0">
+      <mat-icon>people_outline</mat-icon>
+      <p>No users found{{ activeTab !== 'all' ? ' in this list' : '' }}.</p>
+    </div>
 
-  <!-- Email -->
-  <ng-container matColumnDef="email">
-    <th mat-header-cell *matHeaderCellDef mat-sort-header> Email </th>
-    <td mat-cell *matCellDef="let user"> {{ user.email }} </td>
-  </ng-container>
+    <table mat-table [dataSource]="dataSource" matSort *ngIf="!loading && dataSource.data.length">
+      <!-- Avatar -->
+      <ng-container matColumnDef="imageUrl">
+        <th mat-header-cell *matHeaderCellDef></th>
+        <td mat-cell *matCellDef="let user">
+          <img class="avatar" [src]="user.imageSecureUrl" [alt]="user.userName" width="42" height="42" />
+        </td>
+      </ng-container>
 
-  <!-- Phone Number -->
-  <ng-container matColumnDef="phoneNumber">
-    <th mat-header-cell *matHeaderCellDef> Phone </th>
-    <td mat-cell *matCellDef="let user"> ({{ user.countryCode }}){{ user.phoneNumber }} </td>
-  </ng-container>
+      <!-- Username -->
+      <ng-container matColumnDef="userName">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>Username</th>
+        <td mat-cell *matCellDef="let user">
+          <span class="username-link" (click)="onViewProfile(user._id)">{{ user.userName }}</span>
+        </td>
+      </ng-container>
 
-  <!-- Country -->
-  <ng-container matColumnDef="country">
-    <th mat-header-cell *matHeaderCellDef> Country </th>
-    <td mat-cell *matCellDef="let user"> {{ user.country }} </td>
-  </ng-container>
+      <!-- Country -->
+      <ng-container matColumnDef="country">
+        <th mat-header-cell *matHeaderCellDef>Country</th>
+        <td mat-cell *matCellDef="let user">{{ user.country || '—' }}</td>
+      </ng-container>
 
-  <!-- Wallet Balance -->
-  <ng-container matColumnDef="walletBalance">
-    <th mat-header-cell *matHeaderCellDef mat-sort-header> Wallet </th>
-    <td mat-cell *matCellDef="let user">
-      {{ user.walletBalance | currency:'USD':'symbol':'1.2-2' }}
-    </td>
-  </ng-container>
- 
-  <ng-container matColumnDef="BoosterBalance">
-    <th mat-header-cell *matHeaderCellDef mat-sort-header> Booster </th>
-    <td mat-cell *matCellDef="let user">
-      {{ user.tradeRewardCashWalletBalance | currency:'USD':'symbol':'1.2-2' }}
-    </td>
-  </ng-container>
+      <!-- Phone -->
+      <ng-container matColumnDef="phoneNumber">
+        <th mat-header-cell *matHeaderCellDef>Phone</th>
+        <td mat-cell *matCellDef="let user">
+          <span *ngIf="user.phoneNumber">+{{ user.countryCode }} {{ user.phoneNumber }}</span>
+          <span *ngIf="!user.phoneNumber">—</span>
+        </td>
+      </ng-container>
 
-  <!-- Profit -->
-  <ng-container matColumnDef="profit">
-    <th mat-header-cell *matHeaderCellDef mat-sort-header> Profit </th>
-    <td mat-cell *matCellDef="let user">
-      {{ user.profit | currency:'USD':'symbol':'1.2-2' }}
-    </td>
-  </ng-container>
+      <!-- Email -->
+      <ng-container matColumnDef="email">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>Email</th>
+        <td mat-cell *matCellDef="let user">{{ user.email }}</td>
+      </ng-container>
 
-  <ng-container matColumnDef="referralCount">
-    <th mat-header-cell *matHeaderCellDef mat-sort-header> Referrals</th>
-    <td mat-cell *matCellDef="let user">
-      {{ user.referralCount  }}
-    </td>
-  </ng-container>
+      <!-- Wallet -->
+      <ng-container matColumnDef="walletBalance">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header class="numeric-header">Wallet</th>
+        <td mat-cell *matCellDef="let user" class="numeric-cell">
+          {{ user.walletBalance | currency: 'USD' : 'symbol' : '1.2-2' }}
+        </td>
+      </ng-container>
 
-  <!-- Created At -->
-  <ng-container matColumnDef="createdAt">
-    <th mat-header-cell *matHeaderCellDef mat-sort-header> Created </th>
-    <td mat-cell *matCellDef="let user">
-      {{ user.createdAt | date: 'medium' }}
-    </td>
-  </ng-container>
+      <!-- Booster -->
+      <ng-container matColumnDef="boosterBalance">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header class="numeric-header">Booster</th>
+        <td mat-cell *matCellDef="let user" class="numeric-cell">
+          {{ user.tradeRewardCashWalletBalance | currency: 'USD' : 'symbol' : '1.2-2' }}
+        </td>
+      </ng-container>
 
-  <!-- Action Buttons -->
+      <!-- Profit -->
+      <ng-container matColumnDef="profit">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header class="numeric-header">Profit</th>
+        <td
+          mat-cell
+          *matCellDef="let user"
+          class="numeric-cell"
+          [class.profit-positive]="user.profit > 0"
+          [class.profit-negative]="user.profit < 0"
+        >
+          {{ user.profit | currency: 'USD' : 'symbol' : '1.2-2' }}
+        </td>
+      </ng-container>
 
-<ng-container matColumnDef="actions">
-  <th mat-header-cell *matHeaderCellDef> Actions </th>
-  <td mat-cell *matCellDef="let user">
-    <button mat-button color="primary" (click)="onSetupReview(user._id)">Credit</button>
-    <br> <br>
-    <button mat-raised-button
-        (click)="onDisableTraderFeature(user._id)"
-        style="color: #fff; background-color: #FF5722; border: none;">Disable</button>
-  </td>
-</ng-container>
+      <!-- Referrals -->
+      <ng-container matColumnDef="referralCount">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header class="numeric-header">Referrals</th>
+        <td mat-cell *matCellDef="let user" class="numeric-cell">{{ user.referralCount }}</td>
+      </ng-container>
 
+      <!-- Status -->
+      <ng-container matColumnDef="status">
+        <th mat-header-cell *matHeaderCellDef>Status</th>
+        <td mat-cell *matCellDef="let user">
+          <mat-chip-set>
+            <mat-chip *ngIf="userStatus(user) === 'Active'" class="chip chip-active">Active</mat-chip>
+            <mat-chip *ngIf="userStatus(user) === 'Flagged'" class="chip chip-flagged"
+              [matTooltip]="user.flagReason || 'No reason provided'">Flagged</mat-chip>
+            <mat-chip *ngIf="userStatus(user) === 'Banned'" class="chip chip-banned"
+              [matTooltip]="user.banReason || 'No reason provided'">Banned</mat-chip>
+          </mat-chip-set>
+        </td>
+      </ng-container>
 
+      <!-- Created -->
+      <ng-container matColumnDef="createdAt">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>Joined</th>
+        <td mat-cell *matCellDef="let user">{{ user.createdAt | date: 'mediumDate' }}</td>
+      </ng-container>
 
-  <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-  <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
-</table>
+      <!-- Actions -->
+      <ng-container matColumnDef="actions">
+        <th mat-header-cell *matHeaderCellDef class="actions-header">Actions</th>
+        <td mat-cell *matCellDef="let user" class="actions-cell">
+          <div class="action-buttons">
 
+            <!-- Flag / Unflag -->
+            <button
+              *ngIf="!user.isFlagged"
+              mat-stroked-button
+              class="action-btn flag-btn"
+              matTooltip="Flag this account"
+              (click)="onFlagUser(user)"
+            >
+              <mat-icon>flag</mat-icon>
+              Flag
+            </button>
+            <button
+              *ngIf="user.isFlagged"
+              mat-stroked-button
+              class="action-btn unflag-btn"
+              matTooltip="Remove flag"
+              (click)="onUnflagUser(user)"
+            >
+              <mat-icon>outlined_flag</mat-icon>
+              Unflag
+            </button>
+
+            <!-- Ban / Unban (Restore) -->
+            <button
+              *ngIf="!user.isBanned"
+              mat-raised-button
+              color="warn"
+              class="action-btn ban-btn"
+              matTooltip="Ban this account"
+              (click)="onBanUser(user)"
+            >
+              <mat-icon>gavel</mat-icon>
+              Ban
+            </button>
+            <button
+              *ngIf="user.isBanned"
+              mat-raised-button
+              color="primary"
+              class="action-btn unban-btn"
+              matTooltip="Restore this account"
+              (click)="onRestoreUser(user)"
+            >
+              <mat-icon>restore</mat-icon>
+              Unban
+            </button>
+
+            <!-- Overflow menu for the rest -->
+            <button mat-icon-button [matMenuTriggerFor]="actionMenu" aria-label="More actions" class="more-btn">
+              <mat-icon>more_vert</mat-icon>
+            </button>
+
+            <mat-menu #actionMenu="matMenu">
+              <button mat-menu-item (click)="onViewProfile(user._id)">
+                <mat-icon>visibility</mat-icon>
+                <span>View profile</span>
+              </button>
+              <button mat-menu-item (click)="onSetupReview(user._id)">
+                <mat-icon>add_card</mat-icon>
+                <span>Credit wallet</span>
+              </button>
+              <button mat-menu-item (click)="onDisableTraderFeature(user._id)">
+                <mat-icon>block</mat-icon>
+                <span>Disable feature</span>
+              </button>
+            </mat-menu>
+          </div>
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns" [class.row-banned]="row.isBanned" [class.row-flagged]="row.isFlagged"></tr>
+    </table>
+  </div>
+
+  <mat-paginator
+    [length]="totalUsers"
+    [pageSize]="pageSize"
+    [pageSizeOptions]="[10, 25, 50, 100]"
+    (page)="onPageChange($event)"
+    showFirstLastButtons
+  ></mat-paginator>
+</mat-card>
