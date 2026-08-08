@@ -1,0 +1,369 @@
+// ─── Token system ──────────────────────────────────────────────
+// Plain white surface, black ink, restrained emerald for the
+// confirmed/primary action, amber for caution, red for errors.
+// Addresses render in mono to read as data, not prose.
+:host {
+  --aw-bg: #ffffff;
+  --aw-surface: #fafafa;
+  --aw-surface-raised: #f2f2f2;
+  --aw-border: #e2e2e2;
+  --aw-text: #0a0a0a;
+  --aw-muted: #6b6b6b;
+  --aw-faint: #9a9a9a;
+
+  --aw-accent: #1fa97a;
+  --aw-accent-soft: rgba(31, 169, 122, 0.08);
+  --aw-accent-ink: #06140f;
+
+  --aw-warn: #b8791f;
+  --aw-warn-soft: rgba(184, 121, 31, 0.08);
+
+  --aw-danger: #c93b3e;
+  --aw-danger-soft: rgba(201, 59, 62, 0.08);
+
+  --aw-font-display: 'Space Grotesk', 'Inter', -apple-system, sans-serif;
+  --aw-font-body: 'Inter', -apple-system, sans-serif;
+  --aw-font-mono: 'IBM Plex Mono', 'Roboto Mono', monospace;
+
+  display: block;
+}
+
+.mono-num {
+  font-family: var(--aw-font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+// ─── Shell ──────────────────────────────────────────────────────
+.aw-card {
+  background: var(--aw-bg);
+  color: var(--aw-text);
+  font-family: var(--aw-font-body);
+  border-radius: 16px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 1px 12px rgba(0, 0, 0, 0.04);
+}
+
+.aw-content {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  padding: 8px 4px;
+  max-width: 560px;
+}
+
+// ─── Header ─────────────────────────────────────────────────────
+.aw-header {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.aw-eyebrow {
+  font-family: var(--aw-font-mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--aw-accent);
+}
+
+.aw-title {
+  font-family: var(--aw-font-display);
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--aw-text);
+  margin: 0;
+}
+
+.aw-subtitle {
+  font-size: 14px;
+  color: var(--aw-muted);
+  margin: 0;
+  line-height: 1.5;
+}
+
+// ─── Current address record ─────────────────────────────────────
+.aw-record {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.aw-record-label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--aw-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.aw-record-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--aw-surface);
+  border: 1px solid var(--aw-border);
+  border-radius: 10px;
+  padding: 12px 14px;
+
+  &.empty {
+    border-style: dashed;
+  }
+}
+
+.aw-record-icon {
+  color: var(--aw-accent);
+  font-size: 20px;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.aw-record-value {
+  flex: 1;
+  font-size: 13.5px;
+  color: var(--aw-text);
+  word-break: break-all;
+
+  &.placeholder {
+    font-family: var(--aw-font-body);
+    color: var(--aw-faint);
+    font-style: italic;
+  }
+}
+
+.aw-copy-btn {
+  flex-shrink: 0;
+  color: var(--aw-muted);
+  width: 32px;
+  height: 32px;
+  line-height: 32px;
+
+  mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+  }
+
+  &:hover {
+    color: var(--aw-accent);
+  }
+}
+
+// ─── Form ─────────────────────────────────────────────────────
+.aw-form {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.aw-field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border: none;
+  margin: 0;
+  padding: 0;
+}
+
+.aw-field-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--aw-text);
+  padding: 0;
+}
+
+.aw-required {
+  color: var(--aw-danger);
+}
+
+.aw-address-field {
+  ::ng-deep .mdc-text-field--outlined .mdc-notched-outline__leading,
+  ::ng-deep .mdc-text-field--outlined .mdc-notched-outline__notch,
+  ::ng-deep .mdc-text-field--outlined .mdc-notched-outline__trailing {
+    border-color: var(--aw-border);
+  }
+
+  ::ng-deep input {
+    color: var(--aw-text);
+  }
+
+  ::ng-deep .mat-mdc-form-field-hint {
+    color: var(--aw-faint);
+  }
+}
+
+.aw-input-icon {
+  color: var(--aw-faint);
+}
+
+// ─── Network options ──────────────────────────────────────────
+.aw-network-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.aw-network-option {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--aw-border);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+
+  input[type='radio'] {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+
+  &.selected {
+    border-color: var(--aw-accent);
+    background: var(--aw-accent-soft);
+  }
+
+  &:not(.is-disabled):hover {
+    border-color: var(--aw-accent);
+  }
+
+  &.is-disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+  }
+}
+
+.aw-network-badge {
+  font-family: var(--aw-font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--aw-text);
+  background: var(--aw-surface-raised);
+  border-radius: 6px;
+  padding: 3px 8px;
+  flex-shrink: 0;
+}
+
+.aw-network-name {
+  flex: 1;
+  font-size: 13.5px;
+  color: var(--aw-text);
+}
+
+.aw-network-check {
+  color: var(--aw-accent);
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+}
+
+.aw-network-soon {
+  font-size: 11px;
+  color: var(--aw-faint);
+  font-style: italic;
+}
+
+// ─── Notice / disclaimer ────────────────────────────────────────
+.aw-notice {
+  display: flex;
+  gap: 10px;
+  padding: 12px 14px;
+  background: var(--aw-warn-soft);
+  border: 1px solid rgba(184, 121, 31, 0.3);
+  border-radius: 10px;
+}
+
+.aw-notice-icon {
+  color: var(--aw-warn);
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.aw-notice-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 12.5px;
+  line-height: 1.5;
+
+  strong {
+    color: var(--aw-text);
+    font-size: 13px;
+  }
+
+  span {
+    color: var(--aw-muted);
+  }
+}
+
+// ─── Error ──────────────────────────────────────────────────────
+.aw-error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--aw-danger-soft);
+  border: 1px solid rgba(201, 59, 62, 0.25);
+  color: var(--aw-danger);
+  font-size: 13px;
+}
+
+.aw-error-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+// ─── Submit ──────────────────────────────────────────────────────
+.aw-submit-btn {
+  width: 100%;
+  min-height: 46px;
+  border-radius: 8px !important;
+  background: var(--aw-accent) !important;
+  color: var(--aw-accent-ink) !important;
+  font-weight: 600;
+  font-size: 14.5px;
+}
+
+.aw-btn-loading {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.aw-btn-spinner {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid rgba(6, 20, 15, 0.35);
+  border-top-color: var(--aw-accent-ink);
+  animation: aw-spin 0.7s linear infinite;
+}
+
+@keyframes aw-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aw-btn-spinner {
+    animation: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .aw-content {
+    max-width: 100%;
+  }
+}

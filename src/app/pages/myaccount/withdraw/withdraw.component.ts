@@ -39,6 +39,7 @@ import { MatSelectModule } from '@angular/material/select';
      MatCheckboxModule,
   ],
   templateUrl: './withdraw.component.html',
+   styleUrls: ['./withdraw.component.scss'],
 })
 export class WithdrawComponent implements OnInit {
   

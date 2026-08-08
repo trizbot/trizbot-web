@@ -1,96 +1,129 @@
 <!-- Add Crypto Wallet UI -->
-<mat-card class="cardWithShadow theme-card p-6">
-  <mat-card-header>
-    <mat-card-title class="text-3xl font-semibold text-primary">
-      Add valid USDT Network Address
-    </mat-card-title>
-  
-  </mat-card-header>
+<mat-card class="aw-card">
+  <mat-card-content class="aw-content">
 
-  <mat-card-content>
+    <!-- Header -->
+    <header class="aw-header">
+      <span class="aw-eyebrow">Wallet setup</span>
+      <h1 class="aw-title">Add your USDT payout address</h1>
+      <p class="aw-subtitle">
+        This address is where withdrawals and payouts will be sent. Add it once and reuse it for every transaction.
+      </p>
+    </header>
 
-    <!-- Current Wallet Address Display -->
-    <div class="mb-6">
-      <h3 class="text-base font-medium text-muted mb-2">
-        Current Wallet Address:
-      </h3>
-      <div class="bg-gray-100 p-3 rounded text-sm text-primary">
-        {{ availableWalletAddress || 'No wallet address added yet.' }}
+    <!-- Current Wallet Address Record -->
+    <section class="aw-record" aria-label="Current wallet address">
+      <span class="aw-record-label">Current address on file</span>
+
+      <div class="aw-record-box" [class.empty]="!availableWalletAddress">
+        <mat-icon class="aw-record-icon">account_balance_wallet</mat-icon>
+
+        <span class="aw-record-value mono-num" [class.placeholder]="!availableWalletAddress">
+          {{ availableWalletAddress || 'No wallet address added yet' }}
+        </span>
+
+        <button
+          *ngIf="availableWalletAddress"
+          type="button"
+          mat-icon-button
+          class="aw-copy-btn"
+          matTooltip="Copy address"
+          (click)="copyWalletAddress()">
+          <mat-icon>content_copy</mat-icon>
+        </button>
       </div>
-    </div>
-
-   
+    </section>
 
     <!-- Add Wallet Form -->
-    <form (ngSubmit)="onCreateWalletAddress()" class="mt-6">
-      <div class="row gx-4 gy-3">
-        <div class="col-md-6">
-          <mat-form-field appearance="outline" class="w-100">
-            <mat-label>Wallet Address *</mat-label>
-            <input
-              matInput
-              placeholder="e.g., TX7h1x...9A3cZ"
-              name="walletAddress"
-              required
-              [(ngModel)]="walletData.walletAddress" />
-            <mat-icon matSuffix>account_balance_wallet</mat-icon>
-          </mat-form-field>
-        </div>
-      </div>
+    <form (ngSubmit)="onCreateWalletAddress()" class="aw-form" novalidate>
 
-        <div class="col-lg-6">
-        <mat-label class="f-w-600 m-b-8 d-block">Select Network *</mat-label>
-        <mat-form-field appearance="outline" class="w-100">
-          <mat-select
-            placeholder=" Choose USDT network"
-            name="walletCurrency"
+      <!-- Network selection -->
+      <fieldset class="aw-field-group">
+        <legend class="aw-field-label">Select network <span class="aw-required">*</span></legend>
+
+        <div class="aw-network-options" role="radiogroup" aria-label="USDT network">
+
+          <label class="aw-network-option" [class.selected]="walletData.walletCurrency === 'usdtbsc'">
+            <input
+              type="radio"
+              name="walletCurrency"
+              value="usdtbsc"
+              required
+              [(ngModel)]="walletData.walletCurrency" />
+            <span class="aw-network-badge">BEP20</span>
+            <span class="aw-network-name">USDT &middot; BNB Smart Chain</span>
+            <mat-icon class="aw-network-check">check_circle</mat-icon>
+          </label>
+
+          <!-- <label class="aw-network-option is-disabled" aria-disabled="true">
+            <input type="radio" name="walletCurrency" value="usdttrc20" disabled />
+            <span class="aw-network-badge">TRC20</span>
+            <span class="aw-network-name">USDT &middot; Tron</span>
+            <span class="aw-network-soon">Coming soon</span>
+          </label> -->
+
+          <!-- <label class="aw-network-option is-disabled" aria-disabled="true">
+            <input type="radio" name="walletCurrencyPolygon" value="usdtmatic" disabled />
+            <span class="aw-network-badge">Polygon</span>
+            <span class="aw-network-name">USDT &middot; Polygon</span>
+            <span class="aw-network-soon">Coming soon</span>
+          </label> -->
+
+        </div>
+      </fieldset>
+
+      <!-- Wallet address input -->
+      <div class="aw-field-group">
+        <mat-form-field appearance="outline" class="w-100 aw-address-field">
+          <mat-label>Wallet address</mat-label>
+          <input
+            matInput
+            placeholder="e.g. 0x7a1c...9f3E"
+            name="walletAddress"
             required
-            [(ngModel)]="walletData.walletCurrency">
-            <!-- <mat-option value="usdttrc20">USDT TRC20</mat-option> -->
-            <mat-option value="usdtbsc">USDT BEP20 (Binance Smart Chain)</mat-option>
-            <!-- <mat-option value="usdtmatic">USDT MATIC (Polygon Mumbai)</mat-option> -->
-      
-          </mat-select>
+            autocomplete="off"
+            spellcheck="false"
+            class="mono-num"
+            [(ngModel)]="walletData.walletAddress" />
+          <mat-icon matSuffix class="aw-input-icon">tag</mat-icon>
+          <mat-hint>Paste the exact address from your exchange or wallet app.</mat-hint>
         </mat-form-field>
-      </div>
-      
-      <!-- Submit Button -->
-      <div class="mt-4">
-        <button
-          mat-flat-button
-          color="primary"
-          class="w-100 py-3 fw-semibold text-base"
-          type="submit"
-          [disabled]="loadingWallet">
-          <ng-container *ngIf="loadingWallet; else btnText">
-            <mat-progress-spinner
-              diameter="24"
-              mode="indeterminate"
-              color="accent"
-              class="me-2"
-              [strokeWidth]="3">
-            </mat-progress-spinner>
-          </ng-container>
-          <ng-template #btnText>
-            Add Wallet Address
-          </ng-template>
-        </button>
       </div>
 
       <!-- Disclaimer Notice -->
-      <mat-card class="mt-5 p-4 bg-light border rounded">
-        <div class="d-flex align-items-start">
-          <mat-icon class="me-2" color="warn">warning</mat-icon>
-          <div class="text-sm text-muted">
-            <strong>Disclaimer:</strong> Please ensure you enter a <strong>VALID USDT NETWORK </strong> either USDT  BEP20 (BSC) or USDT MATIC (Polygon Mumbai) address only. Submitting an incorrect or unsupported address may lead to irreversible loss of funds. The platform is not liable for such errors.
-          </div>
+      <div class="aw-notice" role="note">
+        <mat-icon class="aw-notice-icon">error_outline</mat-icon>
+        <div class="aw-notice-text">
+          <strong>Double-check this address before saving.</strong>
+          <span>
+            Only submit a valid USDT BEP20 (BNB Smart Chain) address. Funds sent to an incorrect or unsupported
+            address cannot be recovered, and the platform cannot reverse or refund the loss.
+          </span>
         </div>
-      </mat-card>
+      </div>
 
       <!-- Error Message -->
-      <div *ngIf="errorWalletMessage" class="alert alert-danger mt-4 text-center">
-        <strong>{{ errorWalletMessage }}</strong>
+      <div *ngIf="errorWalletMessage" class="aw-error" role="alert">
+        <mat-icon class="aw-error-icon">warning</mat-icon>
+        <span>{{ errorWalletMessage }}</span>
       </div>
+
+      <!-- Submit Button -->
+      <button
+        mat-flat-button
+        color="primary"
+        class="aw-submit-btn"
+        type="submit"
+        [disabled]="loadingWallet">
+        <ng-container *ngIf="loadingWallet; else btnText">
+          <span class="aw-btn-loading">
+            <span class="aw-btn-spinner"></span>
+            Saving address&hellip;
+          </span>
+        </ng-container>
+        <ng-template #btnText>Save wallet address</ng-template>
+      </button>
+
     </form>
 
   </mat-card-content>

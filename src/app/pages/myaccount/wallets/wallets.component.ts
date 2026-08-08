@@ -38,6 +38,7 @@ import { ActivatedRoute } from '@angular/router';
     MatCheckboxModule,
   ],
   templateUrl: './wallets.component.html',
+   styleUrls: ['./wallets.component.scss'],
 })
 
  
@@ -146,6 +147,10 @@ export class WalletComponent implements OnInit {
     });
   }
 
-  
+  copyWalletAddress(): void {
+  if (!this.availableWalletAddress) return;
+  navigator.clipboard.writeText(this.availableWalletAddress);
+  // optionally trigger a snackbar/toast here
+}
 
 }
