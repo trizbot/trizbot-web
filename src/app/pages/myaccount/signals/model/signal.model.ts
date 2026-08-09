@@ -3,6 +3,12 @@ export enum SignalTypeEnum {
   Sell = 'Sell',
 }
 
+/** New: replaces "type" (Buy/Sell) as the primary classification on the create/edit form */
+export enum SignalCategoryEnum {
+  Futures = 'Futures',
+  Spot = 'Spot',
+}
+
 export enum SubscriptionPlanEnum {
   Daily = 'Daily',
   Weekly = 'Weekly',
@@ -31,6 +37,11 @@ export const SIGNAL_TYPE_LABELS: Record<SignalTypeEnum, string> = {
 export const SIGNAL_TYPE_COLORS: Record<SignalTypeEnum, string> = {
   [SignalTypeEnum.Buy]: '#2e7d32',
   [SignalTypeEnum.Sell]: '#e53935',
+};
+
+export const SIGNAL_CATEGORY_LABELS: Record<SignalCategoryEnum, string> = {
+  [SignalCategoryEnum.Futures]: 'Futures',
+  [SignalCategoryEnum.Spot]: 'Spot',
 };
 
 export const PLAN_LABELS: Record<SubscriptionPlanEnum, string> = {
@@ -75,9 +86,15 @@ export interface ApiListResponse<T> {
 export interface RawSignal {
   _id: string;
   pair: string;
-  type: SignalTypeEnum | string;
+  /** @deprecated kept for backward compatibility with older records / other UI that still reads Buy/Sell */
+  type?: SignalTypeEnum | string;
+  category: SignalCategoryEnum | string;
   entryPrice: number;
+  /** @deprecated use takeProfit1/2/3 instead */
   targetPrice?: number;
+  takeProfit1?: number;
+  takeProfit2?: number;
+  takeProfit3?: number;
   stopLoss?: number;
   analysis?: string;
   postedBy?: string;
@@ -91,9 +108,15 @@ export interface RawSignal {
 export interface SignalItem {
   id: string;
   pair: string;
-  type: SignalTypeEnum;
+  /** @deprecated kept for backward compatibility with older records / other UI that still reads Buy/Sell */
+  type?: SignalTypeEnum;
+  category: SignalCategoryEnum;
   entryPrice: number;
+  /** @deprecated use takeProfit1/2/3 instead */
   targetPrice?: number;
+  takeProfit1?: number;
+  takeProfit2?: number;
+  takeProfit3?: number;
   stopLoss?: number;
   analysis?: string;
   postedByName?: string;
@@ -118,8 +141,14 @@ export interface GetSignalsParams {
 
 export interface CreateSignalPayload {
   pair: string;
-  type: SignalTypeEnum;
+  category: SignalCategoryEnum;
+  /** @deprecated no longer collected on the form; kept optional for backward compatibility */
+  type?: SignalTypeEnum;
   entryPrice: number;
+  takeProfit1?: number;
+  takeProfit2?: number;
+  takeProfit3?: number;
+  /** @deprecated use takeProfit1/2/3 instead */
   targetPrice?: number;
   stopLoss?: number;
   analysis?: string;
@@ -167,14 +196,18 @@ export function getSubscriptionPeriodStatus(sub: MySubscription): SubscriptionPe
   return SubscriptionPeriodStatus.Active;
 }
 
-/** Normalizes a raw API signal (_id, string type) into the shape the UI uses (id, enum type) */
+/** Normalizes a raw API signal (_id, string type/category) into the shape the UI uses (id, enums) */
 export function normalizeSignal(raw: RawSignal): SignalItem {
   return {
     id: raw._id,
     pair: raw.pair,
-    type: raw.type as SignalTypeEnum,
+    type: raw.type as SignalTypeEnum | undefined,
+    category: raw.category as SignalCategoryEnum,
     entryPrice: raw.entryPrice,
     targetPrice: raw.targetPrice,
+    takeProfit1: raw.takeProfit1,
+    takeProfit2: raw.takeProfit2,
+    takeProfit3: raw.takeProfit3,
     stopLoss: raw.stopLoss,
     analysis: raw.analysis,
     postedByName: raw.postedByName,

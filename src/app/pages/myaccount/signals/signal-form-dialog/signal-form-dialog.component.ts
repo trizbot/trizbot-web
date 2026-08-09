@@ -6,7 +6,7 @@ import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { MaterialModule } from '../../../../material.module';
 import { SharedService } from '../../../../shared/shared.service';
 import { SignalsService } from '../signals.service';
-import { SignalItem, SignalTypeEnum } from '../model/signal.model';
+import { SignalCategoryEnum, SignalItem } from '../model/signal.model';
 
 export interface SignalFormDialogData {
   mode: 'create' | 'edit';
@@ -21,15 +21,22 @@ export interface SignalFormDialogData {
   styleUrls: ['./signal-form-dialog.component.scss'],
 })
 export class SignalFormDialogComponent implements OnInit {
-  readonly signalTypes = Object.values(SignalTypeEnum);
+  readonly categories = Object.values(SignalCategoryEnum);
 
   saving = false;
 
   form = new FormGroup({
-    pair: new FormControl<string>('', { nonNullable: true, validators: [Validators.required, Validators.maxLength(50)] }),
-    type: new FormControl<SignalTypeEnum>(SignalTypeEnum.Buy, { nonNullable: true, validators: [Validators.required] }),
+    category: new FormControl<SignalCategoryEnum | null>(null, {
+      validators: [Validators.required],
+    }),
+    pair: new FormControl<string>('', {
+      nonNullable: true,
+      validators: [Validators.required, Validators.maxLength(50)],
+    }),
     entryPrice: new FormControl<number | null>(null, { validators: [Validators.required] }),
-    targetPrice: new FormControl<number | null>(null),
+    takeProfit1: new FormControl<number | null>(null),
+    takeProfit2: new FormControl<number | null>(null),
+    takeProfit3: new FormControl<number | null>(null),
     stopLoss: new FormControl<number | null>(null),
     analysis: new FormControl<string>('', { nonNullable: true, validators: [Validators.maxLength(1000)] }),
   });
@@ -49,10 +56,12 @@ export class SignalFormDialogComponent implements OnInit {
     if (this.isEdit && this.data.item) {
       const item = this.data.item;
       this.form.patchValue({
+        category: item.category,
         pair: item.pair,
-        type: item.type,
         entryPrice: item.entryPrice,
-        targetPrice: item.targetPrice ?? null,
+        takeProfit1: item.takeProfit1 ?? null,
+        takeProfit2: item.takeProfit2 ?? null,
+        takeProfit3: item.takeProfit3 ?? null,
         stopLoss: item.stopLoss ?? null,
         analysis: item.analysis || '',
       });
@@ -73,10 +82,14 @@ export class SignalFormDialogComponent implements OnInit {
     const raw = this.form.getRawValue();
 
     const payload = {
+      category: raw.category as SignalCategoryEnum,
       pair: raw.pair.trim().toUpperCase(),
-      type: raw.type,
       entryPrice: raw.entryPrice as number,
-      targetPrice: raw.targetPrice ?? undefined,
+      // Only send TP levels the admin actually filled in — TP1 can be
+      // set alone, or any combination of TP1/TP2/TP3.
+      takeProfit1: raw.takeProfit1 ?? undefined,
+      takeProfit2: raw.takeProfit2 ?? undefined,
+      takeProfit3: raw.takeProfit3 ?? undefined,
       stopLoss: raw.stopLoss ?? undefined,
       analysis: raw.analysis?.trim() || undefined,
     };

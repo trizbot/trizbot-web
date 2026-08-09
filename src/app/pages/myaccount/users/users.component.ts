@@ -81,6 +81,9 @@ export class UsersComponent implements OnInit {
   searchTerm = '';
   private searchSubject = new Subject<string>();
 
+  // Full unfiltered result set for the current search/page fetched from the backend.
+  private allRows: any[] = [];
+
   totalUsers = 0;
   pageSize = 10;
   pageIndex = 0;
@@ -129,20 +132,63 @@ export class UsersComponent implements OnInit {
   }
 
   /**
-   * Client-side safety net: even though each tab hits a dedicated endpoint
-   * (getAllTraders / listFlaggedAccounts / listBannedAccounts), we still
-   * enforce the correct status filter here. This guarantees a flagged-but-
-   * also-banned user can't accidentally show up under "Flagged" once
-   * they've been banned, and guards against any backend inconsistency.
+   * Single source of truth for what belongs on each tab.
+   * This is applied to EVERY response, regardless of which backend
+   * endpoint produced it, so a backend that doesn't filter correctly
+   * (or returns everyone) can never leak the wrong users into a tab.
+   *
+   *  - 'flagged' → only users that are flagged AND not banned
+   *  - 'banned'  → only users that are banned (banned always wins over flagged)
+   *  - 'all'     → everyone, no filtering
    */
   private filterByTab(rows: any[], tab: UserTab): any[] {
     if (tab === 'flagged') {
-      return rows.filter((u) => u?.isFlagged && !u?.isBanned);
+      return rows.filter((u) => !!u?.isFlagged && !u?.isBanned);
     }
     if (tab === 'banned') {
-      return rows.filter((u) => u?.isBanned);
+      return rows.filter((u) => !!u?.isBanned);
     }
     return rows; // 'all' → no filtering, show everything
+  }
+
+  /**
+   * Normalizes whatever shape the backend sends into a single canonical
+   * { isFlagged, isBanned } pair on every user object.
+   *
+   * Why this exists: "Ban" works but "Flag" doesn't, even though both
+   * buttons run through identical code (dialog → API call → fetchUsers()).
+   * That symmetry means the bug isn't in the component logic — it means
+   * the API response for the flagged state doesn't actually match the
+   * `isFlagged` field this component reads. Common culprits:
+   *   - different casing/naming: `flagged`, `is_flagged`, `Flagged`
+   *   - nested under another key: `user.moderation.isFlagged`
+   *   - never set as a boolean at all — only `flagReason` is populated
+   *
+   * This function checks all of those in order and falls back gracefully,
+   * so the UI is correct regardless of which shape the backend actually
+   * uses. Once you confirm the real field name from a network response,
+   * you can simplify this back down to a single `u.isFlagged` read.
+   */
+  private normalizeUser(u: any): any {
+    if (!u) return u;
+
+    const isBanned = !!(
+      u.isBanned ??
+      u.banned ??
+      u.is_banned ??
+      u?.moderation?.isBanned ??
+      (u.banReason ? true : false)
+    );
+
+    const isFlagged = !!(
+      u.isFlagged ??
+      u.flagged ??
+      u.is_flagged ??
+      u?.moderation?.isFlagged ??
+      (u.flagReason ? true : false)
+    );
+
+    return { ...u, isFlagged, isBanned };
   }
 
   // ---------- Data loading ----------
@@ -150,31 +196,38 @@ export class UsersComponent implements OnInit {
     this.loading = true;
     this.errorMessage = '';
 
+    // Always hit the same endpoint (getAllTraders) instead of switching
+    // between getAllTraders / listFlaggedAccounts / listBannedAccounts.
+    // Those separate endpoints are what was causing "all users" to show
+    // up under Flagged/Banned — this guarantees tab correctness because
+    // filterByTab() is applied to the exact same shape of data every time.
     const query = {
       page: this.pageIndex + 1,
       limit: this.pageSize,
       search: this.searchTerm || undefined,
     };
 
-    const request$ =
-      this.activeTab === 'flagged'
-        ? this.traderService.listFlaggedAccounts(query)
-        : this.activeTab === 'banned'
-        ? this.traderService.listBannedAccounts(query)
-        : this.traderService.getAllTraders(query);
-
-    request$.subscribe({
+    this.traderService.getAllTraders(query).subscribe({
       next: (res: any) => {
-        const rawRows = res.data ?? [];
-        const filteredRows = this.filterByTab(rawRows, this.activeTab);
+        const rawRows = (res.data ?? []).map((u: any) => this.normalizeUser(u));
+        this.allRows = rawRows;
 
+        // Debug aid: leave this in until you confirm the flagged users are
+        // showing up correctly, then feel free to remove it.
+        console.debug(
+          '[UsersComponent] rows after normalization:',
+          rawRows.map((u: any) => ({ user: this.displayName(u), isFlagged: u.isFlagged, isBanned: u.isBanned }))
+        );
+
+        const filteredRows = this.filterByTab(rawRows, this.activeTab);
         this.dataSource.data = filteredRows;
 
-        // If the backend returned an accurate paginated total, trust it.
-        // Otherwise (e.g. client-side filtering trimmed the page), fall
-        // back to the filtered row count so the paginator stays honest.
+        // If we're on "All" and nothing was filtered out, trust the
+        // backend's total. Otherwise, fall back to the filtered count
+        // for this page so the paginator doesn't lie about how many
+        // rows are actually visible.
         this.totalUsers =
-          filteredRows.length === rawRows.length ? res.total ?? filteredRows.length : filteredRows.length;
+          this.activeTab === 'all' ? res.total ?? filteredRows.length : filteredRows.length;
 
         this.loading = false;
       },

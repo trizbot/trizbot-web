@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { FormControl, FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
-
+import { SignalCategoryEnum, SIGNAL_CATEGORY_LABELS,  } from './model/signal.model';
 import { MatDialog } from '@angular/material/dialog';
 import { Subject } from 'rxjs';
 import { debounceTime, takeUntil } from 'rxjs/operators';
@@ -182,14 +182,12 @@ export class SignalsComponent implements OnInit, OnDestroy {
           this.subscriptionHistory = sorted;
           this.subscription =
             sorted.find((s) => this.getPeriodStatus(s) === SubscriptionPeriodStatus.Active) ?? null;
-
           this.subscriptionLoading = false;
           this.subscriptionHistoryLoading = false;
 
           this.loadSignals();
         },
         error: (err) => {
-          console.error('[SignalsComponent] loadSubscriptions failed:', err.status, err.error ?? err.message);
           this.subscriptionLoading = false;
           this.subscriptionHistoryLoading = false;
         },
@@ -401,4 +399,40 @@ export class SignalsComponent implements OnInit, OnDestroy {
         },
       });
   }
+
+
+
+
+readonly categoryLabels = SIGNAL_CATEGORY_LABELS;
+
+readonly categoryColors: Record<SignalCategoryEnum, string> = {
+  [SignalCategoryEnum.Futures]: '#7b61ff',
+  [SignalCategoryEnum.Spot]: '#2e7d32',
+};
+
+
+takeProfitSummary(item: SignalItem): string {
+  const levels: string[] = [];
+  if (item.takeProfit1 != null) levels.push(`TP1: ${item.takeProfit1}`);
+  if (item.takeProfit2 != null) levels.push(`TP2: ${item.takeProfit2}`);
+  if (item.takeProfit3 != null) levels.push(`TP3: ${item.takeProfit3}`);
+  return levels.length ? levels.join(' / ') : '—';
+}
+
+// /**
+//  * Risk:Reward now uses the nearest take-profit level (TP1) against entry/stop,
+//  * since `targetPrice` is deprecated. Update this if your existing riskReward()
+//  * used a different formula — paste it and I'll adapt it exactly.
+//  */
+// riskReward(item: SignalItem): string | null {
+//   const tp = item.takeProfit1;
+//   if (tp == null || item.stopLoss == null) return null;
+
+//   const reward = Math.abs(tp - item.entryPrice);
+//   const risk = Math.abs(item.entryPrice - item.stopLoss);
+//   if (risk === 0) return null;
+
+//   return (reward / risk).toFixed(2);
+// }
+
 }

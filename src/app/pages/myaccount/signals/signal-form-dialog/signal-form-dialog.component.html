@@ -7,39 +7,65 @@
   <form [formGroup]="form" (ngSubmit)="save()">
     <div mat-dialog-content class="dialog-content">
 
-      <div class="field-row">
-        <mat-form-field appearance="outline" class="half-field">
-          <mat-label>Pair</mat-label>
-          <input matInput formControlName="pair" maxlength="50" placeholder="BTC/USDT" />
-          <mat-error *ngIf="form.get('pair')?.hasError('required')">Pair is required</mat-error>
-        </mat-form-field>
-
-        <mat-form-field appearance="outline" class="half-field">
-          <mat-label>Type</mat-label>
-          <mat-select formControlName="type">
-            <mat-option *ngFor="let t of signalTypes" [value]="t">{{ t | titlecase }}</mat-option>
-          </mat-select>
-        </mat-form-field>
+      <!-- Category -->
+      <div class="field-block">
+        <label class="field-block-label">Category</label>
+        <mat-radio-group formControlName="category" class="category-group">
+          <mat-radio-button
+            *ngFor="let c of categories"
+            [value]="c"
+            class="category-option"
+          >
+            {{ c | titlecase }}
+          </mat-radio-button>
+        </mat-radio-group>
+        <mat-error *ngIf="form.get('category')?.invalid && form.get('category')?.touched" class="category-error">
+          Category is required
+        </mat-error>
       </div>
 
-      <div class="field-row three">
-        <mat-form-field appearance="outline" class="third-field">
-          <mat-label>Entry price</mat-label>
-          <input matInput type="number" formControlName="entryPrice" />
-          <mat-error *ngIf="form.get('entryPrice')?.hasError('required')">Required</mat-error>
-        </mat-form-field>
+      <!-- Pair -->
+      <mat-form-field appearance="outline" class="full-field">
+        <mat-label>Pair</mat-label>
+        <input matInput formControlName="pair" maxlength="50" placeholder="BTC/USDT" />
+        <mat-error *ngIf="form.get('pair')?.hasError('required')">Pair is required</mat-error>
+      </mat-form-field>
 
-        <mat-form-field appearance="outline" class="third-field">
-          <mat-label>Target price</mat-label>
-          <input matInput type="number" formControlName="targetPrice" />
-        </mat-form-field>
+      <!-- Entry -->
+      <mat-form-field appearance="outline" class="full-field">
+        <mat-label>Entry</mat-label>
+        <input matInput type="number" formControlName="entryPrice" placeholder="Entry price" />
+        <mat-error *ngIf="form.get('entryPrice')?.hasError('required')">Entry is required</mat-error>
+      </mat-form-field>
 
-        <mat-form-field appearance="outline" class="third-field">
-          <mat-label>Stop loss</mat-label>
-          <input matInput type="number" formControlName="stopLoss" />
-        </mat-form-field>
+      <!-- Take Profit -->
+      <div class="field-block">
+        <label class="field-block-label">Take Profit <span class="field-block-optional">(optional)</span></label>
+        <div class="field-row three">
+          <mat-form-field appearance="outline" class="third-field">
+            <mat-label>TP 1</mat-label>
+            <input matInput type="number" formControlName="takeProfit1" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="third-field">
+            <mat-label>TP 2</mat-label>
+            <input matInput type="number" formControlName="takeProfit2" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="third-field">
+            <mat-label>TP 3</mat-label>
+            <input matInput type="number" formControlName="takeProfit3" />
+          </mat-form-field>
+        </div>
       </div>
 
+      <!-- Stop Loss -->
+      <mat-form-field appearance="outline" class="full-field">
+        <mat-label>Stop Loss</mat-label>
+        <input matInput type="number" formControlName="stopLoss" />
+      </mat-form-field>
+
+      <!-- Analysis -->
       <mat-form-field appearance="outline" class="full-field">
         <mat-label>Analysis</mat-label>
         <textarea matInput formControlName="analysis" rows="4" maxlength="1000"></textarea>

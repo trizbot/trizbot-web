@@ -5,7 +5,7 @@
     <div class="signals-hero-text">
       <span class="signals-eyebrow">Desk Calls · Live</span>
       <h1 class="signals-title">Signals</h1>
-      <p class="signals-subtitle">Entry, target and stop-loss calls from the desk — subscribe to unlock.</p>
+      <p class="signals-subtitle">Entry, take-profit and stop-loss calls from the desk — subscribe to unlock.</p>
     </div>
     <button
       *ngIf="canManageSignals"
@@ -21,7 +21,7 @@
   </div>
 
   <!-- TABS -->
-  <div class="signals-tabs" role="tablist">
+  <div class="signals-tabs" role="tablist" *ngIf="!isSuperAdmin" >
     <button class="signals-tab" role="tab" [attr.aria-selected]="activeTab === 'signals'" [class.active]="activeTab === 'signals'" (click)="selectTab('signals')">
       <mat-icon>show_chart</mat-icon>
       Signals
@@ -44,20 +44,20 @@
   </div>
 
   <!-- SIGNALS -->
-  <section *ngIf="activeTab === 'signals'" class="signals-section">
+  <section *ngIf="activeTab === 'signals'" class="signals-section" >
 
-    <div class="subscription-banner" *ngIf="!subscriptionLoading && !isSubscribed">
+    <div class="subscription-banner" *ngIf="!subscriptionLoading && !isSubscribed &&  !isSuperAdmin">
       <mat-icon>lock</mat-icon>
       <div class="subscription-banner-text">
         <strong>Subscribe to unlock live signals.</strong>
-        <span>Get real-time entry, target and stop-loss calls from the desk.</span>
+        <span>Get real-time entry, take-profit and stop-loss calls from the desk.</span>
       </div>
       <button mat-flat-button color="primary" type="button" (click)="selectTab('plans')">
         View plans
       </button>
     </div>
 
-    <ng-container *ngIf="!subscriptionLoading">
+    <ng-container *ngIf="!subscriptionLoading &&  !isSuperAdmin">
       <form class="signals-filters" [formGroup]="filterForm">
         <div class="search-field">
           <mat-icon class="search-icon">search</mat-icon>
@@ -94,11 +94,11 @@
             <span class="pair-name">{{ item.pair }}</span>
             <span
               class="type-badge"
-              [style.background]="typeColors[item.type] + '1a'"
-              [style.color]="typeColors[item.type]"
+              [style.background]="categoryColors[item.category] + '1a'"
+              [style.color]="categoryColors[item.category]"
             >
-              <span class="type-dot" [style.background]="typeColors[item.type]"></span>
-              {{ typeLabels[item.type] }}
+              <span class="type-dot" [style.background]="categoryColors[item.category]"></span>
+              {{ categoryLabels[item.category] }}
             </span>
           </header>
 
@@ -107,9 +107,17 @@
               <span class="price-label">Entry</span>
               <span class="price-value">{{ item.entryPrice }}</span>
             </div>
-            <div class="price-cell">
-              <span class="price-label">Target</span>
-              <span class="price-value target">{{ item.targetPrice ?? '—' }}</span>
+            <div class="price-cell" *ngIf="item.takeProfit1 != null">
+              <span class="price-label">TP 1</span>
+              <span class="price-value target">{{ item.takeProfit1 }}</span>
+            </div>
+            <div class="price-cell" *ngIf="item.takeProfit2 != null">
+              <span class="price-label">TP 2</span>
+              <span class="price-value target">{{ item.takeProfit2 }}</span>
+            </div>
+            <div class="price-cell" *ngIf="item.takeProfit3 != null">
+              <span class="price-label">TP 3</span>
+              <span class="price-value target">{{ item.takeProfit3 }}</span>
             </div>
             <div class="price-cell">
               <span class="price-label">Stop</span>
@@ -251,7 +259,7 @@
         (click)="openCreateDialog()"
       >
         <mat-icon>add</mat-icon>
-        New Signal
+       CREATE NEW SIGNAL
       </button>
     </div>
 
@@ -268,9 +276,9 @@
       <thead>
         <tr>
           <th>Pair</th>
-          <th>Type</th>
+          <th>Category</th>
           <th>Entry</th>
-          <th>Target</th>
+          <th>Take Profit</th>
           <th>Stop</th>
           <th>Status</th>
           <th>Date</th>
@@ -283,14 +291,14 @@
           <td>
             <span
               class="type-badge table"
-              [style.background]="typeColors[item.type] + '1a'"
-              [style.color]="typeColors[item.type]"
+              [style.background]="categoryColors[item.category] + '1a'"
+              [style.color]="categoryColors[item.category]"
             >
-              {{ typeLabels[item.type] }}
+              {{ categoryLabels[item.category] }}
             </span>
           </td>
           <td class="mono-num">{{ item.entryPrice }}</td>
-          <td class="mono-num">{{ item.targetPrice ?? '—' }}</td>
+          <td class="mono-num">{{ takeProfitSummary(item) }}</td>
           <td class="mono-num">{{ item.stopLoss ?? '—' }}</td>
           <td>
             <span class="status-pill" [ngClass]="item.isActive ? 'active' : 'closed'">
