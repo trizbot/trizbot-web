@@ -24,12 +24,23 @@
         </mat-error>
       </div>
 
-      <!-- Pair -->
-      <mat-form-field appearance="outline" class="full-field">
-        <mat-label>Pair</mat-label>
-        <input matInput formControlName="pair" maxlength="50" placeholder="BTC/USDT" />
-        <mat-error *ngIf="form.get('pair')?.hasError('required')">Pair is required</mat-error>
-      </mat-form-field>
+      <div class="field-row">
+        <!-- Pair -->
+        <mat-form-field appearance="outline" class="half-field">
+          <mat-label>Pair</mat-label>
+          <input matInput formControlName="pair" maxlength="50" placeholder="BTC/USDT" />
+          <mat-error *ngIf="form.get('pair')?.hasError('required')">Pair is required</mat-error>
+        </mat-form-field>
+
+        <!-- Type -->
+        <mat-form-field appearance="outline" class="half-field">
+          <mat-label>Type</mat-label>
+          <mat-select formControlName="type">
+            <mat-option *ngFor="let t of types" [value]="t">{{ t | titlecase }}</mat-option>
+          </mat-select>
+          <mat-error *ngIf="form.get('type')?.hasError('required')">Type is required</mat-error>
+        </mat-form-field>
+      </div>
 
       <!-- Entry -->
       <mat-form-field appearance="outline" class="full-field">

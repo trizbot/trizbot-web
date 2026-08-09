@@ -1,6 +1,7 @@
 export enum SignalTypeEnum {
   Buy = 'Buy',
   Sell = 'Sell',
+  Hold = 'Hold',
 }
 
 /** New: replaces "type" (Buy/Sell) as the primary classification on the create/edit form */
@@ -32,11 +33,13 @@ export enum SubscriptionPeriodStatus {
 export const SIGNAL_TYPE_LABELS: Record<SignalTypeEnum, string> = {
   [SignalTypeEnum.Buy]: 'Buy',
   [SignalTypeEnum.Sell]: 'Sell',
+  [SignalTypeEnum.Hold]: 'Hold',
 };
 
 export const SIGNAL_TYPE_COLORS: Record<SignalTypeEnum, string> = {
   [SignalTypeEnum.Buy]: '#2e7d32',
   [SignalTypeEnum.Sell]: '#e53935',
+  [SignalTypeEnum.Hold]: '#ff9800',
 };
 
 export const SIGNAL_CATEGORY_LABELS: Record<SignalCategoryEnum, string> = {

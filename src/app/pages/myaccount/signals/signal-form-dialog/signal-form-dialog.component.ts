@@ -6,7 +6,7 @@ import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { MaterialModule } from '../../../../material.module';
 import { SharedService } from '../../../../shared/shared.service';
 import { SignalsService } from '../signals.service';
-import { SignalCategoryEnum, SignalItem } from '../model/signal.model';
+import { SignalCategoryEnum, SignalTypeEnum, SignalItem } from '../model/signal.model';
 
 export interface SignalFormDialogData {
   mode: 'create' | 'edit';
@@ -22,6 +22,7 @@ export interface SignalFormDialogData {
 })
 export class SignalFormDialogComponent implements OnInit {
   readonly categories = Object.values(SignalCategoryEnum);
+  readonly types = Object.values(SignalTypeEnum);
 
   saving = false;
 
@@ -32,6 +33,9 @@ export class SignalFormDialogComponent implements OnInit {
     pair: new FormControl<string>('', {
       nonNullable: true,
       validators: [Validators.required, Validators.maxLength(50)],
+    }),
+    type: new FormControl<SignalTypeEnum | null>(null, {
+      validators: [Validators.required],
     }),
     entryPrice: new FormControl<number | null>(null, { validators: [Validators.required] }),
     takeProfit1: new FormControl<number | null>(null),
@@ -58,6 +62,7 @@ export class SignalFormDialogComponent implements OnInit {
       this.form.patchValue({
         category: item.category,
         pair: item.pair,
+        type: item.type,
         entryPrice: item.entryPrice,
         takeProfit1: item.takeProfit1 ?? null,
         takeProfit2: item.takeProfit2 ?? null,
@@ -84,9 +89,8 @@ export class SignalFormDialogComponent implements OnInit {
     const payload = {
       category: raw.category as SignalCategoryEnum,
       pair: raw.pair.trim().toUpperCase(),
+      type: raw.type as SignalTypeEnum,
       entryPrice: raw.entryPrice as number,
-      // Only send TP levels the admin actually filled in — TP1 can be
-      // set alone, or any combination of TP1/TP2/TP3.
       takeProfit1: raw.takeProfit1 ?? undefined,
       takeProfit2: raw.takeProfit2 ?? undefined,
       takeProfit3: raw.takeProfit3 ?? undefined,
