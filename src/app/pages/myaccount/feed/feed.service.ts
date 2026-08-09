@@ -24,6 +24,13 @@ export class FeedService {
 
   constructor(private http: HttpClient) {}
 
+  uploadImage(formData: FormData): Observable<any> {
+    return this.http.post(
+      `${environment.cloudUploadApiUrl}/${environment.cloudinaryName}/image/upload`,
+      formData,
+    );
+  }
+
   getFeed(params: GetFeedParams): Observable<FeedListResponse> {
     let httpParams = new HttpParams();
     if (params.category) httpParams = httpParams.set('category', params.category);

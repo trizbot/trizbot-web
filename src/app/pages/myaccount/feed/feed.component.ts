@@ -38,7 +38,8 @@ export class FeedComponent implements OnInit, OnDestroy {
   readonly categoryOptions = FEED_CATEGORY_OPTIONS;
   readonly categoryLabels = FEED_CATEGORY_LABELS;
   readonly categoryColors = FEED_CATEGORY_COLORS;
- isSuperAdmin = false;
+
+  isSuperAdmin = false;
   activeTab: FeedTab = 'feed';
 
   /** Currently selected category from the button navigation ('' = All) */
@@ -73,38 +74,35 @@ export class FeedComponent implements OnInit, OnDestroy {
     return entityName === 'Admin';
   }
 
-  // get isSuperAdmin(): boolean {
-  //   return this.isSuperAdmin;
-  // }
-
   get totalPages(): number {
     return Math.max(1, Math.ceil(this.total / this.limit));
   }
 
   ngOnInit(): void {
     this.loadItems();
+    this.getTrader();
 
     this.filterForm.valueChanges
       .pipe(debounceTime(300), takeUntil(this.destroy$))
       .subscribe(() => {
         this.page = 1;
         this.loadItems();
-        this.getTrader();
       });
   }
 
-getTrader(): void {
-   this.traderService
-        .getTrader()
-        .pipe(takeUntil(this.destroy$))
-        .subscribe({
-          next: (res: GetTraderResBody) => {
-            this.isSuperAdmin = !!res.data?.isSuperAdmin;
-          },
-          error: (err) => {
-          },
-        });
-      }
+  getTrader(): void {
+    this.traderService
+      .getTrader()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (res: GetTraderResBody) => {
+          this.isSuperAdmin = !!res.data?.isSuperAdmin;
+        },
+        error: (err) => {
+          // Fail closed: isSuperAdmin stays false if this lookup fails.
+        },
+      });
+  }
 
   ngOnDestroy(): void {
     this.destroy$.next();

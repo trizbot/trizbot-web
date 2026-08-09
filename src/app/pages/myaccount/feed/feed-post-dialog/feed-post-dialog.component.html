@@ -49,10 +49,45 @@
       </mat-form-field>
     </div>
 
-    <mat-form-field appearance="outline" class="fpd-field">
-      <mat-label>Image URL</mat-label>
-      <input matInput formControlName="imageUrl" placeholder="https://..." />
-    </mat-form-field>
+    <!-- Image upload (dropzone, replaces the old Image URL text field) -->
+    <div class="fpd-field">
+      <mat-label class="fpd-image-label">Image</mat-label>
+
+      <ngx-dropzone
+        class="fpd-dropzone"
+        [class.has-preview]="displayImageUrl"
+        [multiple]="false"
+        accept="image/jpeg,image/png,image/webp"
+        (change)="onSelectImage($event)"
+      >
+        <ng-container *ngIf="!displayImageUrl; else imagePreview">
+          <mat-icon class="dz-icon">cloud_upload</mat-icon>
+          <ngx-dropzone-label>
+            <span class="dz-title">Click or drag to upload</span>
+            <span class="dz-sub">Post image (JPG, PNG, WEBP, max 5MB)</span>
+          </ngx-dropzone-label>
+        </ng-container>
+
+        <ng-template #imagePreview>
+          <div class="fpd-inline-preview-wrap">
+            <img
+              class="fpd-inline-preview"
+              [src]="displayImageUrl"
+              alt="Post image preview"
+              (error)="onPreviewImgError($event)"
+            />
+            <button
+              type="button"
+              class="fpd-remove-btn"
+              aria-label="Remove image"
+              (click)="onRemoveImage(); $event.stopPropagation()"
+            >
+              <mat-icon>close</mat-icon>
+            </button>
+          </div>
+        </ng-template>
+      </ngx-dropzone>
+    </div>
 
     <mat-form-field appearance="outline" class="fpd-field">
       <mat-label>Tags</mat-label>
