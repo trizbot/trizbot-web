@@ -9,9 +9,7 @@ export type CourseCategory =
 
 export type CourseLevel = 'Beginner' | 'Intermediate' | 'Advanced';
 
-// Aliases so either naming convention works across the module — the
-// create-course dialog imports the "Enum" suffix, everything else uses
-// the bare names. Both point at the same underlying type.
+
 export type CourseCategoryEnum = CourseCategory;
 export type CourseLevelEnum = CourseLevel;
 
