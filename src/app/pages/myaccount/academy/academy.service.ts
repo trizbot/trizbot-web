@@ -98,4 +98,23 @@ export class AcademyService {
       .get<CourseSale[] | ApiListResponse<CourseSale>>(`${this.baseUrl}/sales/mine`)
       .pipe(map(unwrapList));
   }
+
+
+
+
+uploadImage(formData: FormData): Observable<any> {
+  return this.http.post(
+    `${environment.cloudUploadApiUrl}/${environment.cloudinaryName}/image/upload`,
+    formData,
+  );
+}
+
+
+uploadRawFile(formData: FormData): Observable<any> {
+  return this.http.post(
+    `${environment.cloudUploadApiUrl}/${environment.cloudinaryName}/raw/upload`,
+    formData,
+  );
+}
+
 }

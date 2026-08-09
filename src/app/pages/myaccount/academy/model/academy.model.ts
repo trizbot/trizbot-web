@@ -1,10 +1,11 @@
 export type CourseCategory =
   | 'RiskManagement'
   | 'TechnicalAnalysis'
-  | 'FundamentalAnalysis'
+  | 'CryptoInvestment'
   | 'CryptoTrading'
-  | 'Forex'
-  | 'General';
+  | 'BeginnerGuide'
+  | 'General'
+  | 'Others';
 
 export type CourseLevel = 'Beginner' | 'Intermediate' | 'Advanced';
 
@@ -19,10 +20,11 @@ export const MAX_INLINE_CONTENT_LENGTH = 20000;
 export const CATEGORY_OPTIONS: { value: CourseCategory; label: string }[] = [
   { value: 'RiskManagement', label: 'Risk Management' },
   { value: 'TechnicalAnalysis', label: 'Technical Analysis' },
-  { value: 'FundamentalAnalysis', label: 'Fundamental Analysis' },
+  { value: 'CryptoInvestment', label: 'Crypto Investment' },
   { value: 'CryptoTrading', label: 'Crypto Trading' },
-  { value: 'Forex', label: 'Forex' },
+  { value: 'BeginnerGuide', label: "Beginner's Guide"},
   { value: 'General', label: 'General' },
+  { value: 'Others', label: 'Others' },
 ];
 
 export const LEVEL_OPTIONS: { value: CourseLevel; label: string }[] = [
@@ -48,7 +50,11 @@ export interface Course {
   price: number;
   category: CourseCategory;
   level: CourseLevel;
+  coverPhotoUrl?: string | null;
+  pdfUrl?: string | null;
+  /** @deprecated renamed to coverPhotoUrl — kept for backward compatibility with older records */
   thumbnailUrl?: string | null;
+  /** @deprecated renamed to pdfUrl — kept for backward compatibility with older records */
   attachmentUrl?: string | null;
   tags: string[];
   isPublished: boolean;
@@ -88,11 +94,16 @@ export interface CourseQueryParams {
 export interface CreateCourseReqBody {
   title: string;
   description?: string;
-  content: string;
+  /** Optional — the dialog's content field has no required validator */
+  content?: string;
   price: number;
   category?: CourseCategory;
   level?: CourseLevel;
+  coverPhotoUrl?: string;
+  pdfUrl?: string;
+  /** @deprecated renamed to coverPhotoUrl */
   thumbnailUrl?: string;
+  /** @deprecated renamed to pdfUrl */
   attachmentUrl?: string;
   tags?: string[];
   isPublished?: boolean;
@@ -106,16 +117,8 @@ export interface PurchaseCourseReqBody {
   transactionPin?: string; // omitted entirely for free courses
 }
 
-/**
- * ---------------------------------------------------------------------
- * Raw API shape.
- * The backend currently returns near-raw Mongo documents (see sample
- * payload: `_id`, `instructorId`, `instructorName`, `purchaseCount`,
- * `createdAt: { $date }`, etc). Normalizing that into the UI-facing
- * `Course` shape lives in one place (the service) so the component and
- * template never have to guess about field names.
- * ---------------------------------------------------------------------
- */
+
+
 export interface RawCourseDoc {
   _id?: string;
   id?: string;
@@ -125,7 +128,11 @@ export interface RawCourseDoc {
   price?: number;
   category?: string;
   level?: string;
+  coverPhotoUrl?: string | null;
+  pdfUrl?: string | null;
+  /** @deprecated renamed to coverPhotoUrl — some existing docs may still only have this */
   thumbnailUrl?: string | null;
+  /** @deprecated renamed to pdfUrl — some existing docs may still only have this */
   attachmentUrl?: string | null;
   tags?: string[];
   isPublished?: boolean;
@@ -190,6 +197,8 @@ export function normalizeCourse(raw: RawCourseDoc): Course {
     price: typeof raw.price === 'number' ? raw.price : 0,
     category: (raw.category as CourseCategory) || 'General',
     level: (raw.level as CourseLevel) || 'Beginner',
+    coverPhotoUrl: raw.coverPhotoUrl ?? raw.thumbnailUrl ?? null,
+    pdfUrl: raw.pdfUrl ?? raw.attachmentUrl ?? null,
     thumbnailUrl: raw.thumbnailUrl || null,
     attachmentUrl: raw.attachmentUrl || null,
     tags: Array.isArray(raw.tags) ? raw.tags : [],

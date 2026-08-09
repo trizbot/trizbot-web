@@ -1,127 +1,277 @@
-// create-course-dialog/create-course-dialog.component.ts
-
 import { CommonModule } from '@angular/common';
-import { Component, Inject } from '@angular/core';
+import { Component, Inject, OnDestroy, OnInit } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
+import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import { NgxDropzoneModule } from 'ngx-dropzone';
+
+import { forkJoin, of } from 'rxjs';
+import { switchMap } from 'rxjs/operators';
 
 import { MaterialModule } from '../../../../material.module';
-import { SharedService } from '../../../../shared/shared.service';
 import { AcademyService } from '../academy.service';
 import {
   CATEGORY_OPTIONS,
   Course,
-  CourseCategoryEnum,
-  CourseLevelEnum,
+  CourseCategory,
+  CourseLevel,
+  CreateCourseReqBody,
   LEVEL_OPTIONS,
-  MAX_INLINE_CONTENT_LENGTH,
+  UpdateCourseReqBody,
 } from '../model/academy.model';
+
+const MAX_COVER_PHOTO_SIZE_BYTES = 1 * 1024 * 1024; // 1MB, per spec
+const MAX_PDF_SIZE_BYTES = 10 * 1024 * 1024; // 10MB — not specified, adjust this constant if you need a different cap
+const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+const ACCEPTED_PDF_TYPE = 'application/pdf';
 
 export interface CreateCourseDialogData {
   existing?: Course;
 }
 
+type UploadSlot = 'coverPhoto' | 'pdf';
+
 @Component({
   selector: 'app-create-course-dialog',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, MaterialModule, MatDialogModule],
+  imports: [CommonModule, ReactiveFormsModule, MaterialModule, NgxDropzoneModule],
   templateUrl: './create-course-dialog.component.html',
   styleUrls: ['./create-course-dialog.component.scss'],
 })
-export class CreateCourseDialogComponent {
+export class CreateCourseDialogComponent implements OnInit, OnDestroy {
   readonly categoryOptions = CATEGORY_OPTIONS;
   readonly levelOptions = LEVEL_OPTIONS;
-  readonly maxContentLength = MAX_INLINE_CONTENT_LENGTH;
+  readonly maxContentLength = 20000;
 
   loading = false;
   errorMessage = '';
+
+  // ---- Cover photo ----
+  coverPhotoFile: File | null = null;
+  coverPhotoPreviewUrl: string | null = null;
+  existingCoverPhotoUrl: string | null = null;
+
+  // ---- PDF ----
+  pdfFile: File | null = null;
+  pdfFileName: string | null = null;
+  existingPdfUrl: string | null = null;
+
+  form = new FormGroup({
+    title: new FormControl<string>('', { nonNullable: true, validators: [Validators.required] }),
+    description: new FormControl<string>(''),
+    category: new FormControl<string>(''),
+    level: new FormControl<string>(''),
+    price: new FormControl<number>(0, {
+      nonNullable: true,
+      validators: [Validators.required, Validators.min(0)],
+    }),
+    tags: new FormControl<string>(''),
+    content: new FormControl<string>('', { validators: [Validators.maxLength(this.maxContentLength)] }),
+  });
 
   get isEditing(): boolean {
     return !!this.data.existing;
   }
 
-  form = new FormGroup({
-    title: new FormControl('', [Validators.required, Validators.maxLength(300)]),
-    description: new FormControl('', [Validators.maxLength(1000)]),
-    content: new FormControl('', [Validators.required, Validators.maxLength(MAX_INLINE_CONTENT_LENGTH)]),
-    thumbnailUrl: new FormControl(''),
-    attachmentUrl: new FormControl(''),
-    price: new FormControl<number | null>(0, [Validators.required, Validators.min(0)]),
-    category: new FormControl<CourseCategoryEnum | ''>(''),
-    level: new FormControl<CourseLevelEnum | ''>(''),
-    tags: new FormControl(''), // comma-separated in the UI, split before submit
-  });
+  get contentLength(): number {
+    return this.form.get('content')?.value?.length || 0;
+  }
+
+  /** True once a cover photo exists, whether newly picked or carried over from the existing course. */
+  get hasCoverPhoto(): boolean {
+    return !!this.coverPhotoPreviewUrl || !!this.existingCoverPhotoUrl;
+  }
+
+  get coverPhotoDisplayUrl(): string | null {
+    return this.coverPhotoPreviewUrl || this.existingCoverPhotoUrl;
+  }
+
+  get hasPdf(): boolean {
+    return !!this.pdfFile || !!this.existingPdfUrl;
+  }
+
+  get pdfDisplayName(): string | null {
+    return this.pdfFileName || (this.existingPdfUrl ? this.existingPdfUrl.split('/').pop() || 'Current PDF' : null);
+  }
 
   constructor(
     private dialogRef: MatDialogRef<CreateCourseDialogComponent>,
     private academyService: AcademyService,
-    private sharedService: SharedService,
     @Inject(MAT_DIALOG_DATA) public data: CreateCourseDialogData
-  ) {
-    if (data.existing) {
-      const c = data.existing;
+  ) {}
+
+  ngOnInit(): void {
+    if (this.isEditing && this.data.existing) {
+      const c = this.data.existing;
       this.form.patchValue({
         title: c.title,
         description: c.description || '',
-        content: c.content,
-        thumbnailUrl: c.thumbnailUrl || '',
-        attachmentUrl: c.attachmentUrl || '',
-        price: c.price,
         category: c.category || '',
         level: c.level || '',
+        price: c.price ?? 0,
         tags: (c.tags || []).join(', '),
+        content: c.content || '',
       });
+      this.existingCoverPhotoUrl = c.coverPhotoUrl || null;
+      this.existingPdfUrl = c.pdfUrl || null;
     }
   }
 
-  get contentLength(): number {
-    return this.form.getRawValue().content?.length || 0;
+  ngOnDestroy(): void {
+    this.revokeCoverPhotoPreview();
   }
 
-  submit(): void {
-    if (this.form.invalid) {
-      this.form.markAllAsTouched();
-      return;
+  private revokeCoverPhotoPreview(): void {
+    if (this.coverPhotoPreviewUrl) {
+      URL.revokeObjectURL(this.coverPhotoPreviewUrl);
+    }
+  }
+
+  // ---------- Cover photo ----------
+  onSelectCoverPhoto(event: any): void {
+    const file = this.validateFile(event, 'coverPhoto');
+    if (!file) return;
+
+    this.revokeCoverPhotoPreview();
+    this.coverPhotoFile = file;
+    this.coverPhotoPreviewUrl = URL.createObjectURL(file);
+    this.existingCoverPhotoUrl = null; // being replaced by the new file
+  }
+
+  onRemoveCoverPhoto(): void {
+    this.revokeCoverPhotoPreview();
+    this.coverPhotoFile = null;
+    this.coverPhotoPreviewUrl = null;
+    this.existingCoverPhotoUrl = null;
+  }
+
+  // ---------- PDF ----------
+  onSelectPdf(event: any): void {
+    const file = this.validateFile(event, 'pdf');
+    if (!file) return;
+
+    this.pdfFile = file;
+    this.pdfFileName = file.name;
+    this.existingPdfUrl = null; // being replaced by the new file
+  }
+
+  onRemovePdf(): void {
+    this.pdfFile = null;
+    this.pdfFileName = null;
+    this.existingPdfUrl = null;
+  }
+
+  // ---------- Shared validation ----------
+  private validateFile(event: any, slot: UploadSlot): File | null {
+    const addedFiles: File[] = event?.addedFiles ?? [];
+    if (!addedFiles.length) return null;
+
+    const file = addedFiles[addedFiles.length - 1];
+    if (!(file instanceof File)) {
+      this.errorMessage = `${this.slotLabel(slot)}: could not read the selected file.`;
+      return null;
+    }
+
+    if (slot === 'coverPhoto') {
+      if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
+        this.errorMessage = 'Cover photo: only JPG, PNG, or WEBP images are allowed.';
+        return null;
+      }
+      if (file.size > MAX_COVER_PHOTO_SIZE_BYTES) {
+        this.errorMessage = 'Cover photo: file is too large (max 1MB).';
+        return null;
+      }
+    }
+
+    if (slot === 'pdf') {
+      if (file.type !== ACCEPTED_PDF_TYPE) {
+        this.errorMessage = 'Course PDF: only PDF files are allowed.';
+        return null;
+      }
+      if (file.size > MAX_PDF_SIZE_BYTES) {
+        this.errorMessage = 'Course PDF: file is too large (max 10MB).';
+        return null;
+      }
     }
 
     this.errorMessage = '';
-    this.loading = true;
-    const value = this.form.getRawValue();
-    const tags = (value.tags || '')
-      .split(',')
-      .map((t) => t.trim())
-      .filter(Boolean);
+    return file;
+  }
 
-    const payload = {
-      title: value.title!,
-      description: value.description || undefined,
-      content: value.content!,
-      thumbnailUrl: value.thumbnailUrl || undefined,
-      attachmentUrl: value.attachmentUrl || undefined,
-      price: value.price!,
-      category: (value.category as CourseCategoryEnum) || undefined,
-      level: (value.level as CourseLevelEnum) || undefined,
-      tags: tags.length ? tags : undefined,
-    };
+  private slotLabel(slot: UploadSlot): string {
+    return slot === 'coverPhoto' ? 'Cover photo' : 'Course PDF';
+  }
 
-    const request = this.isEditing
-      ? this.academyService.updateCourse(this.data.existing!.id, payload)
-      : this.academyService.createCourse(payload);
+  private uploadCoverPhoto(file: File) {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('upload_preset', 'trizbot');
+    formData.append('folder', 'academy/covers');
+    return this.academyService.uploadImage(formData);
+  }
 
-    request.subscribe({
-      next: () => {
-        this.loading = false;
-        this.dialogRef.close(true);
-      },
-      error: (err) => {
-        this.loading = false;
-        const message = err?.error?.message || 'Could not save this course. Please try again.';
-        this.errorMessage = Array.isArray(message) ? message.join(', ') : message;
-      },
-    });
+  private uploadPdf(file: File) {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('upload_preset', 'trizbot');
+    formData.append('folder', 'academy/pdfs');
+    return this.academyService.uploadRawFile(formData);
   }
 
   close(): void {
     this.dialogRef.close(false);
+  }
+
+  submit(): void {
+    this.errorMessage = '';
+
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
+      this.errorMessage = 'Please fill in the required fields.';
+      return;
+    }
+
+    this.loading = true;
+    const raw = this.form.getRawValue();
+
+   
+    const coverPhoto$ = this.coverPhotoFile ? this.uploadCoverPhoto(this.coverPhotoFile) : of(null);
+    const pdf$ = this.pdfFile ? this.uploadPdf(this.pdfFile) : of(null);
+
+    forkJoin({ coverPhoto: coverPhoto$, pdf: pdf$ })
+      .pipe(
+        switchMap(({ coverPhoto, pdf }) => {
+          const payload: CreateCourseReqBody | UpdateCourseReqBody = {
+            title: raw.title.trim(),
+            description: raw.description?.trim() || undefined,
+            category: (raw.category as CourseCategory) || undefined,
+            level: (raw.level as CourseLevel) || undefined,
+            price: raw.price,
+            coverPhotoUrl: coverPhoto ? coverPhoto.secure_url : this.existingCoverPhotoUrl || undefined,
+            pdfUrl: pdf ? pdf.secure_url : this.existingPdfUrl || undefined,
+            tags: raw.tags
+              ? raw.tags
+                  .split(',')
+                  .map((t) => t.trim())
+                  .filter(Boolean)
+              : undefined,
+            content: raw.content?.trim() || undefined,
+          };
+
+          return this.isEditing && this.data.existing
+            ? this.academyService.updateCourse(this.data.existing.id, payload)
+            : this.academyService.createCourse(payload as CreateCourseReqBody);
+        }),
+      )
+      .subscribe({
+        next: () => {
+          this.loading = false;
+          this.dialogRef.close(true);
+        },
+        error: (err) => {
+          this.loading = false;
+          const message = err?.error?.message || 'Could not save this course. Please try again.';
+          this.errorMessage = Array.isArray(message) ? message.join(', ') : message;
+        },
+      });
   }
 }
