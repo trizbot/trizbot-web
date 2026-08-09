@@ -211,7 +211,7 @@ export class FeedPostDialogComponent implements OnInit, OnDestroy {
           if (err?.slot === 'image') {
             this.error = 'Image upload failed. Please try again.';
           } else {
-            this.error =  'Could not save post. Please check the fields and try again.' || err?.message;
+            this.error = 'Could not save post. Please check the fields and try again.';
           }
         },
       });
