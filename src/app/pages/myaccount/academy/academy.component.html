@@ -5,9 +5,9 @@
   <!-- ================================================================= -->
   <header class="academy-header">
     <div class="academy-header__text">
-      <p class="academy-eyebrow">Trading Academy</p>
+      <p class="academy-eyebrow">Crypto Academy</p>
       <h1 class="academy-title">Learn from verified traders</h1>
-      <p class="academy-subtitle">Buy courses from traders with a track record, or publish your own.</p>
+      <p class="academy-subtitle">Publish a course.</p>
     </div>
     <button
       mat-flat-button
@@ -31,6 +31,7 @@
       [class.active]="activeTab === 'browse'"
       [attr.aria-selected]="activeTab === 'browse'"
       (click)="selectTab('browse')"
+      *ngIf="!isSuperAdmin"
     >
       Browse
     </button>
@@ -40,6 +41,7 @@
       [class.active]="activeTab === 'my-courses'"
       [attr.aria-selected]="activeTab === 'my-courses'"
       (click)="selectTab('my-courses')"
+      
     >
       My courses
       <span class="academy-tab__count" *ngIf="myCourses?.length">{{ myCourses.length }}</span>
@@ -50,6 +52,7 @@
       [class.active]="activeTab === 'purchased'"
       [attr.aria-selected]="activeTab === 'purchased'"
       (click)="selectTab('purchased')"
+      *ngIf="!isSuperAdmin" 
     >
       Purchased
       <span class="academy-tab__count" *ngIf="purchases?.length">{{ purchases.length }}</span>
@@ -60,6 +63,7 @@
       [class.active]="activeTab === 'sales'"
       [attr.aria-selected]="activeTab === 'sales'"
       (click)="selectTab('sales')"
+     
     >
       Sales
       <span class="academy-tab__count" *ngIf="sales?.length">{{ sales.length }}</span>
@@ -69,7 +73,7 @@
   <!-- ================================================================= -->
   <!-- BROWSE -->
   <!-- ================================================================= -->
-  <ng-container *ngIf="activeTab === 'browse'">
+  <ng-container *ngIf="activeTab === 'browse' && !isSuperAdmin">
 
     <div class="academy-filterbar" [formGroup]="filterForm">
       <mat-form-field appearance="outline" class="filter-field grow">

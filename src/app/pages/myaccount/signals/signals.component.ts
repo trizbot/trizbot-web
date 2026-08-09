@@ -139,7 +139,7 @@ export class SignalsComponent implements OnInit, OnDestroy {
           this.isSuperAdmin = !!res.data?.isSuperAdmin;
         },
         error: (err) => {
-          console.error('[SignalsComponent] getTrader failed:', err.status, err.error ?? err.message);
+          // console.error('[SignalsComponent] getTrader failed:', err.status, err.error ?? err.message);
         },
       });
   }

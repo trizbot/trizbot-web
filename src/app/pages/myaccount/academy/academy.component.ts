@@ -12,6 +12,8 @@ import { SharedService } from '../../../shared/shared.service';
 import { AcademyService } from './academy.service';
 import { CreateCourseDialogComponent } from './create-course-dialog/create-course-dialog.component';
 import { PurchaseCourseDialogComponent } from './purchase-course-dialog/purchase-course-dialog.component';
+import { TraderService } from '../../../../app/appstate/trader.service';
+import { GetTraderResBody } from '../../../../app/services/auth.type';
 
 import {
   CATEGORY_OPTIONS,
@@ -33,6 +35,7 @@ type MainTab = 'browse' | 'my-courses' | 'purchased' | 'sales';
 export class AcademyComponent implements OnInit, OnDestroy {
   private sharedService = inject(SharedService);
   private destroy$ = new Subject<void>();
+  private traderService = inject(TraderService);
 
   readonly categoryOptions = CATEGORY_OPTIONS;
   readonly levelOptions = LEVEL_OPTIONS;
@@ -49,6 +52,7 @@ export class AcademyComponent implements OnInit, OnDestroy {
   courses: Course[] = [];
   coursesLoading = false;
   coursesError = false;
+  isSuperAdmin = false;
 
   // ---- My Courses (created) ----
   myCourses: Course[] = [];
@@ -70,11 +74,26 @@ export class AcademyComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.loadCourses();
+    this.getTrader();
 
     this.filterForm.controls.search.valueChanges
       .pipe(debounceTime(400), distinctUntilChanged(), takeUntil(this.destroy$))
       .subscribe(() => this.loadCourses());
   }
+
+
+getTrader(): void {
+   this.traderService
+        .getTrader()
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: (res: GetTraderResBody) => {
+            this.isSuperAdmin = !!res.data?.isSuperAdmin;
+          },
+          error: (err) => {
+          },
+        });
+      }
 
   ngOnDestroy(): void {
     this.destroy$.next();
