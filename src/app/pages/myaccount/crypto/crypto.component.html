@@ -54,9 +54,9 @@
           <div class="col-lg-6">
             <mat-label class="f-w-600 m-b-8 d-block">Expiration Duration</mat-label>
             <mat-form-field appearance="outline" class="w-100" color="primary">
-              <mat-select placeholder="Select Expiration Hours" name="expiry" [(ngModel)]="cryptoData.expiry">
+              <mat-select placeholder="Select Expiration Days" name="expiry" [(ngModel)]="cryptoData.expiry">
                 <mat-option *ngFor="let expiry of expiryOptions" [value]="expiry">
-                  {{ expiry }} Hours
+                  {{ expiry }} Days
                 </mat-option>
               </mat-select>
             </mat-form-field>

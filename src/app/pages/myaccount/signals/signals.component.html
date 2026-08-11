@@ -5,7 +5,7 @@
     <div class="signals-hero-text">
       <span class="signals-eyebrow">Desk Calls · Live</span>
       <h1 class="signals-title">Signals</h1>
-      <p class="signals-subtitle">Entry, take-profit and stop-loss calls from the desk — subscribe to unlock.</p>
+      <p class="signals-subtitle" *ngIf="!isSuperAdmin" >Entry, take-profit and stop-loss calls from the desk — subscribe to unlock.</p>
     </div>
     <button
       *ngIf="canManageSignals"

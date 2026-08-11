@@ -1,7 +1,7 @@
 <!-- TRADE TABS SECTION -->
  <div class="row mt-5">
-   <div class="col-lg-4"><strong>Market Status:</strong>
-    <b *ngIf="isCryptoAvailableStatus">Trade is now open </b>
+   <div class="col-lg-4"><strong>Stake Status:</strong>
+    <b *ngIf="isCryptoAvailableStatus">Stake is now open </b>
     <b *ngIf="!isCryptoAvailableStatus"> {{ isCryptoAvailableDescription }} </b>
 </div>
  </div>
@@ -12,10 +12,10 @@
       <div class="row">
    
         <div class="col-lg-4">
-          <!-- <mat-label class="f-w-600 m-b-8 d-block">Trade Status*</mat-label> -->
+          <!-- <mat-label class="f-w-600 m-b-8 d-block">Stake Status*</mat-label> -->
           <mat-form-field appearance="outline" class="w-100">
             <mat-select
-              placeholder="Select Trade Status"
+              placeholder="Select Stake Status"
               name="tradeStatus"
               required
               [(ngModel)]="resumeData.tradeStatus">
@@ -66,7 +66,7 @@
       <mat-tab-group animationDuration="300ms" class="custom-tabs">
         <!-- available trades begins -->
         <mat-tab label="" style="font-size: 15px!important;">
-          <h3 class="text-center">📈 Available Trades</h3>
+          <h3 class="text-center">📈 Available Stake</h3>
           <div class="p-12">
             <div *ngIf="availableCryptoList.length > 0; else noData">
               <div class="crypto-list-container d-flex flex-wrap gap-3 justify-content-start">
@@ -100,16 +100,16 @@
   </div>
   <div class="col-12 mb-4">
     <div class="fw-bold mb-4">   <br><b>Expires:</b></div>
-    <div>{{ crypto.expiry }} Hours</div>
+    <div>{{ crypto.expiry }} Days</div>
   </div>
-  <div class="col-12 mb-4">
+  <!-- <div class="col-12 mb-4">
     <div class="fw-bold mb-4">   <br><b>Buy Exchange:</b></div>
     <div>{{ crypto.buyExchange }}</div>
   </div>
   <div class="col-12 mb-4">
     <div class="fw-bold mb-4">   <br><b>Sell Exchange:</b></div>
     <div>{{ crypto.sellExchange }}</div>
-  </div>
+  </div> -->
 </div>
                         <br>
                         <button mat-raised-button (click)="onRemoveTrade(crypto.id)" style="color: #fff; background-color: #FF5722; border: none;">Delete</button>

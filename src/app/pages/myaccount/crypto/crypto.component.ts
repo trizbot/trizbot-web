@@ -94,7 +94,7 @@ walletBalance: string = '0.00';
 
 
   percentageOptions: number[] = Array.from({ length: 100 }, (_, i) => i + 1);
-  expiryOptions: number[] = Array.from({ length: 100 }, (_, i) => i + 1);
+  expiryOptions: number[] = Array.from({ length: 365 }, (_, i) => i + 1);
 
 
   constructor(
