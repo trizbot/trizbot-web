@@ -217,16 +217,15 @@
         <tbody>
           <tr *ngFor="let item of history">
             <td>
-              <!-- <span class="direction-badge" [ngClass]="isOutgoing(item) ? 'debit' : 'credit'">
-                {{ isOutgoing(item) ? '↑' : '↓' }} -->
-                 {{counterpartyState(item)}}
-              <!-- </span> -->
+              <span class="direction-badge" [ngClass]="currentUserEmail ? 'debit' : 'credit'">
+                {{ counterpartyState(item) ? '↑' : '↓' }}
+              </span>
               {{ counterpartyName(item) }}
               <span class="handle">{{ counterpartyEmail(item) }}</span>
             </td>
             <td [ngClass]="isOutgoing(item) ? 'amount-debit' : 'amount-credit'">
-              <!-- {{ isOutgoing(item) ? '-' : '+' }}${{ item.amount }} -->
-             {{ counterpartyAmount(item)| number: '1.2-2' }}
+              {{ counterpartyState(item) ? '-' : '+' }}${{ item.amount }}
+             <!-- {{ counterpartyAmount(item)| number: '1.2-2' }} -->
             </td>
             <td>
               <span class="status-pill" [ngClass]="statusClass(item)">{{ item.status }}</span>
