@@ -271,7 +271,7 @@ export class TransferComponent implements OnInit, OnDestroy {
     if (full) {
       return full;
     }
-    return this.beneficiary?.userName?.trim() || 'Member';
+    return this.beneficiary?.userName?.trim() || full||'Member';
   }
 
   get stepIndex(): number {
