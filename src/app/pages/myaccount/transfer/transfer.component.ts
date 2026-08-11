@@ -233,13 +233,7 @@ export class TransferComponent implements OnInit, OnDestroy {
     });
   }
 
-  /**
-   * The history endpoint has been observed returning a bare array in some
-   * environments and a wrapped payload (e.g. `{ data: [...] }`) in others.
-   * Normalizing here means the template's `history.length` checks never see
-   * `undefined` and silently render nothing — pin down the real shape on the
-   * backend and this can be simplified back to `res as TransferHistoryItem[]`.
-   */
+ 
   private normalizeHistoryResponse(res: unknown): TransferHistoryItem[] {
     if (Array.isArray(res)) {
       return res as TransferHistoryItem[];
@@ -252,7 +246,6 @@ export class TransferComponent implements OnInit, OnDestroy {
         }
       }
     }
-    console.warn('Unexpected transfer history response shape:', res);
     return [];
   }
 
@@ -264,21 +257,21 @@ export class TransferComponent implements OnInit, OnDestroy {
   }
 
   /** Display name for the beneficiary. Falls back to username, then a generic label. */
-  get beneficiaryDisplayName(): string {
+  beneficiaryDisplayName(data: TransferHistoryItem): string {
     const first = this.beneficiary?.firstName?.trim() ?? '';
     const last = this.beneficiary?.lastName?.trim() ?? '';
     const full = `${first} ${last}`.trim();
     if (full) {
       return full;
     }
-    return this.beneficiary?.userName?.trim() || full||'Member';
+ 
+    return this.beneficiary?.userName?.trim() || full || data.receiverName;
   }
 
   get stepIndex(): number {
     return this.steps.findIndex((s) => s.key === this.currentStep);
   }
 
-  /** Whether a given step is complete/reachable, used to render the step indicator. */
   isStepComplete(key: TransferStep): boolean {
     return this.steps.findIndex((s) => s.key === key) < this.stepIndex;
   }
