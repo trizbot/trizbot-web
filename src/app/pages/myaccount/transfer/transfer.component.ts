@@ -187,11 +187,30 @@ export class TransferComponent implements OnInit, OnDestroy {
 
   counterpartyName(item: TransferHistoryItem): string {
     this.beneficiaryFullName =item.receiverName;
-    return this.isOutgoing(item) ? item.receiverName : item.senderName;
+
+      if(this.currentUserEmail == item.senderEmail){
+        return item.senderName;
+      }else{
+        return item.receiverName;
+      }
+  // return this.isOutgoing(item) ? item.receiverName : item.senderName;
+  }
+  counterpartyAmount(item: TransferHistoryItem): any {
+      if(this.currentUserEmail == item.senderEmail){
+        return `-${item.amount}`;
+      }else{
+        return `+${item.amount}`;
+      }
   }
 
   counterpartyEmail(item: TransferHistoryItem): string {
-    return this.isOutgoing(item) ? item.receiverEmail : item.senderEmail;
+      if(this.currentUserEmail == item.senderEmail){
+        return item.senderEmail;
+      }else{
+        return item.receiverEmail;
+      }
+
+    // return this.isOutgoing(item) ? item.receiverEmail : item.senderEmail;
   }
 
   historyDate(item: TransferHistoryItem): Date | null {
