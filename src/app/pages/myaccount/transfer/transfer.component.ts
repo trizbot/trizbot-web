@@ -342,7 +342,7 @@ export class TransferComponent implements OnInit, OnDestroy {
       .subscribe({
         next: () => {
           this.sharedService.showToast({
-            title: `Transfer of $${amount} to ${this.beneficiary?.firstName} ${this.beneficiary?.lastName} was successful`,
+            title: `Transfer of $${amount} to ${this.beneficiaryFullName}  was successful`,
           });
           this.submitLoading = false;
           this.resetForm();
