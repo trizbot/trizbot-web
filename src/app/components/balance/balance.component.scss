@@ -826,4 +826,69 @@
   to {
     transform: rotate(360deg);
   }
+
 }
+
+  .bb-plan-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    border: 1px solid var(--bb-border-color, #e5e7eb);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+
+  .bb-plan-table thead th {
+    text-align: left;
+    padding: 12px 16px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    color: var(--bb-muted-text, #6b7280);
+    background: var(--bb-table-head-bg, #f9fafb);
+    border-bottom: 1px solid var(--bb-border-color, #e5e7eb);
+  }
+
+  .bb-plan-table tbody td {
+    padding: 14px 16px;
+    font-size: 0.9rem;
+    vertical-align: middle;
+    border-bottom: 1px solid var(--bb-border-color, #f0f1f3);
+  }
+
+  .bb-plan-table tbody tr:last-child td {
+    border-bottom: none;
+  }
+
+  .bb-plan-table tbody tr:hover td {
+    background: var(--bb-row-hover-bg, #fafafa);
+  }
+
+  .bb-plan-table .bb-plan-name {
+    font-weight: 600;
+  }
+
+  .bb-plan-table .bb-plan-subs {
+    color: var(--bb-muted-text, #6b7280);
+  }
+
+  .bb-plan-table .bb-plan-amount {
+    font-weight: 600;
+    color: var(--bb-accent-color, #16a34a);
+  }
+
+  /* Keep the Opportunities table using the same spacing language */
+  .bb-opp-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+
+  .bb-opp-table thead th {
+    padding: 12px 16px;
+  }
+
+  .bb-opp-table tbody td {
+    padding: 14px 16px;
+  }

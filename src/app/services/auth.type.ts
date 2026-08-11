@@ -17,14 +17,40 @@ export type SigninDto = {
   password: string;
 };
 
+
+
+export type SubscriptionPlanStat = {
+  subscribers: number;
+  amount: number;
+  plan: string; // 'Daily' | 'Weekly' | 'Monthly'
+};
+
+export type SubscriptionStats = {
+  totalSubscribers: number;
+  totalAmount: number;
+  byPlan: SubscriptionPlanStat[];
+};
+
+export type AdminCourseStats = {
+  totalSales: number;
+  totalAmount: number;
+};
+
 export type GetWeeklyStatisticsResBody = {
   data: {
-    totalUsers: string;
-    totalActiveUsers: string;
-    totalWeeklyFunds: string;
-    totalWeeklyProfits: string;
+    totalUsers: number;
+    totalActiveUsers: number;
+    totalWeeklyFunds: number;
+    totalWeeklyProfits: number;
+    signal: SubscriptionStats;
+    arbitrageScanner: SubscriptionStats;
+    adminCourse: AdminCourseStats;
   };
+  message: string;
 };
+
+
+
 
 export type PayoutTransactionResBody = {
   data: {

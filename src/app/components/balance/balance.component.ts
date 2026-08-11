@@ -6,7 +6,13 @@ import { TablerIconsModule } from 'angular-tabler-icons';
 import { interval, Subscription, Subject } from 'rxjs';
 import { debounceTime, takeUntil } from 'rxjs/operators';
 import { TraderService } from '../../../app/appstate/trader.service';
-import { GetTraderResBody, GetCryptoResBody, GetWeeklyStatisticsResBody } from '../../../app/services/auth.type';
+import {
+  GetTraderResBody,
+  GetCryptoResBody,
+  GetWeeklyStatisticsResBody,
+  SubscriptionStats,
+  AdminCourseStats,
+} from '../../../app/services/auth.type';
 import { CommonModule } from '@angular/common';
 import { Store } from '@ngrx/store';
 import { Observable } from 'rxjs';
@@ -67,10 +73,17 @@ export class WalletBalanceComponent implements OnInit, OnDestroy {
   loading$: Observable<boolean>;
   error$: Observable<any>;
 
-  totalUsers: string;
-  totalActiveUsers: number;
-  totalWeeklyFunds: number;
-  totalWeeklyProfits: number;
+  totalUsers: number = 0;
+  totalActiveUsers: number = 0;
+  totalWeeklyFunds: number = 0;
+  totalWeeklyProfits: number = 0;
+
+  // ---------------------------------------------------------------------
+  // Admin dashboard: subscription / course stats
+  // ---------------------------------------------------------------------
+  signalStats: SubscriptionStats = { totalSubscribers: 0, totalAmount: 0, byPlan: [] };
+  arbitrageScannerStats: SubscriptionStats = { totalSubscribers: 0, totalAmount: 0, byPlan: [] };
+  adminCourseStats: AdminCourseStats = { totalSales: 0, totalAmount: 0 };
 
   entityName: string;
   isSuperAdmin: boolean;
@@ -195,7 +208,12 @@ export class WalletBalanceComponent implements OnInit, OnDestroy {
     this.traderService.getWeeklyStatistics().subscribe({
       next: (res: GetWeeklyStatisticsResBody) => {
         this.totalUsers = res.data.totalUsers;
+
+        this.signalStats = res.data.signal;
+        this.arbitrageScannerStats = res.data.arbitrageScanner;
+        this.adminCourseStats = res.data.adminCourse;
       },
+      error: () => {},
     });
   }
 
@@ -248,8 +266,6 @@ export class WalletBalanceComponent implements OnInit, OnDestroy {
           this.isAdminDashBoardType = false;
           this.isTradersDashBoardType = true;
         }
-
-       
       },
       error: (err) => {
         this.errorMessage = '';
@@ -502,14 +518,12 @@ export class WalletBalanceComponent implements OnInit, OnDestroy {
     this.arbCurrentPage = 1;
   }
 
-  // Filtered + sorted, but NOT yet paginated — used to compute totals.
   get visibleOpportunities(): ArbitrageOpportunity[] {
     return this.allOpportunities
       .filter((o) => o.buyExchange === this.activeExchange || o.sellExchange === this.activeExchange)
       .sort((a, b) => b.spreadPercent - a.spreadPercent);
   }
 
-  // What the table actually renders: one page's worth of visibleOpportunities.
   get pagedOpportunities(): ArbitrageOpportunity[] {
     const start = (this.arbCurrentPage - 1) * this.arbPageSize;
     return this.visibleOpportunities.slice(start, start + this.arbPageSize);
@@ -528,7 +542,6 @@ export class WalletBalanceComponent implements OnInit, OnDestroy {
     return Math.min(this.arbCurrentPage * this.arbPageSize, this.visibleOpportunities.length);
   }
 
-  // Compact page-number list with ellipses, e.g. [1, '…', 4, 5, 6, '…', 12]
   get arbPageNumbers(): (number | '…')[] {
     const total = this.arbTotalPages;
     const current = this.arbCurrentPage;
@@ -619,7 +632,7 @@ export class WalletBalanceComponent implements OnInit, OnDestroy {
       })
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (res:any) => {
+        next: (res: any) => {
           this.allOpportunities = res;
           this.updateArbTokenOptions(res);
           if (this.arbCurrentPage > this.arbTotalPages) {
