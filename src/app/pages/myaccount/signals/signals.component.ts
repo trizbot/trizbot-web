@@ -222,6 +222,8 @@ export class SignalsComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (res) => {
           this.signals = res.items;
+
+          
           this.total = res.total;
           this.totalPages = res.totalPages;
           this.signalsLoading = false;

@@ -291,21 +291,21 @@
                             <span class="bb-meta-value">&#36;{{ crypto.minAmount }}</span>
                           </div>
                           <div class="bb-meta-row">
-                            <span class="bb-meta-label">Percentage</span>
+                            <span class="bb-meta-label">Yield</span>
                             <span class="bb-meta-value bb-accent-text">{{ crypto.percentage }}%</span>
                           </div>
                           <div class="bb-meta-row">
                             <span class="bb-meta-label">Expires</span>
                             <span class="bb-meta-value">{{ crypto.expiry }}h</span>
                           </div>
-                          <div class="bb-meta-row">
+                          <!-- <div class="bb-meta-row">
                             <span class="bb-meta-label">Buy Exchange</span>
                             <span class="bb-meta-value">{{ crypto.buyExchange }}</span>
                           </div>
                           <div class="bb-meta-row">
                             <span class="bb-meta-label">Sell Exchange</span>
                             <span class="bb-meta-value">{{ crypto.sellExchange }}</span>
-                          </div>
+                          </div> -->
                         </div>
 
                         <button class="bb-btn bb-btn-primary bb-full-w" (click)="onSetupTrade(crypto.id)">

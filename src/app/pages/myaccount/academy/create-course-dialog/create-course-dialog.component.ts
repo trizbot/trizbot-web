@@ -65,6 +65,7 @@ export class CreateCourseDialogComponent implements OnInit, OnDestroy {
       validators: [Validators.required, Validators.min(0)],
     }),
     tags: new FormControl<string>(''),
+    attachmentUrl: new FormControl<string>(''),
     content: new FormControl<string>('', { validators: [Validators.maxLength(this.maxContentLength)] }),
   });
 
@@ -105,6 +106,7 @@ export class CreateCourseDialogComponent implements OnInit, OnDestroy {
       this.form.patchValue({
         title: c.title,
         description: c.description || '',
+        attachmentUrl: c.attachmentUrl || '',
         category: c.category || '',
         level: c.level || '',
         price: c.price ?? 0,
@@ -243,6 +245,7 @@ export class CreateCourseDialogComponent implements OnInit, OnDestroy {
           const payload: CreateCourseReqBody | UpdateCourseReqBody = {
             title: raw.title.trim(),
             description: raw.description?.trim() || undefined,
+            attachmentUrl: raw.attachmentUrl?.trim() || undefined,
             category: (raw.category as CourseCategory) || undefined,
             level: (raw.level as CourseLevel) || undefined,
             price: raw.price,
