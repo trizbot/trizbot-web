@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnDestroy, OnInit, inject } from '@angular/core';
+import { Component, HostListener, OnDestroy, OnInit, inject } from '@angular/core';
 import { FormControl, FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 
@@ -22,6 +22,10 @@ import { TraderService } from '../../../../app/appstate/trader.service';
 import { GetTraderResBody } from '../../../../app/services/auth.type';
 
 type FeedTab = 'feed' | 'trending' | 'manage';
+
+const MIN_LIGHTBOX_ZOOM = 1;
+const MAX_LIGHTBOX_ZOOM = 4;
+const LIGHTBOX_ZOOM_STEP = 0.25;
 
 @Component({
   selector: 'app-feed',
@@ -67,6 +71,17 @@ export class FeedComponent implements OnInit, OnDestroy {
   manageLoading = false;
   deletingId: string | null = null;
 
+  // ── Detail lightbox (zoomable image viewer) ────────────────
+  lightboxItem: FeedItem | null = null;
+  lightboxZoom = MIN_LIGHTBOX_ZOOM;
+  lightboxPanX = 0;
+  lightboxPanY = 0;
+  private lightboxDragging = false;
+  private lightboxDragStartX = 0;
+  private lightboxDragStartY = 0;
+  private lightboxPanStartX = 0;
+  private lightboxPanStartY = 0;
+
   constructor(private feedService: FeedService, private dialog: MatDialog) {}
 
   get isAdmin(): boolean {
@@ -76,6 +91,18 @@ export class FeedComponent implements OnInit, OnDestroy {
 
   get totalPages(): number {
     return Math.max(1, Math.ceil(this.total / this.limit));
+  }
+
+  get lightboxZoomPercent(): string {
+    return `${Math.round(this.lightboxZoom * 100)}%`;
+  }
+
+  get canLightboxZoomIn(): boolean {
+    return this.lightboxZoom < MAX_LIGHTBOX_ZOOM;
+  }
+
+  get canLightboxZoomOut(): boolean {
+    return this.lightboxZoom > MIN_LIGHTBOX_ZOOM;
   }
 
   ngOnInit(): void {
@@ -98,7 +125,7 @@ export class FeedComponent implements OnInit, OnDestroy {
         next: (res: GetTraderResBody) => {
           this.isSuperAdmin = !!res.data?.isSuperAdmin;
         },
-        error: (err) => {
+        error: () => {
           // Fail closed: isSuperAdmin stays false if this lookup fails.
         },
       });
@@ -131,6 +158,8 @@ export class FeedComponent implements OnInit, OnDestroy {
       .getFeed({
         search: search || undefined,
         coinSymbol: coinSymbol || undefined,
+        // activeCategory is '' for "All" — the service strips empty values
+        // so this never sends a stray `category=` param.
         category: this.activeCategory || undefined,
         page: this.page,
         limit: this.limit,
@@ -144,6 +173,7 @@ export class FeedComponent implements OnInit, OnDestroy {
         },
         error: () => {
           this.items = [];
+          this.total = 0;
           this.itemsLoading = false;
         },
       });
@@ -151,12 +181,16 @@ export class FeedComponent implements OnInit, OnDestroy {
 
   clearFilters(): void {
     this.activeCategory = '';
+    this.page = 1;
+    // reset() re-triggers valueChanges, which already calls loadItems().
     this.filterForm.reset({ search: '', coinSymbol: '' });
   }
 
   /** Button-based category navigation. Pass '' to select "All". */
   filterByCategory(category: FeedCategoryEnum | string): void {
-    this.activeCategory = (category as FeedCategoryEnum) || '';
+    const next = (category as FeedCategoryEnum) || '';
+    if (next === this.activeCategory) return;
+    this.activeCategory = next;
     this.page = 1;
     this.loadItems();
   }
@@ -222,6 +256,81 @@ export class FeedComponent implements OnInit, OnDestroy {
     return item.id;
   }
 
+  // ─── Detail lightbox ───────────────────────────────────────
+
+  openLightbox(item: FeedItem, event?: Event): void {
+    event?.stopPropagation();
+    if (!item.imageUrl) return;
+    this.lightboxItem = item;
+    this.resetLightboxZoom();
+  }
+
+  closeLightbox(): void {
+    this.lightboxItem = null;
+    this.resetLightboxZoom();
+  }
+
+  lightboxZoomIn(event?: Event): void {
+    event?.stopPropagation();
+    this.setLightboxZoom(this.lightboxZoom + LIGHTBOX_ZOOM_STEP);
+  }
+
+  lightboxZoomOut(event?: Event): void {
+    event?.stopPropagation();
+    this.setLightboxZoom(this.lightboxZoom - LIGHTBOX_ZOOM_STEP);
+  }
+
+  resetLightboxZoom(event?: Event): void {
+    event?.stopPropagation();
+    this.lightboxZoom = MIN_LIGHTBOX_ZOOM;
+    this.lightboxPanX = 0;
+    this.lightboxPanY = 0;
+  }
+
+  private setLightboxZoom(next: number): void {
+    this.lightboxZoom = Math.min(MAX_LIGHTBOX_ZOOM, Math.max(MIN_LIGHTBOX_ZOOM, next));
+    if (this.lightboxZoom === MIN_LIGHTBOX_ZOOM) {
+      this.lightboxPanX = 0;
+      this.lightboxPanY = 0;
+    }
+  }
+
+  onLightboxWheel(event: WheelEvent): void {
+    if (!this.lightboxItem) return;
+    event.preventDefault();
+    const delta = event.deltaY > 0 ? -LIGHTBOX_ZOOM_STEP : LIGHTBOX_ZOOM_STEP;
+    this.setLightboxZoom(this.lightboxZoom + delta);
+  }
+
+  onLightboxPointerDown(event: PointerEvent): void {
+    if (this.lightboxZoom <= MIN_LIGHTBOX_ZOOM) return;
+    event.stopPropagation();
+    this.lightboxDragging = true;
+    this.lightboxDragStartX = event.clientX;
+    this.lightboxDragStartY = event.clientY;
+    this.lightboxPanStartX = this.lightboxPanX;
+    this.lightboxPanStartY = this.lightboxPanY;
+    (event.target as HTMLElement).setPointerCapture(event.pointerId);
+  }
+
+  onLightboxPointerMove(event: PointerEvent): void {
+    if (!this.lightboxDragging) return;
+    this.lightboxPanX = this.lightboxPanStartX + (event.clientX - this.lightboxDragStartX);
+    this.lightboxPanY = this.lightboxPanStartY + (event.clientY - this.lightboxDragStartY);
+  }
+
+  onLightboxPointerUp(): void {
+    this.lightboxDragging = false;
+  }
+
+  @HostListener('window:keydown', ['$event'])
+  onKeydown(event: KeyboardEvent): void {
+    if (!this.lightboxItem) return;
+    if (event.key === 'Escape') this.closeLightbox();
+    if (event.key === '+' || event.key === '=') this.lightboxZoomIn();
+    if (event.key === '-') this.lightboxZoomOut();
+  }
+
   // ─── Trending ──────────────────────────────────────────────
 
   loadTrending(): void {
@@ -282,6 +391,7 @@ export class FeedComponent implements OnInit, OnDestroy {
     const ref = this.dialog.open(FeedPostDialogComponent, {
       width: '560px',
       maxWidth: '95vw',
+      panelClass: 'feed-post-dialog-panel',
       data: { mode: 'create' },
     });
 
@@ -298,6 +408,7 @@ export class FeedComponent implements OnInit, OnDestroy {
     const ref = this.dialog.open(FeedPostDialogComponent, {
       width: '560px',
       maxWidth: '95vw',
+      panelClass: 'feed-post-dialog-panel',
       data: { mode: 'edit', item },
     });
 

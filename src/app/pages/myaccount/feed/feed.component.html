@@ -4,13 +4,17 @@
   <!-- HERO HEADER -->
   <!-- ===================================================================== -->
   <div class="feed-hero">
+    <div class="feed-hero-glow" aria-hidden="true"></div>
     <div class="feed-hero-text">
-      <span class="feed-eyebrow">Market Pulse</span>
+      <span class="feed-eyebrow">
+        <span class="pulse-dot" aria-hidden="true"></span>
+        Market Pulse
+      </span>
       <h1 class="feed-title">Feed</h1>
       <p class="feed-subtitle">News, announcements and market analysis — curated in one stream.</p>
     </div>
     <button
-      *ngIf="isSuperAdmin" 
+      *ngIf="isSuperAdmin"
       mat-flat-button
       color="primary"
       class="fw-bold new-post-btn"
@@ -71,17 +75,20 @@
         *ngIf="filterForm.get('search')?.value || filterForm.get('coinSymbol')?.value || activeCategory"
         (click)="clearFilters()"
       >
+        <mat-icon>close</mat-icon>
         Clear
       </button>
     </form>
 
     <!-- ─── Button-based category navigation ─── -->
-    <div class="category-nav">
+    <div class="category-nav" role="tablist" aria-label="Filter feed by category">
       <button
         type="button"
         class="category-nav-btn"
         [class.active]="!activeCategory"
         (click)="filterByCategory('')"
+        role="tab"
+        [attr.aria-selected]="!activeCategory"
       >
         All
       </button>
@@ -90,34 +97,55 @@
         class="category-nav-btn"
         *ngFor="let c of categoryOptions"
         [class.active]="activeCategory === c"
-        [style.--cat-color]="categoryColors[c] || '#3f51b5'"
+        [style.--cat-color]="categoryColors[c] || '#5B8DEF'"
         (click)="filterByCategory(c)"
+        role="tab"
+        [attr.aria-selected]="activeCategory === c"
       >
+        <span class="cat-dot" aria-hidden="true"></span>
         {{ categoryLabels[c] || c }}
       </button>
     </div>
 
     <div class="feed-loading" *ngIf="itemsLoading">
-      <img src="./assets/images/loading.gif" alt="Loading..." style="width: 28px; height: 28px;" />
+      <span class="spinner" aria-hidden="true"></span>
+      <span>Loading feed…</span>
     </div>
 
     <div class="feed-empty" *ngIf="!itemsLoading && items.length === 0">
       <mat-icon class="feed-empty-icon">inbox</mat-icon>
       <p>No posts match your filters right now.</p>
+      <button
+        type="button"
+        class="clear-filters-btn inline"
+        *ngIf="filterForm.get('search')?.value || filterForm.get('coinSymbol')?.value || activeCategory"
+        (click)="clearFilters()"
+      >
+        Clear filters
+      </button>
     </div>
 
     <div class="feed-grid" *ngIf="!itemsLoading && items.length > 0">
       <article class="feed-card" *ngFor="let item of items; trackBy: trackByItemId">
-        <div class="feed-card-media" [class.no-image]="!item.imageUrl">
+        <div
+          class="feed-card-media"
+          [class.no-image]="!item.imageUrl"
+          [class.clickable]="item.imageUrl"
+          (click)="openLightbox(item, $event)"
+        >
           <img *ngIf="item.imageUrl" [src]="item.imageUrl" [alt]="item.title" loading="lazy" />
           <mat-icon *ngIf="!item.imageUrl">insights</mat-icon>
+
+          <span class="zoom-hint" *ngIf="item.imageUrl">
+            <mat-icon>zoom_in</mat-icon>
+          </span>
 
           <span
             class="category-badge"
             *ngIf="item.category"
-            [style.background]="(categoryColors[item.category] || '#3f51b5') + '1a'"
-            [style.color]="categoryColors[item.category] || '#3f51b5'"
-            (click)="filterByCategory(item.category)"
+            [style.background]="(categoryColors[item.category] || '#5B8DEF') + '1a'"
+            [style.color]="categoryColors[item.category] || '#5B8DEF'"
+            (click)="filterByCategory(item.category); $event.stopPropagation()"
           >
             {{ categoryLabels[item.category] || item.category }}
           </span>
@@ -154,7 +182,7 @@
             <span class="feed-dot" *ngIf="item.source">&middot;</span>
             <span class="feed-time">{{ timeAgo(item) }}</span>
 
-            <button
+            <!-- <button
               class="read-more-btn"
               type="button"
               *ngIf="item.sourceUrl"
@@ -162,7 +190,7 @@
             >
               Read source
               <mat-icon>north_east</mat-icon>
-            </button>
+            </button> -->
           </div>
         </div>
       </article>
@@ -219,7 +247,8 @@
     </div>
 
     <div class="feed-loading" *ngIf="trendingLoading">
-      <img src="./assets/images/loading.gif" alt="Loading..." style="width: 28px; height: 28px;" />
+      <span class="spinner" aria-hidden="true"></span>
+      <span>Loading trending…</span>
     </div>
 
     <div class="feed-empty" *ngIf="!trendingLoading && trending.length === 0">
@@ -275,7 +304,8 @@
     </div>
 
     <div class="feed-loading" *ngIf="manageLoading">
-      <img src="./assets/images/loading.gif" alt="Loading..." style="width: 28px; height: 28px;" />
+      <span class="spinner" aria-hidden="true"></span>
+      <span>Loading posts…</span>
     </div>
 
     <div class="feed-empty" *ngIf="!manageLoading && manageItems.length === 0">
@@ -283,56 +313,114 @@
       <p>No posts yet. Create your first one.</p>
     </div>
 
-    <table class="manage-table" *ngIf="!manageLoading && manageItems.length > 0">
-      <thead>
-        <tr>
-          <th>Title</th>
-          <th>Category</th>
-          <th>Coin</th>
-          <th>Status</th>
-          <th>Date</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let item of manageItems; trackBy: trackByItemId">
-          <td class="manage-title-cell" [title]="item.title">{{ item.title }}</td>
-          <td>
-            <span
-              class="category-badge table"
-              *ngIf="item.category"
-              [style.background]="(categoryColors[item.category] || '#3f51b5') + '1a'"
-              [style.color]="categoryColors[item.category] || '#3f51b5'"
-            >
-              {{ categoryLabels[item.category] || item.category }}
-            </span>
-            <span class="muted" *ngIf="!item.category">&mdash;</span>
-          </td>
-          <td>{{ item.coinSymbol || '—' }}</td>
-          <td>
-            <span class="status-pill" [ngClass]="item.isPublished ? 'published' : 'draft'">
-              {{ item.isPublished ? 'Published' : 'Draft' }}
-            </span>
-          </td>
-          <td>{{ item.createdAt | date: 'mediumDate' }}</td>
-          <td class="manage-actions">
-            <button mat-icon-button type="button" (click)="openEditDialog(item)" aria-label="Edit post">
-              <mat-icon>edit</mat-icon>
-            </button>
-            <button
-              mat-icon-button
-              color="warn"
-              type="button"
-              [disabled]="deletingId === item.id"
-              (click)="deletePost(item)"
-              aria-label="Delete post"
-            >
-              <mat-icon>{{ deletingId === item.id ? 'hourglass_empty' : 'delete' }}</mat-icon>
-            </button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+    <div class="manage-table-wrap" *ngIf="!manageLoading && manageItems.length > 0">
+      <table class="manage-table">
+        <thead>
+          <tr>
+            <th>Reference</th>
+            <th>Title</th>
+            <th>Category</th>
+            <th>Coin</th>
+            <th>Status</th>
+            <th>Date</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of manageItems; trackBy: trackByItemId">
+            <td class="manage-ref-cell">
+              <code *ngIf="item.reference">{{ item.reference }}</code>
+              <span class="muted" *ngIf="!item.reference">&mdash;</span>
+            </td>
+            <td class="manage-title-cell" [title]="item.title">{{ item.title }}</td>
+            <td>
+              <span
+                class="category-badge table"
+                *ngIf="item.category"
+                [style.background]="(categoryColors[item.category] || '#5B8DEF') + '1a'"
+                [style.color]="categoryColors[item.category] || '#5B8DEF'"
+              >
+                {{ categoryLabels[item.category] || item.category }}
+              </span>
+              <span class="muted" *ngIf="!item.category">&mdash;</span>
+            </td>
+            <td>{{ item.coinSymbol || '—' }}</td>
+            <td>
+              <span class="status-pill" [ngClass]="item.isPublished ? 'published' : 'draft'">
+                {{ item.isPublished ? 'Published' : 'Draft' }}
+              </span>
+            </td>
+            <td>{{ item.createdAt | date: 'mediumDate' }}</td>
+            <td class="manage-actions">
+              <button mat-icon-button type="button" (click)="openEditDialog(item)" aria-label="Edit post">
+                <mat-icon>edit</mat-icon>
+              </button>
+              <button
+                mat-icon-button
+                color="warn"
+                type="button"
+                [disabled]="deletingId === item.id"
+                (click)="deletePost(item)"
+                aria-label="Delete post"
+              >
+                <mat-icon>{{ deletingId === item.id ? 'hourglass_empty' : 'delete' }}</mat-icon>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </section>
 
+</div>
+
+<!-- ===================================================================== -->
+<!-- IMAGE LIGHTBOX — zoom & pan to view post images in detail -->
+<!-- ===================================================================== -->
+<div
+  class="lightbox-backdrop"
+  *ngIf="lightboxItem as li"
+  (click)="closeLightbox()"
+>
+  <div class="lightbox-panel" (click)="$event.stopPropagation()">
+    <header class="lightbox-header">
+      <div class="lightbox-header-text">
+        <span class="coin-badge inline" *ngIf="li.coinSymbol">{{ li.coinSymbol }}</span>
+        <h3 [title]="li.title">{{ li.title }}</h3>
+      </div>
+      <button type="button" class="lightbox-close" (click)="closeLightbox()" aria-label="Close">
+        <mat-icon>close</mat-icon>
+      </button>
+    </header>
+
+    <div
+      class="lightbox-viewport"
+      [class.zoomed]="lightboxZoom > 1"
+      (wheel)="onLightboxWheel($event)"
+      (pointerdown)="onLightboxPointerDown($event)"
+      (pointermove)="onLightboxPointerMove($event)"
+      (pointerup)="onLightboxPointerUp()"
+      (pointerleave)="onLightboxPointerUp()"
+    >
+      <img
+        [src]="li.imageUrl"
+        [alt]="li.title"
+        [style.transform]="'translate(' + lightboxPanX + 'px,' + lightboxPanY + 'px) scale(' + lightboxZoom + ')'"
+      />
+    </div>
+
+    <div class="lightbox-zoom-controls">
+      <button type="button" (click)="lightboxZoomOut($event)" [disabled]="!canLightboxZoomOut" aria-label="Zoom out">
+        <mat-icon>remove</mat-icon>
+      </button>
+      <span class="zoom-level">{{ lightboxZoomPercent }}</span>
+      <button type="button" (click)="lightboxZoomIn($event)" [disabled]="!canLightboxZoomIn" aria-label="Zoom in">
+        <mat-icon>add</mat-icon>
+      </button>
+      <button type="button" class="reset-btn" (click)="resetLightboxZoom($event)" aria-label="Reset zoom">
+        <mat-icon>restart_alt</mat-icon>
+        Reset
+      </button>
+    </div>
+  </div>
 </div>

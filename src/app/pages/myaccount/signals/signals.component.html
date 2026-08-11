@@ -16,17 +16,17 @@
       (click)="openCreateDialog()"
     >
       <mat-icon>add_chart</mat-icon>
-      New Signal
+      CREATE NEW SIGNAL
     </button>
   </div>
 
   <!-- TABS -->
-  <div class="signals-tabs" role="tablist" *ngIf="!isSuperAdmin" >
+  <div class="signals-tabs" role="tablist" >
     <button class="signals-tab" role="tab" [attr.aria-selected]="activeTab === 'signals'" [class.active]="activeTab === 'signals'" (click)="selectTab('signals')">
       <mat-icon>show_chart</mat-icon>
       Signals
     </button>
-    <button class="signals-tab" role="tab" [attr.aria-selected]="activeTab === 'plans'" [class.active]="activeTab === 'plans'" (click)="selectTab('plans')">
+    <button  *ngIf="!isSuperAdmin"  class="signals-tab" role="tab" [attr.aria-selected]="activeTab === 'plans'" [class.active]="activeTab === 'plans'" (click)="selectTab('plans')">
       <mat-icon>workspace_premium</mat-icon>
       Plans
     </button>
@@ -44,8 +44,7 @@
   </div>
 
   <!-- SIGNALS -->
-  <section *ngIf="activeTab === 'signals'" class="signals-section" >
-
+  <section *ngIf="activeTab === 'signals'" class="signals-section">
     <div class="subscription-banner" *ngIf="!subscriptionLoading && !isSubscribed &&  !isSuperAdmin">
       <mat-icon>lock</mat-icon>
       <div class="subscription-banner-text">

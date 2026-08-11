@@ -1,4 +1,9 @@
-<h2 mat-dialog-title class="fpd-title">{{ dialogTitle }}</h2>
+<div class="fpd-header" mat-dialog-title>
+  <h2 class="fpd-title">{{ dialogTitle }}</h2>
+  <code class="fpd-reference" *ngIf="reference" [title]="'Auto-generated reference: ' + reference">
+    {{ reference }}
+  </code>
+</div>
 
 <form [formGroup]="form" (ngSubmit)="save()">
   <div mat-dialog-content class="fpd-content">
@@ -49,7 +54,7 @@
       </mat-form-field>
     </div>
 
-    <!-- Image upload (dropzone, replaces the old Image URL text field) -->
+    <!-- Image upload (dropzone, with pinch/scroll zoom on the preview) -->
     <div class="fpd-field">
       <mat-label class="fpd-image-label">Image</mat-label>
 
@@ -70,12 +75,25 @@
 
         <ng-template #imagePreview>
           <div class="fpd-inline-preview-wrap">
-            <img
-              class="fpd-inline-preview"
-              [src]="displayImageUrl"
-              alt="Post image preview"
-              (error)="onPreviewImgError($event)"
-            />
+            <div
+              class="fpd-preview-viewport"
+              [class.zoomed]="zoom > 1"
+              (wheel)="onPreviewWheel($event)"
+              (pointerdown)="onPreviewPointerDown($event)"
+              (pointermove)="onPreviewPointerMove($event)"
+              (pointerup)="onPreviewPointerUp()"
+              (pointerleave)="onPreviewPointerUp()"
+              (click)="$event.stopPropagation()"
+            >
+              <img
+                class="fpd-inline-preview"
+                [src]="displayImageUrl"
+                alt="Post image preview"
+                (error)="onPreviewImgError($event)"
+                [style.transform]="'translate(' + panX + 'px,' + panY + 'px) scale(' + zoom + ')'"
+              />
+            </div>
+
             <button
               type="button"
               class="fpd-remove-btn"
@@ -84,6 +102,19 @@
             >
               <mat-icon>close</mat-icon>
             </button>
+
+            <div class="fpd-zoom-controls" (click)="$event.stopPropagation()">
+              <button type="button" (click)="zoomOut($event)" [disabled]="!canZoomOut" aria-label="Zoom out">
+                <mat-icon>remove</mat-icon>
+              </button>
+              <span class="fpd-zoom-level">{{ zoomPercent }}</span>
+              <button type="button" (click)="zoomIn($event)" [disabled]="!canZoomIn" aria-label="Zoom in">
+                <mat-icon>add</mat-icon>
+              </button>
+              <button type="button" class="fpd-zoom-reset" (click)="resetZoom($event)" aria-label="Reset zoom">
+                <mat-icon>restart_alt</mat-icon>
+              </button>
+            </div>
           </div>
         </ng-template>
       </ngx-dropzone>
@@ -95,7 +126,7 @@
     </mat-form-field>
 
     <mat-checkbox formControlName="isPublished" class="fpd-checkbox">
-      Publish immediately
+      Do you want to show this post image?
     </mat-checkbox>
 
     <p class="fpd-error" *ngIf="error">{{ error }}</p>

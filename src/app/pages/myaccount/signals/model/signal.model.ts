@@ -1,7 +1,9 @@
 export enum SignalTypeEnum {
   Buy = 'Buy',
   Sell = 'Sell',
-  Hold = 'Hold',
+  Short = 'Short',
+  Hedge = 'Hedge',
+  Long = 'Long',
 }
 
 /** New: replaces "type" (Buy/Sell) as the primary classification on the create/edit form */
@@ -33,13 +35,17 @@ export enum SubscriptionPeriodStatus {
 export const SIGNAL_TYPE_LABELS: Record<SignalTypeEnum, string> = {
   [SignalTypeEnum.Buy]: 'Buy',
   [SignalTypeEnum.Sell]: 'Sell',
-  [SignalTypeEnum.Hold]: 'Hold',
+  [SignalTypeEnum.Short]: 'Short',
+  [SignalTypeEnum.Long]: 'Long',
+  [SignalTypeEnum.Hedge]: 'Hedge',
 };
 
 export const SIGNAL_TYPE_COLORS: Record<SignalTypeEnum, string> = {
   [SignalTypeEnum.Buy]: '#2e7d32',
   [SignalTypeEnum.Sell]: '#e53935',
-  [SignalTypeEnum.Hold]: '#ff9800',
+  [SignalTypeEnum.Short]: '#f44336',
+  [SignalTypeEnum.Long]: '#4caf50',
+  [SignalTypeEnum.Hedge]: '#ff9800',
 };
 
 export const SIGNAL_CATEGORY_LABELS: Record<SignalCategoryEnum, string> = {
@@ -71,9 +77,7 @@ export interface ApiResponse<T> {
   data: T;
 }
 
-/** Generic PAGINATED envelope, as actually returned by GET /signals:
- *  { message, data: RawSignal[], meta: { total, page, limit, totalPages } }
- */
+
 export interface ApiListResponse<T> {
   message: string;
   data: T[];

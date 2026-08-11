@@ -1,16 +1,21 @@
 export enum FeedCategoryEnum {
-  News = 'news',
-  Announcement = 'announcement',
-  MarketAnalysis = 'market_analysis',
-  PriceAlert = 'price_alert',
-  Regulation = 'regulation',
-  Partnership = 'partnership',
-  Trend = 'Trend', // matches raw "category": "Trend" coming back from CoinGecko sync
+  News = 'News',
+  Announcement = 'Announcement',
+  MarketAnalysis = 'MarketAnalysis',
+  PriceAlert = 'PriceAlert',
+  PriceUpdate = 'PriceUpdate',
+  Regulation = 'Regulation',
+  Partnership = 'Partnership',
+  Trend = 'Trend',
 }
+
+
+
 
 /** Shape actually returned by the backend for a single item */
 export interface RawFeedItem {
   _id: string;
+  reference?: string;
   title: string;
   summary?: string;
   content: string;
@@ -48,6 +53,7 @@ export interface FeedItemStats {
 /** Normalized shape the UI actually works with */
 export interface FeedItem {
   id: string;
+  reference?: string;
   title: string;
   summary?: string;
   content: string;
@@ -81,15 +87,18 @@ export interface GetFeedParams {
 
 export interface CreateFeedPayload {
   title: string;
-  summary?: string;
+  
+  summary?: string | null;
   content: string;
-  source?: string;
-  sourceUrl?: string;
-  imageUrl?: string;
-  category?: FeedCategoryEnum;
-  coinSymbol?: string;
+  source?: string | null;
+  sourceUrl?: string | null;
+  imageUrl?: string | null;
+  category?: FeedCategoryEnum | null;
+  coinSymbol?: string | null;
   tags?: string[];
   isPublished?: boolean;
+  // `reference` is intentionally NOT part of this payload — it is always
+  // generated server-side on create and must never be sent by the client.
 }
 
 export type UpdateFeedPayload = Partial<CreateFeedPayload>;
@@ -101,21 +110,29 @@ export const FEED_CATEGORY_LABELS: Record<string, string> = {
   [FeedCategoryEnum.Announcement]: 'Announcement',
   [FeedCategoryEnum.MarketAnalysis]: 'Market Analysis',
   [FeedCategoryEnum.PriceAlert]: 'Price Alert',
+  [FeedCategoryEnum.PriceUpdate]: 'Price Update',
   [FeedCategoryEnum.Regulation]: 'Regulation',
   [FeedCategoryEnum.Partnership]: 'Partnership',
   [FeedCategoryEnum.Trend]: 'Trending',
 };
 
 export const FEED_CATEGORY_COLORS: Record<string, string> = {
-  [FeedCategoryEnum.News]: '#3f51b5',
-  [FeedCategoryEnum.Announcement]: '#f5a623',
-  [FeedCategoryEnum.MarketAnalysis]: '#6c63ff',
-  [FeedCategoryEnum.PriceAlert]: '#e53935',
-  [FeedCategoryEnum.Regulation]: '#00897b',
-  [FeedCategoryEnum.Partnership]: '#8e24aa',
-  [FeedCategoryEnum.Trend]: '#f5a623',
+  [FeedCategoryEnum.News]: '#5B8DEF',
+  [FeedCategoryEnum.Announcement]: '#F5A623',
+  [FeedCategoryEnum.MarketAnalysis]: '#8E7CFF',
+  [FeedCategoryEnum.PriceAlert]: '#EA3943',
+  [FeedCategoryEnum.PriceUpdate]: '#EA3943',
+  [FeedCategoryEnum.Regulation]: '#16C784',
+  [FeedCategoryEnum.Partnership]: '#EF7BD8',
+  [FeedCategoryEnum.Trend]: '#F5A623',
 };
 
+
+export function generateClientReferenceHint(prefix = 'FD'): string {
+  const year = new Date().getFullYear();
+  const rand = Math.random().toString(36).slice(2, 7).toUpperCase();
+  return `${prefix}-${year}-${rand}`;
+}
 
 function parseStats(text?: string): FeedItemStats {
   if (!text) return {};
@@ -134,6 +151,7 @@ function parseStats(text?: string): FeedItemStats {
 export function mapRawFeedItem(raw: RawFeedItem): FeedItem {
   return {
     id: raw._id,
+    reference: raw.reference,
     title: raw.title,
     summary: raw.summary,
     content: raw.content,
