@@ -56,7 +56,7 @@
             </div>
             <div class="beneficiary-info">
               <div class="beneficiary-name">{{ beneficiaryDisplayName }}</div>
-              <div class="beneficiary-handle" *ngIf="beneficiary.username">&#64;{{ beneficiary.username }}</div>
+              <div class="beneficiary-handle" *ngIf="beneficiary.userName">&#64;{{ beneficiary.userName }}</div>
             </div>
             <mat-icon class="verified-badge">verified</mat-icon>
           </div>
@@ -85,7 +85,7 @@
         <div class="step-panel" *ngIf="currentStep === 'details'">
           <div class="recipient-summary">
             <span>Sending to</span>
-            <strong>{{ beneficiaryDisplayName }}<ng-container *ngIf="beneficiary?.username"> &middot; &#64;{{ beneficiary?.username }}</ng-container></strong>
+            <strong>{{ beneficiaryDisplayName }}<ng-container *ngIf="beneficiary?.userName"> &middot; &#64;{{ beneficiary?.userName }}</ng-container></strong>
             <button mat-button type="button" class="change-link" (click)="jumpToStep('recipient')">Change</button>
           </div>
 
@@ -124,7 +124,7 @@
           <div class="confirm-summary">
             <div class="confirm-row">
               <span>Recipient</span>
-              <strong>{{ beneficiaryDisplayName }}<ng-container *ngIf="beneficiary?.username"> (&#64;{{ beneficiary?.username }})</ng-container></strong>
+              <strong>{{ beneficiaryDisplayName }}<ng-container *ngIf="beneficiary?.userName"> (&#64;{{ beneficiary?.userName }})</ng-container></strong>
             </div>
             <div class="confirm-row">
               <span>Amount</span>
@@ -224,7 +224,7 @@
               <span class="handle">{{ counterpartyEmail(item) }}</span>
             </td>
             <td [ngClass]="isOutgoing(item) ? 'amount-debit' : 'amount-credit'">
-              {{ isOutgoing(item) ? '-' : '+' }}{{ item.amount | number: '1.2-2' }}
+              ${{ isOutgoing(item) ? '-' : '+' }}{{ item.amount | number: '1.2-2' }}
             </td>
             <td>
               <span class="status-pill" [ngClass]="statusClass(item)">{{ item.status }}</span>
