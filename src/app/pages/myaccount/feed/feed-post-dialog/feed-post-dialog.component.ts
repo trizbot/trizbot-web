@@ -189,8 +189,7 @@ export class FeedPostDialogComponent implements OnInit, OnDestroy {
     this.saving = true;
     this.error = null;
 
-    // Decide the image source: a newly picked file needs uploading first;
-    // otherwise fall back to whatever existing URL is left (or none, if removed).
+   
     const image$ = this.imageFiles.length
       ? this.uploadImage(this.imageFiles[0])
       : of(this.existingImageUrl ? { secure_url: this.existingImageUrl } : null);
