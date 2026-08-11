@@ -26,7 +26,13 @@
       <mat-icon>show_chart</mat-icon>
       Signals
     </button>
-    <button  *ngIf="!isSuperAdmin"  class="signals-tab" role="tab" [attr.aria-selected]="activeTab === 'plans'" [class.active]="activeTab === 'plans'" (click)="selectTab('plans')">
+    <!--
+      Plans tab is now visible to EVERYONE (regular users and admins/super admins).
+      It's the only place "My Subscriptions" lives, so hiding it for super admins
+      also hid their subscription history. Purchase-only UI (plan cards, subscribe
+      banner) is separately gated by isSuperAdmin further down instead.
+    -->
+    <button class="signals-tab" role="tab" [attr.aria-selected]="activeTab === 'plans'" [class.active]="activeTab === 'plans'" (click)="selectTab('plans')">
       <mat-icon>workspace_premium</mat-icon>
       Plans
     </button>
@@ -56,7 +62,7 @@
       </button>
     </div>
 
-    <ng-container *ngIf="!subscriptionLoading &&  !isSuperAdmin">
+    <ng-container *ngIf="!subscriptionLoading && !isSuperAdmin">
       <form class="signals-filters" [formGroup]="filterForm">
         <div class="search-field">
           <mat-icon class="search-icon">search</mat-icon>
@@ -169,30 +175,33 @@
       </span>
     </div>
 
-    <div class="signals-loading" *ngIf="plansLoading">
-      <div class="spinner" aria-label="Loading plans"></div>
-    </div>
-
-    <div class="plans-grid" *ngIf="!plansLoading && plans.length > 0">
-      <div class="plan-card" *ngFor="let plan of plans">
-        <span class="plan-name">{{ planLabels[plan.plan] }}</span>
-        <div class="plan-price">
-          <span class="plan-amount">{{ plan.amount }} {{ plan.currency }}</span>
-          <span class="plan-duration">/ {{ plan.durationDays }} days</span>
-        </div>
-        <button
-          mat-flat-button
-          color="primary"
-          class="fw-bold plan-cta"
-          type="button"
-          (click)="openSubscribeDialog(plan)"
-        >
-          Subscribe
-        </button>
+ 
+    <ng-container *ngIf="!isSuperAdmin">
+      <div class="signals-loading" *ngIf="plansLoading">
+        <div class="spinner" aria-label="Loading plans"></div>
       </div>
-    </div>
 
-    <!-- Subscription history: member view — reference / internal payment id is never shown here -->
+      <div class="plans-grid" *ngIf="!plansLoading && plans.length > 0">
+        <div class="plan-card" *ngFor="let plan of plans">
+          <span class="plan-name">{{ planLabels[plan.plan] }}</span>
+          <div class="plan-price">
+            <span class="plan-amount">{{ plan.amount }} {{ plan.currency }}</span>
+            <span class="plan-duration">/ {{ plan.durationDays }} days</span>
+          </div>
+          <button
+            mat-flat-button
+            color="primary"
+            class="fw-bold plan-cta"
+            type="button"
+            (click)="openSubscribeDialog(plan)"
+          >
+            Subscribe
+          </button>
+        </div>
+      </div>
+    </ng-container>
+
+ 
     <div class="sub-history">
       <h3 class="sub-history-title">My Subscriptions ({{ visibleSubscriptionHistory.length }})</h3>
 

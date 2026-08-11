@@ -95,7 +95,6 @@ export class SignalsComponent implements OnInit, OnDestroy {
     return entityName === 'Admin';
   }
 
-  /** Only true super-admins may create/edit/delete signals. */
   get canManageSignals(): boolean {
     return this.isSuperAdmin;
   }
@@ -139,7 +138,6 @@ export class SignalsComponent implements OnInit, OnDestroy {
           this.isSuperAdmin = !!res.data?.isSuperAdmin;
         },
         error: (err) => {
-          // console.error('[SignalsComponent] getTrader failed:', err.status, err.error ?? err.message);
         },
       });
   }
@@ -418,21 +416,5 @@ takeProfitSummary(item: SignalItem): string {
   if (item.takeProfit3 != null) levels.push(`TP3: ${item.takeProfit3}`);
   return levels.length ? levels.join(' / ') : '—';
 }
-
-// /**
-//  * Risk:Reward now uses the nearest take-profit level (TP1) against entry/stop,
-//  * since `targetPrice` is deprecated. Update this if your existing riskReward()
-//  * used a different formula — paste it and I'll adapt it exactly.
-//  */
-// riskReward(item: SignalItem): string | null {
-//   const tp = item.takeProfit1;
-//   if (tp == null || item.stopLoss == null) return null;
-
-//   const reward = Math.abs(tp - item.entryPrice);
-//   const risk = Math.abs(item.entryPrice - item.stopLoss);
-//   if (risk === 0) return null;
-
-//   return (reward / risk).toFixed(2);
-// }
 
 }
