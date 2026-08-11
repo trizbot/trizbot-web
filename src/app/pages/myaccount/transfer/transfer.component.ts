@@ -50,13 +50,7 @@ export class TransferComponent implements OnInit, OnDestroy {
   ];
   currentStep: TransferStep = 'recipient';
 
-  /**
-   * Identity of the logged-in member, used to work out whether a given
-   * history row was money going out (they were the sender) or coming in
-   * (they were the receiver). Pass these in from the parent/auth store —
-   * `resolveCurrentUser()` below only falls back to localStorage as a
-   * last resort if neither is supplied.
-   */
+
   @Input() currentUserId?: string;
   @Input() currentUserEmail?: string;
 
@@ -65,8 +59,7 @@ export class TransferComponent implements OnInit, OnDestroy {
     amount: new FormControl<number | null>(null, [Validators.required, Validators.min(1)]),
     narration: new FormControl('', [Validators.maxLength(500)]),
     transactionPin: new FormControl('', [Validators.required, Validators.minLength(4)]),
-    // Generated internally and sent with the request. Intentionally kept out of
-    // the template entirely: members never see or edit a transfer reference.
+
     reference: new FormControl({ value: '', disabled: true }, [Validators.required]),
   });
 
@@ -76,6 +69,7 @@ export class TransferComponent implements OnInit, OnDestroy {
 
   submitLoading = false;
   errorMessage = '';
+  beneficiaryFullName = '';
 
   pinVisible = false;
 
@@ -137,11 +131,7 @@ export class TransferComponent implements OnInit, OnDestroy {
     this.transferForm.controls.reference.setValue(ref);
   }
 
-  /**
-   * Best-effort fallback if the parent didn't pass currentUserId/currentUserEmail
-   * as @Inputs. Adjust the storage keys here to match your actual auth service —
-   * this is only a safety net, not the source of truth.
-   */
+ 
   private resolveCurrentUser(): void {
     if (this.currentUserId || this.currentUserEmail) {
       return;
@@ -196,6 +186,7 @@ export class TransferComponent implements OnInit, OnDestroy {
   }
 
   counterpartyName(item: TransferHistoryItem): string {
+    this.beneficiaryFullName =item.receiverName;
     return this.isOutgoing(item) ? item.receiverName : item.senderName;
   }
 
@@ -257,7 +248,7 @@ export class TransferComponent implements OnInit, OnDestroy {
   }
 
   /** Display name for the beneficiary. Falls back to username, then a generic label. */
-  beneficiaryDisplayName(data: TransferHistoryItem): string {
+  get beneficiaryDisplayName(): string {
     const first = this.beneficiary?.firstName?.trim() ?? '';
     const last = this.beneficiary?.lastName?.trim() ?? '';
     const full = `${first} ${last}`.trim();
@@ -265,7 +256,7 @@ export class TransferComponent implements OnInit, OnDestroy {
       return full;
     }
  
-    return this.beneficiary?.userName?.trim() || full || data.receiverName;
+    return this.beneficiary?.userName?.trim() || this.beneficiaryFullName;
   }
 
   get stepIndex(): number {
