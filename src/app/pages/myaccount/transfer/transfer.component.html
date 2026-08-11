@@ -224,7 +224,7 @@
               <span class="handle">{{ counterpartyEmail(item) }}</span>
             </td>
             <td [ngClass]="isOutgoing(item) ? 'amount-debit' : 'amount-credit'">
-              ${{ isOutgoing(item) ? '-' : '+' }}{{ item.amount | number: '1.2-2' }}
+              {{ isOutgoing(item) ? '-' : '+' }}${{ item.amount | number: '1.2-2' }}
             </td>
             <td>
               <span class="status-pill" [ngClass]="statusClass(item)">{{ item.status }}</span>
