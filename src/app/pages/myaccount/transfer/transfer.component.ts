@@ -197,9 +197,16 @@ export class TransferComponent implements OnInit, OnDestroy {
   }
   counterpartyAmount(item: TransferHistoryItem): any {
       if(this.currentUserEmail == item.senderEmail){
-        return `-${item.amount}`;
+        return `-$${item.amount}`;
       }else{
-        return `+${item.amount}`;
+        return `+$${item.amount}`;
+      }
+  }
+  counterpartyState(item: TransferHistoryItem): any {
+      if(this.currentUserEmail == item.senderEmail){
+        return ` <span class="direction-badge" [ngClass]="debit">↑</span>`;
+      }else{
+        return ` <span class="direction-badge" [ngClass]="credit">↓</span>`;
       }
   }
 
