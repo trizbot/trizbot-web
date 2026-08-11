@@ -223,7 +223,7 @@
               {{ counterpartyName(item) }}
               <span class="handle">{{ counterpartyEmail(item) }}</span>
             </td>
-            <td [ngClass]="isOutgoing(item) ? 'amount-debit' : 'amount-credit'">
+            <td [ngClass]="currentUserEmail ? 'amount-debit' : 'amount-credit'">
               {{ counterpartyState(item) ? '-' : '+' }}${{ item.amount }}
              <!-- {{ counterpartyAmount(item)| number: '1.2-2' }} -->
             </td>
