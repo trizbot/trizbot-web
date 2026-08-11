@@ -99,6 +99,13 @@ export class SignalsComponent implements OnInit, OnDestroy {
     return this.isSuperAdmin;
   }
 
+  // Both super admins and regular admins can browse the signals list
+  // without needing an active subscription. Only plain clients are gated
+  // behind the subscription check (see isSubscribed below).
+  get canBypassSubscription(): boolean {
+    return this.isSuperAdmin || this.isAdmin;
+  }
+
   get isSubscribed(): boolean {
     return !!this.subscription && this.getPeriodStatus(this.subscription) === SubscriptionPeriodStatus.Active;
   }
@@ -136,6 +143,8 @@ export class SignalsComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (res: GetTraderResBody) => {
           this.isSuperAdmin = !!res.data?.isSuperAdmin;
+
+          this.loadSignals();
         },
         error: (err) => {
         },
@@ -163,7 +172,6 @@ export class SignalsComponent implements OnInit, OnDestroy {
   }
 
   // ─── Subscription ────────────────────────────────────────
-
   loadSubscriptions(): void {
     this.subscriptionLoading = true;
     this.subscriptionHistoryLoading = true;
@@ -198,8 +206,18 @@ export class SignalsComponent implements OnInit, OnDestroy {
     this.signalsLoading = true;
     const { pair } = this.filterForm.getRawValue();
 
+    const params: Record<string, unknown> = {
+      pair: pair || undefined,
+      page: this.page,
+      limit: this.limit,
+    };
+
+    if (this.canBypassSubscription) {
+      params['bypassSubscription'] = true;
+    }
+
     this.signalsService
-      .getSignals({ pair: pair || undefined, page: this.page, limit: this.limit })
+      .getSignals(params as any)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (res) => {
@@ -320,7 +338,7 @@ export class SignalsComponent implements OnInit, OnDestroy {
   loadManageSignals(): void {
     this.manageLoading = true;
     this.signalsService
-      .getSignals({ page: 1, limit: 100 })
+      .getSignals({ page: 1, limit: 100, bypassSubscription: this.canBypassSubscription || undefined })
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (res) => {
@@ -398,23 +416,18 @@ export class SignalsComponent implements OnInit, OnDestroy {
       });
   }
 
+  readonly categoryLabels = SIGNAL_CATEGORY_LABELS;
 
+  readonly categoryColors: Record<SignalCategoryEnum, string> = {
+    [SignalCategoryEnum.Futures]: '#7b61ff',
+    [SignalCategoryEnum.Spot]: '#2e7d32',
+  };
 
-
-readonly categoryLabels = SIGNAL_CATEGORY_LABELS;
-
-readonly categoryColors: Record<SignalCategoryEnum, string> = {
-  [SignalCategoryEnum.Futures]: '#7b61ff',
-  [SignalCategoryEnum.Spot]: '#2e7d32',
-};
-
-
-takeProfitSummary(item: SignalItem): string {
-  const levels: string[] = [];
-  if (item.takeProfit1 != null) levels.push(`TP1: ${item.takeProfit1}`);
-  if (item.takeProfit2 != null) levels.push(`TP2: ${item.takeProfit2}`);
-  if (item.takeProfit3 != null) levels.push(`TP3: ${item.takeProfit3}`);
-  return levels.length ? levels.join(' / ') : '—';
-}
-
+  takeProfitSummary(item: SignalItem): string {
+    const levels: string[] = [];
+    if (item.takeProfit1 != null) levels.push(`TP1: ${item.takeProfit1}`);
+    if (item.takeProfit2 != null) levels.push(`TP2: ${item.takeProfit2}`);
+    if (item.takeProfit3 != null) levels.push(`TP3: ${item.takeProfit3}`);
+    return levels.length ? levels.join(' / ') : '—';
+  }
 }

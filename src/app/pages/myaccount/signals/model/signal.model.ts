@@ -1,9 +1,10 @@
 export enum SignalTypeEnum {
   Buy = 'Buy',
   Sell = 'Sell',
-  Short = 'Short',
+   Long = 'Long',
+   Short = 'Short',
   Hedge = 'Hedge',
-  Long = 'Long',
+ 
 }
 
 /** New: replaces "type" (Buy/Sell) as the primary classification on the create/edit form */
@@ -35,9 +36,9 @@ export enum SubscriptionPeriodStatus {
 export const SIGNAL_TYPE_LABELS: Record<SignalTypeEnum, string> = {
   [SignalTypeEnum.Buy]: 'Buy',
   [SignalTypeEnum.Sell]: 'Sell',
+   [SignalTypeEnum.Long]: 'Long',
   [SignalTypeEnum.Short]: 'Short',
-  [SignalTypeEnum.Long]: 'Long',
-  [SignalTypeEnum.Hedge]: 'Hedge',
+   [SignalTypeEnum.Hedge]: 'Hedge',
 };
 
 export const SIGNAL_TYPE_COLORS: Record<SignalTypeEnum, string> = {
@@ -144,6 +145,7 @@ export interface GetSignalsParams {
   pair?: string;
   page?: number;
   limit?: number;
+  bypassSubscription?: boolean;
 }
 
 export interface CreateSignalPayload {

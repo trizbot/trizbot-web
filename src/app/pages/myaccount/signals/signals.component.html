@@ -5,7 +5,7 @@
     <div class="signals-hero-text">
       <span class="signals-eyebrow">Desk Calls · Live</span>
       <h1 class="signals-title">Signals</h1>
-      <p class="signals-subtitle" *ngIf="!isSuperAdmin" >Entry, take-profit and stop-loss calls from the desk — subscribe to unlock.</p>
+      <p class="signals-subtitle" *ngIf="!canBypassSubscription" >Entry, take-profit and stop-loss calls from the desk — subscribe to unlock.</p>
     </div>
     <button
       *ngIf="canManageSignals"
@@ -26,13 +26,8 @@
       <mat-icon>show_chart</mat-icon>
       Signals
     </button>
-    <!--
-      Plans tab is now visible to EVERYONE (regular users and admins/super admins).
-      It's the only place "My Subscriptions" lives, so hiding it for super admins
-      also hid their subscription history. Purchase-only UI (plan cards, subscribe
-      banner) is separately gated by isSuperAdmin further down instead.
-    -->
-    <button class="signals-tab" role="tab" [attr.aria-selected]="activeTab === 'plans'" [class.active]="activeTab === 'plans'" (click)="selectTab('plans')">
+  
+    <button *ngIf="!isSuperAdmin" type="button" class="signals-tab" role="tab" [attr.aria-selected]="activeTab === 'plans'" [class.active]="activeTab === 'plans'" (click)="selectTab('plans')">
       <mat-icon>workspace_premium</mat-icon>
       Plans
     </button>
@@ -51,7 +46,7 @@
 
   <!-- SIGNALS -->
   <section *ngIf="activeTab === 'signals'" class="signals-section">
-    <div class="subscription-banner" *ngIf="!subscriptionLoading && !isSubscribed &&  !isSuperAdmin">
+    <div class="subscription-banner" *ngIf="!subscriptionLoading && !isSubscribed && !canBypassSubscription">
       <mat-icon>lock</mat-icon>
       <div class="subscription-banner-text">
         <strong>Subscribe to unlock live signals.</strong>
@@ -62,7 +57,11 @@
       </button>
     </div>
 
-    <ng-container *ngIf="!subscriptionLoading && !isSuperAdmin">
+    <!--
+      Super admins can always browse the list without a subscription.
+      Regular clients (and plain Admins) only get here with an active subscription.
+    -->
+    <ng-container *ngIf="!subscriptionLoading && (canBypassSubscription || isSubscribed)">
       <form class="signals-filters" [formGroup]="filterForm">
         <div class="search-field">
           <mat-icon class="search-icon">search</mat-icon>
@@ -175,8 +174,8 @@
       </span>
     </div>
 
- 
-    <ng-container *ngIf="!isSuperAdmin">
+
+    <ng-container *ngIf="!canBypassSubscription">
       <div class="signals-loading" *ngIf="plansLoading">
         <div class="spinner" aria-label="Loading plans"></div>
       </div>
@@ -201,7 +200,7 @@
       </div>
     </ng-container>
 
- 
+
     <div class="sub-history">
       <h3 class="sub-history-title">My Subscriptions ({{ visibleSubscriptionHistory.length }})</h3>
 
