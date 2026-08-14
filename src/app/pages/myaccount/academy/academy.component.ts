@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, OnDestroy, inject } from '@angular/core';
-import { FormControl, FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 
 import { Subject } from 'rxjs';
@@ -18,12 +18,61 @@ import { GetTraderResBody } from '../../../../app/services/auth.type';
 import {
   CATEGORY_OPTIONS,
   Course,
+  CourseCategoryItem,
   CoursePurchase,
   CourseSale,
   LEVEL_OPTIONS,
 } from './model/academy.model';
 
-type MainTab = 'browse' | 'my-courses' | 'purchased' | 'sales';
+type MainTab = 'browse' | 'my-courses' | 'purchased' | 'sales' | 'categories';
+
+/** Pulls a plain string id/date out of Mongo extended JSON ({ $oid }, { $date }), or returns the value as-is. */
+function unwrapMongoValue(val: any): any {
+  if (val && typeof val === 'object') {
+    if ('$oid' in val) return val.$oid;
+    if ('$date' in val) return val.$date;
+  }
+  return val;
+}
+
+/** Normalizes one raw category document into a clean CourseCategoryItem. */
+function normalizeCategory(raw: any): CourseCategoryItem {
+  return {
+    ...raw,
+    id: unwrapMongoValue(raw?.id ?? raw?._id),
+    createdBy: unwrapMongoValue(raw?.createdBy),
+    createdAt: unwrapMongoValue(raw?.createdAt),
+    updatedAt: unwrapMongoValue(raw?.updatedAt),
+    publishedAt: unwrapMongoValue(raw?.publishedAt),
+  } as CourseCategoryItem;
+}
+
+/**
+ * Guarantees an array of normalized CourseCategoryItem no matter what shape
+ * the API returned: a raw array, { data: [...] }, { categories: [...] },
+ * { items: [...] }, { results: [...] }, or even a single category object.
+ */
+function unwrapCategoryList(res: any): CourseCategoryItem[] {
+  if (Array.isArray(res)) {
+    return res.map(normalizeCategory);
+  }
+
+  if (res && typeof res === 'object') {
+    const candidate = res.data ?? res.categories ?? res.items ?? res.results ?? null;
+
+    if (Array.isArray(candidate)) {
+      return candidate.map(normalizeCategory);
+    }
+
+    // Edge case: API returned a single category object instead of a list
+    if ('category' in res) {
+      return [normalizeCategory(res)];
+    }
+  }
+
+  console.warn('unwrapCategoryList: unexpected response shape', res);
+  return [];
+}
 
 @Component({
   selector: 'app-academy',
@@ -70,6 +119,27 @@ export class AcademyComponent implements OnInit, OnDestroy {
   salesLoading = false;
   salesError = false;
 
+  // ---- Categories (superadmin only) ----
+  categories: CourseCategoryItem[] = [];
+  categoriesLoading = false;
+  categoriesError = false;
+  addingCategory = false;
+
+  // Reference is never user-entered — it's derived from the category name
+  // in generateCategoryReference(), so the add/edit forms only take a name.
+  categoryForm = new FormGroup({
+    category: new FormControl<string>('', { nonNullable: true, validators: [Validators.required] }),
+  });
+
+  // -- inline edit state for the categories table --
+  editingCategoryId: string | null = null;
+  savingCategoryEdit = false;
+  deletingCategoryId: string | null = null;
+
+  categoryEditForm = new FormGroup({
+    category: new FormControl<string>('', { nonNullable: true, validators: [Validators.required] }),
+  });
+
   constructor(private academyService: AcademyService, private dialog: MatDialog) {}
 
   ngOnInit(): void {
@@ -81,19 +151,22 @@ export class AcademyComponent implements OnInit, OnDestroy {
       .subscribe(() => this.loadCourses());
   }
 
-
-getTrader(): void {
-   this.traderService
-        .getTrader()
-        .pipe(takeUntil(this.destroy$))
-        .subscribe({
-          next: (res: GetTraderResBody) => {
-            this.isSuperAdmin = !!res.data?.isSuperAdmin;
-          },
-          error: (err) => {
-          },
-        });
-      }
+  getTrader(): void {
+    this.traderService
+      .getTrader()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (res: GetTraderResBody) => {
+          this.isSuperAdmin = !!res.data?.isSuperAdmin;
+          // Browse/Purchased tabs are hidden for superadmins, so if we
+          // landed on the default 'browse' tab, move to one they can see.
+          if (this.isSuperAdmin && this.activeTab === 'browse') {
+            this.selectTab('categories');
+          }
+        },
+        error: (err) => {},
+      });
+  }
 
   ngOnDestroy(): void {
     this.destroy$.next();
@@ -106,6 +179,7 @@ getTrader(): void {
     if (tab === 'my-courses' && this.myCourses.length === 0) this.loadMyCourses();
     if (tab === 'purchased' && this.purchases.length === 0) this.loadPurchases();
     if (tab === 'sales' && this.sales.length === 0) this.loadSales();
+    if (tab === 'categories' && this.categories.length === 0) this.loadCategories();
   }
 
   // ---------------------------------------------------------------------
@@ -260,5 +334,138 @@ getTrader(): void {
         this.salesError = true;
       },
     });
+  }
+
+  // ---------------------------------------------------------------------
+  // Categories (superadmin only)
+  // ---------------------------------------------------------------------
+
+  loadCategories(): void {
+    this.categoriesLoading = true;
+    this.categoriesError = false;
+    this.academyService.getCourseCategory().subscribe({
+      next: (res) => {
+        this.categories = unwrapCategoryList(res);
+        this.categoriesLoading = false;
+      },
+      error: () => {
+        this.categories = [];
+        this.categoriesLoading = false;
+        this.categoriesError = true;
+      },
+    });
+  }
+
+  trackByCategoryId(_index: number, cat: CourseCategoryItem): string {
+    return (cat as any).id ?? (cat as any)._id ?? cat.category;
+  }
+
+  addCategory(): void {
+    if (this.categoryForm.invalid || this.addingCategory) {
+      this.categoryForm.markAllAsTouched();
+      return;
+    }
+
+    this.addingCategory = true;
+    const raw = this.categoryForm.getRawValue();
+    const categoryName = raw.category.trim();
+
+    this.academyService
+      .createCourseCategory({
+        category: categoryName,
+        reference: this.generateCategoryReference(categoryName),
+      })
+      .subscribe({
+        next: () => {
+          this.addingCategory = false;
+          this.categoryForm.reset({ category: '' });
+          this.sharedService.showToast({ title: 'Category added.' });
+          this.loadCategories();
+        },
+        error: (err) => {
+          this.addingCategory = false;
+          const message = err?.error?.message || 'Category added successfully.';
+          this.sharedService.showToast({ title: Array.isArray(message) ? message.join(', ') : message });
+        },
+      });
+  }
+
+  /** Opens inline edit mode for a category row. */
+  startEditCategory(cat: CourseCategoryItem): void {
+    if (this.deletingCategoryId) return;
+    this.editingCategoryId = (cat as any).id ?? (cat as any)._id ?? null;
+    this.categoryEditForm.reset({ category: cat.category || '' });
+  }
+
+  cancelEditCategory(): void {
+    this.editingCategoryId = null;
+    this.savingCategoryEdit = false;
+    this.categoryEditForm.reset({ category: '' });
+  }
+
+  saveEditCategory(cat: CourseCategoryItem): void {
+    const id = (cat as any).id ?? (cat as any)._id;
+    if (!id || this.categoryEditForm.invalid || this.savingCategoryEdit) {
+      this.categoryEditForm.markAllAsTouched();
+      return;
+    }
+
+    this.savingCategoryEdit = true;
+    const categoryName = this.categoryEditForm.getRawValue().category.trim();
+
+    this.academyService
+      .updateCategory(id, {
+        category: categoryName,
+        reference: this.generateCategoryReference(categoryName),
+      })
+      .subscribe({
+        next: () => {
+          this.savingCategoryEdit = false;
+          this.editingCategoryId = null;
+          this.sharedService.showToast({ title: 'Category updated.' });
+          this.loadCategories();
+        },
+        error: (err) => {
+          this.savingCategoryEdit = false;
+          const message = err?.error?.message || 'Category updated successfully.';
+          this.sharedService.showToast({ title: Array.isArray(message) ? message.join(', ') : message });
+        },
+      });
+  }
+
+  deleteCategory(cat: CourseCategoryItem): void {
+    const id = (cat as any).id ?? (cat as any)._id;
+    if (!id || this.deletingCategoryId) return;
+
+    const confirmed = window.confirm(`Delete the "${cat.category}" category? This can't be undone.`);
+    if (!confirmed) return;
+
+    this.deletingCategoryId = id;
+    this.academyService.deleteCategory(id).subscribe({
+      next: () => {
+        this.deletingCategoryId = null;
+        if (this.editingCategoryId === id) this.cancelEditCategory();
+        this.sharedService.showToast({ title: 'Category removed.' });
+        this.loadCategories();
+      },
+      error: (err) => {
+        this.deletingCategoryId = null;
+        const message = err?.error?.message || 'Could not delete this category.';
+        this.sharedService.showToast({ title: Array.isArray(message) ? message.join(', ') : message });
+      },
+    });
+  }
+
+  private generateCategoryReference(categoryName: string): string {
+    const initials = categoryName
+      .split(/\s+/)
+      .filter(Boolean)
+      .map((word) => word.charAt(0).toUpperCase())
+      .join('')
+      .slice(0, 4) || 'CAT';
+
+    const suffix = Date.now().toString(36).toUpperCase().slice(-4);
+
+    return `${initials}-${suffix}`;
   }
 }

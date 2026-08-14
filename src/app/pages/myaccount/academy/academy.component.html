@@ -41,7 +41,6 @@
       [class.active]="activeTab === 'my-courses'"
       [attr.aria-selected]="activeTab === 'my-courses'"
       (click)="selectTab('my-courses')"
-      
     >
       Courses
       <span class="academy-tab__count" *ngIf="myCourses?.length">{{ myCourses.length }}</span>
@@ -52,7 +51,7 @@
       [class.active]="activeTab === 'purchased'"
       [attr.aria-selected]="activeTab === 'purchased'"
       (click)="selectTab('purchased')"
-      *ngIf="!isSuperAdmin" 
+      *ngIf="!isSuperAdmin"
     >
       Purchased
       <span class="academy-tab__count" *ngIf="purchases?.length">{{ purchases.length }}</span>
@@ -63,10 +62,21 @@
       [class.active]="activeTab === 'sales'"
       [attr.aria-selected]="activeTab === 'sales'"
       (click)="selectTab('sales')"
-     
     >
       Sales
       <span class="academy-tab__count" *ngIf="sales?.length">{{ sales.length }}</span>
+    </button>
+
+    <button
+      class="academy-tab"
+      role="tab"
+      [class.active]="activeTab === 'categories'"
+      [attr.aria-selected]="activeTab === 'categories'"
+      (click)="selectTab('categories')"
+      *ngIf="isSuperAdmin"
+    >
+      Categories
+      <span class="academy-tab__count" *ngIf="categories?.length">{{ categories.length }}</span>
     </button>
   </nav>
 
@@ -146,9 +156,6 @@
             </span>
             <span class="course-instructor__handle">&#64;{{ course.instructor.username || 'trader' }}</span>
           </div>
-          <!-- <span class="course-enrolled" matTooltip="Traders enrolled">
-            <mat-icon>people</mat-icon>{{ course.totalPurchases || 0 }}
-          </span> -->
         </div>
 
         <button
@@ -293,18 +300,18 @@
             <th>Date</th>
           </tr>
         </thead>
-        <tbody>
-          <tr *ngFor="let p of purchases">
-            <td class="title-cell">{{ p.course.title }}</td>
-            <td>&#64;{{ p.course.instructor.username || 'trader' }}</td>
-            <td class="mono ref-cell">{{ p.reference }}</td>
-            <td class="num mono amount-debit">&#36;{{ p.amountPaid | number: '1.2-2' }}</td>
-            <td>
-              <span class="status-pill" [ngClass]="p.status">{{ p.status }}</span>
-            </td>
-            <td class="mono date-cell">{{ p.createdAt | date: 'medium' }}</td>
-          </tr>
-        </tbody>
+       <tbody>
+  <tr *ngFor="let p of purchases">
+    <td class="title-cell">{{ p.course?.title || 'Untitled course' }}</td>
+    <td>&#64;{{ p.course?.instructor?.username || 'trader' }}</td>
+    <td class="mono ref-cell">{{ p.reference || '—' }}</td>
+    <td class="num mono amount-debit">&#36;{{ (p.amountPaid ?? 0) | number: '1.2-2' }}</td>
+    <td>
+      <span class="status-pill" [ngClass]="p.status">{{ p.status || 'pending' }}</span>
+    </td>
+    <td class="mono date-cell">{{ p.createdAt ? (p.createdAt | date: 'medium') : '—' }}</td>
+  </tr>
+</tbody>
       </table>
     </div>
   </section>
@@ -355,15 +362,143 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let s of sales">
-            <td class="title-cell">{{ s.course.title }}</td>
-            <td>&#64;{{ s.buyer.username || 'trader' }}</td>
-            <td class="mono ref-cell">{{ s.reference }}</td>
-            <td class="num mono amount-credit">&#36;{{ s.amountEarned | number: '1.2-2' }}</td>
-            <td>
-              <span class="status-pill" [ngClass]="s.status">{{ s.status }}</span>
-            </td>
-            <td class="mono date-cell">{{ s.createdAt | date: 'medium' }}</td>
+  <tr *ngFor="let s of sales">
+    <td class="title-cell">{{ s.course?.title || 'Untitled course' }}</td>
+    <td>&#64;{{ s.buyer?.username || 'trader' }}</td>
+    <td class="mono ref-cell">{{ s.reference || '—' }}</td>
+    <td class="num mono amount-credit">&#36;{{ (s.amountEarned ?? 0) | number: '1.2-2' }}</td>
+    <td>
+      <span class="status-pill" [ngClass]="s.status">{{ s.status || 'pending' }}</span>
+    </td>
+    <td class="mono date-cell">{{ s.createdAt ? (s.createdAt | date: 'medium') : '—' }}</td>
+  </tr>
+</tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ================================================================= -->
+  <!-- CATEGORIES (superadmin only) -->
+  <!-- ================================================================= -->
+  <section class="academy-panel categories-panel" *ngIf="activeTab === 'categories' && isSuperAdmin">
+    <header class="academy-panel__header">
+      <div>
+        <h2 class="academy-panel__title">Course categories</h2>
+        <p class="academy-panel__subtitle">Manage the categories traders can assign to their courses.</p>
+      </div>
+      <div class="categories-stat" *ngIf="!categoriesLoading && !categoriesError">
+        <span class="categories-stat__value">{{ categories.length }}</span>
+        <span class="categories-stat__label">Active categories</span>
+      </div>
+    </header>
+
+    <div class="category-add-card">
+      <div class="category-add-card__icon">
+        <mat-icon>sell</mat-icon>
+      </div>
+      <form class="category-add-card__form" [formGroup]="categoryForm" (ngSubmit)="addCategory()">
+        <mat-form-field appearance="outline" class="filter-field grow">
+          <mat-label>Category name</mat-label>
+          <input matInput formControlName="category" placeholder="e.g. Technical Analysis" />
+        </mat-form-field>
+        <div class="category-add-card__actions">
+          <button mat-flat-button color="primary" class="fw-bold" type="submit" [disabled]="addingCategory">
+            <mat-icon *ngIf="!addingCategory">add</mat-icon>
+            {{ addingCategory ? 'Adding…' : 'Add category' }}
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <div class="academy-loading" *ngIf="categoriesLoading">
+      <img src="./assets/images/loading.gif" alt="Loading…" width="26" height="26" />
+    </div>
+
+    <div class="academy-state academy-state--error" *ngIf="!categoriesLoading && categoriesError">
+      <mat-icon>error_outline</mat-icon>
+      <div>
+        <p class="academy-state__title">Couldn't load categories</p>
+        <p class="academy-state__body">Something went wrong on our end. Try again.</p>
+      </div>
+      <button mat-stroked-button color="primary" type="button" (click)="loadCategories()">Retry</button>
+    </div>
+
+    <div class="academy-state academy-state--empty" *ngIf="!categoriesLoading && !categoriesError && categories.length === 0">
+      <mat-icon>category</mat-icon>
+      <div>
+        <p class="academy-state__title">No categories yet</p>
+        <p class="academy-state__body">Add your first category above.</p>
+      </div>
+    </div>
+
+    <div class="academy-table-wrap" *ngIf="!categoriesLoading && !categoriesError && categories.length > 0">
+      <table class="academy-table categories-table">
+        <thead>
+          <tr>
+            <th>Category</th>
+            <th class="actions"></th>
+          </tr>
+        </thead>
+        <tbody [formGroup]="categoryEditForm">
+          <tr *ngFor="let cat of categories; trackBy: trackByCategoryId">
+
+            <!-- Edit mode -->
+            <ng-container *ngIf="editingCategoryId === (cat.id || cat._id)">
+              <td class="title-cell">
+                <mat-form-field appearance="outline" class="filter-field category-edit-field">
+                  <input matInput formControlName="category" placeholder="Category name" />
+                </mat-form-field>
+              </td>
+              <td class="actions">
+                <button
+                  mat-icon-button
+                  color="primary"
+                  type="button"
+                  matTooltip="Save"
+                  [disabled]="savingCategoryEdit"
+                  (click)="saveEditCategory(cat)"
+                >
+                  <mat-icon>{{ savingCategoryEdit ? 'hourglass_empty' : 'check' }}</mat-icon>
+                </button>
+                <button
+                  mat-icon-button
+                  type="button"
+                  matTooltip="Cancel"
+                  [disabled]="savingCategoryEdit"
+                  (click)="cancelEditCategory()"
+                >
+                  <mat-icon>close</mat-icon>
+                </button>
+              </td>
+            </ng-container>
+
+            <!-- Read mode -->
+            <ng-container *ngIf="editingCategoryId !== (cat.id || cat._id)">
+              <td class="title-cell">{{ cat.category }}</td>
+              <td class="actions">
+                <button
+                  mat-icon-button
+                  type="button"
+                  matTooltip="Edit"
+                  [disabled]="!!editingCategoryId || deletingCategoryId === (cat.id || cat._id)"
+                  (click)="startEditCategory(cat)"
+                >
+                  <mat-icon>edit</mat-icon>
+                </button>
+
+                <button
+                  mat-icon-button
+                  color="warn"
+                  type="button"
+                  matTooltip="Delete"
+                  [disabled]="!!editingCategoryId || deletingCategoryId === (cat.id || cat._id)"
+                  (click)="deleteCategory(cat)"
+                >
+                  <mat-icon>{{ deletingCategoryId === (cat.id || cat._id) ? 'hourglass_empty' : 'delete' }}</mat-icon>
+                </button>
+              </td>
+            </ng-container>
+
           </tr>
         </tbody>
       </table>

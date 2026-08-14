@@ -8,13 +8,21 @@ import { map } from 'rxjs/operators';
 import { environment } from '../../../../environments/environment';
 import {
   Course,
+  CourseCategoryItem,
   CoursePurchase,
   CourseQueryParams,
   CourseSale,
+  CreateCourseCategoryReqBody,
   CreateCourseReqBody,
   normalizeCourse,
+  normalizeCourseCategory,
+  normalizeCoursePurchase,
+  normalizeCourseSale,
   PurchaseCourseReqBody,
+  RawCourseCategoryDoc,
   RawCourseDoc,
+  RawCoursePurchaseDoc,
+  RawCourseSaleDoc,
   UpdateCourseReqBody,
 } from './model/academy.model';
 
@@ -26,6 +34,29 @@ interface ApiListResponse<T> {
 function unwrapList<T>(res: T[] | ApiListResponse<T>): T[] {
   if (Array.isArray(res)) return res;
   return res?.data ?? res?.items ?? [];
+}
+
+/**
+ * The category endpoints may return either a single created/updated doc, a
+ * bare array, or a { data / items } wrapper depending on the backend
+ * response shape — this normalizes all three into an array.
+ */
+function unwrapCategoryList(
+  res: RawCourseCategoryDoc | RawCourseCategoryDoc[] | ApiListResponse<RawCourseCategoryDoc>,
+): RawCourseCategoryDoc[] {
+  if (Array.isArray(res)) return res;
+  if (res && typeof res === 'object' && 'category' in (res as RawCourseCategoryDoc)) {
+    return [res as RawCourseCategoryDoc];
+  }
+  return (res as ApiListResponse<RawCourseCategoryDoc>)?.data
+    ?? (res as ApiListResponse<RawCourseCategoryDoc>)?.items
+    ?? [];
+}
+
+/** Body accepted by PATCH /academy/category/:id — mirrors ListCourseCategoryDto. */
+export interface UpdateCourseCategoryReqBody {
+  category?: string;
+  reference?: string;
 }
 
 @Injectable({
@@ -84,37 +115,68 @@ export class AcademyService {
   // ---- Purchases ----
 
   purchaseCourse(payload: PurchaseCourseReqBody): Observable<CoursePurchase> {
-    return this.http.post<CoursePurchase>(`${this.baseUrl}/purchase`, payload);
+    return this.http
+      .post<RawCoursePurchaseDoc>(`${this.baseUrl}/purchase`, payload)
+      .pipe(map(normalizeCoursePurchase));
   }
 
   myPurchases(): Observable<CoursePurchase[]> {
     return this.http
-      .get<CoursePurchase[] | ApiListResponse<CoursePurchase>>(`${this.baseUrl}/purchases/mine`)
-      .pipe(map(unwrapList));
+      .get<RawCoursePurchaseDoc[] | ApiListResponse<RawCoursePurchaseDoc>>(
+        `${this.baseUrl}/purchases/mine`,
+      )
+      .pipe(map((res) => unwrapList(res).map(normalizeCoursePurchase)));
   }
 
   mySales(): Observable<CourseSale[]> {
     return this.http
-      .get<CourseSale[] | ApiListResponse<CourseSale>>(`${this.baseUrl}/sales/mine`)
-      .pipe(map(unwrapList));
+      .get<RawCourseSaleDoc[] | ApiListResponse<RawCourseSaleDoc>>(`${this.baseUrl}/sales/mine`)
+      .pipe(map((res) => unwrapList(res).map(normalizeCourseSale)));
   }
 
+  // ---- Categories (superadmin only, gated in the UI) ----
 
+  getCourseCategory(): Observable<CourseCategoryItem[]> {
+    return this.http
+      .get<RawCourseCategoryDoc[] | ApiListResponse<RawCourseCategoryDoc>>(`${this.baseUrl}/category`)
+      .pipe(map((res) => unwrapCategoryList(res).map(normalizeCourseCategory)));
+  }
 
+  createCourseCategory(payload: CreateCourseCategoryReqBody): Observable<CourseCategoryItem[]> {
+    return this.http
+      .post<RawCourseCategoryDoc | RawCourseCategoryDoc[] | ApiListResponse<RawCourseCategoryDoc>>(
+        `${this.baseUrl}/category`,
+        payload,
+      )
+      .pipe(map((res) => unwrapCategoryList(res).map(normalizeCourseCategory)));
+  }
 
-uploadImage(formData: FormData): Observable<any> {
-  return this.http.post(
-    `${environment.cloudUploadApiUrl}/${environment.cloudinaryName}/image/upload`,
-    formData,
-  );
-}
+  updateCategory(id: string, payload: UpdateCourseCategoryReqBody): Observable<CourseCategoryItem[]> {
+    return this.http
+      .patch<RawCourseCategoryDoc | RawCourseCategoryDoc[] | ApiListResponse<RawCourseCategoryDoc>>(
+        `${this.baseUrl}/category/${id}`,
+        payload,
+      )
+      .pipe(map((res) => unwrapCategoryList(res).map(normalizeCourseCategory)));
+  }
 
+  deleteCategory(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/category/${id}`);
+  }
 
-uploadRawFile(formData: FormData): Observable<any> {
-  return this.http.post(
-    `${environment.cloudUploadApiUrl}/${environment.cloudinaryName}/raw/upload`,
-    formData,
-  );
-}
+  // ---- Uploads ----
 
+  uploadImage(formData: FormData): Observable<any> {
+    return this.http.post(
+      `${environment.cloudUploadApiUrl}/${environment.cloudinaryName}/image/upload`,
+      formData,
+    );
+  }
+
+  uploadRawFile(formData: FormData): Observable<any> {
+    return this.http.post(
+      `${environment.cloudUploadApiUrl}/${environment.cloudinaryName}/raw/upload`,
+      formData,
+    );
+  }
 }

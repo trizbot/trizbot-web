@@ -207,3 +207,180 @@ export function normalizeCourse(raw: RawCourseDoc): Course {
     updatedAt: extractDate(raw.updatedAt),
   };
 }
+
+
+
+// ---- Course Category ----
+
+export interface CourseCategoryItem {
+  id: string;
+  _id?: string;
+  category: string;
+  reference?: string;
+  entityId?: string;
+  createdAt?: string;
+}
+
+export interface RawCourseCategoryDoc {
+  _id?: string;
+  id?: string;
+  category: string;
+  reference?: string;
+  entityId?: string;
+  createdAt?: string;
+}
+
+export interface CreateCourseCategoryReqBody {
+  category?: string;
+  reference?: string;
+}
+
+export function normalizeCourseCategory(raw: RawCourseCategoryDoc): CourseCategoryItem {
+  return {
+    id: raw.id || raw._id || '',
+    category: raw.category,
+    reference: raw.reference,
+    entityId: raw.entityId,
+    createdAt: raw.createdAt,
+  };
+}
+
+
+
+
+
+// ---- Course Purchase / Sale ----
+
+/**
+ * Minimal course info as it may come back nested inside a purchase/sale doc.
+ * Some backends only populate this partially, or leave `course` as a bare
+ * ObjectId string when the ref wasn't populated at all.
+ */
+interface RawNestedCourseRef {
+  _id?: string | { $oid: string };
+  id?: string | { $oid: string };
+  title?: string;
+  name?: string; // some endpoints call it `name` instead of `title`
+  instructor?: {
+    _id?: string;
+    id?: string;
+    username?: string;
+    firstName?: string;
+    lastName?: string;
+  };
+  instructorUsername?: string;
+}
+
+interface RawUserRef {
+  _id?: string | { $oid: string };
+  id?: string | { $oid: string };
+  username?: string;
+  firstName?: string;
+  lastName?: string;
+}
+
+export interface RawCoursePurchaseDoc {
+  _id?: string | { $oid: string };
+  id?: string | { $oid: string };
+  reference?: string;
+  transactionRef?: string; // alternate name seen on some payment records
+  amountPaid?: number;
+  amount?: number; // alternate name
+  price?: number; // alternate name
+  status?: string;
+  paymentStatus?: string; // alternate name
+  createdAt?: string | { $date: string };
+  updatedAt?: string | { $date: string };
+  course?: RawNestedCourseRef | string; // may be an unpopulated ObjectId string
+  courseId?: string;
+  courseTitle?: string; // flattened alternate, seen when `course` isn't populated
+}
+
+export interface RawCourseSaleDoc {
+  _id?: string | { $oid: string };
+  id?: string | { $oid: string };
+  reference?: string;
+  transactionRef?: string;
+  amountEarned?: number;
+  amount?: number;
+  status?: string;
+  paymentStatus?: string;
+  createdAt?: string | { $date: string };
+  updatedAt?: string | { $date: string };
+  course?: RawNestedCourseRef | string;
+  courseId?: string;
+  courseTitle?: string;
+  buyer?: RawUserRef | string;
+  buyerId?: string;
+  buyerUsername?: string; // flattened alternate
+}
+
+function safeId(value: unknown): string {
+  if (!value) return '';
+  if (typeof value === 'string') return value;
+  if (typeof value === 'object' && '$oid' in (value as any)) return (value as any).$oid;
+  return String(value);
+}
+
+function safeDate(value: unknown): string {
+  if (!value) return '';
+  if (typeof value === 'string') return value;
+  if (typeof value === 'object' && '$date' in (value as any)) return (value as any).$date;
+  return String(value);
+}
+
+/** Builds the nested `{ id, title, instructor: { username } }` course summary, tolerating unpopulated refs. */
+function normalizeNestedCourseRef(
+  course: RawNestedCourseRef | string | undefined,
+  fallbackId?: string,
+  fallbackTitle?: string,
+): Pick<Course, 'id' | 'title'> & { instructor: Pick<CourseInstructor, 'username'> } {
+  if (!course || typeof course === 'string') {
+    // `course` was either missing or just an unpopulated ObjectId string
+    return {
+      id: safeId(course) || fallbackId || '',
+      title: fallbackTitle || 'Untitled course',
+      instructor: { username: 'trader' },
+    };
+  }
+
+  return {
+    id: safeId(course.id ?? course._id) || fallbackId || '',
+    title: course.title || course.name || fallbackTitle || 'Untitled course',
+    instructor: {
+      username: course.instructor?.username || course.instructorUsername || 'trader',
+    },
+  };
+}
+
+export function normalizeCoursePurchase(raw: RawCoursePurchaseDoc): CoursePurchase {
+  return {
+    id: safeId(raw.id ?? raw._id),
+    reference: raw.reference || raw.transactionRef || '—',
+    amountPaid: raw.amountPaid ?? raw.amount ?? raw.price ?? 0,
+    status: (raw.status || raw.paymentStatus || 'pending') as CoursePurchase['status'],
+    createdAt: safeDate(raw.createdAt),
+    course: normalizeNestedCourseRef(raw.course, raw.courseId, raw.courseTitle),
+  };
+}
+
+export function normalizeCourseSale(raw: RawCourseSaleDoc): CourseSale {
+  const buyerRaw = raw.buyer;
+  const buyerUsername =
+    (buyerRaw && typeof buyerRaw === 'object' ? buyerRaw.username : undefined) ||
+    raw.buyerUsername ||
+    'trader';
+
+  return {
+    id: safeId(raw.id ?? raw._id),
+    reference: raw.reference || raw.transactionRef || '—',
+    amountEarned: raw.amountEarned ?? raw.amount ?? 0,
+    status: (raw.status || raw.paymentStatus || 'pending') as CourseSale['status'],
+    createdAt: safeDate(raw.createdAt),
+    course: {
+      id: normalizeNestedCourseRef(raw.course, raw.courseId, raw.courseTitle).id,
+      title: normalizeNestedCourseRef(raw.course, raw.courseId, raw.courseTitle).title,
+    },
+    buyer: { username: buyerUsername },
+  };
+}

@@ -10,9 +10,9 @@ import { switchMap } from 'rxjs/operators';
 import { MaterialModule } from '../../../../material.module';
 import { AcademyService } from '../academy.service';
 import {
-  CATEGORY_OPTIONS,
   Course,
   CourseCategory,
+  CourseCategoryItem,
   CourseLevel,
   CreateCourseReqBody,
   LEVEL_OPTIONS,
@@ -38,9 +38,12 @@ type UploadSlot = 'coverPhoto' | 'pdf';
   styleUrls: ['./create-course-dialog.component.scss'],
 })
 export class CreateCourseDialogComponent implements OnInit, OnDestroy {
-  readonly categoryOptions = CATEGORY_OPTIONS;
   readonly levelOptions = LEVEL_OPTIONS;
   readonly maxContentLength = 20000;
+
+  // Categories are now loaded from the backend instead of a static list.
+  categories: CourseCategoryItem[] = [];
+  categoriesLoading = false;
 
   loading = false;
   errorMessage = '';
@@ -77,7 +80,6 @@ export class CreateCourseDialogComponent implements OnInit, OnDestroy {
     return this.form.get('content')?.value?.length || 0;
   }
 
-  /** True once a cover photo exists, whether newly picked or carried over from the existing course. */
   get hasCoverPhoto(): boolean {
     return !!this.coverPhotoPreviewUrl || !!this.existingCoverPhotoUrl;
   }
@@ -116,6 +118,22 @@ export class CreateCourseDialogComponent implements OnInit, OnDestroy {
       this.existingCoverPhotoUrl = c.coverPhotoUrl || null;
       this.existingPdfUrl = c.pdfUrl || null;
     }
+
+    this.loadCategories();
+  }
+
+  private loadCategories(): void {
+    this.categoriesLoading = true;
+    this.academyService.getCourseCategory().subscribe({
+      next: (res) => {
+        this.categories = res;
+        this.categoriesLoading = false;
+      },
+      error: () => {
+        this.categories = [];
+        this.categoriesLoading = false;
+      },
+    });
   }
 
   ngOnDestroy(): void {
@@ -136,7 +154,7 @@ export class CreateCourseDialogComponent implements OnInit, OnDestroy {
     this.revokeCoverPhotoPreview();
     this.coverPhotoFile = file;
     this.coverPhotoPreviewUrl = URL.createObjectURL(file);
-    this.existingCoverPhotoUrl = null; // being replaced by the new file
+    this.existingCoverPhotoUrl = null;
   }
 
   onRemoveCoverPhoto(): void {
@@ -153,7 +171,7 @@ export class CreateCourseDialogComponent implements OnInit, OnDestroy {
 
     this.pdfFile = file;
     this.pdfFileName = file.name;
-    this.existingPdfUrl = null; // being replaced by the new file
+    this.existingPdfUrl = null;
   }
 
   onRemovePdf(): void {
@@ -235,7 +253,6 @@ export class CreateCourseDialogComponent implements OnInit, OnDestroy {
     this.loading = true;
     const raw = this.form.getRawValue();
 
-   
     const coverPhoto$ = this.coverPhotoFile ? this.uploadCoverPhoto(this.coverPhotoFile) : of(null);
     const pdf$ = this.pdfFile ? this.uploadPdf(this.pdfFile) : of(null);
 
