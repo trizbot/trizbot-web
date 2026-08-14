@@ -98,6 +98,7 @@ export interface CourseSale {
   id: string;
   reference: string;
   amountEarned: number;
+  instructorEarning: number;
   status: 'pending' | 'completed' | 'failed' | string;
   createdAt: string;
   course: Pick<Course, 'id' | 'title'>;
@@ -321,6 +322,7 @@ export interface RawCourseSaleDoc {
   reference?: string;
   transactionRef?: string;
   amountEarned?: number;
+  instructorEarning?: number;
   amount?: number;
   status?: string;
   paymentStatus?: string;
@@ -409,6 +411,7 @@ export function normalizeCourseSale(raw: RawCourseSaleDoc): CourseSale {
     id: safeId(raw.id ?? raw._id),
     reference: raw.reference || raw.transactionRef || '—',
     amountEarned: raw.amountEarned ?? raw.amount ?? 0,
+    instructorEarning: raw.instructorEarning ?? raw.amount ?? 0,
     status: (raw.status || raw.paymentStatus || 'pending') as CourseSale['status'],
     createdAt: safeDate(raw.createdAt),
     course: {
