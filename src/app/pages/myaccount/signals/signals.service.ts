@@ -106,6 +106,13 @@ export class SignalsService {
     if (params.pair) httpParams = httpParams.set('pair', params.pair);
     if (params.page != null) httpParams = httpParams.set('page', params.page);
     if (params.limit != null) httpParams = httpParams.set('limit', params.limit);
+    // Admins pass bypassSubscription: true so the backend skips the
+    // subscription gate and returns the full signals list. This was
+    // previously being silently dropped here — it was accepted as an
+    // input param but never actually added to the outgoing HttpParams,
+    // so the backend never saw it and always applied the normal
+    // subscription-gated filtering, even for admins.
+    if (params.bypassSubscription) httpParams = httpParams.set('bypassSubscription', true);
 
     return this.http
       .get<ApiListResponse<RawSignal>>(this.baseUrl, { params: httpParams })

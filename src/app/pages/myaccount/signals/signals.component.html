@@ -5,7 +5,7 @@
     <div class="signals-hero-text">
       <span class="signals-eyebrow">Desk Calls · Live</span>
       <h1 class="signals-title">Signals</h1>
-      <p class="signals-subtitle" *ngIf="!canBypassSubscription" >Entry, take-profit and stop-loss calls from the desk — subscribe to unlock.</p>
+      <p class="signals-subtitle" *ngIf="!accessLoading && !canBypassSubscription">Entry, take-profit and stop-loss calls from the desk — subscribe to unlock.</p>
     </div>
     <button
       *ngIf="canManageSignals"
@@ -26,13 +26,13 @@
       <mat-icon>show_chart</mat-icon>
       Signals
     </button>
-  
+
     <button *ngIf="!isSuperAdmin" type="button" class="signals-tab" role="tab" [attr.aria-selected]="activeTab === 'plans'" [class.active]="activeTab === 'plans'" (click)="selectTab('plans')">
       <mat-icon>workspace_premium</mat-icon>
       Plans
     </button>
     <button
-      *ngIf="isAdmin"
+      *ngIf="isSuperAdmin"
       class="signals-tab"
       role="tab"
       [attr.aria-selected]="activeTab === 'manage'"
@@ -46,120 +46,128 @@
 
   <!-- SIGNALS -->
   <section *ngIf="activeTab === 'signals'" class="signals-section">
-    <div class="subscription-banner" *ngIf="!subscriptionLoading && !isSubscribed && !canBypassSubscription">
-      <mat-icon>lock</mat-icon>
-      <div class="subscription-banner-text">
-        <strong>Subscribe to unlock live signals.</strong>
-        <span>Get real-time entry, take-profit and stop-loss calls from the desk.</span>
-      </div>
-      <button mat-flat-button color="primary" type="button" (click)="selectTab('plans')">
-        View plans
-      </button>
+
+    <!-- Single loading state while access (subscription + admin status) resolves together. -->
+    <div class="signals-loading" *ngIf="accessLoading">
+      <div class="spinner" aria-label="Checking access"></div>
     </div>
 
-    <!--
-      Super admins can always browse the list without a subscription.
-      Regular clients (and plain Admins) only get here with an active subscription.
-    -->
-    <ng-container *ngIf="!subscriptionLoading && (canBypassSubscription || isSubscribed)">
-      <form class="signals-filters" [formGroup]="filterForm">
-        <div class="search-field">
-          <mat-icon class="search-icon">search</mat-icon>
-          <input
-            type="text"
-            formControlName="pair"
-            placeholder="Search pair, e.g. BTC/USDT"
-            class="search-input"
-          />
+    <ng-container *ngIf="!accessLoading">
+      <div class="subscription-banner" *ngIf="!isSubscribed && !canBypassSubscription">
+        <mat-icon>lock</mat-icon>
+        <div class="subscription-banner-text">
+          <strong>Subscribe to unlock live signals.</strong>
+          <span>Get real-time entry, take-profit and stop-loss calls from the desk.</span>
         </div>
-
-        <button
-          type="button"
-          class="clear-filters-btn"
-          *ngIf="filterForm.get('pair')?.value"
-          (click)="clearFilters()"
-        >
-          Clear
+        <button mat-flat-button color="primary" type="button" (click)="selectTab('plans')">
+          View plans
         </button>
-      </form>
-
-      <div class="signals-loading" *ngIf="signalsLoading">
-        <div class="spinner" aria-label="Loading signals"></div>
       </div>
 
-      <div class="signals-empty" *ngIf="!signalsLoading && signals.length === 0">
-        <mat-icon class="signals-empty-icon">show_chart</mat-icon>
-        <p>No signals match your filters right now.</p>
-      </div>
-
-      <div class="signals-grid" *ngIf="!signalsLoading && signals.length > 0">
-        <article class="signal-card" *ngFor="let item of signals" [class.closed]="!item.isActive">
-          <header class="signal-card-top">
-            <span class="pair-name">{{ item.pair }}</span>
-            <span
-              class="type-badge"
-              [style.background]="categoryColors[item.category] + '1a'"
-              [style.color]="categoryColors[item.category]"
-            >
-              <span class="type-dot" [style.background]="categoryColors[item.category]"></span>
-              {{ categoryLabels[item.category] }}
-            </span>
-          </header>
-
-          <div class="signal-card-prices">
-            <div class="price-cell">
-              <span class="price-label">Entry</span>
-              <span class="price-value">{{ item.entryPrice }}</span>
-            </div>
-            <div class="price-cell" *ngIf="item.takeProfit1 != null">
-              <span class="price-label">TP 1</span>
-              <span class="price-value target">{{ item.takeProfit1 }}</span>
-            </div>
-            <div class="price-cell" *ngIf="item.takeProfit2 != null">
-              <span class="price-label">TP 2</span>
-              <span class="price-value target">{{ item.takeProfit2 }}</span>
-            </div>
-            <div class="price-cell" *ngIf="item.takeProfit3 != null">
-              <span class="price-label">TP 3</span>
-              <span class="price-value target">{{ item.takeProfit3 }}</span>
-            </div>
-            <div class="price-cell">
-              <span class="price-label">Stop</span>
-              <span class="price-value stop">{{ item.stopLoss ?? '—' }}</span>
-            </div>
+      <!--
+        Super admins can always browse the list without a subscription.
+        Regular clients only get here with an active subscription.
+      -->
+      <ng-container *ngIf="canBypassSubscription || isSubscribed">
+        <form class="signals-filters" [formGroup]="filterForm">
+          <div class="search-field">
+            <mat-icon class="search-icon">search</mat-icon>
+            <input
+              type="text"
+              formControlName="pair"
+              placeholder="Search pair, e.g. BTC/USDT"
+              class="search-input"
+            />
           </div>
 
-          <p class="signal-analysis" *ngIf="item.analysis">{{ item.analysis }}</p>
+          <button
+            type="button"
+            class="clear-filters-btn"
+            *ngIf="filterForm.get('pair')?.value"
+            (click)="clearFilters()"
+          >
+            Clear
+          </button>
+        </form>
 
-          <footer class="signal-card-footer">
-            <span class="rr-chip" *ngIf="riskReward(item)">R:R {{ riskReward(item) }}</span>
-            <span class="signal-time">{{ timeAgo(item.createdAt) }}</span>
-            <span class="status-dot" [class.inactive]="!item.isActive">
-              {{ item.isActive ? 'Active' : 'Closed' }}
-            </span>
-          </footer>
-        </article>
-      </div>
+        <div class="signals-loading" *ngIf="signalsLoading">
+          <div class="spinner" aria-label="Loading signals"></div>
+        </div>
 
-      <div class="signals-pagination" *ngIf="!signalsLoading && totalPages > 1">
-        <button class="page-nav-btn" type="button" [disabled]="page === 1" (click)="goToPage(page - 1)" aria-label="Previous page">
-          <mat-icon>chevron_left</mat-icon>
-        </button>
+        <div class="signals-empty" *ngIf="!signalsLoading && signals.length === 0">
+          <mat-icon class="signals-empty-icon">show_chart</mat-icon>
+          <p>No signals match your filters right now.</p>
+        </div>
 
-        <button
-          class="page-btn"
-          type="button"
-          *ngFor="let p of pageRange()"
-          [class.active]="p === page"
-          (click)="goToPage(p)"
-        >
-          {{ p }}
-        </button>
+        <div class="signals-grid" *ngIf="!signalsLoading && signals.length > 0">
+          <article class="signal-card" *ngFor="let item of signals" [class.closed]="!item.isActive">
+            <header class="signal-card-top">
+              <span class="pair-name">{{ item.pair }}</span>
+              <span
+                class="type-badge"
+                [style.background]="categoryColors[item.category] + '1a'"
+                [style.color]="categoryColors[item.category]"
+              >
+                <span class="type-dot" [style.background]="categoryColors[item.category]"></span>
+                {{ categoryLabels[item.category] }}
+              </span>
+            </header>
 
-        <button class="page-nav-btn" type="button" [disabled]="page === totalPages" (click)="goToPage(page + 1)" aria-label="Next page">
-          <mat-icon>chevron_right</mat-icon>
-        </button>
-      </div>
+            <div class="signal-card-prices">
+              <div class="price-cell">
+                <span class="price-label">Entry</span>
+                <span class="price-value">{{ item.entryPrice }}</span>
+              </div>
+              <div class="price-cell" *ngIf="item.takeProfit1 != null">
+                <span class="price-label">TP 1</span>
+                <span class="price-value target">{{ item.takeProfit1 }}</span>
+              </div>
+              <div class="price-cell" *ngIf="item.takeProfit2 != null">
+                <span class="price-label">TP 2</span>
+                <span class="price-value target">{{ item.takeProfit2 }}</span>
+              </div>
+              <div class="price-cell" *ngIf="item.takeProfit3 != null">
+                <span class="price-label">TP 3</span>
+                <span class="price-value target">{{ item.takeProfit3 }}</span>
+              </div>
+              <div class="price-cell">
+                <span class="price-label">Stop</span>
+                <span class="price-value stop">{{ item.stopLoss ?? '—' }}</span>
+              </div>
+            </div>
+
+            <p class="signal-analysis" *ngIf="item.analysis">{{ item.analysis }}</p>
+
+            <footer class="signal-card-footer">
+              <span class="rr-chip" *ngIf="riskReward(item)">R:R {{ riskReward(item) }}</span>
+              <span class="signal-time">{{ timeAgo(item.createdAt) }}</span>
+              <span class="status-dot" [class.inactive]="!item.isActive">
+                {{ item.isActive ? 'Active' : 'Closed' }}
+              </span>
+            </footer>
+          </article>
+        </div>
+
+        <div class="signals-pagination" *ngIf="!signalsLoading && totalPages > 1">
+          <button class="page-nav-btn" type="button" [disabled]="page === 1" (click)="goToPage(page - 1)" aria-label="Previous page">
+            <mat-icon>chevron_left</mat-icon>
+          </button>
+
+          <button
+            class="page-btn"
+            type="button"
+            *ngFor="let p of pageRange()"
+            [class.active]="p === page"
+            (click)="goToPage(p)"
+          >
+            {{ p }}
+          </button>
+
+          <button class="page-nav-btn" type="button" [disabled]="page === totalPages" (click)="goToPage(page + 1)" aria-label="Next page">
+            <mat-icon>chevron_right</mat-icon>
+          </button>
+        </div>
+      </ng-container>
     </ng-container>
   </section>
 
@@ -174,7 +182,7 @@
       </span>
     </div>
 
-    
+
 
     <ng-container *ngIf="!canBypassSubscription">
       <div class="signals-loading" *ngIf="plansLoading">
@@ -254,8 +262,8 @@
     </div>
   </section>
 
-  <!-- MANAGE (admin) -->
-  <section *ngIf="activeTab === 'manage' && isAdmin" class="signals-section">
+  <!-- MANAGE (super admin) -->
+  <section *ngIf="activeTab === 'manage' && isSuperAdmin" class="signals-section">
     <div class="manage-header">
       <p class="manage-caption">{{ manageSignals.length }} signal(s)</p>
       <button

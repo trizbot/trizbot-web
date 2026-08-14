@@ -4,8 +4,8 @@ import { FormControl, FormGroup, FormsModule, ReactiveFormsModule } from '@angul
 import { RouterModule } from '@angular/router';
 import { SignalCategoryEnum, SIGNAL_CATEGORY_LABELS,  } from './model/signal.model';
 import { MatDialog } from '@angular/material/dialog';
-import { Subject } from 'rxjs';
-import { debounceTime, takeUntil } from 'rxjs/operators';
+import { Subject, of, forkJoin } from 'rxjs';
+import { catchError, debounceTime, switchMap, takeUntil } from 'rxjs/operators';
 
 import { MaterialModule } from '../../../material.module';
 import { SharedService } from '../../../shared/shared.service';
@@ -22,6 +22,7 @@ import {
   SIGNAL_TYPE_COLORS,
   SIGNAL_TYPE_LABELS,
   SignalItem,
+  SignalListResponse,
   SUBSCRIPTION_PERIOD_LABELS,
   SUBSCRIPTION_STATUS_LABELS,
   SubscriptionPeriodStatus,
@@ -41,6 +42,15 @@ export class SignalsComponent implements OnInit, OnDestroy {
   private sharedService = inject(SharedService);
   private traderService = inject(TraderService);
   private destroy$ = new Subject<void>();
+
+  /**
+   * Every call to loadSignals() pushes here instead of calling the service
+   * directly. Piped through switchMap below, so if multiple loads are
+   * triggered in quick succession, only the response to the LATEST trigger
+   * is ever applied — stale, out-of-order responses are dropped
+   * automatically instead of racing to overwrite the signals list.
+   */
+  private reloadSignals$ = new Subject<void>();
 
   readonly typeLabels = SIGNAL_TYPE_LABELS;
   readonly typeColors = SIGNAL_TYPE_COLORS;
@@ -65,7 +75,24 @@ export class SignalsComponent implements OnInit, OnDestroy {
   // Signals list
   signals: SignalItem[] = [];
   signalsLoading = false;
+
+  /**
+   * Single source of truth for elevated access, resolved from the backend
+   * via traderService.getTrader() (see ngOnInit). Do NOT derive this from
+   * localStorage — that value can be stale or missing.
+   */
   isSuperAdmin = false;
+
+  /**
+   * True until the initial access check (subscription + admin status,
+   * resolved together via forkJoin) completes. The signals grid stays
+   * hidden behind a loading spinner during this window instead of behind
+   * two independently-resolving flags, which previously caused the grid to
+   * flicker between "subscribe" and "grid" depending on which network call
+   * happened to land first.
+   */
+  accessLoading = true;
+
   page = 1;
   limit = 12;
   total = 0;
@@ -83,27 +110,23 @@ export class SignalsComponent implements OnInit, OnDestroy {
   plans: PlanOption[] = [];
   plansLoading = false;
 
-  // Manage (admin)
+  // Manage (super admin)
   manageSignals: SignalItem[] = [];
   manageLoading = false;
   deletingId: string | null = null;
 
   constructor(private signalsService: SignalsService, private dialog: MatDialog) {}
 
-  get isAdmin(): boolean {
-    const entityName = localStorage.getItem('entity');
-    return entityName === 'Admin';
-  }
-
+  /** Super admins can manage (create/edit/delete) signals. */
   get canManageSignals(): boolean {
     return this.isSuperAdmin;
   }
 
-  // Both super admins and regular admins can browse the signals list
-  // without needing an active subscription. Only plain clients are gated
-  // behind the subscription check (see isSubscribed below).
+  /**
+   * Only super admins can browse the list without an active subscription.
+   * Regular clients only see signals with an active subscription.
+   */
   get canBypassSubscription(): boolean {
-    // return this.isSuperAdmin || this.isAdmin;
     return this.isSuperAdmin;
   }
 
@@ -127,8 +150,90 @@ export class SignalsComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    this.loadSubscriptions();
-    this.loadSignals();
+    // Single pipeline for all signal-list loads. switchMap guarantees that
+    // only the most recently triggered request's response is ever applied,
+    // regardless of network timing.
+    this.reloadSignals$
+      .pipe(
+        switchMap(() => {
+          this.signalsLoading = true;
+          const { pair } = this.filterForm.getRawValue();
+
+          const params: Record<string, unknown> = {
+            pair: pair || undefined,
+            page: this.page,
+            limit: this.limit,
+          };
+
+          if (this.canBypassSubscription) {
+            params['bypassSubscription'] = true;
+          }
+
+          return this.signalsService.getSignals(params as any).pipe(
+            catchError(() => of(null as SignalListResponse | null))
+          );
+        }),
+        takeUntil(this.destroy$)
+      )
+      .subscribe((res) => {
+        this.signalsLoading = false;
+        if (!res) {
+          return;
+        }
+        this.signals = res.items;
+        this.total = res.total;
+        this.totalPages = res.totalPages;
+      });
+
+    // Resolve subscription status AND admin status TOGETHER before the
+    // signals grid is ever shown or hidden — this is what actually fixes
+    // the "waits until something else happens" symptom. Previously these
+    // were two independent async calls, so the template's *ngIf could
+    // flicker through "subscribe to unlock" before finally settling once
+    // both had resolved. Now there's exactly one settling point.
+    this.subscriptionLoading = true;
+    this.subscriptionHistoryLoading = true;
+
+    forkJoin({
+      subscriptions: this.signalsService.getMySubscriptions().pipe(
+        catchError(() => of([] as MySubscription[]))
+      ),
+      trader: this.traderService.getTrader().pipe(
+        catchError(() => of(null as GetTraderResBody | null))
+      ),
+    })
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(({ subscriptions, trader }) => {
+        const sorted = [...subscriptions].sort(
+          (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
+        this.subscriptionHistory = sorted;
+        this.subscription =
+          sorted.find((s) => this.getPeriodStatus(s) === SubscriptionPeriodStatus.Active) ?? null;
+
+        this.isSuperAdmin = !!trader?.data?.isSuperAdmin;
+
+        this.subscriptionLoading = false;
+        this.subscriptionHistoryLoading = false;
+        this.accessLoading = false;
+
+        // Load the signals list exactly once, right here — the same
+        // settling point used for subscription history above. isSuperAdmin
+        // is already known by this line, so canBypassSubscription is
+        // correct on this very first request: admins always get the full,
+        // bypassed list on the first try, with no earlier/partial request
+        // to race against and no flash of an empty grid.
+        this.loadSignals();
+
+        if (this.activeTab === 'manage' && !this.isSuperAdmin) {
+          this.activeTab = 'signals';
+        }
+
+        if (this.activeTab === 'manage' && this.isSuperAdmin && this.manageSignals.length === 0) {
+          this.loadManageSignals();
+        }
+      });
+
     this.loadPlans();
 
     this.filterForm.valueChanges
@@ -136,19 +241,6 @@ export class SignalsComponent implements OnInit, OnDestroy {
       .subscribe(() => {
         this.page = 1;
         this.loadSignals();
-      });
-
-    this.traderService
-      .getTrader()
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (res: GetTraderResBody) => {
-          this.isSuperAdmin = !!res.data?.isSuperAdmin;
-
-          this.loadSignals();
-        },
-        error: (err) => {
-        },
       });
   }
 
@@ -158,7 +250,7 @@ export class SignalsComponent implements OnInit, OnDestroy {
   }
 
   selectTab(tab: SignalsTab): void {
-    if (tab === 'manage' && !this.isAdmin) return;
+    if (tab === 'manage' && !this.isSuperAdmin) return;
 
     this.activeTab = tab;
 
@@ -167,12 +259,17 @@ export class SignalsComponent implements OnInit, OnDestroy {
       this.loadSubscriptions();
     }
 
-    if (tab === 'manage' && this.isAdmin && this.manageSignals.length === 0) {
+    if (tab === 'manage' && this.isSuperAdmin && this.manageSignals.length === 0) {
       this.loadManageSignals();
     }
   }
 
   // ─── Subscription ────────────────────────────────────────
+  /**
+   * Re-fetches subscription history on demand (e.g. after subscribing, or
+   * switching to the Plans tab). The initial load is handled by the
+   * forkJoin in ngOnInit — this is for subsequent refreshes only.
+   */
   loadSubscriptions(): void {
     this.subscriptionLoading = true;
     this.subscriptionHistoryLoading = true;
@@ -203,36 +300,9 @@ export class SignalsComponent implements OnInit, OnDestroy {
 
   // ─── Signals ─────────────────────────────────────────────
 
+  /** Triggers a (re)load through the switchMap pipeline set up in ngOnInit. */
   loadSignals(): void {
-    this.signalsLoading = true;
-    const { pair } = this.filterForm.getRawValue();
-
-    const params: Record<string, unknown> = {
-      pair: pair || undefined,
-      page: this.page,
-      limit: this.limit,
-    };
-
-    if (this.canBypassSubscription) {
-      params['bypassSubscription'] = true;
-    }
-
-    this.signalsService
-      .getSignals(params as any)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (res) => {
-          this.signals = res.items;
-
-          
-          this.total = res.total;
-          this.totalPages = res.totalPages;
-          this.signalsLoading = false;
-        },
-        error: () => {
-          this.signalsLoading = false;
-        },
-      });
+    this.reloadSignals$.next();
   }
 
   clearFilters(): void {
@@ -336,9 +406,11 @@ export class SignalsComponent implements OnInit, OnDestroy {
     });
   }
 
-  // ─── Manage (admin) ──────────────────────────────────────
+  // ─── Manage (super admin) ────────────────────────────────
 
   loadManageSignals(): void {
+    if (!this.isSuperAdmin) return;
+
     this.manageLoading = true;
     this.signalsService
       .getSignals({ page: 1, limit: 100, bypassSubscription: this.canBypassSubscription || undefined })
@@ -371,7 +443,7 @@ export class SignalsComponent implements OnInit, OnDestroy {
       this.signals = [created, ...this.signals];
       this.total += 1;
 
-      if (this.isAdmin) {
+      if (this.isSuperAdmin) {
         this.manageSignals = [created, ...this.manageSignals];
       }
     });

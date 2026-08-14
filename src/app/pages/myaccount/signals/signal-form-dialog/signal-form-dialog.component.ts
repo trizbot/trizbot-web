@@ -74,7 +74,7 @@ export class SignalFormDialogComponent implements OnInit {
   }
 
   close(): void {
-    this.dialogRef.close(false);
+    this.dialogRef.close(null);
   }
 
   save(): void {
@@ -104,9 +104,10 @@ export class SignalFormDialogComponent implements OnInit {
         : this.signalsService.createSignal(payload);
 
     request$.subscribe({
-      next: () => {
+      next: (result: SignalItem) => {
         this.saving = false;
-        this.dialogRef.close(true);
+      
+        this.dialogRef.close(result);
       },
       error: (err) => {
         this.saving = false;
