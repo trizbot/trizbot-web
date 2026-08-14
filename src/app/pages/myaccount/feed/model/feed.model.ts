@@ -31,6 +31,19 @@ export interface RawFeedItem {
   updatedAt?: string;
 }
 
+export interface RawFeedCategory {
+  _id: string;
+  reference?: string;
+  title: string;
+  summary?: string;
+  source?: string;
+  category?: string;
+  isPublished: boolean;
+  publishedAt?: string;
+  createdAt: string;
+  updatedAt?: string;
+}
+
 /** Shape actually returned by the backend for a list endpoint */
 export interface RawFeedListResponse {
   message: string;
@@ -167,4 +180,21 @@ export function mapRawFeedItem(raw: RawFeedItem): FeedItem {
     updatedAt: raw.updatedAt,
     stats: parseStats(raw.summary || raw.content),
   };
+}
+
+  export function mapRawFeedCategory(raw: RawFeedCategory) {
+  return {
+    id: raw._id,
+    reference: raw.reference,
+    title: raw.title,
+    summary: raw.summary,
+    source: raw.source,
+    category: raw.category,
+    isPublished: raw.isPublished,
+    createdAt: raw.createdAt,
+    publishedAt: raw.publishedAt,
+    updatedAt: raw.updatedAt,
+    stats: parseStats(raw.summary),
+  };
+  
 }

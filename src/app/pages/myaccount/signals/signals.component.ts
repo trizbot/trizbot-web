@@ -103,7 +103,8 @@ export class SignalsComponent implements OnInit, OnDestroy {
   // without needing an active subscription. Only plain clients are gated
   // behind the subscription check (see isSubscribed below).
   get canBypassSubscription(): boolean {
-    return this.isSuperAdmin || this.isAdmin;
+    // return this.isSuperAdmin || this.isAdmin;
+    return this.isSuperAdmin;
   }
 
   get isSubscribed(): boolean {

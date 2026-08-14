@@ -1,9 +1,15 @@
 export interface BeneficiaryLookupResBody {
-  entityId: string;
-  userName: string;
-  email: string;
-  firstName: string;
-  lastName: string;
+  entityId?: string;
+  id?: string;
+  _id?: string;
+  username?: string;
+  userName?: string;
+  name?: string;
+  email?: string;
+  firstName?: string;
+  lastName?: string;
+  fullName?: string;
+  displayName?: string;
   avatarUrl?: string;
 }
 
@@ -26,12 +32,6 @@ export interface TransferResBody {
   createdAt: string;
 }
 
-/**
- * Mongo's extended JSON wraps ObjectIds and Dates instead of returning plain
- * strings. The transfer history endpoint currently returns raw documents in
- * this shape, so the frontend types (and the parsing helpers in the
- * component) account for both the raw and a plain-string form.
- */
 export interface MongoObjectId {
   $oid: string;
 }
@@ -40,12 +40,6 @@ export interface MongoDate {
   $date: string;
 }
 
-/**
- * Shape actually returned by GET /transfer/history — a raw transfer document,
- * recorded once per transfer (not once per participant), with both sides'
- * details on it. The frontend derives "credit"/"debit" per row by comparing
- * senderId/senderEmail against the current member.
- */
 export interface TransferHistoryItem {
   _id?: string | MongoObjectId;
   senderId: string | MongoObjectId;

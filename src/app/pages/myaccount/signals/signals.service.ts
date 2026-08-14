@@ -118,7 +118,7 @@ export class SignalsService {
           totalPages: res.meta?.totalPages ?? 1,
         })),
         catchError((err: HttpErrorResponse) => {
-          console.error('[SignalsService] getSignals failed:', err.status, err.error ?? err.message);
+          // console.error('[SignalsService] getSignals failed:', err.status, err.error ?? err.message);
           return throwError(() => err);
         })
       );

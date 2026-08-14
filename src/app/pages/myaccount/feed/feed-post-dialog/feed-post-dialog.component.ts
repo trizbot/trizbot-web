@@ -73,7 +73,8 @@ export class FeedPostDialogComponent implements OnInit, OnDestroy {
     category: new FormControl<FeedCategoryEnum | ''>(''),
     coinSymbol: new FormControl<string>(''),
     tagsRaw: new FormControl<string>(''), // comma-separated input, split on submit
-    isPublished: new FormControl<boolean>(false),
+    // isPublished: new FormControl<boolean>(false),
+    isPublished: new FormControl<boolean>(true),
   });
 
   constructor(

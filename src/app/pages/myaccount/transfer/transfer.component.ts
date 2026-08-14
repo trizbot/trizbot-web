@@ -20,6 +20,9 @@ import { BeneficiaryLookupResBody, MongoDate, MongoObjectId, TransferHistoryItem
 
 type TransferStep = 'recipient' | 'details' | 'confirm';
 
+/** Direction relative to the logged-in member. `null` = identity unresolved. */
+type Direction = 'debit' | 'credit' | null;
+
 @Component({
   selector: 'app-transfer',
   standalone: true,
@@ -50,7 +53,6 @@ export class TransferComponent implements OnInit, OnDestroy {
   ];
   currentStep: TransferStep = 'recipient';
 
-
   @Input() currentUserId?: string;
   @Input() currentUserEmail?: string;
 
@@ -69,12 +71,14 @@ export class TransferComponent implements OnInit, OnDestroy {
 
   submitLoading = false;
   errorMessage = '';
-  beneficiaryFullName = '';
 
   pinVisible = false;
 
   historyLoading = false;
   history: TransferHistoryItem[] = [];
+
+  /** Whether we were able to resolve who's logged in — drives a UI warning if false. */
+  identityResolved = false;
 
   constructor(private transferService: TransferService) {}
 
@@ -111,6 +115,12 @@ export class TransferComponent implements OnInit, OnDestroy {
       .subscribe((res) => {
         this.lookupLoading = false;
         this.beneficiary = res;
+        if (res) {
+          const name = this.beneficiaryDisplayName;
+          if (name === this.lastTypedIdentifier) {
+           
+          }
+        }
       });
   }
 
@@ -131,25 +141,83 @@ export class TransferComponent implements OnInit, OnDestroy {
     this.transferForm.controls.reference.setValue(ref);
   }
 
- 
+  /**
+   * Resolves the logged-in member's id/email so history rows can be
+   * attributed correctly. Tries, in order:
+   *  1. @Input()s passed from the parent (preferred — wire these up if possible)
+   *  2. localStorage 'userId' / 'user' JSON blob
+   *  3. A decoded JWT in localStorage under a common key name
+   */
   private resolveCurrentUser(): void {
     if (this.currentUserId || this.currentUserEmail) {
+      this.identityResolved = true;
       return;
     }
+
     try {
       const storedId = localStorage.getItem('userId');
       if (storedId) {
         this.currentUserId = storedId;
-        return;
       }
+
       const storedUser = localStorage.getItem('user');
       if (storedUser) {
         const parsed = JSON.parse(storedUser);
-        this.currentUserId = parsed?.id || parsed?._id || parsed?.userId;
-        this.currentUserEmail = parsed?.email;
+        this.currentUserId =
+          this.currentUserId || parsed?.id || parsed?._id || parsed?.userId || parsed?.entityId;
+        this.currentUserEmail = parsed?.email || parsed?.userEmail;
       }
     } catch {
-      // Malformed/absent storage — direction falls back to "outgoing" per row.
+      // Malformed/absent 'user' blob — fall through to JWT attempt below.
+    }
+
+    if (!this.currentUserId && !this.currentUserEmail) {
+      this.tryResolveFromJwt();
+    }
+
+    this.identityResolved = !!(this.currentUserId || this.currentUserEmail);
+
+    if (!this.identityResolved) {
+      
+    }
+  }
+
+  /** Attempts to pull sub/email claims out of a JWT stored under a common key name. */
+  private tryResolveFromJwt(): void {
+    const tokenKeys = ['token', 'accessToken', 'access_token', 'authToken', 'jwt'];
+    for (const key of tokenKeys) {
+      const token = localStorage.getItem(key);
+      if (!token) {
+        continue;
+      }
+      const payload = this.decodeJwtPayload(token);
+      if (!payload) {
+        continue;
+      }
+      this.currentUserId = payload.id || payload.sub || payload.userId || payload._id;
+      this.currentUserEmail = payload.email;
+      if (this.currentUserId || this.currentUserEmail) {
+        return;
+      }
+    }
+  }
+
+  private decodeJwtPayload(token: string): any | null {
+    try {
+      const parts = token.split('.');
+      if (parts.length !== 3) {
+        return null;
+      }
+      const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+      const json = decodeURIComponent(
+        atob(base64)
+          .split('')
+          .map((c) => '%' + c.charCodeAt(0).toString(16).padStart(2, '0'))
+          .join('')
+      );
+      return JSON.parse(json);
+    } catch {
+      return null;
     }
   }
 
@@ -171,53 +239,51 @@ export class TransferComponent implements OnInit, OnDestroy {
     return Number.isNaN(parsed.getTime()) ? null : parsed;
   }
 
-  /** True when the current member was the sender on this transfer (money out). */
-  isOutgoing(item: TransferHistoryItem): boolean {
+  /**
+   * Direction relative to the current member.
+   * 'debit'  => current member was the SENDER   (-$amount, red)
+   * 'credit' => current member was the RECEIVER (+$amount, green)
+   * null     => identity unresolved — render as neutral, never guess.
+   */
+  direction(item: TransferHistoryItem): Direction {
     const senderId = this.extractId(item.senderId);
     if (this.currentUserId && senderId) {
-      return senderId === this.currentUserId;
+      return senderId === this.currentUserId ? 'debit' : 'credit';
     }
     if (this.currentUserEmail && item.senderEmail) {
-      return item.senderEmail.toLowerCase() === this.currentUserEmail.toLowerCase();
+      return item.senderEmail.toLowerCase() === this.currentUserEmail.toLowerCase() ? 'debit' : 'credit';
     }
-    // Identity unresolved — default to outgoing so the row still renders
-    // sensibly; wire up currentUserId/currentUserEmail to fix this properly.
-    return true;
+    return null;
+  }
+
+  isDebit(item: TransferHistoryItem): boolean {
+    return this.direction(item) === 'debit';
+  }
+
+  isCredit(item: TransferHistoryItem): boolean {
+    return this.direction(item) === 'credit';
   }
 
   counterpartyName(item: TransferHistoryItem): string {
-    this.beneficiaryFullName =item.receiverName;
-
-      if(this.currentUserEmail == item.senderEmail){
-        return item.senderName;
-      }else{
-        return item.receiverName;
-      }
-  // return this.isOutgoing(item) ? item.receiverName : item.senderName;
-  }
-  counterpartyAmount(item: TransferHistoryItem): any {
-      if(this.currentUserEmail == item.senderEmail){
-        return `-$${item.amount}`;
-      }else{
-        return `+$${item.amount}`;
-      }
-  }
-  counterpartyState(item: TransferHistoryItem): any {
-      if(this.currentUserEmail == item.senderEmail){
-        return  false;
-      }else{
-        return  true;
-      }
+    const dir = this.direction(item);
+    if (dir === 'debit') return item.receiverName;
+    if (dir === 'credit') return item.senderName;
+    // Unresolved — show both so nothing is misattributed.
+    return `${item.senderName} → ${item.receiverName}`;
   }
 
   counterpartyEmail(item: TransferHistoryItem): string {
-      if(this.currentUserEmail == item.senderEmail){
-        return item.senderEmail;
-      }else{
-        return item.receiverEmail;
-      }
+    const dir = this.direction(item);
+    if (dir === 'debit') return item.receiverEmail;
+    if (dir === 'credit') return item.senderEmail;
+    return '';
+  }
 
-    // return this.isOutgoing(item) ? item.receiverEmail : item.senderEmail;
+  /** Signed, formatted amount string, e.g. "-$50.00" / "+$50.00" / "$50.00". */
+  counterpartyAmount(item: TransferHistoryItem): string {
+    const dir = this.direction(item);
+    const sign = dir === 'debit' ? '-' : dir === 'credit' ? '+' : '';
+    return `${sign}$${item.amount.toFixed(2)}`;
   }
 
   historyDate(item: TransferHistoryItem): Date | null {
@@ -250,7 +316,6 @@ export class TransferComponent implements OnInit, OnDestroy {
     });
   }
 
- 
   private normalizeHistoryResponse(res: unknown): TransferHistoryItem[] {
     if (Array.isArray(res)) {
       return res as TransferHistoryItem[];
@@ -266,24 +331,56 @@ export class TransferComponent implements OnInit, OnDestroy {
     return [];
   }
 
-  /** Initials for the avatar circle. Falls back to a generic mark if the API omitted name fields. */
-  get beneficiaryInitials(): string {
-    const first = this.beneficiary?.firstName?.trim()?.charAt(0) ?? '';
-    const last = this.beneficiary?.lastName?.trim()?.charAt(0) ?? '';
-    return (first + last).toUpperCase() || '?';
+  /** Tracks the raw text the user typed, used as the last-resort display fallback. */
+  private get lastTypedIdentifier(): string {
+    return (this.transferForm.controls.recipientIdentifier.value || '').trim();
   }
 
-  /** Display name for the beneficiary. Falls back to username, then a generic label. */
+ get beneficiaryInitials(): string {
+    const first = this.beneficiary?.firstName?.trim()?.charAt(0) ?? '';
+    const last = this.beneficiary?.lastName?.trim()?.charAt(0) ?? '';
+    const initials = (first + last).toUpperCase();
+    if (initials) {
+      return initials;
+    }
+    const name = this.beneficiaryDisplayName;
+    if (!name) {
+      return '?';
+    }
+    // "Rachel Lucky" -> "RL"; single-word names -> first letter only.
+    const parts = name.trim().split(/\s+/);
+    return parts.length > 1
+      ? (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase()
+      : parts[0].charAt(0).toUpperCase();
+  }
+
   get beneficiaryDisplayName(): string {
-    const first = this.beneficiary?.firstName?.trim() ?? '';
-    const last = this.beneficiary?.lastName?.trim() ?? '';
+    const b = this.beneficiary;
+    if (!b) {
+      return '';
+    }
+
+    // Primary shape returned by /transfer/lookup-beneficiary: { name, username, entityId }.
+    if (b.name?.trim()) {
+      return b.name.trim();
+    }
+
+    // Fallbacks for other possible response shapes / endpoints.
+    const first = b.firstName?.trim() ?? '';
+    const last = b.lastName?.trim() ?? '';
     const full = `${first} ${last}`.trim();
     if (full) {
       return full;
     }
- 
-    return this.beneficiary?.userName?.trim() || this.beneficiaryFullName;
+    if (b.fullName?.trim()) return b.fullName.trim();
+    if (b.displayName?.trim()) return b.displayName.trim();
+    if (b.userName?.trim()) return b.userName.trim();
+    if (b.username?.trim()) return b.username.trim();
+    if (b.email?.trim()) return b.email.trim();
+
+    return this.lastTypedIdentifier || 'Recipient';
   }
+
 
   get stepIndex(): number {
     return this.steps.findIndex((s) => s.key === this.currentStep);
@@ -356,6 +453,7 @@ export class TransferComponent implements OnInit, OnDestroy {
     this.submitLoading = true;
     const { recipientIdentifier, amount, transactionPin, reference, narration } =
       this.transferForm.getRawValue();
+    const recipientName = this.beneficiaryDisplayName;
 
     this.transferService
       .transferFunds({
@@ -368,7 +466,7 @@ export class TransferComponent implements OnInit, OnDestroy {
       .subscribe({
         next: () => {
           this.sharedService.showToast({
-            title: `Transfer of $${amount} to ${this.beneficiaryFullName}  was successful`,
+            title: `Transfer of $${amount} to ${recipientName} was successful`,
           });
           this.submitLoading = false;
           this.resetForm();

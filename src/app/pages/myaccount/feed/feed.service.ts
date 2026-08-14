@@ -10,9 +10,11 @@ import {
   FeedItem,
   FeedListResponse,
   GetFeedParams,
+  RawFeedCategory,
   RawFeedItem,
   RawFeedListResponse,
   UpdateFeedPayload,
+  mapRawFeedCategory,
   mapRawFeedItem,
 } from './model/feed.model';
 
@@ -93,6 +95,12 @@ export class FeedService {
     return this.http
       .patch<RawFeedItem | { data: RawFeedItem }>(`${this.baseUrl}/${id}`, payload)
       .pipe(map((res) => mapRawFeedItem('data' in res ? res.data : res)));
+  }
+
+  getFeedCategory(id: string) {
+    return this.http
+      .get<RawFeedCategory | { data: RawFeedCategory }>(`${this.baseUrl}/category`, )
+      .pipe(map((res) => mapRawFeedCategory('data' in res ? res.data : res)));
   }
 
   deleteFeed(id: string): Observable<{ message?: string }> {

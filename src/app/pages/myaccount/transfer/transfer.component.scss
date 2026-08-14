@@ -387,3 +387,19 @@
     color: var(--transfer-danger);
   }
 }
+
+.direction-badge.unknown {
+  background: rgba(0, 0, 0, 0.06);
+  color: #6b7280;
+}
+.identity-warning {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  margin-bottom: 12px;
+  background: #fff8e1;
+  color: #92610a;
+  border-radius: 8px;
+  font-size: 13px;
+}
