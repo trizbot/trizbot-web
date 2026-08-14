@@ -26,54 +26,6 @@ import {
 
 type MainTab = 'browse' | 'my-courses' | 'purchased' | 'sales' | 'categories';
 
-/** Pulls a plain string id/date out of Mongo extended JSON ({ $oid }, { $date }), or returns the value as-is. */
-function unwrapMongoValue(val: any): any {
-  if (val && typeof val === 'object') {
-    if ('$oid' in val) return val.$oid;
-    if ('$date' in val) return val.$date;
-  }
-  return val;
-}
-
-/** Normalizes one raw category document into a clean CourseCategoryItem. */
-function normalizeCategory(raw: any): CourseCategoryItem {
-  return {
-    ...raw,
-    id: unwrapMongoValue(raw?.id ?? raw?._id),
-    createdBy: unwrapMongoValue(raw?.createdBy),
-    createdAt: unwrapMongoValue(raw?.createdAt),
-    updatedAt: unwrapMongoValue(raw?.updatedAt),
-    publishedAt: unwrapMongoValue(raw?.publishedAt),
-  } as CourseCategoryItem;
-}
-
-/**
- * Guarantees an array of normalized CourseCategoryItem no matter what shape
- * the API returned: a raw array, { data: [...] }, { categories: [...] },
- * { items: [...] }, { results: [...] }, or even a single category object.
- */
-function unwrapCategoryList(res: any): CourseCategoryItem[] {
-  if (Array.isArray(res)) {
-    return res.map(normalizeCategory);
-  }
-
-  if (res && typeof res === 'object') {
-    const candidate = res.data ?? res.categories ?? res.items ?? res.results ?? null;
-
-    if (Array.isArray(candidate)) {
-      return candidate.map(normalizeCategory);
-    }
-
-    // Edge case: API returned a single category object instead of a list
-    if ('category' in res) {
-      return [normalizeCategory(res)];
-    }
-  }
-
-  console.warn('unwrapCategoryList: unexpected response shape', res);
-  return [];
-}
-
 @Component({
   selector: 'app-academy',
   standalone: true,
@@ -86,6 +38,8 @@ export class AcademyComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
   private traderService = inject(TraderService);
 
+  // Kept as a fallback label source only (e.g. if a course's category
+  // doesn't match anything currently in the live `categories` list).
   readonly categoryOptions = CATEGORY_OPTIONS;
   readonly levelOptions = LEVEL_OPTIONS;
 
@@ -119,7 +73,9 @@ export class AcademyComponent implements OnInit, OnDestroy {
   salesLoading = false;
   salesError = false;
 
-  // ---- Categories (superadmin only) ----
+  // ---- Categories ----
+  // Loaded for ALL users now, not just superadmins — the Browse tab's
+  // category filter reads from this same list.
   categories: CourseCategoryItem[] = [];
   categoriesLoading = false;
   categoriesError = false;
@@ -131,7 +87,7 @@ export class AcademyComponent implements OnInit, OnDestroy {
     category: new FormControl<string>('', { nonNullable: true, validators: [Validators.required] }),
   });
 
-  // -- inline edit state for the categories table --
+  // -- inline edit state for the categories table (superadmin only) --
   editingCategoryId: string | null = null;
   savingCategoryEdit = false;
   deletingCategoryId: string | null = null;
@@ -144,6 +100,7 @@ export class AcademyComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.loadCourses();
+    this.loadCategories(); // needed up-front now: Browse tab's filter dropdown depends on it
     this.getTrader();
 
     this.filterForm.controls.search.valueChanges
@@ -212,7 +169,15 @@ export class AcademyComponent implements OnInit, OnDestroy {
       });
   }
 
+  /** Resolves a course's category value (reference) to a display label, preferring the live API list. */
   categoryLabel(value?: string): string {
+    if (!value) return 'General';
+    const apiMatch = this.categories.find(
+      (c) => (c as any).reference === value || c.category === value,
+    );
+    if (apiMatch) return apiMatch.category;
+
+    // Fallback to the static list in case a course references an older/removed category.
     return this.categoryOptions.find((c) => c.value === value)?.label || 'General';
   }
 
@@ -337,15 +302,17 @@ export class AcademyComponent implements OnInit, OnDestroy {
   }
 
   // ---------------------------------------------------------------------
-  // Categories (superadmin only)
+  // Categories
   // ---------------------------------------------------------------------
 
   loadCategories(): void {
     this.categoriesLoading = true;
     this.categoriesError = false;
+    // academyService.getCourseCategory() already unwraps and normalizes
+    // the response into CourseCategoryItem[] — no extra handling needed here.
     this.academyService.getCourseCategory().subscribe({
       next: (res) => {
-        this.categories = unwrapCategoryList(res);
+        this.categories = res;
         this.categoriesLoading = false;
       },
       error: () => {
@@ -384,7 +351,7 @@ export class AcademyComponent implements OnInit, OnDestroy {
         },
         error: (err) => {
           this.addingCategory = false;
-          const message = err?.error?.message || 'Category added successfully.';
+          const message = err?.error?.message || 'Could not add this category.';
           this.sharedService.showToast({ title: Array.isArray(message) ? message.join(', ') : message });
         },
       });
@@ -427,7 +394,7 @@ export class AcademyComponent implements OnInit, OnDestroy {
         },
         error: (err) => {
           this.savingCategoryEdit = false;
-          const message = err?.error?.message || 'Category updated successfully.';
+          const message = err?.error?.message || 'Could not update this category.';
           this.sharedService.showToast({ title: Array.isArray(message) ? message.join(', ') : message });
         },
       });

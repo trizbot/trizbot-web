@@ -90,12 +90,16 @@
         <mat-icon matPrefix>search</mat-icon>
       </mat-form-field>
 
+
       <mat-form-field appearance="outline" class="filter-field">
-        <mat-select formControlName="category" (selectionChange)="loadCourses()">
-          <mat-option value="">All categories</mat-option>
-          <mat-option *ngFor="let c of categoryOptions" [value]="c.value">{{ c.label }}</mat-option>
-        </mat-select>
-      </mat-form-field>
+  <mat-select formControlName="category" (selectionChange)="loadCourses()">
+    <mat-option value="">All categories</mat-option>
+    <mat-option *ngFor="let c of categories; trackBy: trackByCategoryId" [value]="c.category">
+      {{ c.category }}
+    </mat-option>
+  </mat-select>
+</mat-form-field>
+
 
       <mat-form-field appearance="outline" class="filter-field">
         <mat-select formControlName="level" (selectionChange)="loadCourses()">
