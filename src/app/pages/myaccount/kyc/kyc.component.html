@@ -10,10 +10,7 @@
       <p>Checking verification status...</p>
     </div>
 
-    <!-- <p>{{myStatus | json}}</p> -->
-    <!-- <p>{{myStatus.status}}</p>
-    <p>{{myStatus.data.status}}</p> -->
-    <!-- Status check failed (not just "no record") -->
+
     <div class="kyc-status-banner rejected" *ngIf="!statusLoading && statusError">
       <mat-icon>error_outline</mat-icon>
       <div class="kyc-status-text">
@@ -40,13 +37,27 @@
         <p *ngIf="myStatus.data.status === KycStatusEnum.Approved" style="margin-bottom: 0; font-size: 19px; fontweight: 500;">
           Your identity has been verified.
         </p>
-        <p *ngIf="myStatus.data.status === KycStatusEnum.Rejected" style="margin-bottom: 0; font-size: 19px; fontweight: 500;"> 
+        <p *ngIf="myStatus.data.status === KycStatusEnum.Rejected" style="margin-bottom: 0; font-size: 19px; fontweight: 500;">
           Rejected{{ myStatus.data.rejectionReason ? ': ' + myStatus.data.rejectionReason : '' }}. Please resubmit below.
-        </p> 
+        </p>
       </div>
     </div>
 
-    <form class="mt-3" (submit)="onSubmitKyc()" #kycForm="ngForm">
+    <!--
+      The whole form (fields, uploads, review grid, submit button) is now gated
+      here in one place, instead of relying on a nested *ngIf further down that
+      referenced myStatus.data.status without checking myStatus was truthy first
+      (that threw when statusLoading was false but myStatus was still undefined,
+      e.g. on statusError). Form shows only once loading has finished AND the
+      user is not already Approved. If the status call failed (statusError) or
+      no status exists yet (first-time submitter), we still show the form.
+    -->
+    <form
+      class="mt-3"
+      (submit)="onSubmitKyc()"
+      #kycForm="ngForm"
+      *ngIf="!statusLoading && (!myStatus || myStatus.data.status !== KycStatusEnum.Approved)"
+    >
       <div class="row">
 
         <div class="col-lg-6">
@@ -256,7 +267,7 @@
           color="primary"
           class="w-100 py-2 fw-bold"
           type="submit"
-         
+
         >
           <b *ngIf="loading">
             <img src="./assets/images/loading.gif" alt="Loading..." style="width: 26px; height: 26px;" />
@@ -265,7 +276,7 @@
         </button>
       </div>
 
-      
+
       <div *ngIf="errorMessage" class="alert alert-danger">
         <b>{{ errorMessage }}</b>
       </div>

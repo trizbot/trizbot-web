@@ -30,6 +30,9 @@
           <button [routerLink]="['/myaccount/deposit']" class="bb-btn bb-btn-outline bb-btn-up">
             <i class="bi bi-arrow-down-circle"></i> Deposit
           </button>
+          <button [routerLink]="['/myaccount/transfer']" class="bb-btn bb-btn-outline bb-btn-down">
+            <i class="bi bi-send"></i> Transfer
+          </button>
           <button [routerLink]="['/myaccount/withdraw']" class="bb-btn bb-btn-outline bb-btn-down">
             <i class="bi bi-arrow-up-circle"></i> Withdraw
           </button>
@@ -571,14 +574,24 @@
         </div>
         <div class="bb-stat-value up">&#36;{{ totalWeeklyProfits || 0.0 | number: '1.2-2' }}</div>
       </div>
+      <div class="bb-stat-card">
+        <div class="bb-stat-top">
+          <span class="bb-stat-icon up"><i class="bi bi-bar-chart"></i></span>
+          <span class="bb-stat-label">Course Weekly total</span>
+        </div>
+        <div class="bb-stat-value up">&#36;{{  adminCourseStats.totalAmount || 0.0 | number: '1.2-2' }}</div>
+      </div>
+      <div class="bb-stat-card">
+        <div class="bb-stat-top">
+          <span class="bb-stat-icon up"><i class="bi bi-bar-chart"></i></span>
+          <span class="bb-stat-label">Course + Stake Weekly total</span>
+        </div>
+        <div class="bb-stat-value up">&#36;{{  adminCourseStats.totalAmount + totalWeeklyProfits || 0.0 | number: '1.2-2' }}</div>
+      </div>
 
     </div>
 
-    <!-- ------------------------------------------------------------ -->
-    <!-- Revenue-line summary: Signal / Arbitrage Scanner / Courses    -->
-    <!-- Kept as one consistent 3-up grid so every product line reads  -->
-    <!-- the same way (icon, label, headline value, sub-metric).       -->
-    <!-- ------------------------------------------------------------ -->
+
     <div class="bb-stat-grid bb-stat-grid-3">
 
       <div class="bb-stat-card">
@@ -599,10 +612,7 @@
           <span class="bb-stat-label">Arbitrage Scanner</span>
         </div>
         <div class="bb-stat-value">{{ arbitrageScannerStats.totalSubscribers || 0 }}</div>
-        <div class="bb-stat-sub bb-stat-sub-row">
-          <span class="bb-stat-sub-label">Total Amount</span>
-          <span class="bb-stat-sub-value">&#36;{{ arbitrageScannerStats.totalAmount || 0 | number: '1.2-2' }}</span>
-        </div>
+        
       </div>
 
       <div class="bb-stat-card">
@@ -611,10 +621,7 @@
           <span class="bb-stat-label">Admin Course Sales</span>
         </div>
         <div class="bb-stat-value">{{ adminCourseStats.totalSales || 0 }}</div>
-        <div class="bb-stat-sub bb-stat-sub-row">
-          <span class="bb-stat-sub-label">Total Amount</span>
-          <span class="bb-stat-sub-value">&#36;{{ adminCourseStats.totalAmount || 0 | number: '1.2-2' }}</span>
-        </div>
+       
       </div>
 
     </div>
