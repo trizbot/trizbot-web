@@ -294,17 +294,21 @@ export class AcademyComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Downloads the purchased course's file. Tries the file url that came
-   * back on the purchase record first (attachmentUrl -> pdfUrl / source
-   * url); if the backend didn't populate it, falls back to fetching the
-   * full course record by id.
+   * Downloads the purchased course's file. Always prefers `pdfUrl` over
+   * `attachmentUrl` (pdfUrl is the actual uploaded/hosted course file;
+   * attachmentUrl is a legacy/external link). If the purchase record
+   * itself doesn't carry a file url, falls back to fetching the full
+   * course by id before giving up.
    */
   downloadPurchase(purchase: CoursePurchase): void {
     if (this.downloadingPurchaseId) return;
 
     const directUrl = purchase.course?.pdfUrl || purchase.course?.attachmentUrl;
     if (directUrl) {
-      this.triggerDownload(directUrl, purchase.course.title);
+      this.downloadingPurchaseId = purchase.id;
+      this.fetchAndDownload(directUrl, purchase.course.title).finally(() => {
+        this.downloadingPurchaseId = null;
+      });
       return;
     }
 
@@ -313,16 +317,20 @@ export class AcademyComponent implements OnInit, OnDestroy {
       return;
     }
 
+    // pdfUrl/attachmentUrl weren't populated on the purchase record itself —
+    // look the course up directly so we don't fail on a stale/partial record.
     this.downloadingPurchaseId = purchase.id;
     this.academyService.getCourseById(purchase.course.id).subscribe({
       next: (course) => {
-        this.downloadingPurchaseId = null;
         const fileUrl = course.pdfUrl || course.attachmentUrl;
-        if (fileUrl) {
-          this.triggerDownload(fileUrl, course.title);
-        } else {
+        if (!fileUrl) {
+          this.downloadingPurchaseId = null;
           this.sharedService.showToast({ title: 'No downloadable file is attached to this course.' });
+          return;
         }
+        this.fetchAndDownload(fileUrl, course.title).finally(() => {
+          this.downloadingPurchaseId = null;
+        });
       },
       error: () => {
         this.downloadingPurchaseId = null;
@@ -332,23 +340,75 @@ export class AcademyComponent implements OnInit, OnDestroy {
   }
 
   downloadCourseFile(course: Course): void {
-    const url = course.attachmentUrl || course.pdfUrl;
+    const url = course.pdfUrl || course.attachmentUrl;
     if (!url) {
       this.sharedService.showToast({ title: 'No downloadable file is attached to this course.' });
       return;
     }
-    this.triggerDownload(url, course.title);
+    this.fetchAndDownload(url, course.title);
   }
 
-  private triggerDownload(url: string, title: string): void {
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = title || 'course-material';
-    link.target = '_blank';
-    link.rel = 'noopener';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  /**
+   * Forces an actual file download rather than a browser navigation.
+   *
+   * Why not just `<a href download>`: the `download` attribute is silently
+   * ignored by browsers for cross-origin URLs (Cloudinary/S3/etc. are always
+   * cross-origin from our app's domain), so that approach just opens the PDF
+   * in a new tab instead of downloading it — no error, just wrong behavior.
+   *
+   * Instead we fetch the file as a Blob and download it via an object URL,
+   * which works regardless of origin as long as the host allows the request
+   * (CORS). If the fetch itself fails (network error, CORS block, 404), we
+   * fall back to opening the raw URL in a new tab and tell the user, rather
+   * than failing silently.
+   */
+  private async fetchAndDownload(url: string, title: string): Promise<void> {
+    if (!url) {
+      this.sharedService.showToast({ title: 'No downloadable file is attached to this course.' });
+      return;
+    }
+
+    try {
+      const response = await fetch(url, { mode: 'cors' });
+      if (!response.ok) {
+        throw new Error(`Request failed with status ${response.status}`);
+      }
+
+      const blob = await response.blob();
+      const objectUrl = URL.createObjectURL(blob);
+
+      const link = document.createElement('a');
+      link.href = objectUrl;
+      link.download = this.buildDownloadFilename(title, url, blob.type);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      // Give the browser a moment to pick up the click before revoking.
+      setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+    } catch (err) {
+      // Fallback: at least get the file in front of the user, even if we
+      // couldn't force a "Save As" download (e.g. the host blocks CORS).
+      this.sharedService.showToast({
+        title: 'Could not auto-download the file — opening it in a new tab instead.',
+      });
+      window.open(url, '_blank', 'noopener');
+    }
+  }
+
+  /** Builds a safe, extension-correct filename for the downloaded blob. */
+  private buildDownloadFilename(title: string, url: string, mimeType: string): string {
+    const safeTitle = (title || 'course-material')
+      .trim()
+      .replace(/[\\/:*?"<>|]+/g, '-')
+      .replace(/\s+/g, ' ')
+      .slice(0, 120);
+
+    const extFromUrl = url.split('?')[0].split('.').pop();
+    const extFromMime = mimeType?.split('/')?.pop();
+    const ext = (extFromUrl && extFromUrl.length <= 5 ? extFromUrl : extFromMime) || 'pdf';
+
+    return `${safeTitle}.${ext}`;
   }
 
   loadSales(): void {

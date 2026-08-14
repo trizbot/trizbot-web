@@ -16,11 +16,12 @@ import {
   CourseLevel,
   CreateCourseReqBody,
   LEVEL_OPTIONS,
+  MAX_COURSE_FILE_SIZE_BYTES,
+  MAX_COURSE_FILE_SIZE_LABEL,
   UpdateCourseReqBody,
 } from '../model/academy.model';
 
-const MAX_COVER_PHOTO_SIZE_BYTES = 1 * 1024 * 1024; // 1MB, per spec
-const MAX_PDF_SIZE_BYTES = 10 * 1024 * 1024; // 10MB — not specified, adjust this constant if you need a different cap
+// Both uploads now share the same 2MB cap (was 1MB for cover photo, 10MB for PDF).
 const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 const ACCEPTED_PDF_TYPE = 'application/pdf';
 
@@ -40,6 +41,7 @@ type UploadSlot = 'coverPhoto' | 'pdf';
 export class CreateCourseDialogComponent implements OnInit, OnDestroy {
   readonly levelOptions = LEVEL_OPTIONS;
   readonly maxContentLength = 20000;
+  readonly maxFileSizeLabel = MAX_COURSE_FILE_SIZE_LABEL;
 
   // Categories are now loaded from the backend instead of a static list.
   categories: CourseCategoryItem[] = [];
@@ -181,6 +183,9 @@ export class CreateCourseDialogComponent implements OnInit, OnDestroy {
   }
 
   // ---------- Shared validation ----------
+  // Both slots now enforce the same MAX_COURSE_FILE_SIZE_BYTES (2MB) cap,
+  // sourced from academy.model.ts so it stays in sync with the service-level
+  // check in AcademyService.uploadImage / uploadRawFile.
   private validateFile(event: any, slot: UploadSlot): File | null {
     const addedFiles: File[] = event?.addedFiles ?? [];
     if (!addedFiles.length) return null;
@@ -191,26 +196,19 @@ export class CreateCourseDialogComponent implements OnInit, OnDestroy {
       return null;
     }
 
-    if (slot === 'coverPhoto') {
-      if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
-        this.errorMessage = 'Cover photo: only JPG, PNG, or WEBP images are allowed.';
-        return null;
-      }
-      if (file.size > MAX_COVER_PHOTO_SIZE_BYTES) {
-        this.errorMessage = 'Cover photo: file is too large (max 1MB).';
-        return null;
-      }
+    if (slot === 'coverPhoto' && !ACCEPTED_IMAGE_TYPES.includes(file.type)) {
+      this.errorMessage = 'Cover photo: only JPG, PNG, or WEBP images are allowed.';
+      return null;
     }
 
-    if (slot === 'pdf') {
-      if (file.type !== ACCEPTED_PDF_TYPE) {
-        this.errorMessage = 'Course PDF: only PDF files are allowed.';
-        return null;
-      }
-      if (file.size > MAX_PDF_SIZE_BYTES) {
-        this.errorMessage = 'Course PDF: file is too large (max 10MB).';
-        return null;
-      }
+    if (slot === 'pdf' && file.type !== ACCEPTED_PDF_TYPE) {
+      this.errorMessage = 'Course PDF: only PDF files are allowed.';
+      return null;
+    }
+
+    if (file.size > MAX_COURSE_FILE_SIZE_BYTES) {
+      this.errorMessage = `${this.slotLabel(slot)}: file is too large (max ${MAX_COURSE_FILE_SIZE_LABEL}).`;
+      return null;
     }
 
     this.errorMessage = '';
@@ -226,7 +224,8 @@ export class CreateCourseDialogComponent implements OnInit, OnDestroy {
     formData.append('file', file);
     formData.append('upload_preset', 'trizbot');
     formData.append('folder', 'academy/covers');
-    return this.academyService.uploadImage(formData);
+    // Pass the raw File through so the service can re-check size server-side too.
+    return this.academyService.uploadImage(formData, file);
   }
 
   private uploadPdf(file: File) {
@@ -234,7 +233,7 @@ export class CreateCourseDialogComponent implements OnInit, OnDestroy {
     formData.append('file', file);
     formData.append('upload_preset', 'trizbot');
     formData.append('folder', 'academy/pdfs');
-    return this.academyService.uploadRawFile(formData);
+    return this.academyService.uploadRawFile(formData, file);
   }
 
   close(): void {
@@ -247,6 +246,17 @@ export class CreateCourseDialogComponent implements OnInit, OnDestroy {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       this.errorMessage = 'Please fill in the required fields.';
+      return;
+    }
+
+    // Defensive re-check right before submit, in case a file was selected
+    // via a path that bypassed the dropzone's change handler.
+    if (this.coverPhotoFile && this.coverPhotoFile.size > MAX_COURSE_FILE_SIZE_BYTES) {
+      this.errorMessage = `Cover photo: file is too large (max ${MAX_COURSE_FILE_SIZE_LABEL}).`;
+      return;
+    }
+    if (this.pdfFile && this.pdfFile.size > MAX_COURSE_FILE_SIZE_BYTES) {
+      this.errorMessage = `Course PDF: file is too large (max ${MAX_COURSE_FILE_SIZE_LABEL}).`;
       return;
     }
 

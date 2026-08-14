@@ -51,69 +51,70 @@
   </mat-form-field>
 
   <!-- Cover Photo (replaces the old Thumbnail URL text field) -->
-  <mat-label class="f-w-600 m-b-8 d-block">Cover Photo</mat-label>
-  <ngx-dropzone
-    class="course-dropzone cover-dropzone"
-    [class.has-preview]="hasCoverPhoto"
-    [multiple]="false"
-    accept="image/jpeg,image/png,image/webp"
-    (change)="onSelectCoverPhoto($event)"
-  >
-    <ng-container *ngIf="!hasCoverPhoto; else coverPreview">
-      <mat-icon class="dz-icon">cloud_upload</mat-icon>
-      <ngx-dropzone-label>
-        <span class="dz-title">Click or drag to upload</span>
-        <span class="dz-sub">JPG, PNG, or WEBP — max 1MB</span>
-      </ngx-dropzone-label>
-    </ng-container>
+  <!-- Cover Photo dropzone -->
+<mat-label class="f-w-600 m-b-8 d-block">Cover Photo</mat-label>
+<ngx-dropzone
+  class="course-dropzone cover-dropzone"
+  [class.has-preview]="hasCoverPhoto"
+  [multiple]="false"
+  accept="image/jpeg,image/png,image/webp"
+  (change)="onSelectCoverPhoto($event)"
+>
+  <ng-container *ngIf="!hasCoverPhoto; else coverPreview">
+    <mat-icon class="dz-icon">cloud_upload</mat-icon>
+    <ngx-dropzone-label>
+      <span class="dz-title">Click or drag to upload</span>
+      <span class="dz-sub">JPG, PNG, or WEBP — max {{ maxFileSizeLabel }}</span>
+    </ngx-dropzone-label>
+  </ng-container>
 
-    <ng-template #coverPreview>
-      <div class="course-inline-preview-wrap">
-        <img class="course-inline-preview" [src]="coverPhotoDisplayUrl" alt="Cover photo preview" />
-        <button
-          type="button"
-          class="course-remove-btn"
-          aria-label="Remove cover photo"
-          (click)="onRemoveCoverPhoto(); $event.stopPropagation()"
-        >
-          <mat-icon>close</mat-icon>
-        </button>
-      </div>
-    </ng-template>
-  </ngx-dropzone>
+  <ng-template #coverPreview>
+    <div class="course-inline-preview-wrap">
+      <img class="course-inline-preview" [src]="coverPhotoDisplayUrl" alt="Cover photo preview" />
+      <button
+        type="button"
+        class="course-remove-btn"
+        aria-label="Remove cover photo"
+        (click)="onRemoveCoverPhoto(); $event.stopPropagation()"
+      >
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+  </ng-template>
+</ngx-dropzone>
 
-  <!-- Course PDF (replaces the old Attachment URL text field) -->
-  <mat-label class="f-w-600 m-b-8 d-block m-t-3">Course PDF (optional)</mat-label>
-  <ngx-dropzone
-    class="course-dropzone pdf-dropzone"
-    [class.has-preview]="hasPdf"
-    [multiple]="false"
-    accept="application/pdf"
-    (change)="onSelectPdf($event)"
-  >
-    <ng-container *ngIf="!hasPdf; else pdfPreview">
-      <mat-icon class="dz-icon">picture_as_pdf</mat-icon>
-      <ngx-dropzone-label>
-        <span class="dz-title">Click or drag to upload</span>
-        <span class="dz-sub">PDF resources or syllabus — max 10MB</span>
-      </ngx-dropzone-label>
-    </ng-container>
+<!-- Course PDF dropzone -->
+<mat-label class="f-w-600 m-b-8 d-block m-t-3">Course PDF (optional)</mat-label>
+<ngx-dropzone
+  class="course-dropzone pdf-dropzone"
+  [class.has-preview]="hasPdf"
+  [multiple]="false"
+  accept="application/pdf"
+  (change)="onSelectPdf($event)"
+>
+  <ng-container *ngIf="!hasPdf; else pdfPreview">
+    <mat-icon class="dz-icon">picture_as_pdf</mat-icon>
+    <ngx-dropzone-label>
+      <span class="dz-title">Click or drag to upload</span>
+      <span class="dz-sub">PDF resources or syllabus — max {{ maxFileSizeLabel }}</span>
+    </ngx-dropzone-label>
+  </ng-container>
 
-    <ng-template #pdfPreview>
-      <div class="course-pdf-chip">
-        <mat-icon>picture_as_pdf</mat-icon>
-        <span class="course-pdf-name">{{ pdfDisplayName }}</span>
-        <button
-          type="button"
-          class="course-remove-btn"
-          aria-label="Remove PDF"
-          (click)="onRemovePdf(); $event.stopPropagation()"
-        >
-          <mat-icon>close</mat-icon>
-        </button>
-      </div>
-    </ng-template>
-  </ngx-dropzone>
+  <ng-template #pdfPreview>
+    <div class="course-pdf-chip">
+      <mat-icon>picture_as_pdf</mat-icon>
+      <span class="course-pdf-name">{{ pdfDisplayName }}</span>
+      <button
+        type="button"
+        class="course-remove-btn"
+        aria-label="Remove PDF"
+        (click)="onRemovePdf(); $event.stopPropagation()"
+      >
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+  </ng-template>
+</ngx-dropzone>
 
   <mat-label class="f-w-600 m-b-8 d-block m-t-3">Tags (comma-separated, optional)</mat-label>
   <mat-form-field appearance="outline" class="w-100">
