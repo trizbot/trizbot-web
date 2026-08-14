@@ -81,8 +81,8 @@ export class WalletBalanceComponent implements OnInit, OnDestroy {
   // ---------------------------------------------------------------------
   // Admin dashboard: subscription / course stats
   // ---------------------------------------------------------------------
-  signalStats: SubscriptionStats = { totalSubscribers: 0, totalAmount: 0, byPlan: [] };
-  arbitrageScannerStats: SubscriptionStats = { totalSubscribers: 0, totalAmount: 0, byPlan: [] };
+  signalStats: SubscriptionStats = { totalSubscribers: 0, totalAmount: 0, buyPriceCount:0,sellPriceCount:0, byPlan: [] };
+  arbitrageScannerStats: SubscriptionStats = { totalSubscribers: 0, totalAmount: 0,buyPriceCount:0,sellPriceCount:0, byPlan: [] };
   adminCourseStats: AdminCourseStats = { totalSales: 0, totalAmount: 0 };
 
   entityName: string;
@@ -212,6 +212,7 @@ export class WalletBalanceComponent implements OnInit, OnDestroy {
         this.signalStats = res.data.signal;
         this.arbitrageScannerStats = res.data.arbitrageScanner;
         this.adminCourseStats = res.data.adminCourse;
+    
       },
       error: () => {},
     });

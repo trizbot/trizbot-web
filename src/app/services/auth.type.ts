@@ -29,6 +29,7 @@ export type SubscriptionStats = {
   totalSubscribers: number;
   totalAmount: number;
   byPlan: SubscriptionPlanStat[];
+  buyPriceCount:number,sellPriceCount:number,
 };
 
 export type AdminCourseStats = {

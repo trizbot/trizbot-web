@@ -537,6 +537,7 @@
   <!-- ============================================================ -->
   <ng-container *ngIf="isAdminDashBoardType">
 
+    <!-- ---------- Top overview strip ---------- -->
     <div class="bb-stat-grid">
 
       <div class="bb-stat-card">
@@ -574,9 +575,11 @@
     </div>
 
     <!-- ------------------------------------------------------------ -->
-    <!-- Signal / Arbitrage Scanner / Course sales summary             -->
+    <!-- Revenue-line summary: Signal / Arbitrage Scanner / Courses    -->
+    <!-- Kept as one consistent 3-up grid so every product line reads  -->
+    <!-- the same way (icon, label, headline value, sub-metric).       -->
     <!-- ------------------------------------------------------------ -->
-    <div class="bb-stat-grid">
+    <div class="bb-stat-grid bb-stat-grid-3">
 
       <div class="bb-stat-card">
         <div class="bb-stat-top">
@@ -593,7 +596,7 @@
       <div class="bb-stat-card">
         <div class="bb-stat-top">
           <span class="bb-stat-icon"><i class="bi bi-lightning-charge-fill"></i></span>
-          <span class="bb-stat-label">Arbitrage Scanner Subscribers</span>
+          <span class="bb-stat-label">Arbitrage Scanner</span>
         </div>
         <div class="bb-stat-value">{{ arbitrageScannerStats.totalSubscribers || 0 }}</div>
         <div class="bb-stat-sub bb-stat-sub-row">
@@ -616,22 +619,27 @@
 
     </div>
 
-    <!-- ------------------------------------------------------------ -->
-    <!-- Breakdown by plan (Daily / Weekly / Monthly)                  -->
-    <!-- Rearranged into clean, properly-headed tables for both        -->
-    <!-- Signal and Arbitrage Scanner, matching structure/markup.       -->
-    <!-- ------------------------------------------------------------ -->
+  
     <section class="bb-panel">
-      <h2 class="bb-panel-title">
-        <span class="bb-panel-title-icon"><i class="bi bi-pie-chart-fill"></i></span>
-        Subscriptions by Plan
-      </h2>
+      <div class="bb-arb-header">
+        <div>
+          <h2 class="bb-panel-title">
+            <span class="bb-panel-title-icon"><i class="bi bi-pie-chart-fill"></i></span>
+            Subscriptions by Plan
+          </h2>
+          <p class="bb-panel-subtitle">
+            Breakdown of active subscribers and revenue per billing plan
+          </p>
+        </div>
+      </div>
 
       <div class="bb-plan-breakdown-grid">
 
         <!-- Signal plan breakdown -->
         <div class="bb-plan-breakdown-col">
-          <h5 class="bb-plan-breakdown-heading">Signal</h5>
+          <h5 class="bb-plan-breakdown-heading">
+            <i class="bi bi-broadcast"></i> Signal
+          </h5>
 
           <div class="bb-table-scroll" *ngIf="signalStats.byPlan?.length; else noSignalPlans">
             <table class="bb-plan-table">
@@ -643,52 +651,30 @@
                 </tr>
               </thead>
               <tbody>
-                <tr *ngFor="let plan of signalStats.byPlan">
+                <tr *ngFor="let plan of signalStats.byPlan" class="bb-plan-total-row">
                   <td><span class="bb-plan-name">{{ plan.plan }}</span></td>
                   <td><span class="bb-plan-subs">{{ plan.subscribers }} subs</span></td>
                   <td><span class="bb-plan-amount">&#36;{{ plan.amount | number: '1.2-2' }}</span></td>
                 </tr>
               </tbody>
+             
             </table>
           </div>
 
           <ng-template #noSignalPlans>
-            <p class="bb-muted-note">No signal subscriptions yet.</p>
+            <div class="bb-empty-state bb-empty-state-inline">
+              <i class="bi bi-inboxes"></i>
+              <p class="bb-muted-note">No signal subscriptions yet.</p>
+            </div>
           </ng-template>
         </div>
 
-        <!-- Arbitrage Scanner plan breakdown -->
-        <div class="bb-plan-breakdown-col">
-          <h5 class="bb-plan-breakdown-heading">Arbitrage Scanner</h5>
-
-          <div class="bb-table-scroll" *ngIf="arbitrageScannerStats.byPlan?.length; else noArbPlans">
-            <table class="bb-plan-table">
-              <thead>
-                <tr>
-                  <th>Plan</th>
-                  <th>Subscribers</th>
-                  <th>Amount</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr *ngFor="let plan of arbitrageScannerStats.byPlan">
-                  <td><span class="bb-plan-name">{{ plan.plan }}</span></td>
-                  <td><span class="bb-plan-subs">{{ plan.subscribers }} subs</span></td>
-                  <td><span class="bb-plan-amount">&#36;{{ plan.amount | number: '1.2-2' }}</span></td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-
-          <ng-template #noArbPlans>
-            <p class="bb-muted-note">No arbitrage scanner subscriptions yet.</p>
-          </ng-template>
-        </div>
-
+        
+       
+        
       </div>
     </section>
 
   </ng-container>
 
 </div>
-
