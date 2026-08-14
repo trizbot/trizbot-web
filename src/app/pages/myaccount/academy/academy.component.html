@@ -384,7 +384,7 @@
         <tbody>
   <tr *ngFor="let s of sales">
     <td class="title-cell">{{ s.course.title || 'Untitled course' }}</td>
-    <td>&#64;{{ s.buyer.username || 'trader' }}</td>
+    <td>&#64;{{ s.studentName || 'trader' }}</td>
     <td class="mono ref-cell">{{ s.reference || '—' }}</td>
     <td class="num mono amount-credit">&#36;{{ s.instructorEarning | number: '1.2-2' }}</td>
     <td>
