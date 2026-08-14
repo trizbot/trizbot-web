@@ -162,6 +162,10 @@
           </div>
         </div>
 
+         <button mat-stroked-button type="button" (click)="openCourseDetail(course, false)">
+    Preview
+  </button>
+
         <button
           mat-flat-button
           color="primary"
@@ -294,29 +298,41 @@
 
     <div class="academy-table-wrap" *ngIf="!purchasesLoading && !purchasesError && purchases.length > 0">
       <table class="academy-table">
-        <thead>
-          <tr>
-            <th>Course</th>
-            <th>Instructor</th>
-            <th>Reference</th>
-            <th class="num">Amount</th>
-            <th>Status</th>
-            <th>Date</th>
-          </tr>
-        </thead>
-       <tbody>
-  <tr *ngFor="let p of purchases">
-    <td class="title-cell">{{ p.course?.title || 'Untitled course' }}</td>
-    <td>&#64;{{ p.course?.instructor?.username || 'trader' }}</td>
-    <td class="mono ref-cell">{{ p.reference || '—' }}</td>
-    <td class="num mono amount-debit">&#36;{{ (p.amountPaid ?? 0) | number: '1.2-2' }}</td>
-    <td>
-      <span class="status-pill" [ngClass]="p.status">{{ p.status || 'pending' }}</span>
-    </td>
-    <td class="mono date-cell">{{ p.createdAt ? (p.createdAt | date: 'medium') : '—' }}</td>
-  </tr>
-</tbody>
-      </table>
+  <thead>
+    <tr>
+      <th>Course</th>
+      <th>Instructor</th>
+      <th>Reference</th>
+      <th class="num">Amount</th>
+      <th>Status</th>
+      <th>Date</th>
+      <th class="actions"></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr *ngFor="let p of purchases">
+      <td class="title-cell">{{ p.course.title || 'Untitled course' }}</td>
+      <td>&#64;{{ p.course.instructor.username || 'trader' }}</td>
+      <td class="mono ref-cell">{{ p.reference || '—' }}</td>
+      <td class="num mono amount-debit">&#36;{{ (p.amountPaid | number: '1.2-2') }}</td>
+      <td>
+        <span class="status-pill" [ngClass]="p.status">{{ p.status || 'pending' }}</span>
+      </td>
+      <td class="mono date-cell">{{ p.createdAt ? (p.createdAt | date: 'medium') : '—' }}</td>
+      <td class="actions">
+        <button
+          mat-icon-button
+          type="button"
+          matTooltip="Download course file"
+          [disabled]="downloadingPurchaseId === p.id"
+          (click)="downloadPurchase(p)"
+        >
+          <mat-icon>{{ downloadingPurchaseId === p.id ? 'hourglass_empty' : 'download' }}</mat-icon>
+        </button>
+      </td>
+    </tr>
+  </tbody>
+</table>
     </div>
   </section>
 
@@ -367,10 +383,10 @@
         </thead>
         <tbody>
   <tr *ngFor="let s of sales">
-    <td class="title-cell">{{ s.course?.title || 'Untitled course' }}</td>
-    <td>&#64;{{ s.buyer?.username || 'trader' }}</td>
+    <td class="title-cell">{{ s.course.title || 'Untitled course' }}</td>
+    <td>&#64;{{ s.buyer.username || 'trader' }}</td>
     <td class="mono ref-cell">{{ s.reference || '—' }}</td>
-    <td class="num mono amount-credit">&#36;{{ (s.amountEarned ?? 0) | number: '1.2-2' }}</td>
+    <td class="num mono amount-credit">&#36;{{ s.amountEarned | number: '1.2-2' }}</td>
     <td>
       <span class="status-pill" [ngClass]="s.status">{{ s.status || 'pending' }}</span>
     </td>

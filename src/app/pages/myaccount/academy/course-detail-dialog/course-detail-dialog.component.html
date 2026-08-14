@@ -1,0 +1,83 @@
+<div class="detail-dialog">
+  <button class="detail-dialog__close" mat-icon-button type="button" matTooltip="Close" (click)="close()">
+    <mat-icon>close</mat-icon>
+  </button>
+
+  <div
+    class="detail-dialog__cover"
+    [style.backgroundImage]="course.coverPhotoUrl ? 'url(' + course.coverPhotoUrl + ')' : null"
+  >
+    <span class="risk-chip" [ngClass]="'risk-chip--' + (course.level || 'beginner')" *ngIf="course.level">
+      {{ course.level }}
+    </span>
+    <span class="price-tag" [class.price-tag--free]="isFree">
+      {{ course.price ? ('$' + (course.price | number: '1.2-2')) : 'Free' }}
+    </span>
+  </div>
+
+  <div class="detail-dialog__body">
+    <p class="detail-dialog__category">{{ course.category }}</p>
+    <h2 class="detail-dialog__title">{{ course.title }}</h2>
+
+    <div class="detail-dialog__instructor">
+      <div class="detail-dialog__avatar">
+        <img *ngIf="course.instructor.avatarUrl" [src]="course.instructor.avatarUrl" alt="" />
+        <span *ngIf="!course.instructor.avatarUrl">{{ initials() }}</span>
+      </div>
+      <div>
+        <span class="detail-dialog__instructor-name">
+          {{ course.instructor.firstName }} {{ course.instructor.lastName }}
+          <mat-icon class="verified-badge" *ngIf="course.instructor.isVerified" matTooltip="Verified trader">verified</mat-icon>
+        </span>
+        <span class="detail-dialog__instructor-handle">&#64;{{ course.instructor.username || 'trader' }}</span>
+      </div>
+    </div>
+
+    <p class="detail-dialog__desc" *ngIf="course.description">{{ course.description }}</p>
+
+    <div class="detail-dialog__tags" *ngIf="course.tags?.length">
+      <span class="detail-dialog__tag" *ngFor="let tag of course.tags">{{ tag }}</span>
+    </div>
+
+    <!-- Full content: only visible once free or purchased -->
+    <ng-container *ngIf="canViewFullContent; else locked">
+      <div class="detail-dialog__content" *ngIf="course.content">
+        <h4>Course content</h4>
+        <p>{{ course.content }}</p>
+      </div>
+    </ng-container>
+    <ng-template #locked>
+      <div class="detail-dialog__locked">
+        <mat-icon>lock</mat-icon>
+        <p>Purchase this course to unlock the full content and downloadable materials.</p>
+      </div>
+    </ng-template>
+  </div>
+
+  <div class="detail-dialog__actions">
+    <button mat-stroked-button type="button" (click)="close()">Close</button>
+
+    <button
+      *ngIf="!isPurchased"
+      mat-flat-button
+      color="primary"
+      class="fw-bold"
+      type="button"
+      (click)="purchase()"
+    >
+      {{ isFree ? 'Enroll for free' : 'Purchase course' }}
+    </button>
+
+    <button
+      *ngIf="isPurchased && hasFile"
+      mat-flat-button
+      color="primary"
+      class="fw-bold"
+      type="button"
+      (click)="download()"
+    >
+      <mat-icon>download</mat-icon>
+      Download
+    </button>
+  </div>
+</div>

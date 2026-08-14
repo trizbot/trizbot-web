@@ -15,6 +15,22 @@ export type CourseLevelEnum = CourseLevel;
 
 export const MAX_INLINE_CONTENT_LENGTH = 20000;
 
+
+export const MAX_COURSE_FILE_SIZE_BYTES = 2 * 1024 * 1024; // 2MB
+export const MAX_COURSE_FILE_SIZE_LABEL = '2MB';
+
+/** Returns true if the file is within the allowed upload size. */
+export function isFileSizeAllowed(file: File): boolean {
+  return file.size <= MAX_COURSE_FILE_SIZE_BYTES;
+}
+
+export function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+}
+
+
 export const CATEGORY_OPTIONS: { value: CourseCategory; label: string }[] = [
   { value: 'RiskManagement', label: 'Risk Management' },
   { value: 'TechnicalAnalysis', label: 'Technical Analysis' },
@@ -62,13 +78,20 @@ export interface Course {
   updatedAt: string;
 }
 
+
+
+
 export interface CoursePurchase {
   id: string;
   reference: string;
   amountPaid: number;
   status: 'pending' | 'completed' | 'failed' | string;
   createdAt: string;
-  course: Pick<Course, 'id' | 'title'> & { instructor: Pick<CourseInstructor, 'username'> };
+  course: Pick<Course, 'id' | 'title'> & {
+    instructor: Pick<CourseInstructor, 'username'>;
+    pdfUrl?: string | null;
+    attachmentUrl?: string | null;
+  };
 }
 
 export interface CourseSale {
@@ -247,20 +270,13 @@ export function normalizeCourseCategory(raw: RawCourseCategoryDoc): CourseCatego
 
 
 
-
-
-// ---- Course Purchase / Sale ----
-
-/**
- * Minimal course info as it may come back nested inside a purchase/sale doc.
- * Some backends only populate this partially, or leave `course` as a bare
- * ObjectId string when the ref wasn't populated at all.
- */
 interface RawNestedCourseRef {
   _id?: string | { $oid: string };
   id?: string | { $oid: string };
   title?: string;
-  name?: string; // some endpoints call it `name` instead of `title`
+  name?: string;
+  pdfUrl?: string | null;
+  attachmentUrl?: string | null;
   instructor?: {
     _id?: string;
     id?: string;
@@ -279,21 +295,24 @@ interface RawUserRef {
   lastName?: string;
 }
 
+
 export interface RawCoursePurchaseDoc {
   _id?: string | { $oid: string };
   id?: string | { $oid: string };
   reference?: string;
-  transactionRef?: string; // alternate name seen on some payment records
+  transactionRef?: string;
   amountPaid?: number;
-  amount?: number; // alternate name
-  price?: number; // alternate name
+  amount?: number;
+  price?: number;
   status?: string;
-  paymentStatus?: string; // alternate name
+  paymentStatus?: string;
   createdAt?: string | { $date: string };
   updatedAt?: string | { $date: string };
-  course?: RawNestedCourseRef | string; // may be an unpopulated ObjectId string
+  course?: RawNestedCourseRef | string;
   courseId?: string;
-  courseTitle?: string; // flattened alternate, seen when `course` isn't populated
+  courseTitle?: string;
+  coursePdfUrl?: string;         // flattened alternate, seen when `course` isn't populated
+  courseAttachmentUrl?: string;  // flattened alternate
 }
 
 export interface RawCourseSaleDoc {
@@ -329,18 +348,24 @@ function safeDate(value: unknown): string {
   return String(value);
 }
 
-/** Builds the nested `{ id, title, instructor: { username } }` course summary, tolerating unpopulated refs. */
 function normalizeNestedCourseRef(
   course: RawNestedCourseRef | string | undefined,
   fallbackId?: string,
   fallbackTitle?: string,
-): Pick<Course, 'id' | 'title'> & { instructor: Pick<CourseInstructor, 'username'> } {
+  fallbackPdfUrl?: string,
+  fallbackAttachmentUrl?: string,
+): Pick<Course, 'id' | 'title'> & {
+  instructor: Pick<CourseInstructor, 'username'>;
+  pdfUrl?: string | null;
+  attachmentUrl?: string | null;
+} {
   if (!course || typeof course === 'string') {
-    // `course` was either missing or just an unpopulated ObjectId string
     return {
       id: safeId(course) || fallbackId || '',
       title: fallbackTitle || 'Untitled course',
       instructor: { username: 'trader' },
+      pdfUrl: fallbackPdfUrl ?? null,
+      attachmentUrl: fallbackAttachmentUrl ?? null,
     };
   }
 
@@ -350,8 +375,11 @@ function normalizeNestedCourseRef(
     instructor: {
       username: course.instructor?.username || course.instructorUsername || 'trader',
     },
+    pdfUrl: course.pdfUrl ?? fallbackPdfUrl ?? null,
+    attachmentUrl: course.attachmentUrl ?? fallbackAttachmentUrl ?? null,
   };
 }
+
 
 export function normalizeCoursePurchase(raw: RawCoursePurchaseDoc): CoursePurchase {
   return {
@@ -360,7 +388,13 @@ export function normalizeCoursePurchase(raw: RawCoursePurchaseDoc): CoursePurcha
     amountPaid: raw.amountPaid ?? raw.amount ?? raw.price ?? 0,
     status: (raw.status || raw.paymentStatus || 'pending') as CoursePurchase['status'],
     createdAt: safeDate(raw.createdAt),
-    course: normalizeNestedCourseRef(raw.course, raw.courseId, raw.courseTitle),
+    course: normalizeNestedCourseRef(
+      raw.course,
+      raw.courseId,
+      raw.courseTitle,
+      raw.coursePdfUrl,
+      raw.courseAttachmentUrl,
+    ),
   };
 }
 

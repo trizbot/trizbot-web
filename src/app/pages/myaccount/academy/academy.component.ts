@@ -23,6 +23,7 @@ import {
   CourseSale,
   LEVEL_OPTIONS,
 } from './model/academy.model';
+import { CourseDetailDialogComponent, CourseDetailDialogResult } from './course-detail-dialog/course-detail-dialog.component';
 
 type MainTab = 'browse' | 'my-courses' | 'purchased' | 'sales' | 'categories';
 
@@ -38,8 +39,6 @@ export class AcademyComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
   private traderService = inject(TraderService);
 
-  // Kept as a fallback label source only (e.g. if a course's category
-  // doesn't match anything currently in the live `categories` list).
   readonly categoryOptions = CATEGORY_OPTIONS;
   readonly levelOptions = LEVEL_OPTIONS;
 
@@ -67,6 +66,7 @@ export class AcademyComponent implements OnInit, OnDestroy {
   purchases: CoursePurchase[] = [];
   purchasesLoading = false;
   purchasesError = false;
+  downloadingPurchaseId: string | null = null;
 
   // ---- Sales ----
   sales: CourseSale[] = [];
@@ -74,20 +74,15 @@ export class AcademyComponent implements OnInit, OnDestroy {
   salesError = false;
 
   // ---- Categories ----
-  // Loaded for ALL users now, not just superadmins — the Browse tab's
-  // category filter reads from this same list.
   categories: CourseCategoryItem[] = [];
   categoriesLoading = false;
   categoriesError = false;
   addingCategory = false;
 
-  // Reference is never user-entered — it's derived from the category name
-  // in generateCategoryReference(), so the add/edit forms only take a name.
   categoryForm = new FormGroup({
     category: new FormControl<string>('', { nonNullable: true, validators: [Validators.required] }),
   });
 
-  // -- inline edit state for the categories table (superadmin only) --
   editingCategoryId: string | null = null;
   savingCategoryEdit = false;
   deletingCategoryId: string | null = null;
@@ -100,7 +95,7 @@ export class AcademyComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.loadCourses();
-    this.loadCategories(); // needed up-front now: Browse tab's filter dropdown depends on it
+    this.loadCategories();
     this.getTrader();
 
     this.filterForm.controls.search.valueChanges
@@ -115,8 +110,6 @@ export class AcademyComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (res: GetTraderResBody) => {
           this.isSuperAdmin = !!res.data?.isSuperAdmin;
-          // Browse/Purchased tabs are hidden for superadmins, so if we
-          // landed on the default 'browse' tab, move to one they can see.
           if (this.isSuperAdmin && this.activeTab === 'browse') {
             this.selectTab('categories');
           }
@@ -169,15 +162,12 @@ export class AcademyComponent implements OnInit, OnDestroy {
       });
   }
 
-  /** Resolves a course's category value (reference) to a display label, preferring the live API list. */
   categoryLabel(value?: string): string {
     if (!value) return 'General';
     const apiMatch = this.categories.find(
       (c) => (c as any).reference === value || c.category === value,
     );
     if (apiMatch) return apiMatch.category;
-
-    // Fallback to the static list in case a course references an older/removed category.
     return this.categoryOptions.find((c) => c.value === value)?.label || 'General';
   }
 
@@ -206,6 +196,24 @@ export class AcademyComponent implements OnInit, OnDestroy {
       if (purchased) {
         this.sharedService.showToast({ title: `You now have access to "${course.title}".` });
         if (this.activeTab === 'purchased') this.loadPurchases();
+      }
+    });
+  }
+
+  /** Opens the read-only preview dialog before purchase. */
+  openCourseDetail(course: Course, isPurchased = false): void {
+    const ref = this.dialog.open(CourseDetailDialogComponent, {
+      width: '640px',
+      maxWidth: '95vw',
+      data: { course, isPurchased },
+    });
+
+    ref.afterClosed().subscribe((result: CourseDetailDialogResult) => {
+      if (result?.action === 'purchase') {
+        this.openPurchaseDialog(course);
+      }
+      if (result?.action === 'download') {
+        this.downloadCourseFile(course);
       }
     });
   }
@@ -285,6 +293,64 @@ export class AcademyComponent implements OnInit, OnDestroy {
     });
   }
 
+  /**
+   * Downloads the purchased course's file. Tries the file url that came
+   * back on the purchase record first (attachmentUrl -> pdfUrl / source
+   * url); if the backend didn't populate it, falls back to fetching the
+   * full course record by id.
+   */
+  downloadPurchase(purchase: CoursePurchase): void {
+    if (this.downloadingPurchaseId) return;
+
+    const directUrl = purchase.course?.pdfUrl || purchase.course?.attachmentUrl;
+    if (directUrl) {
+      this.triggerDownload(directUrl, purchase.course.title);
+      return;
+    }
+
+    if (!purchase.course?.id) {
+      this.sharedService.showToast({ title: 'No downloadable file is attached to this course.' });
+      return;
+    }
+
+    this.downloadingPurchaseId = purchase.id;
+    this.academyService.getCourseById(purchase.course.id).subscribe({
+      next: (course) => {
+        this.downloadingPurchaseId = null;
+        const fileUrl = course.pdfUrl || course.attachmentUrl;
+        if (fileUrl) {
+          this.triggerDownload(fileUrl, course.title);
+        } else {
+          this.sharedService.showToast({ title: 'No downloadable file is attached to this course.' });
+        }
+      },
+      error: () => {
+        this.downloadingPurchaseId = null;
+        this.sharedService.showToast({ title: 'Could not fetch the course file. Try again.' });
+      },
+    });
+  }
+
+  downloadCourseFile(course: Course): void {
+    const url = course.pdfUrl || course.attachmentUrl;
+    if (!url) {
+      this.sharedService.showToast({ title: 'No downloadable file is attached to this course.' });
+      return;
+    }
+    this.triggerDownload(url, course.title);
+  }
+
+  private triggerDownload(url: string, title: string): void {
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = title || 'course-material';
+    link.target = '_blank';
+    link.rel = 'noopener';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
   loadSales(): void {
     this.salesLoading = true;
     this.salesError = false;
@@ -308,8 +374,6 @@ export class AcademyComponent implements OnInit, OnDestroy {
   loadCategories(): void {
     this.categoriesLoading = true;
     this.categoriesError = false;
-    // academyService.getCourseCategory() already unwraps and normalizes
-    // the response into CourseCategoryItem[] — no extra handling needed here.
     this.academyService.getCourseCategory().subscribe({
       next: (res) => {
         this.categories = res;
@@ -357,7 +421,6 @@ export class AcademyComponent implements OnInit, OnDestroy {
       });
   }
 
-  /** Opens inline edit mode for a category row. */
   startEditCategory(cat: CourseCategoryItem): void {
     if (this.deletingCategoryId) return;
     this.editingCategoryId = (cat as any).id ?? (cat as any)._id ?? null;

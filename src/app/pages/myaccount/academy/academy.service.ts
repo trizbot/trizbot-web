@@ -2,7 +2,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Router } from '@angular/router';
 
-import { Observable } from 'rxjs';
+import { Observable, throwError } from 'rxjs';
 import { map } from 'rxjs/operators';
 
 import { environment } from '../../../../environments/environment';
@@ -14,6 +14,8 @@ import {
   CourseSale,
   CreateCourseCategoryReqBody,
   CreateCourseReqBody,
+  isFileSizeAllowed,
+  MAX_COURSE_FILE_SIZE_LABEL,
   normalizeCourse,
   normalizeCourseCategory,
   normalizeCoursePurchase,
@@ -36,11 +38,6 @@ function unwrapList<T>(res: T[] | ApiListResponse<T>): T[] {
   return res?.data ?? res?.items ?? [];
 }
 
-/**
- * The category endpoints may return either a single created/updated doc, a
- * bare array, or a { data / items } wrapper depending on the backend
- * response shape — this normalizes all three into an array.
- */
 function unwrapCategoryList(
   res: RawCourseCategoryDoc | RawCourseCategoryDoc[] | ApiListResponse<RawCourseCategoryDoc>,
 ): RawCourseCategoryDoc[] {
@@ -53,7 +50,6 @@ function unwrapCategoryList(
     ?? [];
 }
 
-/** Body accepted by PATCH /academy/category/:id — mirrors ListCourseCategoryDto. */
 export interface UpdateCourseCategoryReqBody {
   category?: string;
   reference?: string;
@@ -165,15 +161,27 @@ export class AcademyService {
   }
 
   // ---- Uploads ----
+  // Both methods now validate size client-side before hitting the network.
+  // Pass the raw File alongside the FormData so we can check `.size`.
 
-  uploadImage(formData: FormData): Observable<any> {
+  uploadImage(formData: FormData, file?: File): Observable<any> {
+    if (file && !isFileSizeAllowed(file)) {
+      return throwError(
+        () => new Error(`Image exceeds the maximum allowed size of ${MAX_COURSE_FILE_SIZE_LABEL}.`),
+      );
+    }
     return this.http.post(
       `${environment.cloudUploadApiUrl}/${environment.cloudinaryName}/image/upload`,
       formData,
     );
   }
 
-  uploadRawFile(formData: FormData): Observable<any> {
+  uploadRawFile(formData: FormData, file?: File): Observable<any> {
+    if (file && !isFileSizeAllowed(file)) {
+      return throwError(
+        () => new Error(`File exceeds the maximum allowed size of ${MAX_COURSE_FILE_SIZE_LABEL}.`),
+      );
+    }
     return this.http.post(
       `${environment.cloudUploadApiUrl}/${environment.cloudinaryName}/raw/upload`,
       formData,
