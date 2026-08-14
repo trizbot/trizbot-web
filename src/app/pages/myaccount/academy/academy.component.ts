@@ -332,7 +332,7 @@ export class AcademyComponent implements OnInit, OnDestroy {
   }
 
   downloadCourseFile(course: Course): void {
-    const url = course.pdfUrl || course.attachmentUrl;
+    const url = course.attachmentUrl || course.pdfUrl;
     if (!url) {
       this.sharedService.showToast({ title: 'No downloadable file is attached to this course.' });
       return;
