@@ -19,13 +19,13 @@
 
   <div class="field-row">
     <div>
-     <mat-label class="f-w-600 m-b-8 d-block">Category</mat-label>
-<mat-form-field appearance="outline" class="w-100">
-  <mat-select formControlName="category" [disabled]="categoriesLoading">
-    <mat-option value="">None</mat-option>
-    <mat-option *ngFor="let c of categories" [value]="c.category">{{ c.category }}</mat-option>
-  </mat-select>
-</mat-form-field>
+      <mat-label class="f-w-600 m-b-8 d-block">Category</mat-label>
+      <mat-form-field appearance="outline" class="w-100">
+        <mat-select formControlName="category" [disabled]="categoriesLoading">
+          <mat-option value="">None</mat-option>
+          <mat-option *ngFor="let c of categories" [value]="c.category">{{ c.category }}</mat-option>
+        </mat-select>
+      </mat-form-field>
     </div>
     <div>
       <mat-label class="f-w-600 m-b-8 d-block">Level</mat-label>
@@ -38,10 +38,9 @@
     </div>
   </div>
 
-  <mat-label class="f-w-600 m-b-8 d-block">Attachment URL(Optional)</mat-label>
+  <mat-label class="f-w-600 m-b-8 d-block">Attachment URL (optional)</mat-label>
   <mat-form-field appearance="outline" class="w-100">
-    <span matPrefix>&#36;&nbsp;</span>
-    <input matInput type="url" min="0" formControlName="attachmentUrl" placeholder="Link to video/resources hosted elsewhere" />
+    <input matInput type="url" formControlName="attachmentUrl" placeholder="Link to video/resources hosted elsewhere" />
   </mat-form-field>
 
   <mat-label class="f-w-600 m-b-8 d-block">Price</mat-label>
@@ -50,71 +49,71 @@
     <input matInput type="number" min="0" formControlName="price" placeholder="0 for free" />
   </mat-form-field>
 
-  <!-- Cover Photo (replaces the old Thumbnail URL text field) -->
   <!-- Cover Photo dropzone -->
-<mat-label class="f-w-600 m-b-8 d-block">Cover Photo</mat-label>
-<ngx-dropzone
-  class="course-dropzone cover-dropzone"
-  [class.has-preview]="hasCoverPhoto"
-  [multiple]="false"
-  accept="image/jpeg,image/png,image/webp"
-  (change)="onSelectCoverPhoto($event)"
->
-  <ng-container *ngIf="!hasCoverPhoto; else coverPreview">
-    <mat-icon class="dz-icon">cloud_upload</mat-icon>
-    <ngx-dropzone-label>
-      <span class="dz-title">Click or drag to upload</span>
-      <span class="dz-sub">JPG, PNG, or WEBP — max {{ maxFileSizeLabel }}</span>
-    </ngx-dropzone-label>
-  </ng-container>
+  <mat-label class="f-w-600 m-b-8 d-block">Cover Photo</mat-label>
+  <ngx-dropzone
+    class="course-dropzone cover-dropzone"
+    [class.has-preview]="hasCoverPhoto"
+    [multiple]="false"
+    accept="image/jpeg,image/png,image/webp"
+    (change)="onSelectCoverPhoto($event)"
+  >
+    <ng-container *ngIf="!hasCoverPhoto; else coverPreview">
+      <mat-icon class="dz-icon">cloud_upload</mat-icon>
+      <ngx-dropzone-label>
+        <span class="dz-title">Click or drag to upload</span>
+        <span class="dz-sub">JPG, PNG, or WEBP — max {{ coverPhotoMaxLabel }}</span>
+      </ngx-dropzone-label>
+    </ng-container>
 
-  <ng-template #coverPreview>
-    <div class="course-inline-preview-wrap">
-      <img class="course-inline-preview" [src]="coverPhotoDisplayUrl" alt="Cover photo preview" />
-      <button
-        type="button"
-        class="course-remove-btn"
-        aria-label="Remove cover photo"
-        (click)="onRemoveCoverPhoto(); $event.stopPropagation()"
-      >
-        <mat-icon>close</mat-icon>
-      </button>
-    </div>
-  </ng-template>
-</ngx-dropzone>
+    <ng-template #coverPreview>
+      <div class="course-inline-preview-wrap">
+        <img class="course-inline-preview" [src]="coverPhotoDisplayUrl" alt="Cover photo preview" />
+        <button
+          type="button"
+          class="course-remove-btn"
+          aria-label="Remove cover photo"
+          (click)="onRemoveCoverPhoto(); $event.stopPropagation()"
+        >
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+    </ng-template>
+  </ngx-dropzone>
 
-<!-- Course PDF dropzone -->
-<mat-label class="f-w-600 m-b-8 d-block m-t-3">Course PDF (optional)</mat-label>
-<ngx-dropzone
-  class="course-dropzone pdf-dropzone"
-  [class.has-preview]="hasPdf"
-  [multiple]="false"
-  accept="application/pdf"
-  (change)="onSelectPdf($event)"
->
-  <ng-container *ngIf="!hasPdf; else pdfPreview">
-    <mat-icon class="dz-icon">picture_as_pdf</mat-icon>
-    <ngx-dropzone-label>
-      <span class="dz-title">Click or drag to upload</span>
-      <span class="dz-sub">PDF resources or syllabus — max {{ maxFileSizeLabel }}</span>
-    </ngx-dropzone-label>
-  </ng-container>
+  <!-- Course material dropzone: pdf, docx, audio, or video -->
+  <mat-label class="f-w-600 m-b-8 d-block m-t-3">Course Material</mat-label>
+  <ngx-dropzone
+    class="course-dropzone material-dropzone"
+    [class.has-preview]="hasMaterial"
+    [multiple]="false"
+    [accept]="materialAcceptString"
+    (change)="onSelectMaterial($event)"
+  >
+    <ng-container *ngIf="!hasMaterial; else materialPreview">
+      <mat-icon class="dz-icon">upload_file</mat-icon>
+      <ngx-dropzone-label>
+        <span class="dz-title">Click or drag to upload a lesson file</span>
+        <span class="dz-sub">{{ materialAcceptHint }}</span>
+        <span class="dz-sub dz-sub-limits">Docs up to 1MB · Audio up to 1MB · Video up to 10MB</span>
+      </ngx-dropzone-label>
+    </ng-container>
 
-  <ng-template #pdfPreview>
-    <div class="course-pdf-chip">
-      <mat-icon>picture_as_pdf</mat-icon>
-      <span class="course-pdf-name">{{ pdfDisplayName }}</span>
-      <button
-        type="button"
-        class="course-remove-btn"
-        aria-label="Remove PDF"
-        (click)="onRemovePdf(); $event.stopPropagation()"
-      >
-        <mat-icon>close</mat-icon>
-      </button>
-    </div>
-  </ng-template>
-</ngx-dropzone>
+    <ng-template #materialPreview>
+      <div class="course-pdf-chip">
+        <mat-icon>{{ materialIcon }}</mat-icon>
+        <span class="course-pdf-name">{{ materialDisplayName }}</span>
+        <button
+          type="button"
+          class="course-remove-btn"
+          aria-label="Remove course material"
+          (click)="onRemoveMaterial(); $event.stopPropagation()"
+        >
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+    </ng-template>
+  </ngx-dropzone>
 
   <mat-label class="f-w-600 m-b-8 d-block m-t-3">Tags (comma-separated, optional)</mat-label>
   <mat-form-field appearance="outline" class="w-100">
@@ -130,7 +129,7 @@
       matInput
       rows="8"
       formControlName="content"
-      placeholder="Write your course outline or full syllabus here. For videos, host them externally and link them in the description."
+      placeholder="Write your course outline or full syllabus here."
     ></textarea>
   </mat-form-field>
 
@@ -146,6 +145,6 @@
     [disabled]="loading"
     (click)="submit()"
   >
-    {{ loading ? 'Saving...' : (isEditing ? 'Save Changes' : 'Publish Course') }}
+    {{ loading ? uploadingLabel : (isEditing ? 'Save Changes' : 'Create') }}
   </button>
 </mat-dialog-content>

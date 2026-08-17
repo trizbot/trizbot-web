@@ -90,16 +90,14 @@
         <mat-icon matPrefix>search</mat-icon>
       </mat-form-field>
 
-
       <mat-form-field appearance="outline" class="filter-field">
-  <mat-select formControlName="category" (selectionChange)="loadCourses()">
-    <mat-option value="">All categories</mat-option>
-    <mat-option *ngFor="let c of categories; trackBy: trackByCategoryId" [value]="c.category">
-      {{ c.category }}
-    </mat-option>
-  </mat-select>
-</mat-form-field>
-
+        <mat-select formControlName="category" (selectionChange)="loadCourses()">
+          <mat-option value="">All categories</mat-option>
+          <mat-option *ngFor="let c of categories; trackBy: trackByCategoryId" [value]="c.category">
+            {{ c.category }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
 
       <mat-form-field appearance="outline" class="filter-field">
         <mat-select formControlName="level" (selectionChange)="loadCourses()">
@@ -133,7 +131,7 @@
     <div class="course-grid" *ngIf="!coursesLoading && !coursesError && courses.length > 0">
       <article class="course-card" *ngFor="let course of courses; trackBy: trackByCourseId">
 
-        <div class="course-thumb" [style.backgroundImage]="course.thumbnailUrl ? 'url(' + course.thumbnailUrl + ')' : null">
+        <div class="course-thumb" [style.backgroundImage]="course.coverPhotoUrl ? 'url(' + course.coverPhotoUrl + ')' : null">
           <span class="risk-chip" [ngClass]="'risk-chip--' + (course.level || 'beginner')" *ngIf="course.level">
             {{ levelLabel(course.level) }}
           </span>
@@ -143,7 +141,13 @@
         </div>
 
         <div class="course-body">
-          <p class="course-category">{{ categoryLabel(course.category) }}</p>
+          <div class="course-meta-row">
+            <p class="course-category">{{ categoryLabel(course.category) }}</p>
+            <span class="file-kind-chip" *ngIf="course.courseFileKind">
+              <mat-icon>{{ fileKindIcon(course.courseFileKind) }}</mat-icon>
+              {{ fileKindLabel(course.courseFileKind) }}
+            </span>
+          </div>
           <h3 class="course-title">{{ course.title }}</h3>
           <p class="course-desc" *ngIf="course.description">{{ course.description }}</p>
         </div>
@@ -158,23 +162,25 @@
               {{ course.instructor.firstName }} {{ course.instructor.lastName }}
               <mat-icon class="verified-badge" *ngIf="course.instructor.isVerified" matTooltip="Verified trader">verified</mat-icon>
             </span>
-            <span class="course-instructor__handle">&#64;{{ course.instructor.username || 'trader' }}</span>
+            <span class="course-instructor__handle">&#64;{{ course.instructor.userName || 'trader' }}</span>
           </div>
         </div>
 
-         <button mat-stroked-button type="button" (click)="openCourseDetail(course, false)">
-    Preview
-  </button>
+        <div class="course-card__actions">
+          <button mat-stroked-button type="button" (click)="openCourseDetail(course, false)">
+            Preview
+          </button>
 
-        <button
-          mat-flat-button
-          color="primary"
-          class="fw-bold course-cta"
-          type="button"
-          (click)="openPurchaseDialog(course)"
-        >
-          {{ course.price ? 'Purchase Course' : 'Enroll for free' }}
-        </button>
+          <button
+            mat-flat-button
+            color="primary"
+            class="fw-bold course-cta"
+            type="button"
+            (click)="openPurchaseDialog(course)"
+          >
+            {{ course.price ? 'Purchase Course' : 'Enroll for free' }}
+          </button>
+        </div>
       </article>
     </div>
   </ng-container>
@@ -223,6 +229,7 @@
             <th>Title</th>
             <th>Category</th>
             <th>Level</th>
+            <th>Material</th>
             <th class="num">Price</th>
             <th class="num">Enrolled</th>
             <th class="actions"></th>
@@ -230,18 +237,25 @@
         </thead>
         <tbody>
           <tr *ngFor="let course of myCourses; trackBy: trackByCourseId">
-            <td class="title-cell">{{ course.title }}</td>
-            <td>{{ categoryLabel(course.category) }}</td>
-            <td>
+            <td class="title-cell" [attr.data-label]="'Title'">{{ course.title }}</td>
+            <td [attr.data-label]="'Category'">{{ categoryLabel(course.category) }}</td>
+            <td [attr.data-label]="'Level'">
               <span class="risk-chip risk-chip--sm" [ngClass]="'risk-chip--' + (course.level || 'beginner')">
                 {{ levelLabel(course.level) }}
               </span>
             </td>
-            <td class="num mono">
+            <td [attr.data-label]="'Material'">
+              <span class="file-kind-chip" *ngIf="course.courseFileKind; else noMaterial">
+                <mat-icon>{{ fileKindIcon(course.courseFileKind) }}</mat-icon>
+                {{ fileKindLabel(course.courseFileKind) }}
+              </span>
+              <ng-template #noMaterial><span class="muted">—</span></ng-template>
+            </td>
+            <td class="num mono" [attr.data-label]="'Price'">
               <span *ngIf="course.price > 0">&#36;{{ course.price | number: '1.2-2' }}</span>
               <span *ngIf="!course.price" class="free-tag">Free</span>
             </td>
-            <td class="num mono">{{ course.totalPurchases || 0 }}</td>
+            <td class="num mono" [attr.data-label]="'Enrolled'">{{ course.totalPurchases || 0 }}</td>
             <td class="actions">
               <button mat-icon-button type="button" matTooltip="Edit" (click)="openCreateCourseDialog(course)">
                 <mat-icon>edit</mat-icon>
@@ -298,41 +312,74 @@
 
     <div class="academy-table-wrap" *ngIf="!purchasesLoading && !purchasesError && purchases.length > 0">
       <table class="academy-table">
-  <thead>
-    <tr>
-      <th>Course</th>
-      <th>Instructor</th>
-      <th>Reference</th>
-      <th class="num">Amount</th>
-      <th>Status</th>
-      <th>Date</th>
-      <th class="actions"></th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr *ngFor="let p of purchases">
-      <td class="title-cell">{{ p.course.title || 'Untitled course' }}</td>
-      <td>&#64;{{ p.course.instructor.username || 'trader' }}</td>
-      <td class="mono ref-cell">{{ p.reference || '—' }}</td>
-      <td class="num mono amount-debit">&#36;{{ (p.amountPaid | number: '1.2-2') }}</td>
-      <td>
-        <span class="status-pill" [ngClass]="p.status">{{ p.status || 'pending' }}</span>
-      </td>
-      <td class="mono date-cell">{{ p.createdAt ? (p.createdAt | date: 'medium') : '—' }}</td>
-      <td class="actions">
-        <button
-          mat-icon-button
-          type="button"
-          matTooltip="Download course file"
-          [disabled]="downloadingPurchaseId === p.id"
-          (click)="downloadPurchase(p)"
-        >
-          <mat-icon>{{ downloadingPurchaseId === p.id ? 'hourglass_empty' : 'download' }}</mat-icon>
-        </button>
-      </td>
-    </tr>
-  </tbody>
-</table>
+        <thead>
+          <tr>
+            <th>Course</th>
+            <th>Instructor</th>
+            <th>Reference</th>
+            <th class="num">Amount</th>
+            <th>Status</th>
+            <th>Date</th>
+            <th class="actions"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let p of purchases">
+            <td class="title-cell" [attr.data-label]="'Course'">{{ p.course.title || 'Untitled course' }}</td>
+            <td [attr.data-label]="'Instructor'">&#64;{{ p.course.instructor.userName || 'trader' }}</td>
+            <td class="mono ref-cell" [attr.data-label]="'Reference'">{{ p.reference || '—' }}</td>
+            <td class="num mono amount-debit" [attr.data-label]="'Amount'">&#36;{{ (p.coursePrice | number: '1.2-2') }}</td>
+            <td [attr.data-label]="'Status'">
+              <span class="status-pill" [ngClass]="p.status">{{ p.status || 'pending' }}</span>
+            </td>
+            <td class="mono date-cell" [attr.data-label]="'Date'">{{ p.createdAt ? (p.createdAt | date: 'medium') : '—' }}</td>
+            <td class="actions">
+              <button
+                mat-icon-button
+                type="button"
+                matTooltip="Download course file"
+                [disabled]="downloadingPurchaseId === p.id"
+                (click)="downloadPurchase(p)"
+              >
+                <mat-icon>{{ downloadingPurchaseId === p.id ? 'hourglass_empty' : 'download' }}</mat-icon>
+              </button>
+
+              <button
+                mat-icon-button
+                type="button"
+                matTooltip="Share this course"
+                [matMenuTriggerFor]="shareMenu"
+              >
+                <mat-icon>share</mat-icon>
+              </button>
+
+              <mat-menu #shareMenu="matMenu" xPosition="before">
+                <button mat-menu-item type="button" (click)="shareToPlatform(p, 'linkedin')">
+                  <mat-icon>business_center</mat-icon>
+                  <span>Share on LinkedIn</span>
+                </button>
+                <button mat-menu-item type="button" (click)="shareToPlatform(p, 'twitter')">
+                  <mat-icon>tag</mat-icon>
+                  <span>Share on X / Twitter</span>
+                </button>
+                <button mat-menu-item type="button" (click)="shareToPlatform(p, 'whatsapp')">
+                  <mat-icon>chat</mat-icon>
+                  <span>Share on WhatsApp</span>
+                </button>
+                <button mat-menu-item type="button" (click)="shareToPlatform(p, 'facebook')">
+                  <mat-icon>public</mat-icon>
+                  <span>Share on Facebook</span>
+                </button>
+               
+                <button mat-menu-item type="button" (click)="copyShareLink(p)">
+                  <mat-icon>content_copy</mat-icon>
+                  <span>Copy link &amp; caption</span>
+                </button>
+              </mat-menu>
+            </td>
+          </tr>
+        </tbody>
+      </table>
     </div>
   </section>
 
@@ -382,17 +429,17 @@
           </tr>
         </thead>
         <tbody>
-  <tr *ngFor="let s of sales">
-    <td class="title-cell">{{ s.course.title || 'Untitled course' }}</td>
-    <td>&#64;{{ s.studentName || 'trader' }}</td>
-    <td class="mono ref-cell">{{ s.reference || '—' }}</td>
-    <td class="num mono amount-credit">&#36;{{ s.instructorEarning | number: '1.2-2' }}</td>
-    <td>
-      <span class="status-pill" [ngClass]="s.status">{{ s.status || 'pending' }}</span>
-    </td>
-    <td class="mono date-cell">{{ s.createdAt ? (s.createdAt | date: 'medium') : '—' }}</td>
-  </tr>
-</tbody>
+          <tr *ngFor="let s of sales">
+            <td class="title-cell" [attr.data-label]="'Course'">{{ s.course.title || 'Untitled course' }}</td>
+            <td [attr.data-label]="'Buyer'">&#64;{{ s.studentName || 'trader' }}</td>
+            <td class="mono ref-cell" [attr.data-label]="'Reference'">{{ s.reference || '—' }}</td>
+            <td class="num mono amount-credit" [attr.data-label]="'Earned'">&#36;{{ s.instructorEarning | number: '1.2-2' }}</td>
+            <td [attr.data-label]="'Status'">
+              <span class="status-pill" [ngClass]="s.status">{{ s.status || 'pending' }}</span>
+            </td>
+            <td class="mono date-cell" [attr.data-label]="'Date'">{{ s.createdAt ? (s.createdAt | date: 'medium') : '—' }}</td>
+          </tr>
+        </tbody>
       </table>
     </div>
   </section>
@@ -494,7 +541,7 @@
 
             <!-- Read mode -->
             <ng-container *ngIf="editingCategoryId !== (cat.id || cat._id)">
-              <td class="title-cell">{{ cat.category }}</td>
+              <td class="title-cell" [attr.data-label]="'Category'">{{ cat.category }}</td>
               <td class="actions">
                 <button
                   mat-icon-button

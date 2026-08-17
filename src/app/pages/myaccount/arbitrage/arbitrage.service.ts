@@ -70,7 +70,7 @@ export class ArbitrageService {
       })
       .pipe(
         map((res) => this.mapOpportunities(res)),
-        tap((data) => console.log('[ArbitrageService] getOpportunities response:', data)),
+        tap((data) =>  data),
         catchError((err) => {
           return throwError(() => err);
         })
@@ -95,7 +95,7 @@ export class ArbitrageService {
           opportunities: this.mapOpportunities(res),
           meta: res.meta,
         })),
-        tap((result) => console.log('[ArbitrageService] getOpportunitiesWithMeta response:', result)),
+        tap((result) =>  result),
         catchError((err) => {
           return throwError(() => err);
         })

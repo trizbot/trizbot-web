@@ -9,13 +9,17 @@ import { environment } from '../../../../environments/environment';
 import {
   Course,
   CourseCategoryItem,
+  CourseFileKind,
   CoursePurchase,
   CourseQueryParams,
   CourseSale,
   CreateCourseCategoryReqBody,
   CreateCourseReqBody,
   isFileSizeAllowed,
+  MAX_COURSE_FILE_SIZE_BYTES,
   MAX_COURSE_FILE_SIZE_LABEL,
+  MAX_FILE_SIZE_BY_KIND,
+  MAX_FILE_SIZE_LABEL_BY_KIND,
   normalizeCourse,
   normalizeCourseCategory,
   normalizeCoursePurchase,
@@ -38,6 +42,19 @@ function unwrapList<T>(res: T[] | ApiListResponse<T>): T[] {
   return res?.data ?? res?.items ?? [];
 }
 
+
+
+function unwrapItem<T>(res: T | { data?: T } | { item?: T } | { course?: T }): T {
+  if (res && typeof res === 'object') {
+    const anyRes = res as any;
+    if (anyRes.data && typeof anyRes.data === 'object') return anyRes.data as T;
+    if (anyRes.item && typeof anyRes.item === 'object') return anyRes.item as T;
+    if (anyRes.course && typeof anyRes.course === 'object') return anyRes.course as T;
+  }
+  return res as T;
+}
+
+
 function unwrapCategoryList(
   res: RawCourseCategoryDoc | RawCourseCategoryDoc[] | ApiListResponse<RawCourseCategoryDoc>,
 ): RawCourseCategoryDoc[] {
@@ -45,14 +62,21 @@ function unwrapCategoryList(
   if (res && typeof res === 'object' && 'category' in (res as RawCourseCategoryDoc)) {
     return [res as RawCourseCategoryDoc];
   }
-  return (res as ApiListResponse<RawCourseCategoryDoc>)?.data
-    ?? (res as ApiListResponse<RawCourseCategoryDoc>)?.items
-    ?? [];
+  return (
+    (res as ApiListResponse<RawCourseCategoryDoc>)?.data ?? (res as ApiListResponse<RawCourseCategoryDoc>)?.items ?? []
+  );
 }
 
 export interface UpdateCourseCategoryReqBody {
   category?: string;
   reference?: string;
+}
+
+/** Cloudinary (and most hosts) file endpoints are keyed by "resource type". */
+function resourceTypeForKind(kind: CourseFileKind): 'image' | 'video' | 'raw' {
+  if (kind === 'video' || kind === 'audio') return 'video'; // Cloudinary serves audio under "video"
+  if (kind === 'pdf' || kind === 'docx') return 'raw';
+  return 'raw';
 }
 
 @Injectable({
@@ -80,11 +104,11 @@ export class AcademyService {
       .pipe(map((res) => unwrapList(res).map(normalizeCourse)));
   }
 
-  getCourseById(id: string): Observable<Course> {
-    return this.http
-      .get<RawCourseDoc>(`${this.baseUrl}/courses/${id}`)
-      .pipe(map(normalizeCourse));
-  }
+ getCourseById(id: string): Observable<Course> {
+  return this.http
+    .get<RawCourseDoc | { data: RawCourseDoc }>(`${this.baseUrl}/courses/${id}`)
+    .pipe(map((res) => normalizeCourse(unwrapItem(res))));
+}
 
   myCourses(): Observable<Course[]> {
     return this.http
@@ -92,17 +116,18 @@ export class AcademyService {
       .pipe(map((res) => unwrapList(res).map(normalizeCourse)));
   }
 
-  createCourse(payload: CreateCourseReqBody): Observable<Course> {
-    return this.http
-      .post<RawCourseDoc>(`${this.baseUrl}/courses`, payload)
-      .pipe(map(normalizeCourse));
-  }
+createCourse(payload: CreateCourseReqBody): Observable<Course> {
+  // console.log(payload);
+  return this.http
+    .post<RawCourseDoc | { data: RawCourseDoc }>(`${this.baseUrl}/courses`, payload)
+    .pipe(map((res) => normalizeCourse(unwrapItem(res))));
+}
 
-  updateCourse(id: string, payload: UpdateCourseReqBody): Observable<Course> {
-    return this.http
-      .patch<RawCourseDoc>(`${this.baseUrl}/courses/${id}`, payload)
-      .pipe(map(normalizeCourse));
-  }
+ updateCourse(id: string, payload: UpdateCourseReqBody): Observable<Course> {
+  return this.http
+    .patch<RawCourseDoc | { data: RawCourseDoc }>(`${this.baseUrl}/courses/${id}`, payload)
+    .pipe(map((res) => normalizeCourse(unwrapItem(res))));
+}
 
   deleteCourse(id: string): Observable<void> {
     return this.http.delete<void>(`${this.baseUrl}/courses/${id}`);
@@ -110,17 +135,15 @@ export class AcademyService {
 
   // ---- Purchases ----
 
-  purchaseCourse(payload: PurchaseCourseReqBody): Observable<CoursePurchase> {
-    return this.http
-      .post<RawCoursePurchaseDoc>(`${this.baseUrl}/purchase`, payload)
-      .pipe(map(normalizeCoursePurchase));
-  }
+purchaseCourse(payload: PurchaseCourseReqBody): Observable<CoursePurchase> {
+  return this.http
+    .post<RawCoursePurchaseDoc | { data: RawCoursePurchaseDoc }>(`${this.baseUrl}/purchase`, payload)
+    .pipe(map((res) => normalizeCoursePurchase(unwrapItem(res))));
+}
 
   myPurchases(): Observable<CoursePurchase[]> {
     return this.http
-      .get<RawCoursePurchaseDoc[] | ApiListResponse<RawCoursePurchaseDoc>>(
-        `${this.baseUrl}/purchases/mine`,
-      )
+      .get<RawCoursePurchaseDoc[] | ApiListResponse<RawCoursePurchaseDoc>>(`${this.baseUrl}/purchases/mine`)
       .pipe(map((res) => unwrapList(res).map(normalizeCoursePurchase)));
   }
 
@@ -161,29 +184,39 @@ export class AcademyService {
   }
 
   // ---- Uploads ----
-  // Both methods now validate size client-side before hitting the network.
-  // Pass the raw File alongside the FormData so we can check `.size`.
+  // Cover photo stays image-only. Course material (`uploadCourseFile`) now
+  // accepts PDF, DOCX, audio, or video and is routed to the right Cloudinary
+  // resource-type endpoint automatically.
 
   uploadImage(formData: FormData, file?: File): Observable<any> {
-    if (file && !isFileSizeAllowed(file)) {
-      return throwError(
-        () => new Error(`Image exceeds the maximum allowed size of ${MAX_COURSE_FILE_SIZE_LABEL}.`),
-      );
+    if (file && !isFileSizeAllowed(file, 'other')) {
+      return throwError(() => new Error(`Image exceeds the maximum allowed size of ${MAX_COURSE_FILE_SIZE_LABEL}.`));
     }
-    return this.http.post(
-      `${environment.cloudUploadApiUrl}/${environment.cloudinaryName}/image/upload`,
-      formData,
-    );
+    return this.http.post(`${environment.cloudUploadApiUrl}/${environment.cloudinaryName}/image/upload`, formData);
   }
 
+  /** @deprecated use uploadCourseFile — kept so any existing callers keep compiling */
   uploadRawFile(formData: FormData, file?: File): Observable<any> {
-    if (file && !isFileSizeAllowed(file)) {
+    return this.uploadCourseFile(formData, file, 'pdf');
+  }
+
+  /**
+   * Uploads a piece of course material of any supported kind (pdf, docx,
+   * audio, video), enforcing the per-kind size cap and routing to the
+   * correct Cloudinary resource type.
+   */
+  uploadCourseFile(formData: FormData, file: File | undefined, kind: CourseFileKind): Observable<any> {
+    if (kind === 'other') {
+      return throwError(() => new Error('This file type is not supported for course material.'));
+    }
+    if (file && !isFileSizeAllowed(file, kind)) {
       return throwError(
-        () => new Error(`File exceeds the maximum allowed size of ${MAX_COURSE_FILE_SIZE_LABEL}.`),
+        () => new Error(`File exceeds the maximum allowed size of ${MAX_FILE_SIZE_LABEL_BY_KIND[kind]}.`),
       );
     }
+    const resourceType = resourceTypeForKind(kind);
     return this.http.post(
-      `${environment.cloudUploadApiUrl}/${environment.cloudinaryName}/raw/upload`,
+      `${environment.cloudUploadApiUrl}/${environment.cloudinaryName}/${resourceType}/upload`,
       formData,
     );
   }

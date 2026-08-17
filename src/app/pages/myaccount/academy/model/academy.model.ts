@@ -9,19 +9,104 @@ export type CourseCategory =
 
 export type CourseLevel = 'Beginner' | 'Intermediate' | 'Advanced';
 
-
 export type CourseCategoryEnum = CourseCategory;
 export type CourseLevelEnum = CourseLevel;
 
 export const MAX_INLINE_CONTENT_LENGTH = 20000;
 
 
-export const MAX_COURSE_FILE_SIZE_BYTES = 2 * 1024 * 1024; // 2MB
+
+export type CourseFileKind = 'pdf' | 'docx' | 'word' | 'audio' | 'video' | 'other';
+
+export const FILE_KIND_ACCEPT: Record<Exclude<CourseFileKind, 'other'>, string[]> = {
+  pdf: ['application/pdf'],
+  docx: [
+    'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  ],
+  audio: ['audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/mp4', 'audio/x-m4a', 'audio/aac', 'audio/ogg'],
+  video: ['video/mp4', 'video/webm', 'video/quicktime', 'video/x-matroska'],
+  word: []
+};
+
+/** Comma-separated `accept` attribute value for the upload input, per kind. */
+export const FILE_KIND_ACCEPT_ATTR: Record<Exclude<CourseFileKind, 'other'>, string> = {
+  pdf: '.pdf,application/pdf',
+  docx: '.doc,.docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  audio: '.mp3,.wav,.m4a,.aac,.ogg,audio/*',
+  video: '.mp4,.webm,.mov,.mkv,video/*',
+  word: ""
+};
+
+
+export const MAX_FILE_SIZE_BY_KIND: Record<Exclude<CourseFileKind, 'other'>, number> = {
+  pdf: 20 * 1024 * 1024, // 20MB
+  docx: 20 * 1024 * 1024, // 20MB
+  audio: 75 * 1024 * 1024, // 75MB
+  video: 500 * 1024 * 1024,
+  word: 0
+};
+
+export const MAX_FILE_SIZE_LABEL_BY_KIND: Record<Exclude<CourseFileKind, 'other'>, string> = {
+  pdf: '20MB',
+  docx: '20MB',
+  audio: '75MB',
+  video: '500MB',
+  word: ""
+};
+
+export const FILE_KIND_LABEL: Record<CourseFileKind, string> = {
+  pdf: 'PDF',
+  docx: 'Word document',
+  audio: 'Audio lesson',
+  video: 'Video lesson',
+  other: 'File',
+  word: ""
+};
+
+export const FILE_KIND_ICON: Record<CourseFileKind, string> = {
+  pdf: 'picture_as_pdf',
+  docx: 'description',
+  audio: 'audiotrack',
+  video: 'movie',
+  other: 'insert_drive_file',
+  word: ""
+};
+
+/** Detects the course-file kind from a browser File, falling back to its extension. */
+export function detectFileKind(file: File): CourseFileKind {
+  const mime = (file.type || '').toLowerCase();
+  const kinds = Object.keys(FILE_KIND_ACCEPT) as Exclude<CourseFileKind, 'other'>[];
+  for (const kind of kinds) {
+    if (FILE_KIND_ACCEPT[kind].includes(mime)) return kind;
+  }
+  const ext = file.name.split('.').pop()?.toLowerCase() || '';
+  if (ext === 'pdf') return 'pdf';
+  if (['doc', 'docx'].includes(ext)) return 'docx';
+  if (['mp3', 'wav', 'm4a', 'aac', 'ogg'].includes(ext)) return 'audio';
+  if (['mp4', 'webm', 'mov', 'mkv'].includes(ext)) return 'video';
+  return 'other';
+}
+
+/** Detects a course-file kind from a stored URL when only the URL is known. */
+export function detectFileKindFromUrl(url?: string | null): CourseFileKind {
+  if (!url) return 'other';
+  const clean = url.split('?')[0].toLowerCase();
+  const ext = clean.split('.').pop() || '';
+  if (ext === 'pdf') return 'pdf';
+  if (['doc', 'docx'].includes(ext)) return 'docx';
+  if (['mp3', 'wav', 'm4a', 'aac', 'ogg'].includes(ext)) return 'audio';
+  if (['mp4', 'webm', 'mov', 'mkv'].includes(ext)) return 'video';
+  return 'other';
+}
+
+export const MAX_COURSE_FILE_SIZE_BYTES = 2 * 1024 * 1024; // 2MB — cover photo only now
 export const MAX_COURSE_FILE_SIZE_LABEL = '2MB';
 
-/** Returns true if the file is within the allowed upload size. */
-export function isFileSizeAllowed(file: File): boolean {
-  return file.size <= MAX_COURSE_FILE_SIZE_BYTES;
+/** Returns true if the file is within the allowed upload size for its kind. */
+export function isFileSizeAllowed(file: File, kind: CourseFileKind = 'pdf'): boolean {
+  if (kind === 'other') return file.size <= MAX_COURSE_FILE_SIZE_BYTES;
+  return file.size <= MAX_FILE_SIZE_BY_KIND[kind];
 }
 
 export function formatFileSize(bytes: number): string {
@@ -30,13 +115,12 @@ export function formatFileSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
 }
 
-
 export const CATEGORY_OPTIONS: { value: CourseCategory; label: string }[] = [
   { value: 'RiskManagement', label: 'Risk Management' },
   { value: 'TechnicalAnalysis', label: 'Technical Analysis' },
   { value: 'CryptoInvestment', label: 'Crypto Investment' },
   { value: 'CryptoTrading', label: 'Crypto Trading' },
-  { value: 'BeginnerGuide', label: "Beginner's Guide"},
+  { value: 'BeginnerGuide', label: "Beginner's Guide" },
   { value: 'General', label: 'General' },
   { value: 'Others', label: 'Others' },
 ];
@@ -51,7 +135,7 @@ export interface CourseInstructor {
   id: string;
   firstName: string;
   lastName: string;
-  username: string;
+  userName: string;
   avatarUrl?: string | null;
   isVerified?: boolean;
 }
@@ -65,11 +149,22 @@ export interface Course {
   category: CourseCategory;
   level: CourseLevel;
   coverPhotoUrl?: string | null;
-  pdfUrl?: string | null;
+
+  /** Generic course-material file — can be a PDF, DOCX, audio, or video lesson. */
+  courseFileUrl?: string | null;
+  courseFileKind?: CourseFileKind | null;
+  courseFileName?: string | null;
+
   /** @deprecated renamed to coverPhotoUrl — kept for backward compatibility with older records */
   thumbnailUrl?: string | null;
-  /** @deprecated renamed to pdfUrl — kept for backward compatibility with older records */
+  /**
+   * @deprecated renamed to courseFileUrl — kept for backward compatibility.
+   * Old records only ever stored PDFs here.
+   */
+  pdfUrl?: string | null;
+  /** @deprecated renamed to courseFileUrl — kept for backward compatibility with older records */
   attachmentUrl?: string | null;
+
   tags: string[];
   isPublished: boolean;
   totalPurchases: number;
@@ -78,19 +173,22 @@ export interface Course {
   updatedAt: string;
 }
 
-
-
-
 export interface CoursePurchase {
   id: string;
   reference: string;
   amountPaid: number;
+  coursePrice: number;
   status: 'pending' | 'completed' | 'failed' | string;
   createdAt: string;
   course: Pick<Course, 'id' | 'title'> & {
-    instructor: Pick<CourseInstructor, 'username'>;
-    pdfUrl?: string | null;
-    attachmentUrl?: string | null;
+    instructor: Pick<CourseInstructor, 'userName'>;
+    courseFileUrl?: string | null;
+    courseFileKind?: CourseFileKind | null;
+    courseFileName?: any | null;
+    /** @deprecated */
+    pdfUrl?: any | null;
+    /** @deprecated */
+    attachmentUrl?: any | null;
   };
 }
 
@@ -123,11 +221,18 @@ export interface CreateCourseReqBody {
   category?: CourseCategory;
   level?: CourseLevel;
   coverPhotoUrl?: string;
-  pdfUrl?: string;
+
+  courseFileUrl?: string;
+  courseFileKind?: CourseFileKind;
+  courseFileName?: string;
+
   /** @deprecated renamed to coverPhotoUrl */
   thumbnailUrl?: string;
-  /** @deprecated renamed to pdfUrl */
+  /** @deprecated renamed to courseFileUrl */
+  pdfUrl?: string;
+  /** @deprecated renamed to courseFileUrl */
   attachmentUrl?: string;
+
   tags?: string[];
   isPublished?: boolean;
 }
@@ -140,8 +245,6 @@ export interface PurchaseCourseReqBody {
   transactionPin?: string; // omitted entirely for free courses
 }
 
-
-
 export interface RawCourseDoc {
   _id?: string;
   id?: string;
@@ -152,11 +255,18 @@ export interface RawCourseDoc {
   category?: string;
   level?: string;
   coverPhotoUrl?: string | null;
-  pdfUrl?: string | null;
+
+  courseFileUrl?: string | null;
+  courseFileKind?: string | null;
+  courseFileName?: string | null;
+
   /** @deprecated renamed to coverPhotoUrl — some existing docs may still only have this */
   thumbnailUrl?: string | null;
-  /** @deprecated renamed to pdfUrl — some existing docs may still only have this */
+  /** @deprecated renamed to courseFileUrl — some existing docs may still only have this */
+  pdfUrl?: string | null;
+  /** @deprecated renamed to courseFileUrl — some existing docs may still only have this */
   attachmentUrl?: string | null;
+
   tags?: string[];
   isPublished?: boolean;
   purchaseCount?: number;
@@ -206,11 +316,19 @@ export function normalizeCourse(raw: RawCourseDoc): Course {
     id: extractId(raw.instructor?.id ?? raw.instructorId),
     firstName: firstName || 'Unknown',
     lastName: lastName || '',
-    username:
-      raw.instructor?.username || raw.instructorUsername || (raw.instructorName || 'trader').toLowerCase().replace(/\s+/g, ''),
+    userName:
+      raw.instructor?.userName ||
+      raw.instructorUsername ||
+      (raw.instructorName || 'trader').toLowerCase().replace(/\s+/g, ''),
     avatarUrl: raw.instructor?.avatarUrl ?? raw.instructorAvatarUrl ?? null,
     isVerified: raw.instructor?.isVerified ?? raw.instructorVerified ?? false,
   };
+
+  // Resolve the generic course file, falling back through legacy fields.
+  const courseFileUrl = raw.courseFileUrl ?? raw.pdfUrl ?? raw.attachmentUrl ?? null;
+  const courseFileKind =
+    (raw.courseFileKind as CourseFileKind | undefined) ??
+    (courseFileUrl ? detectFileKindFromUrl(courseFileUrl) : null);
 
   return {
     id: extractId(raw._id ?? raw.id),
@@ -221,9 +339,15 @@ export function normalizeCourse(raw: RawCourseDoc): Course {
     category: (raw.category as CourseCategory) || 'General',
     level: (raw.level as CourseLevel) || 'Beginner',
     coverPhotoUrl: raw.coverPhotoUrl ?? raw.thumbnailUrl ?? null,
-    pdfUrl: raw.pdfUrl ?? raw.attachmentUrl ?? null,
+
+    courseFileUrl,
+    courseFileKind: courseFileKind ?? null,
+    courseFileName: raw.courseFileName ?? null,
+
     thumbnailUrl: raw.thumbnailUrl || null,
+    pdfUrl: raw.pdfUrl || null,
     attachmentUrl: raw.attachmentUrl || null,
+
     tags: Array.isArray(raw.tags) ? raw.tags : [],
     isPublished: raw.isPublished ?? true,
     totalPurchases: raw.totalPurchases ?? raw.purchaseCount ?? 0,
@@ -232,8 +356,6 @@ export function normalizeCourse(raw: RawCourseDoc): Course {
     updatedAt: extractDate(raw.updatedAt),
   };
 }
-
-
 
 // ---- Course Category ----
 
@@ -270,13 +392,14 @@ export function normalizeCourseCategory(raw: RawCourseCategoryDoc): CourseCatego
   };
 }
 
-
-
 interface RawNestedCourseRef {
   _id?: string | { $oid: string };
   id?: string | { $oid: string };
   title?: string;
   name?: string;
+  courseFileUrl?: string | null;
+  courseFileKind?: string | null;
+  courseFileName?: string | null;
   pdfUrl?: string | null;
   attachmentUrl?: string | null;
   instructor?: {
@@ -297,13 +420,13 @@ interface RawUserRef {
   lastName?: string;
 }
 
-
 export interface RawCoursePurchaseDoc {
   _id?: string | { $oid: string };
   id?: string | { $oid: string };
   reference?: string;
   transactionRef?: string;
   amountPaid?: number;
+  coursePrice?: number;
   amount?: number;
   price?: number;
   status?: string;
@@ -313,8 +436,12 @@ export interface RawCoursePurchaseDoc {
   course?: RawNestedCourseRef | string;
   courseId?: string;
   courseTitle?: string;
-  coursePdfUrl?: string;         // flattened alternate, seen when `course` isn't populated
-  courseAttachmentUrl?: string;  // flattened alternate
+  // flattened alternates, seen when `course` isn't populated
+  courseFileUrl?: string;
+  courseFileKind?: string;
+  courseFileName?: string;
+  coursePdfUrl?: string;
+  courseAttachmentUrl?: string;
 }
 
 export interface RawCourseSaleDoc {
@@ -356,39 +483,55 @@ function normalizeNestedCourseRef(
   course: RawNestedCourseRef | string | undefined,
   fallbackId?: string,
   fallbackTitle?: string,
-  fallbackPdfUrl?: string,
-  fallbackAttachmentUrl?: string,
+  fallbackFileUrl?: string,
+  fallbackFileKind?: string,
+  fallbackFileName?: string,
 ): Pick<Course, 'id' | 'title'> & {
-  instructor: Pick<CourseInstructor, 'username'>;
+  instructor: Pick<CourseInstructor, 'userName'>;
+  courseFileUrl?: string | null;
+  courseFileKind?: CourseFileKind | null;
+  courseFileName?: string | null;
   pdfUrl?: string | null;
   attachmentUrl?: string | null;
 } {
   if (!course || typeof course === 'string') {
+    const fileUrl = fallbackFileUrl ?? null;
     return {
       id: safeId(course) || fallbackId || '',
       title: fallbackTitle || 'Untitled course',
-      instructor: { username: 'trader' },
-      pdfUrl: fallbackPdfUrl ?? null,
-      attachmentUrl: fallbackAttachmentUrl ?? null,
+      instructor: { userName: 'trader' },
+      courseFileUrl: fileUrl,
+      courseFileKind: ((fallbackFileKind as CourseFileKind) || (fileUrl ? detectFileKindFromUrl(fileUrl) : null)) ?? null,
+      courseFileName: fallbackFileName ?? null,
+      pdfUrl: fileUrl,
+      attachmentUrl: fileUrl,
     };
   }
+
+  const fileUrl = course.courseFileUrl ?? course.pdfUrl ?? course.attachmentUrl ?? fallbackFileUrl ?? null;
+  const fileKind =
+    ((course.courseFileKind as CourseFileKind) || (fallbackFileKind as CourseFileKind)) ??
+    (fileUrl ? detectFileKindFromUrl(fileUrl) : null);
 
   return {
     id: safeId(course.id ?? course._id) || fallbackId || '',
     title: course.title || course.name || fallbackTitle || 'Untitled course',
     instructor: {
-      username: course.instructor?.username || course.instructorUsername || 'trader',
+      userName: course.instructor?.username || course.instructorUsername || 'trader',
     },
-    pdfUrl: course.pdfUrl ?? fallbackPdfUrl ?? null,
-    attachmentUrl: course.attachmentUrl ?? fallbackAttachmentUrl ?? null,
+    courseFileUrl: fileUrl,
+    courseFileKind: fileKind ?? null,
+    courseFileName: course.courseFileName ?? fallbackFileName ?? null,
+    pdfUrl: course.pdfUrl ?? fileUrl,
+    attachmentUrl: course.attachmentUrl ?? fileUrl,
   };
 }
-
 
 export function normalizeCoursePurchase(raw: RawCoursePurchaseDoc): CoursePurchase {
   return {
     id: safeId(raw.id ?? raw._id),
     reference: raw.reference || raw.transactionRef || '—',
+    coursePrice: raw.coursePrice ?? 0,
     amountPaid: raw.amountPaid ?? raw.amount ?? raw.price ?? 0,
     status: (raw.status || raw.paymentStatus || 'pending') as CoursePurchase['status'],
     createdAt: safeDate(raw.createdAt),
@@ -396,8 +539,9 @@ export function normalizeCoursePurchase(raw: RawCoursePurchaseDoc): CoursePurcha
       raw.course,
       raw.courseId,
       raw.courseTitle,
-      raw.coursePdfUrl,
-      raw.courseAttachmentUrl,
+      raw.courseFileUrl ?? raw.coursePdfUrl ?? raw.courseAttachmentUrl,
+      raw.courseFileKind,
+      raw.courseFileName,
     ),
   };
 }
@@ -405,22 +549,53 @@ export function normalizeCoursePurchase(raw: RawCoursePurchaseDoc): CoursePurcha
 export function normalizeCourseSale(raw: RawCourseSaleDoc): CourseSale {
   const buyerRaw = raw.buyer;
   const buyerUsername =
-    (buyerRaw && typeof buyerRaw === 'object' ? buyerRaw.username : undefined) ||
-    raw.buyerUsername ||
-    'trader';
+    (buyerRaw && typeof buyerRaw === 'object' ? buyerRaw.username : undefined) || raw.buyerUsername || 'trader';
+
+  const nested = normalizeNestedCourseRef(raw.course, raw.courseId, raw.courseTitle);
 
   return {
     id: safeId(raw.id ?? raw._id),
     reference: raw.reference || raw.transactionRef || '—',
     amountEarned: raw.amountEarned ?? raw.amount ?? 0,
-    studentName: raw.studentName ?? "NA",
+    studentName: raw.studentName ?? 'NA',
     instructorEarning: raw.instructorEarning ?? raw.amount ?? 0,
     status: (raw.status || raw.paymentStatus || 'pending') as CourseSale['status'],
     createdAt: safeDate(raw.createdAt),
     course: {
-      id: normalizeNestedCourseRef(raw.course, raw.courseId, raw.courseTitle).id,
-      title: normalizeNestedCourseRef(raw.course, raw.courseId, raw.courseTitle).title,
+      id: nested.id,
+      title: nested.title,
     },
     buyer: { username: buyerUsername },
+  };
+}
+
+// =============================================================================
+// SOCIAL SHARING — used once a course is purchased so a learner can post about
+// it professionally (LinkedIn, X/Twitter, WhatsApp, Facebook, email, or copy).
+// =============================================================================
+
+export interface CourseShareLinks {
+  linkedin: string;
+  twitter: string;
+  whatsapp: string;
+  facebook: string;
+  email: string;
+}
+
+/** Friendly, professional caption for sharing a course a learner has enrolled in. */
+export function buildCourseShareText(courseTitle: string, instructorUsername?: string): string {
+  const byLine = instructorUsername ? ` by @${instructorUsername}` : '';
+  return `I just enrolled in "${courseTitle}"${byLine} on trizbot Academy 📈`;
+}
+
+export function buildCourseShareLinks(url: string, text: string): CourseShareLinks {
+  const encodedUrl = encodeURIComponent(url);
+  const encodedText = encodeURIComponent(text);
+  return {
+    linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}`,
+    twitter: `https://twitter.com/intent/tweet?text=${encodedText}&url=${encodedUrl}`,
+    whatsapp: `https://wa.me/?text=${encodedText}%20${encodedUrl}`,
+    facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`,
+    email: `mailto:?subject=${encodeURIComponent('Check out this course')}&body=${encodedText}%20${encodedUrl}`,
   };
 }

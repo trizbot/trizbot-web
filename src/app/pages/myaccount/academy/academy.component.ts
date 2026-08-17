@@ -16,11 +16,17 @@ import { TraderService } from '../../../../app/appstate/trader.service';
 import { GetTraderResBody } from '../../../../app/services/auth.type';
 
 import {
+  buildCourseShareLinks,
+  buildCourseShareText,
   CATEGORY_OPTIONS,
   Course,
   CourseCategoryItem,
   CoursePurchase,
+  CourseFileKind,
   CourseSale,
+  CourseShareLinks,
+  FILE_KIND_ICON,
+  FILE_KIND_LABEL,
   LEVEL_OPTIONS,
 } from './model/academy.model';
 import { CourseDetailDialogComponent, CourseDetailDialogResult } from './course-detail-dialog/course-detail-dialog.component';
@@ -175,6 +181,16 @@ export class AcademyComponent implements OnInit, OnDestroy {
     return this.levelOptions.find((l) => l.value === value)?.label || '';
   }
 
+  /** Human label for a course-material kind (PDF, Word document, Audio lesson, Video lesson). */
+  fileKindLabel(kind?: CourseFileKind | null): string {
+    return FILE_KIND_LABEL[kind || 'other'];
+  }
+
+  /** Material icon name for a course-material kind. */
+  fileKindIcon(kind?: CourseFileKind | null): string {
+    return FILE_KIND_ICON[kind || 'other'];
+  }
+
   initials(course: Course): string {
     const f = course.instructor.firstName?.charAt(0) || '';
     const l = course.instructor.lastName?.charAt(0) || '';
@@ -243,6 +259,8 @@ export class AcademyComponent implements OnInit, OnDestroy {
       width: '560px',
       maxWidth: '95vw',
       data: { existing },
+      autoFocus: false,
+      panelClass: 'academy-dialog-panel',
     });
 
     ref.afterClosed().subscribe((saved) => {
@@ -293,20 +311,18 @@ export class AcademyComponent implements OnInit, OnDestroy {
     });
   }
 
-  /**
-   * Downloads the purchased course's file. Always prefers `pdfUrl` over
-   * `attachmentUrl` (pdfUrl is the actual uploaded/hosted course file;
-   * attachmentUrl is a legacy/external link). If the purchase record
-   * itself doesn't carry a file url, falls back to fetching the full
-   * course by id before giving up.
-   */
+  /** Resolves the best-known file URL for a purchase, across current + legacy fields. */
+  private purchaseFileUrl(purchase: CoursePurchase): string | undefined {
+    return purchase.course?.courseFileUrl || purchase.course?.pdfUrl || purchase.course?.attachmentUrl || undefined;
+  }
+
   downloadPurchase(purchase: CoursePurchase): void {
     if (this.downloadingPurchaseId) return;
 
-    const directUrl = purchase.course?.pdfUrl || purchase.course?.attachmentUrl;
+    const directUrl = this.purchaseFileUrl(purchase);
     if (directUrl) {
       this.downloadingPurchaseId = purchase.id;
-      this.fetchAndDownload(directUrl, purchase.course.title).finally(() => {
+      this.fetchAndDownload(directUrl, purchase.course.title, purchase.course.courseFileName).finally(() => {
         this.downloadingPurchaseId = null;
       });
       return;
@@ -317,18 +333,19 @@ export class AcademyComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // pdfUrl/attachmentUrl weren't populated on the purchase record itself —
-    // look the course up directly so we don't fail on a stale/partial record.
+ 
     this.downloadingPurchaseId = purchase.id;
     this.academyService.getCourseById(purchase.course.id).subscribe({
       next: (course) => {
-        const fileUrl = course.pdfUrl || course.attachmentUrl;
+       
+        const fileUrl = course.courseFileUrl || course.pdfUrl || course.attachmentUrl;
+
         if (!fileUrl) {
           this.downloadingPurchaseId = null;
           this.sharedService.showToast({ title: 'No downloadable file is attached to this course.' });
           return;
         }
-        this.fetchAndDownload(fileUrl, course.title).finally(() => {
+        this.fetchAndDownload(fileUrl, course.title, course.courseFileName || undefined).finally(() => {
           this.downloadingPurchaseId = null;
         });
       },
@@ -340,33 +357,23 @@ export class AcademyComponent implements OnInit, OnDestroy {
   }
 
   downloadCourseFile(course: Course): void {
-    const url = course.pdfUrl || course.attachmentUrl;
+    const url = course.courseFileUrl || course.pdfUrl || course.attachmentUrl;
+
+
     if (!url) {
       this.sharedService.showToast({ title: 'No downloadable file is attached to this course.' });
       return;
     }
-    this.fetchAndDownload(url, course.title);
+    this.fetchAndDownload(url, course.title, course.courseFileName || undefined);
   }
 
-  /**
-   * Forces an actual file download rather than a browser navigation.
-   *
-   * Why not just `<a href download>`: the `download` attribute is silently
-   * ignored by browsers for cross-origin URLs (Cloudinary/S3/etc. are always
-   * cross-origin from our app's domain), so that approach just opens the PDF
-   * in a new tab instead of downloading it — no error, just wrong behavior.
-   *
-   * Instead we fetch the file as a Blob and download it via an object URL,
-   * which works regardless of origin as long as the host allows the request
-   * (CORS). If the fetch itself fails (network error, CORS block, 404), we
-   * fall back to opening the raw URL in a new tab and tell the user, rather
-   * than failing silently.
-   */
-  private async fetchAndDownload(url: string, title: string): Promise<void> {
+
+  private async fetchAndDownload(url: string, title: string, explicitFileName?: string): Promise<void> {
     if (!url) {
       this.sharedService.showToast({ title: 'No downloadable file is attached to this course.' });
       return;
     }
+
 
     try {
       const response = await fetch(url, { mode: 'cors' });
@@ -379,7 +386,7 @@ export class AcademyComponent implements OnInit, OnDestroy {
 
       const link = document.createElement('a');
       link.href = objectUrl;
-      link.download = this.buildDownloadFilename(title, url, blob.type);
+      link.download = explicitFileName || this.buildDownloadFilename(title, url, blob.type);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -425,6 +432,52 @@ export class AcademyComponent implements OnInit, OnDestroy {
         this.salesError = true;
       },
     });
+  }
+
+  // ---------------------------------------------------------------------
+  // Social sharing (purchased courses)
+  // ---------------------------------------------------------------------
+
+  /**
+   * Public, shareable URL for a purchased course. Adjust the path below if
+   * the app's course-detail route differs from `/academy/courses/:id`.
+   */
+  private buildCourseUrl(courseId: string): any {
+    return ;
+    // return `${window.location.origin}/academy/courses/${courseId}`;
+  }
+
+  /** Builds the platform share links + caption for a purchased course. */
+  getShareLinks(purchase: CoursePurchase): CourseShareLinks {
+    const url = this.buildCourseUrl(purchase.course.pdfUrl)||this.buildCourseUrl(purchase.course.attachmentUrl);
+    const text = buildCourseShareText(purchase.course.title, purchase.course.instructor?.userName);
+    return buildCourseShareLinks(url, text);
+  }
+
+  /** Opens the chosen platform's share intent in a new tab. */
+  shareToPlatform(purchase: CoursePurchase, platform: keyof CourseShareLinks): void {
+    const links = this.getShareLinks(purchase);
+    if (platform === 'email') {
+      window.location.href = links.email;
+      return;
+    }
+    window.open(links[platform], '_blank', 'noopener,width=600,height=600');
+  }
+
+  /** Copies a ready-to-post caption + link to the clipboard. */
+  copyShareLink(purchase: CoursePurchase): void {
+    const url = this.buildCourseUrl(purchase.course.id);
+    const text = buildCourseShareText(purchase.course.title, purchase.course.instructor?.userName);
+    const payload = `${text} ${url}`;
+
+    if (navigator.clipboard?.writeText) {
+      navigator.clipboard
+        .writeText(payload)
+        .then(() => this.sharedService.showToast({ title: 'Share link copied to clipboard.' }))
+        .catch(() => this.sharedService.showToast({ title: 'Could not copy the link.' }));
+    } else {
+      this.sharedService.showToast({ title: 'Clipboard is not available on this browser.' });
+    }
   }
 
   // ---------------------------------------------------------------------

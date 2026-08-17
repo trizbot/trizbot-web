@@ -13,6 +13,7 @@ import {
   Course,
   CourseCategory,
   CourseCategoryItem,
+  CourseFileKind,
   CourseLevel,
   CreateCourseReqBody,
   LEVEL_OPTIONS,
@@ -21,15 +22,55 @@ import {
   UpdateCourseReqBody,
 } from '../model/academy.model';
 
-// Both uploads now share the same 2MB cap (was 1MB for cover photo, 10MB for PDF).
+/**
+ * NOTE: MAX_COURSE_FILE_SIZE_BYTES / MAX_COURSE_FILE_SIZE_LABEL from
+ * academy.model.ts are now used ONLY for the cover photo (2MB).
+ * Course material (pdf/docx/audio/video) uses the per-kind limits below
+ * because a 2MB cap is unusable for audio/video lessons.
+ *
+ * These constants should really live in academy.model.ts alongside
+ * MAX_COURSE_FILE_SIZE_BYTES so the backend/service layer can enforce the
+ * same limits — see NOTES.md.
+ */
+const COVER_PHOTO_MAX_BYTES = MAX_COURSE_FILE_SIZE_BYTES; // 2MB, unchanged
+const COVER_PHOTO_MAX_LABEL = MAX_COURSE_FILE_SIZE_LABEL;
+
+const MATERIAL_LIMITS: Record<'document' | 'audio' | 'video', { bytes: number; label: string }> = {
+  document: { bytes: 20 * 1024 * 1024, label: '20MB' }, // pdf / docx / doc
+  audio: { bytes: 50 * 1024 * 1024, label: '50MB' },
+  video: { bytes: 500 * 1024 * 1024, label: '500MB' },
+};
+
 const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
-const ACCEPTED_PDF_TYPE = 'application/pdf';
+
+// Maps every accepted MIME type to a CourseFileKind + which limit bucket applies.
+// NOTE: 'kind' values here must match AcademyService.resourceTypeForKind's cases
+// ('pdf' | 'docx' | 'audio' | 'video' | 'other') — using 'word' there would
+// silently fall through to the 'raw' default, so we normalize to 'docx' here.
+const MATERIAL_TYPE_MAP: Record<string, { kind: CourseFileKind; bucket: keyof typeof MATERIAL_LIMITS }> = {
+  'application/pdf': { kind: 'pdf', bucket: 'document' },
+  'application/msword': { kind: 'docx', bucket: 'document' },
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document': { kind: 'docx', bucket: 'document' },
+  'audio/mpeg': { kind: 'audio', bucket: 'audio' },
+  'audio/mp3': { kind: 'audio', bucket: 'audio' },
+  'audio/wav': { kind: 'audio', bucket: 'audio' },
+  'audio/x-wav': { kind: 'audio', bucket: 'audio' },
+  'audio/mp4': { kind: 'audio', bucket: 'audio' },
+  'audio/m4a': { kind: 'audio', bucket: 'audio' },
+  'audio/ogg': { kind: 'audio', bucket: 'audio' },
+  'video/mp4': { kind: 'video', bucket: 'video' },
+  'video/webm': { kind: 'video', bucket: 'video' },
+  'video/quicktime': { kind: 'video', bucket: 'video' },
+  'video/x-matroska': { kind: 'video', bucket: 'video' },
+};
+
+const MATERIAL_ACCEPT_STRING = Object.keys(MATERIAL_TYPE_MAP).join(',');
 
 export interface CreateCourseDialogData {
   existing?: Course;
 }
 
-type UploadSlot = 'coverPhoto' | 'pdf';
+type UploadSlot = 'coverPhoto' | 'material';
 
 @Component({
   selector: 'app-create-course-dialog',
@@ -41,13 +82,15 @@ type UploadSlot = 'coverPhoto' | 'pdf';
 export class CreateCourseDialogComponent implements OnInit, OnDestroy {
   readonly levelOptions = LEVEL_OPTIONS;
   readonly maxContentLength = 20000;
-  readonly maxFileSizeLabel = MAX_COURSE_FILE_SIZE_LABEL;
+  readonly coverPhotoMaxLabel = COVER_PHOTO_MAX_LABEL;
+  readonly materialAcceptString = MATERIAL_ACCEPT_STRING;
 
-  // Categories are now loaded from the backend instead of a static list.
+  // Categories are loaded from the backend.
   categories: CourseCategoryItem[] = [];
   categoriesLoading = false;
 
   loading = false;
+  uploadingLabel = '';
   errorMessage = '';
 
   // ---- Cover photo ----
@@ -55,10 +98,12 @@ export class CreateCourseDialogComponent implements OnInit, OnDestroy {
   coverPhotoPreviewUrl: string | null = null;
   existingCoverPhotoUrl: string | null = null;
 
-  // ---- PDF ----
-  pdfFile: File | null = null;
-  pdfFileName: string | null = null;
-  existingPdfUrl: string | null = null;
+  // ---- Course material (pdf / docx / audio / video) — this is the "major" file ----
+  materialFile: File | null = null;
+  materialFileName: string | null = null;
+  materialFileKind: CourseFileKind | null = null;
+  existingMaterialUrl: string | null = null;
+  existingMaterialKind: CourseFileKind | null = null;
 
   form = new FormGroup({
     title: new FormControl<string>('', { nonNullable: true, validators: [Validators.required] }),
@@ -90,12 +135,34 @@ export class CreateCourseDialogComponent implements OnInit, OnDestroy {
     return this.coverPhotoPreviewUrl || this.existingCoverPhotoUrl;
   }
 
-  get hasPdf(): boolean {
-    return !!this.pdfFile || !!this.existingPdfUrl;
+  get hasMaterial(): boolean {
+    return !!this.materialFile || !!this.existingMaterialUrl;
   }
 
-  get pdfDisplayName(): string | null {
-    return this.pdfFileName || (this.existingPdfUrl ? this.existingPdfUrl.split('/').pop() || 'Current PDF' : null);
+  get materialDisplayName(): string | null {
+    return this.materialFileName || (this.existingMaterialUrl ? this.existingMaterialUrl.split('/').pop() || 'Current file' : null);
+  }
+
+  get materialDisplayKind(): CourseFileKind | null {
+    return this.materialFileKind || this.existingMaterialKind;
+  }
+
+  get materialIcon(): string {
+    switch (this.materialDisplayKind) {
+      case 'video':
+        return 'movie';
+      case 'audio':
+        return 'audiotrack';
+      case 'docx':
+        return 'description';
+      case 'pdf':
+      default:
+        return 'picture_as_pdf';
+    }
+  }
+
+  get materialAcceptHint(): string {
+    return 'PDF, DOC/DOCX, MP3/WAV/M4A, or MP4/MOV/WebM';
   }
 
   constructor(
@@ -118,9 +185,14 @@ export class CreateCourseDialogComponent implements OnInit, OnDestroy {
         content: c.content || '',
       });
       this.existingCoverPhotoUrl = c.coverPhotoUrl || null;
-      this.existingPdfUrl = c.pdfUrl || null;
+      // pdfUrl is the legacy/major-file field; courseFileUrl is current.
+      // Prefer courseFileUrl but fall back to pdfUrl for older records.
+      const existingUrl = c.courseFileUrl || c.pdfUrl || null;
+      if (existingUrl) {
+        this.existingMaterialUrl = existingUrl;
+        this.existingMaterialKind = c.courseFileKind || (c.pdfUrl ? 'pdf' : 'other');
+      }
     }
-
     this.loadCategories();
   }
 
@@ -150,9 +222,19 @@ export class CreateCourseDialogComponent implements OnInit, OnDestroy {
 
   // ---------- Cover photo ----------
   onSelectCoverPhoto(event: any): void {
-    const file = this.validateFile(event, 'coverPhoto');
+    const file = this.extractFile(event);
     if (!file) return;
 
+    if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
+      this.errorMessage = 'Cover photo: only JPG, PNG, or WEBP images are allowed.';
+      return;
+    }
+    if (file.size > COVER_PHOTO_MAX_BYTES) {
+      this.errorMessage = `Cover photo: file is too large (max ${COVER_PHOTO_MAX_LABEL}).`;
+      return;
+    }
+
+    this.errorMessage = '';
     this.revokeCoverPhotoPreview();
     this.coverPhotoFile = file;
     this.coverPhotoPreviewUrl = URL.createObjectURL(file);
@@ -166,57 +248,49 @@ export class CreateCourseDialogComponent implements OnInit, OnDestroy {
     this.existingCoverPhotoUrl = null;
   }
 
-  // ---------- PDF ----------
-  onSelectPdf(event: any): void {
-    const file = this.validateFile(event, 'pdf');
+  // ---------- Course material (pdf / docx / audio / video) — THE major file ----------
+  onSelectMaterial(event: any): void {
+    const file = this.extractFile(event);
     if (!file) return;
 
-    this.pdfFile = file;
-    this.pdfFileName = file.name;
-    this.existingPdfUrl = null;
+    const match = MATERIAL_TYPE_MAP[file.type];
+    if (!match) {
+      this.errorMessage = 'Course material: only PDF, DOC/DOCX, audio (MP3/WAV/M4A), or video (MP4/MOV/WebM) files are allowed.';
+      return;
+    }
+
+    const limit = MATERIAL_LIMITS[match.bucket];
+    if (file.size > limit.bytes) {
+      this.errorMessage = `Course material: file is too large (max ${limit.label} for ${match.kind} files).`;
+      return;
+    }
+
+    this.errorMessage = '';
+    this.materialFile = file;
+    this.materialFileName = file.name;
+    this.materialFileKind = match.kind;
+    this.existingMaterialUrl = null;
+    this.existingMaterialKind = null;
   }
 
-  onRemovePdf(): void {
-    this.pdfFile = null;
-    this.pdfFileName = null;
-    this.existingPdfUrl = null;
+  onRemoveMaterial(): void {
+    this.materialFile = null;
+    this.materialFileName = null;
+    this.materialFileKind = null;
+    this.existingMaterialUrl = null;
+    this.existingMaterialKind = null;
   }
 
-  // ---------- Shared validation ----------
-  // Both slots now enforce the same MAX_COURSE_FILE_SIZE_BYTES (2MB) cap,
-  // sourced from academy.model.ts so it stays in sync with the service-level
-  // check in AcademyService.uploadImage / uploadRawFile.
-  private validateFile(event: any, slot: UploadSlot): File | null {
+  private extractFile(event: any): File | null {
     const addedFiles: File[] = event?.addedFiles ?? [];
     if (!addedFiles.length) return null;
 
     const file = addedFiles[addedFiles.length - 1];
     if (!(file instanceof File)) {
-      this.errorMessage = `${this.slotLabel(slot)}: could not read the selected file.`;
+      this.errorMessage = 'Could not read the selected file.';
       return null;
     }
-
-    if (slot === 'coverPhoto' && !ACCEPTED_IMAGE_TYPES.includes(file.type)) {
-      this.errorMessage = 'Cover photo: only JPG, PNG, or WEBP images are allowed.';
-      return null;
-    }
-
-    if (slot === 'pdf' && file.type !== ACCEPTED_PDF_TYPE) {
-      this.errorMessage = 'Course PDF: only PDF files are allowed.';
-      return null;
-    }
-
-    if (file.size > MAX_COURSE_FILE_SIZE_BYTES) {
-      this.errorMessage = `${this.slotLabel(slot)}: file is too large (max ${MAX_COURSE_FILE_SIZE_LABEL}).`;
-      return null;
-    }
-
-    this.errorMessage = '';
     return file;
-  }
-
-  private slotLabel(slot: UploadSlot): string {
-    return slot === 'coverPhoto' ? 'Cover photo' : 'Course PDF';
   }
 
   private uploadCoverPhoto(file: File) {
@@ -224,16 +298,22 @@ export class CreateCourseDialogComponent implements OnInit, OnDestroy {
     formData.append('file', file);
     formData.append('upload_preset', 'trizbot');
     formData.append('folder', 'academy/covers');
-    // Pass the raw File through so the service can re-check size server-side too.
     return this.academyService.uploadImage(formData, file);
   }
 
-  private uploadPdf(file: File) {
+  /**
+   * FIX: previously called uploadRawFile(), which is a deprecated wrapper
+   * that always uploads with kind='pdf' regardless of what was actually
+   * selected — meaning audio/video/docx files were routed to Cloudinary's
+   * `raw/upload` endpoint instead of `video/upload`, producing broken or
+   * unplayable uploads. uploadCourseFile() routes by the real kind.
+   */
+  private uploadMaterial(file: File, kind: CourseFileKind) {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('upload_preset', 'trizbot');
-    formData.append('folder', 'academy/pdfs');
-    return this.academyService.uploadRawFile(formData, file);
+    formData.append('folder', `academy/materials/${kind}`);
+    return this.academyService.uploadCourseFile(formData, file, kind);
   }
 
   close(): void {
@@ -249,26 +329,38 @@ export class CreateCourseDialogComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // Defensive re-check right before submit, in case a file was selected
-    // via a path that bypassed the dropzone's change handler.
-    if (this.coverPhotoFile && this.coverPhotoFile.size > MAX_COURSE_FILE_SIZE_BYTES) {
-      this.errorMessage = `Cover photo: file is too large (max ${MAX_COURSE_FILE_SIZE_LABEL}).`;
+    // Defensive re-check right before submit.
+    if (this.coverPhotoFile && this.coverPhotoFile.size > COVER_PHOTO_MAX_BYTES) {
+      this.errorMessage = `Cover photo: file is too large (max ${COVER_PHOTO_MAX_LABEL}).`;
       return;
     }
-    if (this.pdfFile && this.pdfFile.size > MAX_COURSE_FILE_SIZE_BYTES) {
-      this.errorMessage = `Course PDF: file is too large (max ${MAX_COURSE_FILE_SIZE_LABEL}).`;
-      return;
+    if (this.materialFile && this.materialFileKind) {
+      const bucket = MATERIAL_TYPE_MAP[this.materialFile.type]?.bucket;
+      const limit = bucket ? MATERIAL_LIMITS[bucket] : null;
+      if (limit && this.materialFile.size > limit.bytes) {
+        this.errorMessage = `Course material: file is too large (max ${limit.label}).`;
+        return;
+      }
     }
 
     this.loading = true;
+    this.uploadingLabel = this.materialFileKind === 'video' ? 'Uploading video — this can take a while...' : 'Saving...';
     const raw = this.form.getRawValue();
 
     const coverPhoto$ = this.coverPhotoFile ? this.uploadCoverPhoto(this.coverPhotoFile) : of(null);
-    const pdf$ = this.pdfFile ? this.uploadPdf(this.pdfFile) : of(null);
+    const material$ =
+      this.materialFile && this.materialFileKind ? this.uploadMaterial(this.materialFile, this.materialFileKind) : of(null);
 
-    forkJoin({ coverPhoto: coverPhoto$, pdf: pdf$ })
+    forkJoin({ coverPhoto: coverPhoto$, material: material$ })
       .pipe(
-        switchMap(({ coverPhoto, pdf }) => {
+        switchMap(({ coverPhoto, material }) => {
+          // The uploaded/kept course material is the "major" file for this
+          // course. It's written to courseFileUrl (current field) AND
+          // mirrored onto pdfUrl (legacy/fallback field), since downstream
+          // consumers (downloadPurchase, downloadCourseFile, share links)
+          // read pdfUrl as a fallback when courseFileUrl is absent.
+          const materialUrl = material ? material.secure_url : this.existingMaterialUrl || undefined;
+
           const payload: CreateCourseReqBody | UpdateCourseReqBody = {
             title: raw.title.trim(),
             description: raw.description?.trim() || undefined,
@@ -277,7 +369,10 @@ export class CreateCourseDialogComponent implements OnInit, OnDestroy {
             level: (raw.level as CourseLevel) || undefined,
             price: raw.price,
             coverPhotoUrl: coverPhoto ? coverPhoto.secure_url : this.existingCoverPhotoUrl || undefined,
-            pdfUrl: pdf ? pdf.secure_url : this.existingPdfUrl || undefined,
+            courseFileUrl: materialUrl,
+            pdfUrl: materialUrl,
+            courseFileKind: material ? this.materialFileKind || undefined : this.existingMaterialKind || undefined,
+            courseFileName: this.materialFile ? this.materialFile.name : undefined,
             tags: raw.tags
               ? raw.tags
                   .split(',')
