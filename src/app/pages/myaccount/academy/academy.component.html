@@ -17,7 +17,7 @@
       (click)="openCreateCourseDialog()"
     >
       <mat-icon>add</mat-icon>
-      Publish course
+      Create course
     </button>
   </header>
 
@@ -178,7 +178,7 @@
             type="button"
             (click)="openPurchaseDialog(course)"
           >
-            {{ course.price ? 'Purchase Course' : 'Enroll for free' }}
+            {{ course.price ? 'Purchase' : 'Enroll for free' }}
           </button>
         </div>
       </article>
@@ -194,10 +194,10 @@
         <h2 class="academy-panel__title">Courses</h2>
         <p class="academy-panel__subtitle">Courses you've published for sale.</p>
       </div>
-      <button mat-flat-button color="primary" class="fw-bold" type="button" (click)="openCreateCourseDialog()">
+      <!-- <button mat-flat-button color="primary" class="fw-bold" type="button" (click)="openCreateCourseDialog()">
         <mat-icon>add</mat-icon>
-        Publish course
-      </button>
+        Create course
+      </button> -->
     </header>
 
     <div class="academy-loading" *ngIf="myCoursesLoading">
@@ -219,7 +219,7 @@
         <p class="academy-state__title">You haven't published any courses yet</p>
         <p class="academy-state__body">Share what you know and start earning from your trading edge.</p>
       </div>
-      <button mat-stroked-button color="primary" type="button" (click)="openCreateCourseDialog()">Publish your first course</button>
+      <button mat-stroked-button color="primary" type="button" (click)="openCreateCourseDialog()">Create your first course</button>
     </div>
 
     <div class="academy-table-wrap" *ngIf="!myCoursesLoading && !myCoursesError && myCourses.length > 0">

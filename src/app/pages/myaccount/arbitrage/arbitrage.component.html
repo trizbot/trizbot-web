@@ -69,58 +69,60 @@
       No arbitrage opportunities found for {{ activeConfig.label }} right now.
     </div>
 
-    <table class="opp-table" *ngIf="!loading && visibleOpportunities.length > 0">
-      <thead>
-        <tr>
-          <th>Token</th>
-          <th>{{ activeConfig.label }}</th>
-          <th>Counterparty</th>
-          <th>Spread</th>
-          <th>Est. Profit</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let o of pagedOpportunities; trackBy: trackByOpportunity">
-          <td class="token-cell">{{ o.token }}</td>
+    <div class="table-scroll" *ngIf="!loading && visibleOpportunities.length > 0">
+      <table class="opp-table">
+        <thead>
+          <tr>
+            <th>Token</th>
+            <th>{{ activeConfig.label }}</th>
+            <th>Counterparty</th>
+            <th>Spread</th>
+            <th>Est. Profit</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let o of pagedOpportunities; trackBy: trackByOpportunity">
+            <td class="token-cell" data-label="Token">{{ o.token }}</td>
 
-          <td>
-            <span class="leg-badge" [ngClass]="isActiveBuyLeg(o) ? 'buy' : 'sell'">
-              {{ isActiveBuyLeg(o) ? 'BUY' : 'SELL' }}
-            </span>
-            <span class="price-val">&#36;{{ activePriceFor(o) | number: '1.2-6' }}</span>
-          </td>
+            <td [attr.data-label]="activeConfig.label">
+              <span class="leg-badge" [ngClass]="isActiveBuyLeg(o) ? 'buy' : 'sell'">
+                {{ isActiveBuyLeg(o) ? 'BUY' : 'SELL' }}
+              </span>
+              <span class="price-val">&#36;{{ activePriceFor(o) | number: '1.2-6' }}</span>
+            </td>
 
-          <td>
-            <div class="counterparty-cell">
-              <span class="counterparty-name">{{ counterpartyLabel(o) }}</span>
-              <span class="price-val muted">&#36;{{ counterpartyPriceFor(o) | number: '1.2-6' }}</span>
-            </div>
-          </td>
+            <td data-label="Counterparty">
+              <div class="counterparty-cell">
+                <span class="counterparty-name">{{ counterpartyLabel(o) }}</span>
+                <span class="price-val muted">&#36;{{ counterpartyPriceFor(o) | number: '1.2-6' }}</span>
+              </div>
+            </td>
 
-          <td>
-            <span class="spread-pill" [ngClass]="spreadTier(o.spreadPercent)">
-              {{ o.spreadPercent | number: '1.2-2' }}%
-            </span>
-          </td>
+            <td data-label="Spread">
+              <span class="spread-pill" [ngClass]="spreadTier(o.spreadPercent)">
+                {{ o.spreadPercent | number: '1.2-2' }}%
+              </span>
+            </td>
 
-          <td class="profit-cell">&#36;{{ o.estimatedProfit | number: '1.2-2' }}</td>
+            <td class="profit-cell" data-label="Est. Profit">&#36;{{ o.estimatedProfit | number: '1.2-2' }}</td>
 
-          <td class="action-cell">
-            <button
-              mat-flat-button
-              type="button"
-              class="fw-bold trade-btn"
-              [style.background]="activeConfig.colorPrimary"
-              [style.color]="activeConfig.textOnPrimary"
-              (click)="openTradeDialog(o)"
-            >
-              Trade
-            </button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+            <td class="action-cell">
+              <button
+                mat-flat-button
+                type="button"
+                class="fw-bold trade-btn"
+                [style.background]="activeConfig.colorPrimary"
+                [style.color]="activeConfig.textOnPrimary"
+                (click)="openTradeDialog(o)"
+              >
+                Trade
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
 
     <!-- Bottom navigation / pagination -->
     <div class="pagination-bar" *ngIf="!loading && visibleOpportunities.length > 0">

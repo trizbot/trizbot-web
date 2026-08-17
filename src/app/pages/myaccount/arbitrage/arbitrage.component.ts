@@ -21,6 +21,7 @@ import {
 const AUTO_REFRESH_SECONDS = 20;
 const PAGE_SIZE_OPTIONS = [5,10,15, 25,20,30,35,40, 50] as const;
 
+
 @Component({
   selector: 'app-arbitrage',
   standalone: true,
