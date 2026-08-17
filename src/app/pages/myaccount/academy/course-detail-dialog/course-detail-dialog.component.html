@@ -29,7 +29,7 @@
           {{ course.instructor.firstName }} {{ course.instructor.lastName }}
           <mat-icon class="verified-badge" *ngIf="course.instructor.isVerified" matTooltip="Verified trader">verified</mat-icon>
         </span>
-        <span class="detail-dialog__instructor-handle">&#64;{{ course.instructor.username || 'trader' }}</span>
+        <span class="detail-dialog__instructor-handle">&#64;{{ course.instructor.userName || 'trader' }}</span>
       </div>
     </div>
 
