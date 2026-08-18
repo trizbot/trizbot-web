@@ -21,16 +21,7 @@ const MIN_LIGHTBOX_ZOOM = 1;
 const MAX_LIGHTBOX_ZOOM = 4;
 const LIGHTBOX_ZOOM_STEP = 0.25;
 
-/**
- * Deterministic fallback palette for category accent colors.
- *
- * Categories are now fully API-driven (see `categories`, loaded from
- * FeedService.getFeedCategory()) — there is no more static color/label map
- * keyed off a fixed enum. Each category *name* is hashed to a stable index
- * into this palette, so the same category name always renders with the same
- * accent color without the UI needing to know category names in advance.
- * This is purely presentational — it never affects filtering or matching.
- */
+
 const CATEGORY_COLOR_PALETTE = [
   '#5B8DEF', '#F5A623', '#8E7CFF', '#EA3943', '#16C784',
   '#EF7BD8', '#2DD4BF', '#F97316', '#A855F7', '#22C55E',
@@ -48,20 +39,7 @@ export class FeedComponent implements OnInit, OnDestroy {
   private traderService = inject(TraderService);
   private destroy$ = new Subject<void>();
 
-  /**
-   * SINGLE SOURCE OF TRUTH for write access (create / update / delete,
-   * including feed-category management). Resolved server-side via
-   * TraderService.getTrader() — never derived from localStorage or anything
-   * else the client can tamper with. Every create/edit/delete/manage entry
-   * point in this component (and the child dialog) checks this flag.
-   * Regular (non-super-admin) users are strictly read-only: they can browse
-   * "Feed" but never see or reach "Manage" / "Categories" or any mutating
-   * action.
-   *
-   * NOTE: this only hides/blocks actions in the UI. The backend must also
-   * reject create/update/delete requests from non-super-admins —
-   * client-side gating is a UX convenience, not a security boundary.
-   */
+ 
   isSuperAdmin = false;
 
   activeTab: FeedTab = 'feed';
@@ -86,12 +64,7 @@ export class FeedComponent implements OnInit, OnDestroy {
   manageLoading = false;
   deletingId: string | null = null;
 
-  // ── Feed Categories ─────────────────────────────────────────
-  // `categories` is loaded once from the API for EVERY visitor — it powers
-  // both the public category filter nav on the "Feed" tab and (for
-  // super-admins only) the CRUD list on the "Categories" tab. There is no
-  // static fallback list anymore; if the API returns nothing, the nav only
-  // shows "All".
+
   categories: FeedCategoryItem[] = [];
   categoriesLoading = false;
   savingCategory = false;
@@ -116,6 +89,9 @@ export class FeedComponent implements OnInit, OnDestroy {
   private lightboxDragStartY = 0;
   private lightboxPanStartX = 0;
   private lightboxPanStartY = 0;
+
+
+  detailItem: FeedItem | null = null;
 
   constructor(private feedService: FeedService, private dialog: MatDialog) {}
 
@@ -430,12 +406,38 @@ export class FeedComponent implements OnInit, OnDestroy {
     this.lightboxDragging = false;
   }
 
+  // ─── Post detail modal ("View More") — view-only, available to everyone ─
+
+  /** Opens the full-post detail modal for the given item. */
+  openDetail(item: FeedItem, event?: Event): void {
+    event?.stopPropagation();
+    this.detailItem = item;
+  }
+
+  closeDetail(): void {
+    this.detailItem = null;
+  }
+
+  /** From within the detail modal: jump straight to the zoomable image view. */
+  openLightboxFromDetail(item: FeedItem, event?: Event): void {
+    event?.stopPropagation();
+    if (!item.imageUrl) return;
+    this.lightboxItem = item;
+    this.resetLightboxZoom();
+  }
+
   @HostListener('window:keydown', ['$event'])
   onKeydown(event: KeyboardEvent): void {
-    if (!this.lightboxItem) return;
-    if (event.key === 'Escape') this.closeLightbox();
-    if (event.key === '+' || event.key === '=') this.lightboxZoomIn();
-    if (event.key === '-') this.lightboxZoomOut();
+    if (this.lightboxItem) {
+      if (event.key === 'Escape') this.closeLightbox();
+      if (event.key === '+' || event.key === '=') this.lightboxZoomIn();
+      if (event.key === '-') this.lightboxZoomOut();
+      return;
+    }
+
+    if (this.detailItem && event.key === 'Escape') {
+      this.closeDetail();
+    }
   }
 
   // ─── Manage (super-admin only: create / edit / delete posts) ─

@@ -1,4 +1,3 @@
-
 :host {
   --feed-bg: #ffffff;
   --feed-surface: #ffffff;
@@ -365,6 +364,7 @@
   align-items: center;
   justify-content: center;
   overflow: hidden;
+  cursor: pointer;
 
   img {
     width: 100%;
@@ -506,6 +506,34 @@
   background: rgba(91, 141, 239, 0.1);
   padding: 2px 8px;
   border-radius: 999px;
+}
+
+// ── "View More" — opens the full post detail modal ──
+.view-more-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  align-self: flex-start;
+  border: none;
+  background: transparent;
+  color: var(--feed-primary);
+  font-size: 13px;
+  font-weight: 700;
+  padding: 0;
+  cursor: pointer;
+
+  mat-icon {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+    transition: transform 0.15s ease;
+  }
+
+  &:hover {
+    color: var(--feed-primary-strong);
+
+    mat-icon { transform: translateX(2px); }
+  }
 }
 
 .feed-card-footer {
@@ -857,6 +885,226 @@
 }
 
 // ============================================================================
+// Post detail modal ("View More") — full article-style read view
+// ============================================================================
+.detail-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(6, 8, 12, 0.85);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.detail-panel {
+  position: relative;
+  width: min(720px, 100%);
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--feed-surface);
+  border-radius: var(--feed-radius-lg);
+  overflow: hidden;
+  border: 1px solid var(--feed-border-strong);
+  box-shadow: 0 24px 64px rgba(15, 23, 42, 0.28);
+}
+
+.detail-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 2;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(15, 23, 42, 0.5);
+  color: #fff;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(4px);
+  transition: background 0.15s ease;
+
+  &:hover { background: rgba(15, 23, 42, 0.7); }
+
+  mat-icon { font-size: 18px; width: 18px; height: 18px; }
+}
+
+.detail-hero {
+  position: relative;
+  aspect-ratio: 16 / 8;
+  max-height: 320px;
+  background: var(--feed-surface-alt);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  &.clickable { cursor: zoom-in; }
+
+  &.no-image {
+    background: linear-gradient(135deg, var(--feed-surface-alt) 0%, var(--feed-surface) 100%);
+    aspect-ratio: auto;
+    height: 140px;
+  }
+}
+
+.detail-hero-icon {
+  font-size: 40px;
+  width: 40px;
+  height: 40px;
+  color: var(--feed-text-faint);
+}
+
+.detail-hero-zoom-hint {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+
+  mat-icon { font-size: 15px; width: 15px; height: 15px; }
+}
+
+.detail-hero.clickable:hover .detail-hero-zoom-hint { opacity: 1; }
+
+.detail-hero-badges {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.detail-body {
+  padding: 24px 28px 8px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.detail-title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+}
+
+.detail-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--feed-text-faint);
+
+  .detail-meta-source { color: var(--feed-text-muted); font-weight: 600; }
+}
+
+.detail-status {
+  margin-left: 4px;
+}
+
+.detail-stats { margin-top: -2px; }
+
+.detail-summary {
+  margin: 0;
+  font-size: 14.5px;
+  font-weight: 600;
+  color: var(--feed-text);
+  line-height: 1.6;
+}
+
+.detail-divider {
+  height: 1px;
+  background: var(--feed-border);
+}
+
+.detail-content {
+  margin: 0;
+  font-size: 14px;
+  color: var(--feed-text-muted);
+  line-height: 1.75;
+  white-space: pre-line;
+}
+
+.detail-tags { padding-bottom: 4px; }
+
+.detail-footer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 28px;
+  border-top: 1px solid var(--feed-border);
+  flex-shrink: 0;
+}
+
+.detail-footer-ref code {
+  font-size: 11px;
+  color: var(--feed-text-faint);
+  background: var(--feed-surface-alt);
+  padding: 3px 8px;
+  border-radius: 4px;
+}
+
+.detail-footer-spacer { flex: 1; }
+
+.detail-source-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--feed-border-strong);
+  background: var(--feed-surface);
+  color: var(--feed-text);
+  border-radius: var(--feed-radius-sm);
+  padding: 9px 16px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+
+  mat-icon { font-size: 16px; width: 16px; height: 16px; }
+
+  &:hover { border-color: var(--feed-primary); color: var(--feed-primary); }
+}
+
+.detail-close-btn {
+  border: none;
+  background: var(--feed-primary);
+  color: #fff;
+  border-radius: var(--feed-radius-sm);
+  padding: 9px 18px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+
+  &:hover { background: var(--feed-primary-strong); }
+}
+
+// ============================================================================
 // Responsive — tablet
 // ============================================================================
 @media (max-width: 900px) {
@@ -943,6 +1191,14 @@
 
   .lightbox-panel { width: 100%; max-height: 100vh; border-radius: 0; }
   .lightbox-zoom-controls { flex-wrap: wrap; }
+
+  .detail-panel { width: 100%; max-height: 100vh; border-radius: 0; }
+  .detail-hero { max-height: 220px; }
+  .detail-body { padding: 20px 18px 8px; }
+  .detail-title { font-size: 19px; }
+  .detail-footer { padding: 14px 18px; flex-wrap: wrap; }
+  .detail-source-btn,
+  .detail-close-btn { flex: 1; justify-content: center; }
 }
 
 @media (max-width: 380px) {

@@ -158,7 +158,7 @@
           class="feed-card-media"
           [class.no-image]="!item.imageUrl"
           [class.clickable]="item.imageUrl"
-          (click)="openLightbox(item, $event)"
+          (click)="item.imageUrl ? openLightbox(item, $event) : openDetail(item, $event)"
         >
           <img *ngIf="item.imageUrl" [src]="item.imageUrl" [alt]="item.title" loading="lazy" />
           <mat-icon *ngIf="!item.imageUrl">insights</mat-icon>
@@ -209,6 +209,13 @@
           <div class="feed-card-tags" *ngIf="item.tags && item.tags.length">
             <span class="tag-chip" *ngFor="let tag of item.tags.slice(0, 3)">#{{ tag }}</span>
           </div>
+
+          <!-- View More: opens the full post-detail modal (source/sourceUrl are
+               optional — the modal itself only renders that section when present) -->
+          <button type="button" class="view-more-btn" (click)="openDetail(item, $event)">
+            View More
+            <mat-icon>arrow_forward</mat-icon>
+          </button>
 
           <div class="feed-card-footer">
             <span class="feed-source" *ngIf="item.source">{{ item.source }}</span>
@@ -323,6 +330,9 @@
             </td>
             <td data-label="Date">{{ fullDate(item) }}</td>
             <td class="manage-actions" data-label="Actions">
+              <button mat-icon-button type="button" (click)="openDetail(item, $event)" aria-label="View post">
+                <mat-icon>visibility</mat-icon>
+              </button>
               <button mat-icon-button type="button" (click)="openEditDialog(item)" aria-label="Edit post">
                 <mat-icon>edit</mat-icon>
               </button>
@@ -480,4 +490,109 @@
       </button>
     </div>
   </div>
+</div>
+
+<!-- ===================================================================== -->
+<!-- POST DETAIL MODAL ("View More") — full article view, everyone can open it.
+     source / sourceUrl are optional: the byline row and "View source" button
+     only render when those fields are actually present on the post. -->
+<!-- ===================================================================== -->
+<div
+  class="detail-backdrop"
+  *ngIf="detailItem as di"
+  (click)="closeDetail()"
+>
+  <article class="detail-panel" (click)="$event.stopPropagation()">
+    <button type="button" class="detail-close" (click)="closeDetail()" aria-label="Close">
+      <mat-icon>close</mat-icon>
+    </button>
+
+    <div
+      class="detail-hero"
+      [class.no-image]="!di.imageUrl"
+      [class.clickable]="di.imageUrl"
+      (click)="openLightboxFromDetail(di, $event)"
+    >
+      <img *ngIf="di.imageUrl" [src]="di.imageUrl" [alt]="di.title" loading="lazy" />
+      <mat-icon *ngIf="!di.imageUrl" class="detail-hero-icon">insights</mat-icon>
+
+      <span class="detail-hero-zoom-hint" *ngIf="di.imageUrl">
+        <mat-icon>zoom_in</mat-icon>
+        <span>View image</span>
+      </span>
+
+      <div class="detail-hero-badges">
+        <span
+          class="category-badge"
+          *ngIf="di.category"
+          [style.background]="getCategoryColor(di.category) + '1a'"
+          [style.color]="getCategoryColor(di.category)"
+        >
+          {{ di.category }}
+        </span>
+        <span class="coin-badge" *ngIf="di.coinSymbol">{{ di.coinSymbol }}</span>
+      </div>
+    </div>
+
+    <div class="detail-body">
+      <h2 class="detail-title">{{ di.title }}</h2>
+
+      <div class="detail-meta">
+        <span class="detail-meta-source" *ngIf="di.source">{{ di.source }}</span>
+        <span class="detail-meta-dot" *ngIf="di.source">&middot;</span>
+        <span class="detail-meta-time" [title]="fullDate(di)">{{ timeAgo(di) }}</span>
+        <span class="status-pill detail-status" [ngClass]="di.isPublished ? 'published' : 'draft'" *ngIf="isSuperAdmin">
+          {{ di.isPublished ? 'Published' : 'Draft' }}
+        </span>
+      </div>
+
+      <div
+        class="stat-row detail-stats"
+        *ngIf="di.stats?.price || di.stats?.changePercent !== undefined || di.stats?.rank"
+      >
+        <span class="stat-chip price-chip" *ngIf="di.stats?.price">
+          {{ formatPrice(di.stats?.price) }}
+        </span>
+        <span
+          class="stat-chip change-chip"
+          *ngIf="di.stats?.changePercent !== undefined"
+          [class.up]="(di.stats?.changePercent ?? 0) >= 0"
+          [class.down]="(di.stats?.changePercent ?? 0) < 0"
+        >
+          <mat-icon>{{ (di.stats?.changePercent ?? 0) >= 0 ? 'arrow_drop_up' : 'arrow_drop_down' }}</mat-icon>
+          {{ formatPercent(di.stats?.changePercent) }}
+        </span>
+        <span class="stat-chip rank-chip" *ngIf="di.stats?.rank">Rank #{{ di.stats?.rank }}</span>
+      </div>
+
+      <p class="detail-summary" *ngIf="di.summary">{{ di.summary }}</p>
+
+      <div class="detail-divider" *ngIf="di.summary && di.content"></div>
+
+      <p class="detail-content">{{ di.content }}</p>
+
+      <div class="feed-card-tags detail-tags" *ngIf="di.tags && di.tags.length">
+        <span class="tag-chip" *ngFor="let tag of di.tags">#{{ tag }}</span>
+      </div>
+    </div>
+
+    <footer class="detail-footer">
+      <span class="detail-footer-ref" *ngIf="di.reference">
+        <code>{{ di.reference }}</code>
+      </span>
+      <span class="detail-footer-spacer"></span>
+      <button
+        *ngIf="di.sourceUrl"
+        type="button"
+        class="detail-source-btn"
+        (click)="openSource(di, $event)"
+      >
+        <mat-icon>open_in_new</mat-icon>
+        View Source
+      </button>
+      <button type="button" class="detail-close-btn" (click)="closeDetail()">
+        Close
+      </button>
+    </footer>
+  </article>
 </div>
