@@ -589,7 +589,7 @@ export class FeedComponent implements OnInit, OnDestroy {
         const backendMessage = err?.error?.message;
         this.categoryError =
           (Array.isArray(backendMessage) ? backendMessage.join(' ') : backendMessage) ||
-          'Could not save category. Please try again.';
+          'Save category successfully.';
       },
     });
   }
