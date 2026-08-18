@@ -10,10 +10,8 @@
     </div>
   </div>
 
-
-  
   <!-- ===================================================================== -->
-  <!-- VIEW TABS -->
+  <!-- MAIN TABS -->
   <!-- ===================================================================== -->
   <div class="view-tabs" role="tablist">
     <button class="view-tab-btn" [class.active]="activeTab === 'market'" (click)="selectTab('market')" role="tab">
@@ -32,125 +30,176 @@
   <!-- ===================================================================== -->
   <ng-container *ngIf="activeTab === 'market'">
 
-    <div class="market-controls">
-      <div class="buy-sell-toggle">
-        <button
-          type="button"
-          class="toggle-btn buy"
-          [class.active]="marketType === P2POrderType.Buy"
-          (click)="setMarketType(P2POrderType.Buy)"
-        >
-          Buy
-        </button>
-        <button
-          type="button"
-          class="toggle-btn sell"
-          [class.active]="marketType === P2POrderType.Sell"
-          (click)="setMarketType(P2POrderType.Sell)"
-        >
-          Sell
-        </button>
+    <div class="market-panel">
+
+      <!-- Buy / Sell + quick coin strip -->
+      <div class="market-top-row">
+        <div class="buy-sell-toggle">
+          <button
+            type="button"
+            class="toggle-btn buy"
+            [class.active]="marketType === P2POrderType.Buy"
+            (click)="setMarketType(P2POrderType.Buy)"
+          >
+            Buy
+          </button>
+          <button
+            type="button"
+            class="toggle-btn sell"
+            [class.active]="marketType === P2POrderType.Sell"
+            (click)="setMarketType(P2POrderType.Sell)"
+          >
+            Sell
+          </button>
+        </div>
+
+        <div class="quick-coin-strip">
+          <button
+            type="button"
+            class="quick-coin-chip"
+            *ngFor="let c of quickCoins"
+            [class.active]="filterForm.getRawValue().coin === c"
+            (click)="selectQuickCoin(c)"
+          >
+            {{ c }}
+          </button>
+          <span class="quick-coin-more">300+ coins supported &rsaquo;</span>
+        </div>
       </div>
 
+      <!-- Filters -->
       <form class="filters-row" [formGroup]="filterForm">
-        <mat-form-field appearance="outline" class="filter-field coin-field">
-          <mat-label>Coin</mat-label>
-          <mat-select formControlName="coin" (selectionChange)="loadOrders()">
-            <mat-option value="">All coins</mat-option>
-            <mat-option *ngFor="let c of coinSuggestions" [value]="c">{{ c }}</mat-option>
+        <mat-form-field appearance="outline" class="filter-field amount-field">
+          <mat-label>Enter amount</mat-label>
+          <input type="number" matInput formControlName="amount" min="0" placeholder="Any amount" />
+          <mat-select formControlName="fiatCurrency" matSuffix panelClass="fiat-suffix-panel">
+            <mat-option *ngFor="let f of fiatSuggestions" [value]="f">{{ f }}</mat-option>
           </mat-select>
         </mat-form-field>
 
-        <mat-form-field appearance="outline" class="filter-field fiat-field">
-          <mat-label>Currency</mat-label>
-          <mat-select formControlName="fiatCurrency" (selectionChange)="loadOrders()">
-            <mat-option value="">All currencies</mat-option>
-            <mat-option *ngFor="let f of fiatSuggestions" [value]="f">{{ f }}</mat-option>
+        <mat-form-field appearance="outline" class="filter-field coin-field">
+          <mat-label>Coin</mat-label>
+          <mat-select formControlName="coin" (selectionChange)="loadOrders()">
+            <mat-option *ngFor="let c of coinSuggestions" [value]="c">{{ c }}</mat-option>
           </mat-select>
         </mat-form-field>
 
         <mat-form-field appearance="outline" class="filter-field method-filter">
           <mat-label>Payment method</mat-label>
           <mat-select formControlName="paymentMethod">
-            <mat-option value="">All methods</mat-option>
+            <mat-option value="">All payment methods</mat-option>
             <mat-option *ngFor="let method of paymentMethodOptions" [value]="method">
               {{ method }}
             </mat-option>
           </mat-select>
         </mat-form-field>
 
-        <mat-form-field appearance="outline" class="filter-field amount-field">
-          <mat-label>Amount</mat-label>
-          <input type="number" matInput formControlName="amount" min="0" placeholder="Any amount" />
-          <span matSuffix class="amount-suffix">{{ filterForm.getRawValue().fiatCurrency || '' }}</span>
+        <mat-form-field appearance="outline" class="filter-field sort-field">
+          <mat-label>Sort by</mat-label>
+          <mat-select formControlName="sortBy">
+            <mat-option value="price-asc">Price (lowest first)</mat-option>
+            <mat-option value="price-desc">Price (highest first)</mat-option>
+            <mat-option value="available-desc">Available (most first)</mat-option>
+          </mat-select>
         </mat-form-field>
-      </form>
-    </div>
 
-    <div class="order-loading" *ngIf="ordersLoading">
-      <img src="./assets/images/loading.gif" alt="Loading..." style="width: 26px; height: 26px;" />
-    </div>
-
-    <div class="order-empty" *ngIf="!ordersLoading && filteredOrders().length === 0">
-      <span class="order-empty-title">No {{ marketType === P2POrderType.Buy ? 'buy' : 'sell' }} ads match your filters</span>
-      <span class="order-empty-sub">Try widening the coin, currency, or amount you're searching for.</span>
-    </div>
-
-    <div class="order-list" *ngIf="!ordersLoading && filteredOrders().length > 0">
-      <div
-        class="order-row"
-        [ngClass]="marketType === P2POrderType.Buy ? 'tick-buy' : 'tick-sell'"
-        *ngFor="let order of filteredOrders(); trackBy: trackByOrderId"
-      >
-        <div class="merchant-col">
-          <div class="merchant-avatar">
-            <img *ngIf="order.merchant.avatarUrl" [src]="order.merchant.avatarUrl" alt="" />
-            <span *ngIf="!order.merchant.avatarUrl">{{ (order.merchant.username || 'M').charAt(0).toUpperCase() }}</span>
-          </div>
-          <div class="merchant-meta">
-            <div class="merchant-name">
-              {{ order.merchant.username || 'Merchant' }}
-              <mat-icon *ngIf="order.merchant.isVerified" class="verified-icon">verified</mat-icon>
-            </div>
-            <div class="merchant-stats">
-              {{ order.merchant.totalTrades || 0 }} trades &middot; {{ order.merchant.completionRate || 0 }}% completion
-            </div>
-          </div>
-        </div>
-
-        <div class="price-col">
-          <span class="price-val">&#8358;{{ order.pricePerUnit | number: '1.2-2' }}</span>
-          <span class="price-currency">per {{ order.coin }}</span>
-        </div>
-
-        <div class="limit-col">
-          <div class="limit-row">
-            <span class="limit-label">Available</span>
-            <span class="limit-val">{{ order.availableAmount | number: '1.2-4' }} {{ order.coin }}</span>
-          </div>
-          <div class="limit-row">
-            <span class="limit-label">Limit</span>
-            <span class="limit-val">&#8358;{{ order.minLimit | number }} &ndash; &#8358;{{ order.maxLimit | number }}</span>
-          </div>
-        </div>
-
-        <div class="methods-col">
-          <span class="method-chip" *ngFor="let m of order.paymentMethods.slice(0, 2)">{{ m }}</span>
-          <span class="method-chip more" *ngIf="order.paymentMethods.length > 2">
-            +{{ order.paymentMethods.length - 2 }}
-          </span>
-        </div>
-
-        <div class="action-col">
-          <button
-            mat-flat-button
-            [color]="marketType === P2POrderType.Buy ? 'primary' : 'warn'"
-            class="fw-bold trade-btn"
-            type="button"
-            (click)="tradeOrder(order)"
+        <div class="refresh-control">
+          <mat-icon class="refresh-icon" [class.spinning]="ordersLoading">autorenew</mat-icon>
+          <select
+            class="refresh-select"
+            [ngModel]="refreshSeconds"
+            [ngModelOptions]="{ standalone: true }"
+            (ngModelChange)="onRefreshIntervalChange($event)"
           >
-            {{ actionLabelFor(order) }} {{ order.coin }}
-          </button>
+            <option *ngFor="let opt of refreshOptions" [ngValue]="opt.value">{{ opt.label }}</option>
+          </select>
+          <span class="refresh-countdown" *ngIf="refreshSeconds">{{ secondsToRefresh }}s</span>
+        </div>
+      </form>
+
+      <div class="safety-banner">
+        <mat-icon>shield</mat-icon>
+        Trade only inside the app and never release funds until payment is confirmed. Stay alert for impersonators.
+      </div>
+
+      <!-- List header (desktop only) -->
+      <div class="order-list-header" *ngIf="!ordersLoading && filteredOrders().length > 0">
+        <span class="col-advertiser">Advertiser</span>
+        <span class="col-price">Price</span>
+        <span class="col-limit">Available / Limits</span>
+        <span class="col-methods">Payment</span>
+        <span class="col-action"></span>
+      </div>
+
+      <div class="order-loading" *ngIf="ordersLoading">
+        <img src="./assets/images/loading.gif" alt="Loading..." style="width: 26px; height: 26px;" />
+      </div>
+
+      <div class="order-empty" *ngIf="!ordersLoading && filteredOrders().length === 0">
+        <span class="order-empty-title">No {{ marketType === P2POrderType.Buy ? 'buy' : 'sell' }} ads match your filters</span>
+        <span class="order-empty-sub">Try widening the coin, currency, or amount you're searching for.</span>
+      </div>
+
+      <div class="order-list" *ngIf="!ordersLoading && filteredOrders().length > 0">
+        <div
+          class="order-row"
+          [ngClass]="marketType === P2POrderType.Buy ? 'tick-buy' : 'tick-sell'"
+          *ngFor="let order of filteredOrders(); trackBy: trackByOrderId"
+        >
+          <div class="merchant-col">
+            <div class="merchant-avatar">
+              <img *ngIf="order.merchant.avatarUrl" [src]="order.merchant.avatarUrl" alt="" />
+              <span *ngIf="!order.merchant.avatarUrl">{{ (order.merchant.username || 'M').charAt(0).toUpperCase() }}</span>
+            </div>
+            <div class="merchant-meta">
+              <div class="merchant-name">
+                {{ order.merchant.username || 'Merchant' }}
+                <mat-icon *ngIf="order.merchant.isVerified" class="verified-icon" matTooltip="Verified trader">verified</mat-icon>
+                <mat-icon *ngIf="order.merchant.isPremium" class="premium-icon" matTooltip="Premium merchant">workspace_premium</mat-icon>
+              </div>
+              <div class="merchant-stats">
+                {{ order.merchant.totalTrades || 0 }} orders &middot; {{ order.merchant.completionRate || 0 }}% completion
+              </div>
+              <span class="fast-release-tag" *ngIf="isFastRelease(order)">
+                <mat-icon>bolt</mat-icon> Fast release
+              </span>
+            </div>
+          </div>
+
+          <div class="price-col" [attr.data-label]="'Price'">
+            <span class="price-val">{{ fiatSymbol }}{{ order.pricePerUnit | number: '1.2-2' }}</span>
+            <span class="price-currency">{{ order.fiatCurrency }} / {{ order.coin }}</span>
+          </div>
+
+          <div class="limit-col" [attr.data-label]="'Available / Limits'">
+            <div class="limit-row">
+              <span class="limit-label">Available</span>
+              <span class="limit-val">{{ order.availableAmount | number: '1.2-4' }} {{ order.coin }}</span>
+            </div>
+            <div class="limit-row">
+              <span class="limit-label">Limit</span>
+              <span class="limit-val">{{ fiatSymbol }}{{ order.minLimit | number }} &ndash; {{ fiatSymbol }}{{ order.maxLimit | number }}</span>
+            </div>
+          </div>
+
+          <div class="methods-col" [attr.data-label]="'Payment'">
+            <span class="method-chip" *ngFor="let m of order.paymentMethods.slice(0, 2)">{{ m }}</span>
+            <span class="method-chip more" *ngIf="order.paymentMethods.length > 2">
+              +{{ order.paymentMethods.length - 2 }}
+            </span>
+          </div>
+
+          <div class="action-col">
+            <button
+              mat-flat-button
+              [color]="marketType === P2POrderType.Buy ? 'primary' : 'warn'"
+              class="fw-bold trade-btn"
+              type="button"
+              (click)="tradeOrder(order)"
+            >
+              {{ actionLabelFor(order) }} {{ order.coin }}
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -178,12 +227,44 @@
       </button>
     </div>
 
+    <div class="my-ads-subbar">
+      <div class="sub-tabs">
+        <button
+          type="button"
+          class="sub-tab-btn"
+          [class.active]="myAdsSubTab === 'listed'"
+          (click)="selectMyAdsSubTab('listed')"
+        >
+          Listed
+        </button>
+        <button
+          type="button"
+          class="sub-tab-btn"
+          [class.active]="myAdsSubTab === 'all'"
+          (click)="selectMyAdsSubTab('all')"
+        >
+          All Ads
+        </button>
+      </div>
+
+      <div class="active-mode-control">
+        <span class="active-mode-label">Active Mode</span>
+        <label class="switch">
+          <input type="checkbox" [checked]="activeModeOn" (change)="onActiveModeToggle($any($event.target).checked)" />
+          <span class="switch-track"><span class="switch-thumb"></span></span>
+        </label>
+        <span class="automatic-inactive-link">Automatic Inactive Mode</span>
+      </div>
+    </div>
+
     <div class="order-loading" *ngIf="myOrdersLoading">
       <img src="./assets/images/loading.gif" alt="Loading..." style="width: 26px; height: 26px;" />
     </div>
 
-    <div class="order-empty" *ngIf="!myOrdersLoading && myOrders.length === 0">
-      <span class="order-empty-title">You haven't posted any ads yet</span>
+    <div class="order-empty" *ngIf="!myOrdersLoading && visibleMyOrders().length === 0">
+      <span class="order-empty-title">
+        {{ myAdsSubTab === 'listed' ? "You don't have any listed ads" : "You haven't posted any ads yet" }}
+      </span>
       <span class="order-empty-sub">Post a buy or sell ad — any coin, any currency, your call.</span>
       <button mat-stroked-button color="primary" class="fw-bold" type="button" (click)="openCreateOrderDialog(P2POrderType.Buy)">
         <mat-icon>add</mat-icon>
@@ -191,33 +272,71 @@
       </button>
     </div>
 
-    <div class="order-list" *ngIf="!myOrdersLoading && myOrders.length > 0">
+    <div class="my-ads-table" *ngIf="!myOrdersLoading && visibleMyOrders().length > 0">
+      <div class="my-ads-table-header">
+        <span class="col-type">Type</span>
+        <span class="col-id">Ad ID</span>
+        <span class="col-qty">Total Qty / Limits</span>
+        <span class="col-price">Price</span>
+        <span class="col-fee">Fee</span>
+        <span class="col-methods">Payment Method</span>
+        <span class="col-status">Status</span>
+        <span class="col-action">Action</span>
+      </div>
+
       <div
         class="order-row my-ad-row"
         [ngClass]="order.type === P2POrderType.Buy ? 'tick-buy' : 'tick-sell'"
-        *ngFor="let order of myOrders; trackBy: trackByOrderId"
+        *ngFor="let order of visibleMyOrders(); trackBy: trackByOrderId"
       >
-        <span class="ad-type-badge" [ngClass]="order.type.toLowerCase()">{{ order.type }}</span>
+        <span class="ad-type-badge" [ngClass]="order.type.toLowerCase()" [attr.data-label]="'Type'">{{ order.type }}</span>
 
-        <div class="price-col">
-          <span class="price-val">&#8358;{{ order.pricePerUnit | number: '1.2-2' }}</span>
-          <span class="price-currency">per {{ order.coin }}</span>
+        <div class="ad-id-col" [attr.data-label]="'Ad ID'">
+          <span class="ad-id-val">{{ order.id.slice(-12) }}</span>
+          <button type="button" class="icon-btn" (click)="copyOrderId(order)" matTooltip="Copy full ID">
+            <mat-icon>content_copy</mat-icon>
+          </button>
         </div>
 
-        <div class="limit-col">
+        <div class="limit-col" [attr.data-label]="'Total Qty / Limits'">
           <div class="limit-row">
-            <span class="limit-label">Available</span>
             <span class="limit-val">{{ order.availableAmount | number: '1.2-4' }} {{ order.coin }}</span>
           </div>
           <div class="limit-row">
-            <span class="limit-label">Limit</span>
-            <span class="limit-val">&#8358;{{ order.minLimit | number }} &ndash; &#8358;{{ order.maxLimit | number }}</span>
+            <span class="limit-val muted">
+              {{ fiatSymbol }}{{ order.minLimit | number }} &ndash; {{ fiatSymbol }}{{ order.maxLimit | number }}
+            </span>
           </div>
         </div>
 
-        <span class="status-pill" [ngClass]="order.status.toLowerCase()">{{ order.status }}</span>
+        <div class="price-col" [attr.data-label]="'Price'">
+          <span class="price-val">{{ fiatSymbol }}{{ order.pricePerUnit | number: '1.2-2' }}</span>
+        </div>
 
-        <div class="action-col">
+        <span class="fee-col" [attr.data-label]="'Fee'">{{ order.feePercent || 0 }}%</span>
+
+        <div class="methods-col" [attr.data-label]="'Payment Method'">
+          <span class="method-chip" *ngFor="let m of order.paymentMethods.slice(0, 2)">{{ m }}</span>
+          <span class="method-chip more" *ngIf="order.paymentMethods.length > 2">
+            +{{ order.paymentMethods.length - 2 }}
+          </span>
+        </div>
+
+        <div class="status-col" [attr.data-label]="'Status'">
+          <span class="status-pill" [ngClass]="orderStatusLabel(order).toLowerCase()">{{ orderStatusLabel(order) }}</span>
+          <button
+            type="button"
+            class="icon-btn"
+            *ngIf="order.status === OrderStatus.Active"
+            [disabled]="togglingListedId === order.id"
+            (click)="toggleOrderListed(order)"
+            [matTooltip]="orderStatusLabel(order) === 'Listed' ? 'Hide this ad' : 'List this ad'"
+          >
+            <mat-icon>{{ orderStatusLabel(order) === 'Listed' ? 'visibility_off' : 'visibility' }}</mat-icon>
+          </button>
+        </div>
+
+        <div class="action-col" [attr.data-label]="'Action'">
           <button
             mat-stroked-button
             color="warn"
@@ -265,9 +384,9 @@
           </div>
         </div>
 
-        <div class="price-col">
+        <div class="price-col" [attr.data-label]="'Trade'">
           <span class="price-val">{{ trade.coinAmount }} {{ trade.order.coin }}</span>
-          <span class="price-currency">&#8358;{{ trade.fiatAmount | number: '1.2-2' }}</span>
+          <span class="price-currency">{{ fiatSymbol }}{{ trade.fiatAmount | number: '1.2-2' }}</span>
         </div>
 
         <span class="status-pill" [ngClass]="trade.status.toLowerCase()">{{ trade.status }}</span>

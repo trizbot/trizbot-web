@@ -60,6 +60,13 @@ export class P2pService {
       .pipe(map((res) => normalizeOrder(this.unwrapOne(res))));
   }
 
+  /** Flip an ad between Listed / Hidden without cancelling it (the "Active Mode" switch). */
+  setOrderListed(orderId: string, isListed: boolean): Observable<P2POrder> {
+    return this.http
+      .post<ApiEnvelope<any> | any>(`${this.base}/orders/visibility`, { id: orderId, isListed })
+      .pipe(map((res) => normalizeOrder(this.unwrapOne(res))));
+  }
+
   // ---------------------------------------------------------------------
   // Trades
   // ---------------------------------------------------------------------
@@ -94,11 +101,7 @@ export class P2pService {
       .pipe(map((res) => normalizeTrade(this.unwrapOne(res))));
   }
 
-  // ---------------------------------------------------------------------
-  // Envelope handling — backend sometimes wraps in { message, data }
-  // (as your /orders sample shows) and sometimes may return the array
-  // directly. Handle both so a backend tweak doesn't break the page.
-  // ---------------------------------------------------------------------
+
 
   private unwrap<T>(res: ApiEnvelope<T[]> | T[]): T[] {
     if (Array.isArray(res)) return res;

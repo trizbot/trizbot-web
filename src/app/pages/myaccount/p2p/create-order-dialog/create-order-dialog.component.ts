@@ -8,10 +8,11 @@ import { SharedService } from '../../../../shared/shared.service';
 import { P2pService } from '../p2p.service';
 import {
   P2POrderType,
-  PAYMENT_METHODS,
   PAYMENT_WINDOW_OPTIONS,
   SUPPORTED_COINS,
   SUPPORTED_FIAT,
+  fiatSymbol,
+  getPaymentMethodsForFiat,
 } from '../p2p.model';
 
 export interface CreateOrderDialogData {
@@ -34,7 +35,6 @@ export interface CreateOrderDialogData {
 })
 export class CreateOrderDialogComponent {
   readonly P2POrderType = P2POrderType;
-  readonly paymentMethodOptions = PAYMENT_METHODS;
   readonly paymentWindowOptions = PAYMENT_WINDOW_OPTIONS;
   readonly coinSuggestions: string[];
   readonly fiatSuggestions: string[];
@@ -66,6 +66,28 @@ export class CreateOrderDialogComponent {
     this.fiatSuggestions = data.fiatSuggestions?.length ? data.fiatSuggestions : SUPPORTED_FIAT;
     this.form.patchValue({ type: data.defaultType });
     this.syncPinValidator(data.defaultType);
+
+    // Payment rails are currency-specific (e.g. Pix only exists for BRL, UPI only for INR).
+    // Whenever the fiat currency changes, drop any previously-selected methods that no
+    // longer apply to the new currency, exactly like the main market filter does.
+    this.form.controls.fiatCurrency.valueChanges.subscribe((fiat) => {
+      const validForFiat = getPaymentMethodsForFiat(fiat);
+      const current = this.form.controls.paymentMethods.value;
+      const stillValid = current.filter((m) => validForFiat.includes(m));
+      if (stillValid.length !== current.length) {
+        this.form.controls.paymentMethods.setValue(stillValid);
+      }
+    });
+  }
+
+  /** Payment methods offered depend on the currently selected fiat currency. */
+  get paymentMethodOptions(): string[] {
+    return getPaymentMethodsForFiat(this.form.value.fiatCurrency);
+  }
+
+  /** Currency symbol for the currently selected fiat currency (₦, $, €, R$, ₹, ...). */
+  get fiatSymbol(): string {
+    return fiatSymbol(this.form.value.fiatCurrency);
   }
 
   setType(type: P2POrderType): void {

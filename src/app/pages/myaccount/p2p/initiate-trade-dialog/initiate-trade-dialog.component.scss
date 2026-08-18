@@ -1,111 +1,200 @@
+:host {
+  --p2p-surface: #ffffff;
+  --p2p-surface-2: #fafafa;
+  --p2p-border: #e6e8eb;
+  --p2p-text: #14151a;
+  --p2p-text-muted: #74767e;
+  --p2p-buy: #16a34a;
+  --p2p-buy-bg: #e9f9ef;
+  --p2p-sell: #e5484d;
+  --p2p-sell-bg: #fdecec;
+  --p2p-accent: #f7a600;
+  --p2p-danger-bg: #fdecec;
+  --p2p-danger: #c2262b;
+  --p2p-radius-md: 10px;
+  --p2p-radius-sm: 8px;
+
+  display: block;
+  background: var(--p2p-surface);
+  color: var(--p2p-text);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+* { box-sizing: border-box; }
+
 .dialog-title {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  font-size: 17px;
   font-weight: 700;
-  font-size: 1.15rem;
+  padding: 4px 4px 14px;
+  margin: 0;
 }
 
-.close-btn {
-  margin-left: auto;
+.close-btn { color: var(--p2p-text-muted); }
+
+mat-dialog-content {
+  padding: 4px 4px 12px;
+  max-height: 74vh;
 }
-.expired-hint {
-  color: #c62828;
-}
+
 .merchant-strip {
   display: flex;
   align-items: center;
   gap: 12px;
+  background: var(--p2p-surface-2);
+  border: 1px solid var(--p2p-border);
+  border-radius: var(--p2p-radius-md);
   padding: 12px 14px;
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  border-radius: 10px;
-  margin-bottom: 12px;
+  margin-bottom: 16px;
 }
 
 .merchant-avatar {
-  width: 38px;
-  height: 38px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
-  background: #3f51b5;
-  color: #fff;
-  font-weight: 700;
+  background: #fff;
+  border: 1px solid var(--p2p-border);
   display: flex;
   align-items: center;
   justify-content: center;
-  flex-shrink: 0;
+  font-weight: 700;
+  color: var(--p2p-text-muted);
   overflow: hidden;
+  flex-shrink: 0;
 
-  img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
+  img { width: 100%; height: 100%; object-fit: cover; }
 }
 
 .merchant-name {
-  font-weight: 700;
-  font-size: 0.92rem;
   display: flex;
   align-items: center;
   gap: 4px;
+  font-weight: 700;
+  font-size: 14px;
 }
 
-.verified-icon {
-  font-size: 15px;
-  width: 15px;
-  height: 15px;
-  color: #2e7d32;
-}
+.verified-icon { color: #2f88ff; font-size: 15px; width: 15px; height: 15px; }
 
-.merchant-stats {
-  font-size: 0.78rem;
-  color: rgba(0, 0, 0, 0.5);
-}
+.merchant-stats { font-size: 12px; color: var(--p2p-text-muted); margin-top: 2px; }
 
 .price-tag {
   margin-left: auto;
   text-align: right;
-  font-weight: 800;
-  font-size: 1rem;
+  font-weight: 700;
+  font-size: 15px;
+  white-space: nowrap;
 
-  span {
-    display: block;
-    font-size: 0.7rem;
-    font-weight: 600;
-    color: rgba(0, 0, 0, 0.45);
-  }
+  span { display: block; font-size: 11px; font-weight: 500; color: var(--p2p-text-muted); }
 }
 
 .limit-hint {
-  font-size: 0.8rem;
-  color: rgba(0, 0, 0, 0.55);
+  font-size: 12.5px;
+  color: var(--p2p-text-muted);
   margin: 0 0 12px;
 }
 
+.w-100 { width: 100%; }
+.m-b-8 { margin-bottom: 8px; }
+.d-block { display: block; }
+.f-w-600 { font-weight: 600; font-size: 13px; color: var(--p2p-text); }
+
 .field-error {
-  font-size: 0.78rem;
-  color: #c62828;
-  margin-top: -8px;
-  margin-bottom: 12px;
+  font-size: 12px;
+  color: var(--p2p-danger);
+  margin: -10px 0 12px;
 }
 
 .fiat-total {
-  font-size: 0.88rem;
+  font-size: 13.5px;
+  color: var(--p2p-text-muted);
+  background: var(--p2p-surface-2);
+  border-radius: var(--p2p-radius-sm);
+  padding: 10px 12px;
   margin-bottom: 14px;
-  padding: 8px 12px;
-  background: rgba(63, 81, 181, 0.06);
-  border-radius: 8px;
+
+  b { color: var(--p2p-text); }
+}
+
+.alert {
+  border-radius: var(--p2p-radius-sm);
+  padding: 10px 14px;
+  font-size: 13px;
+
+  &.alert-danger { background: var(--p2p-danger-bg); color: var(--p2p-danger); }
 }
 
 .submit-btn {
-  margin-top: 8px;
-  height: 44px;
+  height: 46px !important;
+  border-radius: var(--p2p-radius-md) !important;
+  font-weight: 700 !important;
+  font-size: 14.5px !important;
+  margin-top: 6px;
 }
 
-.alert.alert-danger {
-  background: rgba(198, 40, 40, 0.08);
-  color: #c62828;
-  border-radius: 8px;
-  padding: 10px 12px;
-  font-size: 0.85rem;
+/* ---- manage mode ---- */
+.trade-summary {
+  background: var(--p2p-surface-2);
+  border: 1px solid var(--p2p-border);
+  border-radius: var(--p2p-radius-md);
+  padding: 14px;
+  margin: 14px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.summary-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13.5px;
+  color: var(--p2p-text-muted);
+
+  b { color: var(--p2p-text); font-weight: 700; text-align: right; }
+}
+
+.trade-hint {
+  font-size: 13px;
+  color: var(--p2p-text-muted);
+  line-height: 1.5;
+  margin: 0 0 14px;
+}
+
+.status-pill {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 999px;
+  text-transform: capitalize;
+  margin-left: auto;
+  background: #f1f1f2;
+  color: var(--p2p-text-muted);
+
+  &.pendingpayment { background: #fff3d6; color: #a5720a; }
+  &.paid { background: #e6f0ff; color: #2f5fd8; }
+  &.released { background: var(--p2p-buy-bg); color: var(--p2p-buy); }
+  &.disputed { background: var(--p2p-sell-bg); color: var(--p2p-sell); }
+  &.cancelled,
+  &.expired { background: #f1f1f2; color: var(--p2p-text-muted); }
+}
+
+.manage-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.dispute-btn {
+  height: 44px !important;
+  border-radius: var(--p2p-radius-md) !important;
+  font-weight: 700 !important;
+}
+
+@media (max-width: 480px) {
+  .merchant-strip { flex-wrap: wrap; }
+  .price-tag { margin-left: 0; text-align: left; }
 }
