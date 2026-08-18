@@ -9,19 +9,20 @@ import { catchError, finalize, switchMap, takeUntil } from 'rxjs/operators';
 import { MaterialModule } from '../../../../material.module';
 import { SharedService } from '../../../../shared/shared.service';
 import { FeedService } from '../feed.service';
-import {
-  CreateFeedPayload,
-  FEED_CATEGORY_LABELS,
-  FEED_CATEGORY_OPTIONS,
-  FeedCategoryEnum,
-  FeedItem,
-} from '../model/feed.model';
+import { CreateFeedPayload, FeedCategoryItem, FeedItem } from '../model/feed.model';
 import { TraderService } from '../../../../../app/appstate/trader.service';
 import { GetTraderResBody } from '../../../../../app/services/auth.type';
 
 export interface FeedPostDialogData {
   mode: 'create' | 'edit';
   item?: FeedItem;
+  /**
+   * Live category list, forwarded by the parent FeedComponent (loaded from
+   * FeedService.getFeedCategory()). This dialog never falls back to a
+   * static enum — if the parent passes nothing, the picker just shows
+   * "None" plus whatever the post already had saved.
+   */
+  categories?: FeedCategoryItem[];
 }
 
 const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024; // 5MB
@@ -39,8 +40,14 @@ const ZOOM_STEP = 0.25;
   styleUrls: ['./feed-post-dialog.component.scss'],
 })
 export class FeedPostDialogComponent implements OnInit, OnDestroy {
-  readonly categoryOptions = FEED_CATEGORY_OPTIONS;
-  readonly categoryLabels = FEED_CATEGORY_LABELS;
+  /**
+   * API-driven category options for the picker — sourced from
+   * `data.categories` (the parent's live list), not a static enum. If the
+   * post being edited carries a category that's since been renamed/deleted
+   * upstream, it's added back in so the field doesn't silently blank out
+   * an existing value the user didn't touch.
+   */
+  categories: FeedCategoryItem[] = [];
 
   saving = false;
   error: string | null = null;
@@ -83,7 +90,9 @@ export class FeedPostDialogComponent implements OnInit, OnDestroy {
     content: new FormControl<string>('', [Validators.required]),
     source: new FormControl<string>('', [Validators.maxLength(200)]),
     sourceUrl: new FormControl<string>(''),
-    category: new FormControl<FeedCategoryEnum | ''>(''),
+    // Plain string now (not a FeedCategoryEnum) — category is whatever
+    // name the API-backed category list uses.
+    category: new FormControl<string>(''),
     coinSymbol: new FormControl<string>(''),
     tagsRaw: new FormControl<string>(''), // comma-separated input, split on submit
     isPublished: new FormControl<boolean>(true),
@@ -111,7 +120,9 @@ export class FeedPostDialogComponent implements OnInit, OnDestroy {
   }
 
   get zoomPercent(): string {
-    return `${Math.round(this.zoom * 100)}%`;
+    return new Intl.NumberFormat(undefined, { style: 'percent', maximumFractionDigits: 0 }).format(
+      this.zoom,
+    );
   }
 
   get canZoomIn(): boolean {
@@ -141,15 +152,28 @@ export class FeedPostDialogComponent implements OnInit, OnDestroy {
         },
       });
 
+    this.categories = this.data.categories ? [...this.data.categories] : [];
+
     if (this.isEdit && this.data.item) {
       const item = this.data.item;
+
+      // If the post's saved category isn't in the live list (renamed or
+      // deleted since), add it back in so the select still shows the
+      // real current value instead of silently reverting to "None".
+      if (item.category && !this.categories.some((c) => c.category === item.category)) {
+        this.categories = [
+          { id: `__current-${item.id}`, category: item.category, createdAt: item.createdAt },
+          ...this.categories,
+        ];
+      }
+
       this.form.patchValue({
         title: item.title,
         summary: item.summary ?? '',
         content: item.content,
         source: item.source ?? '',
         sourceUrl: item.sourceUrl ?? '',
-        category: (item.category as FeedCategoryEnum) ?? '',
+        category: item.category ?? '',
         coinSymbol: item.coinSymbol ?? '',
         tagsRaw: (item.tags ?? []).join(', '),
         isPublished: item.isPublished,
@@ -308,10 +332,11 @@ export class FeedPostDialogComponent implements OnInit, OnDestroy {
    *     fields. `''` survives `JSON.stringify` (so clearing still reaches
    *     the backend and persists), and it satisfies `@IsString()` /
    *     `@IsOptional()` validators that reject `null` outright.
-   *  4. `category` is the one exception — it's an enum, not free text, so
-   *     an empty string would fail `@IsEnum()`. It's omitted from the
-   *     payload entirely when cleared (same `undefined`-drop behavior as
-   *     before) to avoid ever 400ing the request; clearing category on an
+   *  4. `category` is the one exception — it's validated against a fixed
+   *     set of names server-side, so an empty string could still fail
+   *     validation depending on the DTO. It's omitted from the payload
+   *     entirely when cleared (same `undefined`-drop behavior as before)
+   *     to avoid ever 400ing the request; clearing category on an
    *     existing post is a narrower, lower-stakes gap than breaking saves.
    *  5. `tags` always sends a real array — arrays are never dropped by
    *     JSON.stringify, so `[]` correctly clears tags on update.
@@ -335,16 +360,12 @@ export class FeedPostDialogComponent implements OnInit, OnDestroy {
       coinSymbol: raw.coinSymbol?.trim() || '',
       tags, // always an array — [] explicitly clears tags on update
       isPublished: raw.isPublished ?? false,
-      // `reference` is never included here — it's always generated
-      // server-side, on create, and is immutable afterwards.
+     
     };
 
-    // Only attach `category` when one is actually selected. Omitting it
-    // when cleared (rather than sending '' or null) keeps it out of the
-    // JSON body entirely, which is the one value every enum validator
-    // accepts unconditionally under @IsOptional().
+
     if (raw.category) {
-      payload.category = raw.category as FeedCategoryEnum;
+      payload.category = raw.category;
     }
 
     return payload;
@@ -382,7 +403,6 @@ export class FeedPostDialogComponent implements OnInit, OnDestroy {
       )
       .subscribe({
         next: (savedItem) => {
-         
           this.reference = savedItem.reference ?? this.reference;
           this.dialogRef.close(true);
         },

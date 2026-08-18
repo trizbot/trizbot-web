@@ -9,9 +9,6 @@ export enum FeedCategoryEnum {
   Trend = 'Trend',
 }
 
-
-
-
 /** Shape actually returned by the backend for a single item */
 export interface RawFeedItem {
   _id: string;
@@ -22,7 +19,7 @@ export interface RawFeedItem {
   source?: string;
   sourceUrl?: string;
   imageUrl?: string;
-  category?: FeedCategoryEnum | string;
+  category?: string;
   coinSymbol?: string;
   tags?: string[];
   isPublished: boolean;
@@ -60,7 +57,7 @@ export interface FeedItem {
   source?: string;
   sourceUrl?: string;
   imageUrl?: string;
-  category?: FeedCategoryEnum | string;
+  category?: string;
   coinSymbol?: string;
   tags?: string[];
   isPublished: boolean;
@@ -78,7 +75,7 @@ export interface FeedListResponse {
 }
 
 export interface GetFeedParams {
-  category?: FeedCategoryEnum | string | '';
+  category?: string;
   coinSymbol?: string;
   search?: string;
   page?: number;
@@ -87,13 +84,18 @@ export interface GetFeedParams {
 
 export interface CreateFeedPayload {
   title: string;
-  
   summary?: string | null;
   content: string;
   source?: string | null;
   sourceUrl?: string | null;
   imageUrl?: string | null;
-  category?: FeedCategoryEnum | null;
+  /**
+   * Category is a free-form name matched against the live, API-managed
+   * category list (see FeedCategoryItem below) — not a fixed enum. The
+   * `FeedCategoryEnum` above is kept only as a legacy/reference set and is
+   * no longer used to type or constrain this field.
+   */
+  category?: string | null;
   coinSymbol?: string | null;
   tags?: string[];
   isPublished?: boolean;
@@ -102,31 +104,6 @@ export interface CreateFeedPayload {
 }
 
 export type UpdateFeedPayload = Partial<CreateFeedPayload>;
-
-export const FEED_CATEGORY_OPTIONS: FeedCategoryEnum[] = Object.values(FeedCategoryEnum);
-
-export const FEED_CATEGORY_LABELS: Record<string, string> = {
-  [FeedCategoryEnum.News]: 'News',
-  [FeedCategoryEnum.Announcement]: 'Announcement',
-  [FeedCategoryEnum.MarketAnalysis]: 'Market Analysis',
-  [FeedCategoryEnum.PriceAlert]: 'Price Alert',
-  [FeedCategoryEnum.PriceUpdate]: 'Price Update',
-  [FeedCategoryEnum.Regulation]: 'Regulation',
-  [FeedCategoryEnum.Partnership]: 'Partnership',
-  [FeedCategoryEnum.Trend]: 'Trending',
-};
-
-export const FEED_CATEGORY_COLORS: Record<string, string> = {
-  [FeedCategoryEnum.News]: '#5B8DEF',
-  [FeedCategoryEnum.Announcement]: '#F5A623',
-  [FeedCategoryEnum.MarketAnalysis]: '#8E7CFF',
-  [FeedCategoryEnum.PriceAlert]: '#EA3943',
-  [FeedCategoryEnum.PriceUpdate]: '#EA3943',
-  [FeedCategoryEnum.Regulation]: '#16C784',
-  [FeedCategoryEnum.Partnership]: '#EF7BD8',
-  [FeedCategoryEnum.Trend]: '#F5A623',
-};
-
 
 export function generateClientReferenceHint(prefix = 'FD'): string {
   const year = new Date().getFullYear();
@@ -172,11 +149,10 @@ export function mapRawFeedItem(raw: RawFeedItem): FeedItem {
 // ─────────────────────────────────────────────────────────────
 // Feed Category management (super-admin CRUD)
 //
-// This is a distinct concept from `FeedCategoryEnum` above:
-// `FeedCategoryEnum` is the fixed set of tags a *post* can carry.
-// `FeedCategoryItem` below is a managed collection — created, renamed and
-// removed by a super-admin via `/feed/category` — mirroring the same
-// pattern `AcademyService` uses for course categories.
+// This is now the SINGLE source of category data for the whole feed
+// feature: the nav filter, post badges, and the create/edit post dialog
+// all read from `FeedCategoryItem[]` loaded via `/feed/category`. The
+// `FeedCategoryEnum` above is no longer used to drive any UI.
 // ─────────────────────────────────────────────────────────────
 
 /** Shape actually returned by the backend for a single feed category record */

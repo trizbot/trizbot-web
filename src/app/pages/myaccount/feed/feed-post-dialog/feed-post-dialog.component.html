@@ -26,14 +26,19 @@
     </mat-form-field>
 
     <div class="fpd-row">
+      <!-- Category options come from the live API list (data.categories),
+           not a static enum. See FeedPostDialogComponent.categories. -->
       <mat-form-field appearance="outline" class="fpd-field">
         <mat-label>Category</mat-label>
         <mat-select formControlName="category">
           <mat-option value="">None</mat-option>
-          <mat-option *ngFor="let c of categoryOptions" [value]="c">
-            {{ categoryLabels[c] }}
+          <mat-option *ngFor="let cat of categories" [value]="cat.category">
+            {{ cat.category }}
           </mat-option>
         </mat-select>
+        <mat-hint *ngIf="categories.length === 0">
+          No categories yet — add one from the Categories tab.
+        </mat-hint>
       </mat-form-field>
 
       <mat-form-field appearance="outline" class="fpd-field">
