@@ -28,8 +28,8 @@
       </div>
     </div>
     <div class="price-tag">
-      &#8358;{{ order.pricePerUnit | number: '1.2-2' }}
-      <span>per {{ order.coin }}</span>
+      {{ currencySymbol }}{{ order.pricePerUnit | number: '1.2-2' }}
+      <span>{{ currencyCode }} per {{ order.coin }}</span>
     </div>
   </div>
 
@@ -43,7 +43,8 @@
   <div class="field-error" *ngIf="amountError">{{ amountError }}</div>
 
   <div class="fiat-total" *ngIf="form.value.coinAmount">
-    You will {{ actionVerb === 'Buy' ? 'pay' : 'receive' }} <b>&#8358;{{ fiatAmount | number: '1.2-2' }}</b>
+    You will {{ isBuyAction ? 'pay' : 'receive' }}
+    <b>{{ currencySymbol }}{{ fiatAmount | number: '1.2-2' }}</b>
   </div>
 
   <mat-label class="f-w-600 m-b-8 d-block">Payment method</mat-label>
@@ -67,7 +68,7 @@
 
   <button
     mat-flat-button
-    [color]="actionVerb === 'Buy' ? 'primary' : 'warn'"
+    [ngClass]="isBuyAction ? 'submit-btn-buy' : 'submit-btn-sell'"
     class="fw-bold w-100 submit-btn"
     type="button"
     [disabled]="loading"
@@ -93,72 +94,40 @@
     <span class="status-pill" [ngClass]="trade.status.toLowerCase()">{{ trade.status }}</span>
   </div>
 
-<div class="trade-summary">
-  <div class="summary-row">
-    <span>Amount</span>
-    <b>{{ trade.coinAmount }} {{ trade.order.coin }}</b>
+  <div class="trade-summary">
+    <div class="summary-row">
+      <span>Amount</span>
+      <b>{{ trade.coinAmount }} {{ trade.order.coin }}</b>
+    </div>
+    <div class="summary-row">
+      <span>Total</span>
+      <b>{{ currencySymbol }}{{ trade.fiatAmount | number: '1.2-2' }}</b>
+    </div>
+    <div class="summary-row">
+      <span>Payment method</span>
+      <b>{{ trade.paymentMethod }}</b>
+    </div>
+    <div class="summary-row" *ngIf="trade.paymentDeadline">
+      <span>Payment deadline</span>
+      <b>{{ trade.paymentDeadline | date: 'medium' }}</b>
+    </div>
+    <div class="summary-row" *ngIf="trade.status === TradeStatus.PendingPayment && trade.paymentDeadline">
+      <span>Time left to pay</span>
+      <b class="countdown" [class.urgent]="isUrgent">{{ remainingLabel }}</b>
+    </div>
   </div>
-  <div class="summary-row">
-    <span>Total</span>
-    <b>&#8358;{{ trade.fiatAmount | number: '1.2-2' }}</b>
-  </div>
-  <div class="summary-row">
-    <span>Payment method</span>
-    <b>{{ trade.paymentMethod }}</b>
-  </div>
-  <div class="summary-row" *ngIf="trade.paymentDeadline">
-    <span>Payment deadline</span>
-    <b>{{ trade.paymentDeadline | date: 'medium' }}</b>
-  </div>
-  <div class="summary-row" *ngIf="trade.status === TradeStatus.PendingPayment && trade.paymentDeadline">
-    <span>Time left to pay</span>
-    <b class="countdown" [class.urgent]="isUrgent">{{ remainingLabel }}</b>
-  </div>
-</div>
 
-<p class="trade-hint" *ngIf="trade.status === TradeStatus.PendingPayment && iAmBuyer && !isExpiredLocally">
-  Send &#8358;{{ trade.fiatAmount | number: '1.2-2' }} to the seller using {{ trade.paymentMethod }}, then mark this trade as paid before the timer runs out.
-</p>
-<p class="trade-hint" *ngIf="trade.status === TradeStatus.PendingPayment && isExpiredLocally">
-  This trade's payment window has ended. Checking the latest status…
-  <button
-  mat-flat-button color="primary" class="fw-bold w-100 submit-btn" type="button"
-  *ngIf="canMarkPaid" [disabled]="loading" (click)="markPaid()"
->
-  {{ loading ? 'Marking as paid...' : "I've made this payment" }}
-</button>
-</p>
-
-
-
-<p class="trade-hint" *ngIf="trade.status === TradeStatus.PendingPayment && !iAmBuyer">
-  Waiting for the buyer to send payment via {{ trade.paymentMethod }}.
-</p>
-<p class="trade-hint" *ngIf="trade.status === TradeStatus.Paid && !iAmBuyer">
-  The buyer marked this as paid. Confirm you've received &#8358;{{ trade.fiatAmount | number: '1.2-2' }} before releasing.
-</p>
-<p class="trade-hint" *ngIf="trade.status === TradeStatus.Paid && iAmBuyer">
-  Waiting for the seller to release {{ trade.order.coin }} to you.
-</p>
-<p class="trade-hint" *ngIf="trade.status === TradeStatus.Released">This trade is complete.</p>
-<p class="trade-hint" *ngIf="trade.status === TradeStatus.Disputed">
-  This trade is under dispute. Our support team will review it shortly.
-</p>
-<p class="trade-hint" *ngIf="trade.status === TradeStatus.Cancelled">This trade was cancelled.</p>
-<p class="trade-hint" *ngIf="trade.status === TradeStatus.Expired">
-  This trade expired before payment was confirmed.
-</p>
-
-
-
-  <p class="trade-hint" *ngIf="trade.status === TradeStatus.PendingPayment && iAmBuyer">
-    Send &#8358;{{ trade.fiatAmount | number: '1.2-2' }} to the seller using {{ trade.paymentMethod }}, then mark this trade as paid.
+  <p class="trade-hint" *ngIf="trade.status === TradeStatus.PendingPayment && iAmBuyer && !isExpiredLocally">
+    Send {{ currencySymbol }}{{ trade.fiatAmount | number: '1.2-2' }} to the seller using {{ trade.paymentMethod }}, then mark this trade as paid before the timer runs out.
+  </p>
+  <p class="trade-hint" *ngIf="trade.status === TradeStatus.PendingPayment && isExpiredLocally">
+    This trade's payment window has ended. Checking the latest status…
   </p>
   <p class="trade-hint" *ngIf="trade.status === TradeStatus.PendingPayment && !iAmBuyer">
     Waiting for the buyer to send payment via {{ trade.paymentMethod }}.
   </p>
   <p class="trade-hint" *ngIf="trade.status === TradeStatus.Paid && !iAmBuyer">
-    The buyer marked this as paid. Confirm you've received &#8358;{{ trade.fiatAmount | number: '1.2-2' }} before releasing.
+    The buyer marked this as paid. Confirm you've received {{ currencySymbol }}{{ trade.fiatAmount | number: '1.2-2' }} before releasing.
   </p>
   <p class="trade-hint" *ngIf="trade.status === TradeStatus.Paid && iAmBuyer">
     Waiting for the seller to release {{ trade.order.coin }} to you.
@@ -193,14 +162,18 @@
 
   <div class="manage-actions">
     <button
-      mat-flat-button color="primary" class="fw-bold w-100 submit-btn" type="button"
+      mat-flat-button
+      class="submit-btn-buy fw-bold w-100 submit-btn"
+      type="button"
       *ngIf="canMarkPaid" [disabled]="loading" (click)="markPaid()"
     >
       {{ loading ? 'Marking as paid...' : "I've made this payment" }}
     </button>
 
     <button
-      mat-flat-button color="primary" class="fw-bold w-100 submit-btn" type="button"
+      mat-flat-button
+      class="submit-btn-buy fw-bold w-100 submit-btn"
+      type="button"
       *ngIf="canRelease" [disabled]="loading" (click)="release()"
     >
       {{ loading ? 'Releasing...' : 'Release ' + trade.order.coin }}
@@ -214,7 +187,9 @@
     </button>
 
     <button
-      mat-flat-button color="warn" class="fw-bold w-100 submit-btn" type="button"
+      mat-flat-button
+      class="submit-btn-sell fw-bold w-100 submit-btn"
+      type="button"
       *ngIf="showDisputeForm" [disabled]="loading" (click)="submitDispute()"
     >
       {{ loading ? 'Submitting...' : 'Submit dispute' }}

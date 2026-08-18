@@ -147,7 +147,7 @@
                 {{ order.merchant.username || 'Merchant' }}
                 <mat-icon *ngIf="order.merchant.isVerified" class="verified-icon" matTooltip="Verified trader">verified</mat-icon>
                 <mat-icon *ngIf="order.merchant.isPremium" class="premium-icon" matTooltip="Premium merchant">workspace_premium</mat-icon>
-                <span class="ad-type-tag" [ngClass]="order.type.toLowerCase()">{{ order.type }}</span>
+                <!-- <span class="ad-type-tag" [ngClass]="order.type.toLowerCase()">{{ order.type }}</span> -->
               </div>
               <div class="merchant-stats">
                 {{ order.merchant.totalTrades || 0 }} orders &middot; {{ order.merchant.completionRate || 0 }}% completion
@@ -181,17 +181,18 @@
             </span>
           </div>
 
-          <div class="action-col">
-            <button
-              mat-flat-button
-              [color]="marketType === P2POrderType.Buy ? 'primary' : 'warn'"
-              class="fw-bold trade-btn"
-              type="button"
-              (click)="tradeOrder(order)"
-            >
-              {{ actionLabelFor(order) }} {{ order.coin }}
-            </button>
-          </div>
+         <div class="action-col" style="font-size: 18px;">
+  <button
+    mat-flat-button
+    [ngClass]="marketType === P2POrderType.Buy ? 'trade-btn-buy' : 'trade-btn-sell'"
+    class="fw-bold trade-btn"
+    type="button"
+    (click)="tradeOrder(order)"
+  >
+    <!-- {{ marketType }} {{ order.coin }} -->
+    {{ marketType }}
+  </button>
+</div>
         </div>
       </div>
     </div>

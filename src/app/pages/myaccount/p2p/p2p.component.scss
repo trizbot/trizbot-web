@@ -764,3 +764,16 @@
 }
 
 
+
+// Buy = green, Sell = red — matches --p2p-buy / --p2p-sell used elsewhere
+.trade-btn-buy {
+  background-color: var(--p2p-buy, #16a34a) !important;
+  color: #fff !important;
+}
+.trade-btn-sell {
+  background-color: var(--p2p-sell, #e5484d) !important;
+  color: #fff !important;
+}
+.trade-btn-buy:hover { background-color: #128a3e !important; }
+.trade-btn-sell:hover { background-color: #cf3f44 !important; }
+

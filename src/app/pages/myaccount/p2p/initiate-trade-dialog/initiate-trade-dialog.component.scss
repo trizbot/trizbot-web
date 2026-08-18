@@ -133,6 +133,25 @@ mat-dialog-content {
   margin-top: 6px;
 }
 
+/* Buy = green, Sell = red — same palette as the market list buttons.
+   Material's [color] input only understands primary/accent/warn, so we
+   override background/text directly instead of relying on it. */
+.submit-btn-buy {
+  background-color: var(--p2p-buy) !important;
+  color: #fff !important;
+
+  &:hover { background-color: #128a3e !important; }
+  &:disabled { background-color: var(--p2p-buy) !important; opacity: 0.6; }
+}
+
+.submit-btn-sell {
+  background-color: var(--p2p-sell) !important;
+  color: #fff !important;
+
+  &:hover { background-color: #cf3f44 !important; }
+  &:disabled { background-color: var(--p2p-sell) !important; opacity: 0.6; }
+}
+
 /* ---- manage mode ---- */
 .trade-summary {
   background: var(--p2p-surface-2);

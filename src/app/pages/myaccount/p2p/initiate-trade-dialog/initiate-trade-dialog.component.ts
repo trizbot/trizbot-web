@@ -6,7 +6,7 @@ import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/materia
 import { MaterialModule } from '../../../../material.module';
 import { SharedService } from '../../../../shared/shared.service';
 import { P2pService } from '../p2p.service';
-import { P2POrder, P2POrderType, P2PTrade, TradeStatus } from '../p2p.model';
+import { P2POrder, P2POrderType, P2PTrade, TradeStatus, fiatSymbol } from '../p2p.model';
 
 export interface InitiateTradeDialogData {
   order?: P2POrder;
@@ -36,6 +36,7 @@ const SERVER_SYNC_INTERVAL_MS = 10 * 1000;
 })
 export class InitiateTradeDialogComponent implements OnInit, OnDestroy {
   readonly TradeStatus = TradeStatus;
+  readonly P2POrderType = P2POrderType;
 
   mode: DialogMode;
   order: P2POrder;
@@ -97,6 +98,24 @@ export class InitiateTradeDialogComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.clearTimers();
+  }
+
+  // -----------------------------------------------------------------
+  // Currency — everything renders off the order's own fiatCurrency,
+  // never a hardcoded symbol, so this dialog works for any market
+  // (NGN, USD, GHS, KES, ...) exactly like Bybit's P2P modal does.
+  // -----------------------------------------------------------------
+
+  get activeOrder(): P2POrder | null {
+    return this.mode === 'manage' ? this.trade?.order ?? null : this.order;
+  }
+
+  get currencySymbol(): string {
+    return fiatSymbol(this.activeOrder?.fiatCurrency);
+  }
+
+  get currencyCode(): string {
+    return this.activeOrder?.fiatCurrency ?? '';
   }
 
   // -----------------------------------------------------------------
@@ -185,13 +204,17 @@ export class InitiateTradeDialogComponent implements OnInit, OnDestroy {
     return this.order.type === P2POrderType.Buy ? 'Sell' : 'Buy';
   }
 
+  get isBuyAction(): boolean {
+    return this.actionVerb === 'Buy';
+  }
+
   get fiatAmount(): number {
     const amount = this.form.value.coinAmount || 0;
     return amount * this.order.pricePerUnit;
   }
 
   get limitHint(): string {
-    return `Limit: ₦${this.order.minLimit.toLocaleString()} – ₦${this.order.maxLimit.toLocaleString()}`;
+    return `Limit: ${this.currencySymbol}${this.order.minLimit.toLocaleString()} – ${this.currencySymbol}${this.order.maxLimit.toLocaleString()}`;
   }
 
   get amountError(): string | null {
@@ -202,7 +225,7 @@ export class InitiateTradeDialogComponent implements OnInit, OnDestroy {
     }
     const fiat = amount * this.order.pricePerUnit;
     if (fiat < this.order.minLimit || fiat > this.order.maxLimit) {
-      return `Amount must be between ₦${this.order.minLimit.toLocaleString()} and ₦${this.order.maxLimit.toLocaleString()}.`;
+      return `Amount must be between ${this.currencySymbol}${this.order.minLimit.toLocaleString()} and ${this.currencySymbol}${this.order.maxLimit.toLocaleString()}.`;
     }
     return null;
   }
