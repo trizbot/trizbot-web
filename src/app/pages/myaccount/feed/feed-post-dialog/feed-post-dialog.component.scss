@@ -21,6 +21,7 @@
   justify-content: space-between;
   gap: 12px;
   padding-right: 4px;
+  flex-wrap: wrap;
 }
 
 .fpd-title {
@@ -205,8 +206,42 @@
 .fpd-actions {
   padding-top: 8px;
   border-top: 1px solid var(--feed-border);
+  flex-wrap: wrap;
 }
 
 ::ng-deep .feed-post-dialog-panel .mat-mdc-dialog-container {
   --mdc-dialog-container-color: var(--feed-surface, #ffffff);
+}
+
+// ── Responsive ───────────────────────────────────────────────
+// Angular Material dialogs are opened with width:560px / maxWidth:95vw from
+// the component, so on phones the panel itself already shrinks to viewport
+// width. These rules tighten up spacing and stack the two-column rows so
+// nothing gets cramped or clipped inside that narrower panel.
+@media (max-width: 480px) {
+  .fpd-content {
+    max-height: 75vh;
+    gap: 2px;
+  }
+
+  .fpd-row {
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .fpd-title {
+    font-size: 17px;
+  }
+
+  .fpd-preview-viewport {
+    height: 150px;
+  }
+
+  .fpd-actions {
+    justify-content: stretch;
+
+    button {
+      flex: 1;
+    }
+  }
 }

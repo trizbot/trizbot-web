@@ -31,19 +31,6 @@ export interface RawFeedItem {
   updatedAt?: string;
 }
 
-export interface RawFeedCategory {
-  _id: string;
-  reference?: string;
-  title: string;
-  summary?: string;
-  source?: string;
-  category?: string;
-  isPublished: boolean;
-  publishedAt?: string;
-  createdAt: string;
-  updatedAt?: string;
-}
-
 /** Shape actually returned by the backend for a list endpoint */
 export interface RawFeedListResponse {
   message: string;
@@ -182,19 +169,46 @@ export function mapRawFeedItem(raw: RawFeedItem): FeedItem {
   };
 }
 
-  export function mapRawFeedCategory(raw: RawFeedCategory) {
+// ─────────────────────────────────────────────────────────────
+// Feed Category management (super-admin CRUD)
+//
+// This is a distinct concept from `FeedCategoryEnum` above:
+// `FeedCategoryEnum` is the fixed set of tags a *post* can carry.
+// `FeedCategoryItem` below is a managed collection — created, renamed and
+// removed by a super-admin via `/feed/category` — mirroring the same
+// pattern `AcademyService` uses for course categories.
+// ─────────────────────────────────────────────────────────────
+
+/** Shape actually returned by the backend for a single feed category record */
+export interface RawFeedCategoryDoc {
+  _id: string;
+  category: string;
+  reference?: string;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+/** Normalized shape the UI works with */
+export interface FeedCategoryItem {
+  id: string;
+  category: string;
+  reference?: string;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface CreateFeedCategoryPayload {
+  category: string;
+}
+
+export type UpdateFeedCategoryPayload = Partial<CreateFeedCategoryPayload>;
+
+export function normalizeFeedCategory(raw: RawFeedCategoryDoc): FeedCategoryItem {
   return {
     id: raw._id,
-    reference: raw.reference,
-    title: raw.title,
-    summary: raw.summary,
-    source: raw.source,
     category: raw.category,
-    isPublished: raw.isPublished,
+    reference: raw.reference,
     createdAt: raw.createdAt,
-    publishedAt: raw.publishedAt,
     updatedAt: raw.updatedAt,
-    stats: parseStats(raw.summary),
   };
-  
 }

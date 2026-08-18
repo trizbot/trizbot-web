@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, HostListener, OnDestroy, OnInit, inject } from '@angular/core';
-import { FormControl, FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 
 import { MatDialog } from '@angular/material/dialog';
@@ -11,21 +11,30 @@ import { MaterialModule } from '../../../material.module';
 import { SharedService } from '../../../shared/shared.service';
 import { FeedService } from './feed.service';
 import { FeedPostDialogComponent } from './feed-post-dialog/feed-post-dialog.component';
-import {
-  FeedItem,
-  FEED_CATEGORY_COLORS,
-  FEED_CATEGORY_LABELS,
-  FEED_CATEGORY_OPTIONS,
-  FeedCategoryEnum,
-} from './model/feed.model';
+import { FeedCategoryItem, FeedItem } from './model/feed.model';
 import { TraderService } from '../../../../app/appstate/trader.service';
 import { GetTraderResBody } from '../../../../app/services/auth.type';
 
-type FeedTab = 'feed' | 'trending' | 'manage';
+type FeedTab = 'feed' | 'manage' | 'categories';
 
 const MIN_LIGHTBOX_ZOOM = 1;
 const MAX_LIGHTBOX_ZOOM = 4;
 const LIGHTBOX_ZOOM_STEP = 0.25;
+
+/**
+ * Deterministic fallback palette for category accent colors.
+ *
+ * Categories are now fully API-driven (see `categories`, loaded from
+ * FeedService.getFeedCategory()) — there is no more static color/label map
+ * keyed off a fixed enum. Each category *name* is hashed to a stable index
+ * into this palette, so the same category name always renders with the same
+ * accent color without the UI needing to know category names in advance.
+ * This is purely presentational — it never affects filtering or matching.
+ */
+const CATEGORY_COLOR_PALETTE = [
+  '#5B8DEF', '#F5A623', '#8E7CFF', '#EA3943', '#16C784',
+  '#EF7BD8', '#2DD4BF', '#F97316', '#A855F7', '#22C55E',
+];
 
 @Component({
   selector: 'app-feed',
@@ -39,15 +48,26 @@ export class FeedComponent implements OnInit, OnDestroy {
   private traderService = inject(TraderService);
   private destroy$ = new Subject<void>();
 
-  readonly categoryOptions = FEED_CATEGORY_OPTIONS;
-  readonly categoryLabels = FEED_CATEGORY_LABELS;
-  readonly categoryColors = FEED_CATEGORY_COLORS;
-
+  /**
+   * SINGLE SOURCE OF TRUTH for write access (create / update / delete,
+   * including feed-category management). Resolved server-side via
+   * TraderService.getTrader() — never derived from localStorage or anything
+   * else the client can tamper with. Every create/edit/delete/manage entry
+   * point in this component (and the child dialog) checks this flag.
+   * Regular (non-super-admin) users are strictly read-only: they can browse
+   * "Feed" but never see or reach "Manage" / "Categories" or any mutating
+   * action.
+   *
+   * NOTE: this only hides/blocks actions in the UI. The backend must also
+   * reject create/update/delete requests from non-super-admins —
+   * client-side gating is a UX convenience, not a security boundary.
+   */
   isSuperAdmin = false;
+
   activeTab: FeedTab = 'feed';
 
-  /** Currently selected category from the button navigation ('' = All) */
-  activeCategory: FeedCategoryEnum | '' = '';
+  /** Currently selected category *name* from the button navigation ('' = All) */
+  activeCategory = '';
 
   filterForm = new FormGroup({
     search: new FormControl<string>(''),
@@ -61,15 +81,30 @@ export class FeedComponent implements OnInit, OnDestroy {
   limit = 12;
   total = 0;
 
-  // Trending
-  trending: FeedItem[] = [];
-  trendingLoading = false;
-  syncingTrending = false;
-
-  // Manage (admin)
+  // Manage (super-admin only)
   manageItems: FeedItem[] = [];
   manageLoading = false;
   deletingId: string | null = null;
+
+  // ── Feed Categories ─────────────────────────────────────────
+  // `categories` is loaded once from the API for EVERY visitor — it powers
+  // both the public category filter nav on the "Feed" tab and (for
+  // super-admins only) the CRUD list on the "Categories" tab. There is no
+  // static fallback list anymore; if the API returns nothing, the nav only
+  // shows "All".
+  categories: FeedCategoryItem[] = [];
+  categoriesLoading = false;
+  savingCategory = false;
+  categoryError: string | null = null;
+  deletingCategoryId: string | null = null;
+  /** id of the category currently being edited, or null when adding new */
+  editingCategoryId: string | null = null;
+
+  categoryForm = new FormGroup({
+    category: new FormControl<string>('', [Validators.required, Validators.maxLength(60)]),
+  });
+
+  private categoryColorCache = new Map<string, string>();
 
   // ── Detail lightbox (zoomable image viewer) ────────────────
   lightboxItem: FeedItem | null = null;
@@ -84,17 +119,14 @@ export class FeedComponent implements OnInit, OnDestroy {
 
   constructor(private feedService: FeedService, private dialog: MatDialog) {}
 
-  get isAdmin(): boolean {
-    const entityName = localStorage.getItem('entity');
-    return entityName === 'Admin';
-  }
-
   get totalPages(): number {
     return Math.max(1, Math.ceil(this.total / this.limit));
   }
 
   get lightboxZoomPercent(): string {
-    return `${Math.round(this.lightboxZoom * 100)}%`;
+    return new Intl.NumberFormat(undefined, { style: 'percent', maximumFractionDigits: 0 }).format(
+      this.lightboxZoom,
+    );
   }
 
   get canLightboxZoomIn(): boolean {
@@ -107,6 +139,7 @@ export class FeedComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.loadItems();
+    this.loadCategories();
     this.getTrader();
 
     this.filterForm.valueChanges
@@ -123,10 +156,19 @@ export class FeedComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (res: GetTraderResBody) => {
-          this.isSuperAdmin = !!res.data?.isSuperAdmin;
+          this.isSuperAdmin = res.data?.isSuperAdmin;
+
+          if (!this.isSuperAdmin && (this.activeTab === 'manage' || this.activeTab === 'categories')) {
+            this.activeTab = 'feed';
+          }
         },
         error: () => {
-          // Fail closed: isSuperAdmin stays false if this lookup fails.
+          // Fail closed: isSuperAdmin stays false if this lookup fails,
+          // and any admin-only tab view bounces back to read-only feed.
+          this.isSuperAdmin = false;
+          if (this.activeTab === 'manage' || this.activeTab === 'categories') {
+            this.activeTab = 'feed';
+          }
         },
       });
   }
@@ -137,18 +179,25 @@ export class FeedComponent implements OnInit, OnDestroy {
   }
 
   selectTab(tab: FeedTab): void {
-    this.activeTab = tab;
-
-    if (tab === 'trending' && this.trending.length === 0) {
-      this.loadTrending();
+    // 'manage' and 'categories' are super-admin-only surfaces. A
+    // non-super-admin can never land on them, even by manipulating the
+    // DOM to click a hidden button.
+    if ((tab === 'manage' || tab === 'categories') && !this.isSuperAdmin) {
+      return;
     }
 
-    if (tab === 'manage' && this.isAdmin && this.manageItems.length === 0) {
+    this.activeTab = tab;
+
+    if (tab === 'manage' && this.manageItems.length === 0) {
       this.loadManageItems();
+    }
+
+    if (tab === 'categories' && this.categories.length === 0) {
+      this.loadCategories();
     }
   }
 
-  // ─── All Feed ──────────────────────────────────────────────
+  // ─── All Feed (read-only for everyone) ───────────────────────
 
   loadItems(): void {
     this.itemsLoading = true;
@@ -186,13 +235,18 @@ export class FeedComponent implements OnInit, OnDestroy {
     this.filterForm.reset({ search: '', coinSymbol: '' });
   }
 
-  /** Button-based category navigation. Pass '' to select "All". */
-  filterByCategory(category: FeedCategoryEnum | string): void {
-    const next = (category as FeedCategoryEnum) || '';
+  /** Button-based category navigation, driven entirely by the live `categories` list. Pass '' for "All". */
+  filterByCategory(category: string): void {
+    const next = category || '';
     if (next === this.activeCategory) return;
     this.activeCategory = next;
     this.page = 1;
     this.loadItems();
+  }
+
+  hasActiveFilters(): boolean {
+    const { search, coinSymbol } = this.filterForm.getRawValue();
+    return !!(search || coinSymbol || this.activeCategory);
   }
 
   openSource(item: FeedItem, event: Event): void {
@@ -221,42 +275,95 @@ export class FeedComponent implements OnInit, OnDestroy {
     return range;
   }
 
+  // ─── International formatting helpers ────────────────────────
+  // All formatting below relies on the runtime's Intl APIs with no
+  // hard-coded locale, so dates, numbers, currency and relative times
+  // automatically render in whichever locale/region the visitor's browser
+  // is set to (no manual locale strings scattered through the template).
+
+  /** Locale-aware relative time, e.g. "2 hours ago" / "il y a 2 heures". */
   timeAgo(item: FeedItem): string {
     const date = item.publishedAt || item.createdAt;
     const then = new Date(date).getTime();
-    const seconds = Math.max(0, Math.floor((Date.now() - then) / 1000));
+    const seconds = Math.floor((Date.now() - then) / 1000);
 
-    const units: [number, string][] = [
-      [60, 'second'],
-      [60, 'minute'],
-      [24, 'hour'],
-      [7, 'day'],
-      [4.345, 'week'],
-      [12, 'month'],
-      [Number.POSITIVE_INFINITY, 'year'],
+    const rtf = new Intl.RelativeTimeFormat(undefined, { numeric: 'auto' });
+    const divisions: { amount: number; unit: Intl.RelativeTimeFormatUnit }[] = [
+      { amount: 60, unit: 'seconds' },
+      { amount: 60, unit: 'minutes' },
+      { amount: 24, unit: 'hours' },
+      { amount: 7, unit: 'days' },
+      { amount: 4.345, unit: 'weeks' },
+      { amount: 12, unit: 'months' },
+      { amount: Number.POSITIVE_INFINITY, unit: 'years' },
     ];
 
-    let value = seconds;
-    let unitLabel = 'second';
-
-    for (const [amount, name] of units) {
-      if (value < amount) {
-        unitLabel = name;
-        break;
+    let duration = seconds;
+    for (const division of divisions) {
+      if (Math.abs(duration) < division.amount) {
+        return rtf.format(-Math.round(duration), division.unit);
       }
-      value = Math.floor(value / amount);
-      unitLabel = name;
+      duration /= division.amount;
     }
+    return rtf.format(-Math.round(duration), 'years');
+  }
 
-    if (unitLabel === 'second' && value < 10) return 'just now';
-    return `${value} ${unitLabel}${value === 1 ? '' : 's'} ago`;
+  /** Locale-aware absolute date/time — used as a hover title and in the Manage table. */
+  fullDate(item: FeedItem): string {
+    const date = item.publishedAt || item.createdAt;
+    return new Intl.DateTimeFormat(undefined, {
+      dateStyle: 'medium',
+      timeStyle: 'short',
+    }).format(new Date(date));
+  }
+
+  /** Locale-aware currency formatting for the parsed price stat (source data is USD). */
+  formatPrice(price?: string): string {
+    if (!price) return '';
+    const value = parseFloat(price.replace(/,/g, ''));
+    if (Number.isNaN(value)) return price;
+    return new Intl.NumberFormat(undefined, {
+      style: 'currency',
+      currency: 'USD',
+      maximumFractionDigits: value < 1 ? 6 : 2,
+    }).format(value);
+  }
+
+  /** Locale-aware percentage formatting for the parsed 24h change stat. */
+  formatPercent(changePercent?: number): string {
+    if (changePercent === undefined || changePercent === null) return '';
+    return new Intl.NumberFormat(undefined, {
+      style: 'percent',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+      signDisplay: 'exceptZero',
+    }).format(changePercent / 100);
   }
 
   trackByItemId(_index: number, item: FeedItem): string {
     return item.id;
   }
 
-  // ─── Detail lightbox ───────────────────────────────────────
+  trackByCategoryId(_index: number, item: FeedCategoryItem): string {
+    return item.id;
+  }
+
+  // ─── Category accent color (presentational only, not backend data) ─
+  getCategoryColor(category?: string): string {
+    if (!category) return CATEGORY_COLOR_PALETTE[0];
+    const cached = this.categoryColorCache.get(category);
+    if (cached) return cached;
+
+    let hash = 0;
+    for (let i = 0; i < category.length; i++) {
+      hash = category.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const color = CATEGORY_COLOR_PALETTE[Math.abs(hash) % CATEGORY_COLOR_PALETTE.length];
+    this.categoryColorCache.set(category, color);
+    return color;
+  }
+
+  // ─── Detail lightbox (view-only, available to everyone) ─────
 
   openLightbox(item: FeedItem, event?: Event): void {
     event?.stopPropagation();
@@ -331,46 +438,11 @@ export class FeedComponent implements OnInit, OnDestroy {
     if (event.key === '-') this.lightboxZoomOut();
   }
 
-  // ─── Trending ──────────────────────────────────────────────
-
-  loadTrending(): void {
-    this.trendingLoading = true;
-    this.feedService
-      .getTrending(20)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (res) => {
-          this.trending = res;
-          this.trendingLoading = false;
-        },
-        error: () => {
-          this.trending = [];
-          this.trendingLoading = false;
-        },
-      });
-  }
-
-  syncTrending(): void {
-    this.syncingTrending = true;
-    this.feedService
-      .syncTrending()
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: () => {
-          this.syncingTrending = false;
-          this.sharedService.showToast({ title: 'Trending sync triggered.' });
-          this.loadTrending();
-        },
-        error: () => {
-          this.syncingTrending = false;
-          this.sharedService.showToast({ title: 'Could not sync trending items.' });
-        },
-      });
-  }
-
-  // ─── Manage (admin) ────────────────────────────────────────
+  // ─── Manage (super-admin only: create / edit / delete posts) ─
 
   loadManageItems(): void {
+    if (!this.isSuperAdmin) return;
+
     this.manageLoading = true;
     this.feedService
       .getFeed({ page: 1, limit: 100 })
@@ -388,28 +460,34 @@ export class FeedComponent implements OnInit, OnDestroy {
   }
 
   openCreateDialog(): void {
+    if (!this.isSuperAdmin) return;
+
     const ref = this.dialog.open(FeedPostDialogComponent, {
       width: '560px',
       maxWidth: '95vw',
       panelClass: 'feed-post-dialog-panel',
-      data: { mode: 'create' },
+      // Live category list is passed through so the dialog's category
+      // picker is API-driven too, instead of a hard-coded enum.
+      data: { mode: 'create', categories: this.categories },
     });
 
     ref.afterClosed().subscribe((saved) => {
       if (saved) {
         this.sharedService.showToast({ title: 'Post created successfully.' });
         this.loadItems();
-        if (this.isAdmin) this.loadManageItems();
+        this.loadManageItems();
       }
     });
   }
 
   openEditDialog(item: FeedItem): void {
+    if (!this.isSuperAdmin) return;
+
     const ref = this.dialog.open(FeedPostDialogComponent, {
       width: '560px',
       maxWidth: '95vw',
       panelClass: 'feed-post-dialog-panel',
-      data: { mode: 'edit', item },
+      data: { mode: 'edit', item, categories: this.categories },
     });
 
     ref.afterClosed().subscribe((saved) => {
@@ -422,6 +500,7 @@ export class FeedComponent implements OnInit, OnDestroy {
   }
 
   deletePost(item: FeedItem): void {
+    if (!this.isSuperAdmin) return;
     if (!confirm(`Delete "${item.title}"? This cannot be undone.`)) return;
 
     this.deletingId = item.id;
@@ -438,6 +517,111 @@ export class FeedComponent implements OnInit, OnDestroy {
         error: () => {
           this.deletingId = null;
           this.sharedService.showToast({ title: 'Could not delete post.' });
+        },
+      });
+  }
+
+  // ─── Feed Categories (API-driven; create / edit / delete gated to super-admin) ─
+
+  loadCategories(): void {
+    this.categoriesLoading = true;
+    this.feedService
+      .getFeedCategory()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (res) => {
+          this.categories = res;
+          this.categoriesLoading = false;
+        },
+        error: () => {
+          this.categories = [];
+          this.categoriesLoading = false;
+        },
+      });
+  }
+
+  /** Populates the form for editing an existing category. */
+  startEditCategory(item: FeedCategoryItem): void {
+    if (!this.isSuperAdmin) return;
+    this.editingCategoryId = item.id;
+    this.categoryError = null;
+    this.categoryForm.setValue({ category: item.category });
+  }
+
+  /** Clears the form back to "add new" mode. */
+  cancelCategoryEdit(): void {
+    this.editingCategoryId = null;
+    this.categoryError = null;
+    this.categoryForm.reset({ category: '' });
+  }
+
+  /** Single submit handler for both create and update — routes on editingCategoryId. */
+  saveCategory(): void {
+    if (!this.isSuperAdmin) return;
+
+    if (this.categoryForm.invalid) {
+      this.categoryForm.markAllAsTouched();
+      return;
+    }
+
+    const name = (this.categoryForm.getRawValue().category ?? '').trim();
+    if (!name) return;
+
+    this.savingCategory = true;
+    this.categoryError = null;
+
+    const wasEditing = this.editingCategoryId;
+    const request$ = wasEditing
+      ? this.feedService.updateFeedCategory(wasEditing, { category: name })
+      : this.feedService.createFeedCategory({ category: name });
+
+    request$.pipe(takeUntil(this.destroy$)).subscribe({
+      next: (res) => {
+        this.categories = res;
+        this.savingCategory = false;
+        this.sharedService.showToast({
+          title: wasEditing ? 'Category updated.' : 'Category created.',
+        });
+        this.cancelCategoryEdit();
+      },
+      error: (err) => {
+        this.savingCategory = false;
+        const backendMessage = err?.error?.message;
+        this.categoryError =
+          (Array.isArray(backendMessage) ? backendMessage.join(' ') : backendMessage) ||
+          'Could not save category. Please try again.';
+      },
+    });
+  }
+
+  deleteCategoryItem(item: FeedCategoryItem): void {
+    if (!this.isSuperAdmin) return;
+    if (!confirm(`Delete category "${item.category}"? This cannot be undone.`)) return;
+
+    this.deletingCategoryId = item.id;
+    this.feedService
+      .deleteFeedCategory(item.id)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: () => {
+          this.deletingCategoryId = null;
+          this.categories = this.categories.filter((c) => c.id !== item.id);
+          // If the currently active feed filter was this category, clear it
+          // so the "All Feed" tab never ends up filtered on a category that
+          // no longer exists.
+          if (this.activeCategory === item.category) {
+            this.activeCategory = '';
+            this.loadItems();
+          }
+          this.sharedService.showToast({ title: 'Category deleted.' });
+          // If the deleted category was mid-edit, reset the form.
+          if (this.editingCategoryId === item.id) {
+            this.cancelCategoryEdit();
+          }
+        },
+        error: () => {
+          this.deletingCategoryId = null;
+          this.sharedService.showToast({ title: 'Could not delete category.' });
         },
       });
   }

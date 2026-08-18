@@ -6,17 +6,46 @@ import { map } from 'rxjs/operators';
 
 import { environment } from '../../../../environments/environment';
 import {
+  CreateFeedCategoryPayload,
   CreateFeedPayload,
+  FeedCategoryItem,
   FeedItem,
   FeedListResponse,
   GetFeedParams,
-  RawFeedCategory,
+  RawFeedCategoryDoc,
   RawFeedItem,
   RawFeedListResponse,
+  UpdateFeedCategoryPayload,
   UpdateFeedPayload,
-  mapRawFeedCategory,
   mapRawFeedItem,
+  normalizeFeedCategory,
 } from './model/feed.model';
+
+interface ApiListResponse<T> {
+  data?: T[];
+  items?: T[];
+}
+
+/**
+ * Feed category endpoints can come back as a bare array, a single object
+ * (e.g. right after a create/update of one record), or wrapped in
+ * `{ data: [...] }` / `{ items: [...] }` depending on the route — this
+ * normalizes all of those into a flat array, same approach as
+ * `AcademyService`'s `unwrapCategoryList`.
+ */
+function unwrapCategoryList(
+  res: RawFeedCategoryDoc | RawFeedCategoryDoc[] | ApiListResponse<RawFeedCategoryDoc>,
+): RawFeedCategoryDoc[] {
+  if (Array.isArray(res)) return res;
+  if (res && typeof res === 'object' && 'category' in (res as RawFeedCategoryDoc)) {
+    return [res as RawFeedCategoryDoc];
+  }
+  return (
+    (res as ApiListResponse<RawFeedCategoryDoc>)?.data ??
+    (res as ApiListResponse<RawFeedCategoryDoc>)?.items ??
+    []
+  );
+}
 
 @Injectable({
   providedIn: 'root',
@@ -97,33 +126,39 @@ export class FeedService {
       .pipe(map((res) => mapRawFeedItem('data' in res ? res.data : res)));
   }
 
-  getFeedCategory(id: string) {
-    return this.http
-      .get<RawFeedCategory | { data: RawFeedCategory }>(`${this.baseUrl}/category`, )
-      .pipe(map((res) => mapRawFeedCategory('data' in res ? res.data : res)));
-  }
-
   deleteFeed(id: string): Observable<{ message?: string }> {
     return this.http.delete<{ message?: string }>(`${this.baseUrl}/${id}`);
   }
 
-  getTrending(limit?: number): Observable<FeedItem[]> {
-    let httpParams = new HttpParams();
-    if (limit != null) httpParams = httpParams.set('limit', limit);
+  // ── Feed Categories (list is public; create / update / delete are
+  // gated to super-admins in the UI, mirroring AcademyService's
+  // course-category endpoints). ──────────────────────────────────
 
+  getFeedCategory(): Observable<FeedCategoryItem[]> {
     return this.http
-      .get<RawFeedItem[] | RawFeedListResponse>(`${this.baseUrl}/trending/list`, {
-        params: httpParams,
-      })
-      .pipe(
-        map((res) => {
-          const raw: RawFeedItem[] = Array.isArray(res) ? res : res?.data ?? [];
-          return raw.map(mapRawFeedItem);
-        }),
-      );
+      .get<RawFeedCategoryDoc[] | ApiListResponse<RawFeedCategoryDoc>>(`${this.baseUrl}/category`)
+      .pipe(map((res) => unwrapCategoryList(res).map(normalizeFeedCategory)));
   }
 
-  syncTrending(): Observable<{ message: string }> {
-    return this.http.post<{ message: string }>(`${this.baseUrl}/sync-trending`, {});
+  createFeedCategory(payload: CreateFeedCategoryPayload): Observable<FeedCategoryItem[]> {
+    return this.http
+      .post<RawFeedCategoryDoc | RawFeedCategoryDoc[] | ApiListResponse<RawFeedCategoryDoc>>(
+        `${this.baseUrl}/category`,
+        payload,
+      )
+      .pipe(map((res) => unwrapCategoryList(res).map(normalizeFeedCategory)));
+  }
+
+  updateFeedCategory(id: string, payload: UpdateFeedCategoryPayload): Observable<FeedCategoryItem[]> {
+    return this.http
+      .patch<RawFeedCategoryDoc | RawFeedCategoryDoc[] | ApiListResponse<RawFeedCategoryDoc>>(
+        `${this.baseUrl}/category/${id}`,
+        payload,
+      )
+      .pipe(map((res) => unwrapCategoryList(res).map(normalizeFeedCategory)));
+  }
+
+  deleteFeedCategory(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/category/${id}`);
   }
 }

@@ -3,7 +3,7 @@
   <!-- ===================================================================== -->
   <!-- HERO HEADER -->
   <!-- ===================================================================== -->
-  <div class="feed-hero">
+  <header class="feed-hero">
     <div class="feed-hero-glow" aria-hidden="true"></div>
     <div class="feed-hero-text">
       <span class="feed-eyebrow">
@@ -13,6 +13,7 @@
       <h1 class="feed-title">Feed</h1>
       <p class="feed-subtitle">News, announcements and market analysis — curated in one stream.</p>
     </div>
+    <!-- Create is a write action: super-admin only -->
     <button
       *ngIf="isSuperAdmin"
       mat-flat-button
@@ -24,87 +25,113 @@
       <mat-icon>edit_note</mat-icon>
       New Post
     </button>
-  </div>
+  </header>
 
   <!-- ===================================================================== -->
-  <!-- TABS -->
+  <!-- TABS (Trending removed) -->
   <!-- ===================================================================== -->
-  <div class="feed-tabs">
-    <button class="feed-tab" [class.active]="activeTab === 'feed'" (click)="selectTab('feed')">
-      <mat-icon>dynamic_feed</mat-icon>
-      All Feed
-    </button>
-    <button class="feed-tab" [class.active]="activeTab === 'trending'" (click)="selectTab('trending')">
-      <mat-icon>local_fire_department</mat-icon>
-      Trending
-    </button>
+  <nav class="feed-tabs" role="tablist" aria-label="Feed sections">
     <button
-      *ngIf="isAdmin"
+      class="feed-tab"
+      [class.active]="activeTab === 'feed'"
+      (click)="selectTab('feed')"
+      role="tab"
+      [attr.aria-selected]="activeTab === 'feed'"
+    >
+      <mat-icon>dynamic_feed</mat-icon>
+      <span>All Feed</span>
+    </button>
+
+    <!-- Manage is a super-admin-only surface (create / edit / delete posts) -->
+    <button
+      *ngIf="isSuperAdmin"
       class="feed-tab"
       [class.active]="activeTab === 'manage'"
       (click)="selectTab('manage')"
+      role="tab"
+      [attr.aria-selected]="activeTab === 'manage'"
     >
       <mat-icon>settings</mat-icon>
-      Manage
+      <span>Manage</span>
     </button>
-  </div>
+
+    <!-- Categories is a super-admin-only surface (create / edit / delete categories) -->
+    <button
+      *ngIf="isSuperAdmin"
+      class="feed-tab"
+      [class.active]="activeTab === 'categories'"
+      (click)="selectTab('categories')"
+      role="tab"
+      [attr.aria-selected]="activeTab === 'categories'"
+    >
+      <mat-icon>sell</mat-icon>
+      <span>Categories</span>
+    </button>
+  </nav>
 
   <!-- ===================================================================== -->
-  <!-- ALL FEED -->
+  <!-- ALL FEED (read-only for every user) -->
   <!-- ===================================================================== -->
   <section *ngIf="activeTab === 'feed'" class="feed-section">
 
-    <form class="feed-filters" [formGroup]="filterForm">
-      <div class="search-field">
-        <mat-icon class="search-icon">search</mat-icon>
-        <input
-          type="text"
-          formControlName="search"
-          placeholder="Search headlines or content..."
-          class="search-input"
-        />
+    <div class="feed-toolbar">
+      <form class="feed-filters" [formGroup]="filterForm">
+        <label class="search-field">
+          <mat-icon class="search-icon">search</mat-icon>
+          <input
+            type="text"
+            formControlName="search"
+            placeholder="Search headlines or content…"
+            class="search-input"
+          />
+        </label>
+
+        <mat-form-field appearance="outline" class="filter-field coin-field">
+          <mat-label>Coin</mat-label>
+          <input matInput formControlName="coinSymbol" placeholder="e.g. BTC" />
+        </mat-form-field>
+
+        <button type="button" class="clear-filters-btn" *ngIf="hasActiveFilters()" (click)="clearFilters()">
+          <mat-icon>close</mat-icon>
+          Clear
+        </button>
+      </form>
+
+      <!-- ─── Category navigation — built ENTIRELY from live API data ─── -->
+      <!-- No static enum/labels/colors: buttons come straight from `categories`
+           (FeedService.getFeedCategory()); colors are derived at render time. -->
+      <div class="category-nav" role="tablist" aria-label="Filter feed by category">
+        <button
+          type="button"
+          class="category-nav-btn"
+          [class.active]="!activeCategory"
+          (click)="filterByCategory('')"
+          role="tab"
+          [attr.aria-selected]="!activeCategory"
+        >
+          All
+        </button>
+
+        <ng-container *ngIf="!categoriesLoading; else categoryNavSkeleton">
+          <button
+            type="button"
+            class="category-nav-btn"
+            *ngFor="let cat of categories; trackBy: trackByCategoryId"
+            [class.active]="activeCategory === cat.category"
+            [style.--cat-color]="getCategoryColor(cat.category)"
+            (click)="filterByCategory(cat.category)"
+            role="tab"
+            [attr.aria-selected]="activeCategory === cat.category"
+          >
+            <span class="cat-dot" aria-hidden="true"></span>
+            {{ cat.category }}
+          </button>
+        </ng-container>
+
+        <ng-template #categoryNavSkeleton>
+          <span class="category-nav-skeleton" *ngFor="let i of [1, 2, 3, 4]"></span>
+        </ng-template>
       </div>
-
-      <mat-form-field appearance="outline" class="filter-field coin-field">
-        <input matInput formControlName="coinSymbol" placeholder="Coin, e.g. BTC" />
-      </mat-form-field>
-
-      <button
-        type="button"
-        class="clear-filters-btn"
-        *ngIf="filterForm.get('search')?.value || filterForm.get('coinSymbol')?.value || activeCategory"
-        (click)="clearFilters()"
-      >
-        <mat-icon>close</mat-icon>
-        Clear
-      </button>
-    </form>
-
-    <!-- ─── Button-based category navigation ─── -->
-    <div class="category-nav" role="tablist" aria-label="Filter feed by category">
-      <button
-        type="button"
-        class="category-nav-btn"
-        [class.active]="!activeCategory"
-        (click)="filterByCategory('')"
-        role="tab"
-        [attr.aria-selected]="!activeCategory"
-      >
-        All
-      </button>
-      <button
-        type="button"
-        class="category-nav-btn"
-        *ngFor="let c of categoryOptions"
-        [class.active]="activeCategory === c"
-        [style.--cat-color]="categoryColors[c] || '#5B8DEF'"
-        (click)="filterByCategory(c)"
-        role="tab"
-        [attr.aria-selected]="activeCategory === c"
-      >
-        <span class="cat-dot" aria-hidden="true"></span>
-        {{ categoryLabels[c] || c }}
-      </button>
     </div>
 
     <div class="feed-loading" *ngIf="itemsLoading">
@@ -118,7 +145,7 @@
       <button
         type="button"
         class="clear-filters-btn inline"
-        *ngIf="filterForm.get('search')?.value || filterForm.get('coinSymbol')?.value || activeCategory"
+        *ngIf="hasActiveFilters()"
         (click)="clearFilters()"
       >
         Clear filters
@@ -140,14 +167,15 @@
             <mat-icon>zoom_in</mat-icon>
           </span>
 
+          <!-- Badge color/label sourced from the live category, not a static map -->
           <span
             class="category-badge"
             *ngIf="item.category"
-            [style.background]="(categoryColors[item.category] || '#5B8DEF') + '1a'"
-            [style.color]="categoryColors[item.category] || '#5B8DEF'"
+            [style.background]="getCategoryColor(item.category) + '1a'"
+            [style.color]="getCategoryColor(item.category)"
             (click)="filterByCategory(item.category); $event.stopPropagation()"
           >
-            {{ categoryLabels[item.category] || item.category }}
+            {{ item.category }}
           </span>
 
           <span class="coin-badge" *ngIf="item.coinSymbol">{{ item.coinSymbol }}</span>
@@ -156,9 +184,14 @@
         <div class="feed-card-body">
           <h3 class="feed-card-title" [title]="item.title">{{ item.title }}</h3>
 
-          <!-- Parsed market stats shown as clean chips instead of raw text -->
-          <div class="stat-row" *ngIf="item.stats?.price || item.stats?.changePercent !== undefined || item.stats?.rank">
-            <span class="stat-chip price-chip" *ngIf="item.stats?.price">${{ item.stats?.price }}</span>
+          <!-- Parsed market stats, formatted with Intl (currency / percent) -->
+          <div
+            class="stat-row"
+            *ngIf="item.stats?.price || item.stats?.changePercent !== undefined || item.stats?.rank"
+          >
+            <span class="stat-chip price-chip" *ngIf="item.stats?.price">
+              {{ formatPrice(item.stats?.price) }}
+            </span>
             <span
               class="stat-chip change-chip"
               *ngIf="item.stats?.changePercent !== undefined"
@@ -166,7 +199,7 @@
               [class.down]="(item.stats?.changePercent ?? 0) < 0"
             >
               <mat-icon>{{ (item.stats?.changePercent ?? 0) >= 0 ? 'arrow_drop_up' : 'arrow_drop_down' }}</mat-icon>
-              {{ item.stats?.changePercent }}%
+              {{ formatPercent(item.stats?.changePercent) }}
             </span>
             <span class="stat-chip rank-chip" *ngIf="item.stats?.rank">Rank #{{ item.stats?.rank }}</span>
           </div>
@@ -180,17 +213,16 @@
           <div class="feed-card-footer">
             <span class="feed-source" *ngIf="item.source">{{ item.source }}</span>
             <span class="feed-dot" *ngIf="item.source">&middot;</span>
-            <span class="feed-time">{{ timeAgo(item) }}</span>
-
-            <!-- <button
-              class="read-more-btn"
-              type="button"
+            <span class="feed-time" [title]="fullDate(item)">{{ timeAgo(item) }}</span>
+            <button
               *ngIf="item.sourceUrl"
+              type="button"
+              class="feed-source-link"
               (click)="openSource(item, $event)"
+              aria-label="Open source"
             >
-              Read source
-              <mat-icon>north_east</mat-icon>
-            </button> -->
+              <mat-icon>open_in_new</mat-icon>
+            </button>
           </div>
         </div>
       </article>
@@ -202,6 +234,7 @@
         type="button"
         [disabled]="page === 1"
         (click)="goToPage(page - 1)"
+        aria-label="Previous page"
       >
         <mat-icon>chevron_left</mat-icon>
       </button>
@@ -211,7 +244,8 @@
         type="button"
         *ngFor="let p of pageRange()"
         [class.active]="p === page"
-        (click)="goToPage(p)">
+        (click)="goToPage(p)"
+      >
         {{ p }}
       </button>
 
@@ -220,6 +254,7 @@
         type="button"
         [disabled]="page === totalPages"
         (click)="goToPage(page + 1)"
+        aria-label="Next page"
       >
         <mat-icon>chevron_right</mat-icon>
       </button>
@@ -227,74 +262,9 @@
   </section>
 
   <!-- ===================================================================== -->
-  <!-- TRENDING -->
+  <!-- MANAGE (super-admin only: create / edit / delete posts) -->
   <!-- ===================================================================== -->
-  <section *ngIf="activeTab === 'trending'" class="feed-section">
-
-    <div class="trending-header">
-      <p class="trending-caption">Auto-ranked from live market activity.</p>
-      <button
-        *ngIf="isAdmin"
-        mat-stroked-button
-        color="primary"
-        type="button"
-        [disabled]="syncingTrending"
-        (click)="syncTrending()"
-      >
-        <mat-icon>{{ syncingTrending ? 'hourglass_empty' : 'refresh' }}</mat-icon>
-        {{ syncingTrending ? 'Syncing...' : 'Sync Trending' }}
-      </button>
-    </div>
-
-    <div class="feed-loading" *ngIf="trendingLoading">
-      <span class="spinner" aria-hidden="true"></span>
-      <span>Loading trending…</span>
-    </div>
-
-    <div class="feed-empty" *ngIf="!trendingLoading && trending.length === 0">
-      <mat-icon class="feed-empty-icon">local_fire_department</mat-icon>
-      <p>Nothing trending yet.</p>
-    </div>
-
-    <ol class="trending-list" *ngIf="!trendingLoading && trending.length > 0">
-      <li class="trending-row" *ngFor="let item of trending; let i = index; trackBy: trackByItemId">
-        <span class="trending-rank" [class.top-rank]="i < 3">{{ i + 1 }}</span>
-
-        <div class="trending-info">
-          <div class="trending-title-row">
-            <span class="coin-badge inline" *ngIf="item.coinSymbol">{{ item.coinSymbol }}</span>
-            <h4 class="trending-title" [title]="item.title">{{ item.title }}</h4>
-          </div>
-
-          <div class="trending-stats" *ngIf="item.stats?.price || item.stats?.changePercent !== undefined">
-            <span class="stat-chip price-chip small" *ngIf="item.stats?.price">${{ item.stats?.price }}</span>
-            <span
-              class="stat-chip change-chip small"
-              *ngIf="item.stats?.changePercent !== undefined"
-              [class.up]="(item.stats?.changePercent ?? 0) >= 0"
-              [class.down]="(item.stats?.changePercent ?? 0) < 0"
-            >
-              <mat-icon>{{ (item.stats?.changePercent ?? 0) >= 0 ? 'arrow_drop_up' : 'arrow_drop_down' }}</mat-icon>
-              {{ item.stats?.changePercent }}%
-            </span>
-          </div>
-
-          <div class="trending-meta">
-            <span *ngIf="item.source">{{ item.source }}</span>
-            <span *ngIf="item.source">&middot;</span>
-            <span>{{ timeAgo(item) }}</span>
-          </div>
-        </div>
-
-        <mat-icon class="trending-flame">local_fire_department</mat-icon>
-      </li>
-    </ol>
-  </section>
-
-  <!-- ===================================================================== -->
-  <!-- MANAGE (admin) -->
-  <!-- ===================================================================== -->
-  <section *ngIf="activeTab === 'manage' && isAdmin" class="feed-section">
+  <section *ngIf="activeTab === 'manage' && isSuperAdmin" class="feed-section">
     <div class="manage-header">
       <p class="manage-caption">{{ manageItems.length }} post(s)</p>
       <button mat-flat-button color="primary" class="fw-bold" type="button" (click)="openCreateDialog()">
@@ -313,6 +283,7 @@
       <p>No posts yet. Create your first one.</p>
     </div>
 
+    <!-- data-label attrs power the mobile card-style collapse in the SCSS -->
     <div class="manage-table-wrap" *ngIf="!manageLoading && manageItems.length > 0">
       <table class="manage-table">
         <thead>
@@ -323,35 +294,35 @@
             <th>Coin</th>
             <th>Status</th>
             <th>Date</th>
-            <th></th>
+            <th>Actions</th>
           </tr>
         </thead>
         <tbody>
           <tr *ngFor="let item of manageItems; trackBy: trackByItemId">
-            <td class="manage-ref-cell">
+            <td class="manage-ref-cell" data-label="Reference">
               <code *ngIf="item.reference">{{ item.reference }}</code>
               <span class="muted" *ngIf="!item.reference">&mdash;</span>
             </td>
-            <td class="manage-title-cell" [title]="item.title">{{ item.title }}</td>
-            <td>
+            <td class="manage-title-cell" data-label="Title" [title]="item.title">{{ item.title }}</td>
+            <td data-label="Category">
               <span
                 class="category-badge table"
                 *ngIf="item.category"
-                [style.background]="(categoryColors[item.category] || '#5B8DEF') + '1a'"
-                [style.color]="categoryColors[item.category] || '#5B8DEF'"
+                [style.background]="getCategoryColor(item.category) + '1a'"
+                [style.color]="getCategoryColor(item.category)"
               >
-                {{ categoryLabels[item.category] || item.category }}
+                {{ item.category }}
               </span>
               <span class="muted" *ngIf="!item.category">&mdash;</span>
             </td>
-            <td>{{ item.coinSymbol || '—' }}</td>
-            <td>
+            <td data-label="Coin">{{ item.coinSymbol || '—' }}</td>
+            <td data-label="Status">
               <span class="status-pill" [ngClass]="item.isPublished ? 'published' : 'draft'">
                 {{ item.isPublished ? 'Published' : 'Draft' }}
               </span>
             </td>
-            <td>{{ item.createdAt | date: 'mediumDate' }}</td>
-            <td class="manage-actions">
+            <td data-label="Date">{{ fullDate(item) }}</td>
+            <td class="manage-actions" data-label="Actions">
               <button mat-icon-button type="button" (click)="openEditDialog(item)" aria-label="Edit post">
                 <mat-icon>edit</mat-icon>
               </button>
@@ -372,10 +343,96 @@
     </div>
   </section>
 
+  <!-- ===================================================================== -->
+  <!-- CATEGORIES (super-admin only: create / edit / delete categories) -->
+  <!-- ===================================================================== -->
+  <section *ngIf="activeTab === 'categories' && isSuperAdmin" class="feed-section">
+    <div class="manage-header">
+      <p class="manage-caption">
+        {{ categories.length }} categor{{ categories.length === 1 ? 'y' : 'ies' }}
+      </p>
+    </div>
+
+    <!-- Same form handles both "add new" and "edit existing" — routed by editingCategoryId -->
+    <form class="category-form" [formGroup]="categoryForm" (ngSubmit)="saveCategory()">
+      <mat-form-field appearance="outline" class="category-field">
+        <mat-label>{{ editingCategoryId ? 'Edit category name' : 'New category name' }}</mat-label>
+        <input matInput formControlName="category" maxlength="60" placeholder="e.g. DeFi" />
+        <mat-error *ngIf="categoryForm.get('category')?.hasError('required')">
+          Category name is required
+        </mat-error>
+      </mat-form-field>
+
+      <div class="category-form-actions">
+        <button mat-flat-button color="primary" type="submit" [disabled]="savingCategory">
+          <mat-icon>{{ editingCategoryId ? 'save' : 'add' }}</mat-icon>
+          {{ savingCategory ? 'Saving...' : (editingCategoryId ? 'Save Changes' : 'Add Category') }}
+        </button>
+        <button
+          mat-button
+          type="button"
+          *ngIf="editingCategoryId"
+          [disabled]="savingCategory"
+          (click)="cancelCategoryEdit()"
+        >
+          Cancel
+        </button>
+      </div>
+
+      <p class="category-error" *ngIf="categoryError">{{ categoryError }}</p>
+    </form>
+
+    <div class="feed-loading" *ngIf="categoriesLoading">
+      <span class="spinner" aria-hidden="true"></span>
+      <span>Loading categories…</span>
+    </div>
+
+    <div class="feed-empty" *ngIf="!categoriesLoading && categories.length === 0">
+      <mat-icon class="feed-empty-icon">sell</mat-icon>
+      <p>No categories yet. Add your first one above.</p>
+    </div>
+
+    <ul class="category-list" *ngIf="!categoriesLoading && categories.length > 0">
+      <li
+        class="category-row"
+        *ngFor="let cat of categories; trackBy: trackByCategoryId"
+        [class.editing]="editingCategoryId === cat.id"
+      >
+        <div class="category-row-info">
+          <span class="category-swatch" [style.background]="getCategoryColor(cat.category)" aria-hidden="true"></span>
+          <span class="category-name">{{ cat.category }}</span>
+          <code class="category-ref" *ngIf="cat.reference">{{ cat.reference }}</code>
+        </div>
+
+        <div class="category-row-actions">
+          <button
+            mat-icon-button
+            type="button"
+            [disabled]="deletingCategoryId === cat.id"
+            (click)="startEditCategory(cat)"
+            aria-label="Edit category"
+          >
+            <mat-icon>edit</mat-icon>
+          </button>
+          <button
+            mat-icon-button
+            color="warn"
+            type="button"
+            [disabled]="deletingCategoryId === cat.id"
+            (click)="deleteCategoryItem(cat)"
+            aria-label="Delete category"
+          >
+            <mat-icon>{{ deletingCategoryId === cat.id ? 'hourglass_empty' : 'delete' }}</mat-icon>
+          </button>
+        </div>
+      </li>
+    </ul>
+  </section>
+
 </div>
 
 <!-- ===================================================================== -->
-<!-- IMAGE LIGHTBOX — zoom & pan to view post images in detail -->
+<!-- IMAGE LIGHTBOX — zoom & pan to view post images in detail (everyone) -->
 <!-- ===================================================================== -->
 <div
   class="lightbox-backdrop"
