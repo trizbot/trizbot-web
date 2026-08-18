@@ -1,8 +1,6 @@
 <div class="p2p-wrapper">
 
-  <!-- ===================================================================== -->
   <!-- HEADER -->
-  <!-- ===================================================================== -->
   <div class="p2p-header">
     <div>
       <h1 class="p2p-title">P2P Trading</h1>
@@ -10,9 +8,7 @@
     </div>
   </div>
 
-  <!-- ===================================================================== -->
   <!-- MAIN TABS -->
-  <!-- ===================================================================== -->
   <div class="view-tabs" role="tablist">
     <button class="view-tab-btn" [class.active]="activeTab === 'market'" (click)="selectTab('market')" role="tab">
       Market
@@ -25,14 +21,11 @@
     </button>
   </div>
 
-  <!-- ===================================================================== -->
   <!-- MARKET -->
-  <!-- ===================================================================== -->
   <ng-container *ngIf="activeTab === 'market'">
 
     <div class="market-panel">
 
-      <!-- Buy / Sell + quick coin strip -->
       <div class="market-top-row">
         <div class="buy-sell-toggle">
           <button
@@ -67,7 +60,6 @@
         </div>
       </div>
 
-      <!-- Filters -->
       <form class="filters-row" [formGroup]="filterForm">
         <mat-form-field appearance="outline" class="filter-field amount-field">
           <mat-label>Enter amount</mat-label>
@@ -122,7 +114,6 @@
         Trade only inside the app and never release funds until payment is confirmed. Stay alert for impersonators.
       </div>
 
-      <!-- List header (desktop only) -->
       <div class="order-list-header" *ngIf="!ordersLoading && filteredOrders().length > 0">
         <span class="col-advertiser">Advertiser</span>
         <span class="col-price">Price</span>
@@ -143,7 +134,7 @@
       <div class="order-list" *ngIf="!ordersLoading && filteredOrders().length > 0">
         <div
           class="order-row"
-          [ngClass]="marketType === P2POrderType.Buy ? 'tick-buy' : 'tick-sell'"
+          [ngClass]="order.type === P2POrderType.Buy ? 'tick-buy' : 'tick-sell'"
           *ngFor="let order of filteredOrders(); trackBy: trackByOrderId"
         >
           <div class="merchant-col">
@@ -156,6 +147,7 @@
                 {{ order.merchant.username || 'Merchant' }}
                 <mat-icon *ngIf="order.merchant.isVerified" class="verified-icon" matTooltip="Verified trader">verified</mat-icon>
                 <mat-icon *ngIf="order.merchant.isPremium" class="premium-icon" matTooltip="Premium merchant">workspace_premium</mat-icon>
+                <span class="ad-type-tag" [ngClass]="order.type.toLowerCase()">{{ order.type }}</span>
               </div>
               <div class="merchant-stats">
                 {{ order.merchant.totalTrades || 0 }} orders &middot; {{ order.merchant.completionRate || 0 }}% completion
@@ -205,9 +197,7 @@
     </div>
   </ng-container>
 
-  <!-- ===================================================================== -->
-  <!-- MY ADS -->
-  <!-- ===================================================================== -->
+  <!-- MY ADS (unchanged) -->
   <ng-container *ngIf="activeTab === 'my-orders'">
 
     <div class="my-ads-toolbar">
@@ -353,9 +343,7 @@
     </div>
   </ng-container>
 
-  <!-- ===================================================================== -->
-  <!-- MY TRADES -->
-  <!-- ===================================================================== -->
+  <!-- MY TRADES (unchanged) -->
   <ng-container *ngIf="activeTab === 'my-trades'">
 
     <div class="order-loading" *ngIf="myTradesLoading">

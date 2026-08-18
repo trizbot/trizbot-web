@@ -94,10 +94,8 @@ export class P2pComponent implements OnInit, OnDestroy {
   isSuperEntityType: boolean;
   isLoading = true;
 
-  // Full dropdown source lists (used inside the Coin / Currency mat-selects).
   readonly coinSuggestions: string[] = SUPPORTED_COINS;
   readonly fiatSuggestions: string[] = SUPPORTED_FIAT;
-  // Pinned quick-select coin strip, mirrors Bybit's "USDT BTC ETH USDC ..." row.
   readonly quickCoins: string[] = QUICK_COINS;
 
   activeTab: MainTab = 'market';
@@ -118,7 +116,6 @@ export class P2pComponent implements OnInit, OnDestroy {
   orders: P2POrder[] = [];
   ordersLoading = false;
 
-  /** Payment methods offered depend on the currently selected fiat currency. */
   get paymentMethodOptions(): string[] {
     return getPaymentMethodsForFiat(this.filterForm.getRawValue().fiatCurrency);
   }
@@ -127,7 +124,10 @@ export class P2pComponent implements OnInit, OnDestroy {
     return fiatSymbol(this.filterForm.getRawValue().fiatCurrency);
   }
 
+  // Uses a wall-clock deadline rather than a naive per-tick decrement, so the
+  // countdown can't drift (or silently stall) if the tab is backgrounded/throttled.
   private refreshTimer: ReturnType<typeof setInterval> | null = null;
+  private refreshDeadline = 0;
   refreshSeconds = 15;
   secondsToRefresh = 15;
 
@@ -138,7 +138,6 @@ export class P2pComponent implements OnInit, OnDestroy {
   myOrdersLoading = false;
   cancellingOrderId: string | null = null;
   myAdsSubTab: MyAdsSubTab = 'listed';
-  /** Global switch — when off, every one of the trader's ads is hidden from the market. */
   activeModeOn = true;
   togglingListedId: string | null = null;
 
@@ -160,7 +159,6 @@ export class P2pComponent implements OnInit, OnDestroy {
     this.startAutoRefresh();
 
     this.filterForm.controls.fiatCurrency.valueChanges.subscribe(() => {
-      // Payment method filter may no longer be valid for the new currency.
       const stillValid = this.paymentMethodOptions.includes(this.filterForm.getRawValue().paymentMethod || '');
       if (!stillValid) this.filterForm.patchValue({ paymentMethod: '' });
       this.loadOrders();
@@ -252,9 +250,17 @@ export class P2pComponent implements OnInit, OnDestroy {
   loadOrders(): void {
     this.ordersLoading = true;
     const { coin, fiatCurrency } = this.filterForm.getRawValue();
+
+    // Bybit-style flip: the "Buy" tab is where a user comes to BUY crypto, so it
+    // must list the SELL ads merchants posted (someone has to sell to you) — and
+    // the "Sell" tab must list BUY ads. Querying by marketType directly showed
+    // a merchant's own ad type back under the matching tab, which is backwards.
+    const orderTypeToQuery =
+      this.marketType === P2POrderType.Buy ? P2POrderType.Sell : P2POrderType.Buy;
+
     this.p2pService
       .listOrders({
-        type: this.marketType,
+        type: orderTypeToQuery,
         coin: coin ? coin.toUpperCase() : undefined,
         fiatCurrency: fiatCurrency ? fiatCurrency.toUpperCase() : undefined,
       })
@@ -271,7 +277,6 @@ export class P2pComponent implements OnInit, OnDestroy {
       });
   }
 
-  /** Client-side refinement on top of the server results: payment method, amount + sort. */
   filteredOrders(): P2POrder[] {
     const { paymentMethod, amount, sortBy } = this.filterForm.getRawValue();
     const filtered = this.orders.filter((o) => {
@@ -291,13 +296,13 @@ export class P2pComponent implements OnInit, OnDestroy {
     }
   }
 
-  // The action verb on each row is the OPPOSITE of the ad's type:
-  // a BUY ad means the poster buys, so the taker sells to them, and vice versa.
+  // The action verb is the opposite of the AD's own type: a BUY ad means the
+  // poster buys, so the taker sells to them, and vice versa. This still holds
+  // correctly now that the Buy/Sell tabs list the opposite ad type.
   actionLabelFor(order: P2POrder): string {
     return order.type === P2POrderType.Buy ? 'Sell' : 'Buy';
   }
 
-  /** Cosmetic "Fast release" tag for high-volume, high-completion merchants — same signal Bybit surfaces. */
   isFastRelease(order: P2POrder): boolean {
     return order.merchant.completionRate >= 97 && order.merchant.totalTrades >= 100;
   }
@@ -319,7 +324,7 @@ export class P2pComponent implements OnInit, OnDestroy {
   }
 
   // ---------------------------------------------------------------------
-  // Auto-refresh (mirrors Bybit's "5s / 15s Refresh" control)
+  // Auto-refresh (mirrors Bybit's "15s / 30s / 60s Refresh" control)
   // ---------------------------------------------------------------------
 
   onRefreshIntervalChange(seconds: number): void {
@@ -331,13 +336,18 @@ export class P2pComponent implements OnInit, OnDestroy {
     this.stopAutoRefresh();
     if (!this.refreshSeconds) return;
     this.secondsToRefresh = this.refreshSeconds;
+    this.refreshDeadline = Date.now() + this.refreshSeconds * 1000;
+    // Tick at 250ms and derive the displayed seconds from a wall-clock deadline
+    // instead of decrementing a counter — avoids drift/stalling on slow tabs.
     this.refreshTimer = setInterval(() => {
-      this.secondsToRefresh -= 1;
-      if (this.secondsToRefresh <= 0) {
+      const msLeft = this.refreshDeadline - Date.now();
+      this.secondsToRefresh = Math.max(0, Math.ceil(msLeft / 1000));
+      if (msLeft <= 0) {
         if (this.activeTab === 'market' && !this.ordersLoading) this.loadOrders();
+        this.refreshDeadline = Date.now() + this.refreshSeconds * 1000;
         this.secondsToRefresh = this.refreshSeconds;
       }
-    }, 1000);
+    }, 250);
   }
 
   private stopAutoRefresh(): void {
@@ -355,7 +365,6 @@ export class P2pComponent implements OnInit, OnDestroy {
     this.myAdsSubTab = tab;
   }
 
-  /** Rows shown under the current My Ads sub-tab. */
   visibleMyOrders(): P2POrder[] {
     if (this.myAdsSubTab === 'listed') {
       return this.myOrders.filter((o) => o.status === OrderStatus.Active && o.isListed !== false);
@@ -411,7 +420,6 @@ export class P2pComponent implements OnInit, OnDestroy {
     });
   }
 
-  /** Per-ad Listed / Hidden switch, independent of the global Active Mode toggle. */
   toggleOrderListed(order: P2POrder): void {
     if (order.status !== OrderStatus.Active) return;
     this.togglingListedId = order.id;
@@ -430,7 +438,6 @@ export class P2pComponent implements OnInit, OnDestroy {
     });
   }
 
-  /** Global "Active Mode" — when switched off, all Listed ads move to Hidden at once. */
   onActiveModeToggle(isOn: boolean): void {
     this.activeModeOn = isOn;
     const targets = this.myOrders.filter((o) => o.status === OrderStatus.Active);

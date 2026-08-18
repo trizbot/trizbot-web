@@ -111,4 +111,8 @@ export class P2pService {
   private unwrapOne<T>(res: ApiEnvelope<T> | T): T {
     return (res as ApiEnvelope<T>)?.data !== undefined ? (res as ApiEnvelope<T>).data : (res as T);
   }
+getTrade(id: string): Observable<P2PTrade> {
+  return this.http.get<P2PTrade>(`${this.base}/p2p/trades/${id}`);
+}
+
 }

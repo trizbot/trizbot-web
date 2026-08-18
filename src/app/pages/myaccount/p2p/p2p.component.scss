@@ -745,3 +745,22 @@
     .price-col { align-items: flex-end; }
   }
 }
+
+
+
+
+
+.order-row.tick-buy { border-left: 3px solid var(--color-buy, #16a34a); }
+.order-row.tick-sell { border-left: 3px solid var(--color-sell, #dc2626); }
+
+.ad-type-tag {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 4px;
+  margin-left: 6px;
+  &.buy { background: rgba(22,163,74,.12); color: #16a34a; }
+  &.sell { background: rgba(220,38,38,.12); color: #dc2626; }
+}
+
+

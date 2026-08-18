@@ -198,3 +198,8 @@ mat-dialog-content {
   .merchant-strip { flex-wrap: wrap; }
   .price-tag { margin-left: 0; text-align: left; }
 }
+
+.countdown {
+  font-variant-numeric: tabular-nums;
+  &.urgent { color: #dc2626; }
+}
