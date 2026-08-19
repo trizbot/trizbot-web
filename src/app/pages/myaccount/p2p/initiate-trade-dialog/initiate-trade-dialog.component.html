@@ -70,20 +70,23 @@
           <label>Additional info (optional)</label>
           <input type="text" [(ngModel)]="sellerAdditionalInfo" placeholder="Reference, notes for the buyer, etc." />
         </div>
-          
+      </div>
 
+      <!-- Transaction PIN is required to start ANY trade (locks funds into
+           escrow), regardless of whether this is a Buy or Sell order -->
       <div class="form-group">
         <label>Transaction PIN</label>
         <input
           type="password"
-          maxlength="4"
+          inputmode="numeric"
+          maxlength="6"
           autocomplete="off"
           [(ngModel)]="transactionPin"
-          placeholder="Enter 4 transaction Pin"
+          placeholder="Enter transaction PIN"
         />
-       
-      </div>
-
+        <div class="field-error" *ngIf="transactionPin && !pinValid">
+          Enter a 4&ndash;6 digit transaction PIN.
+        </div>
       </div>
 
       <div class="field-error" *ngIf="errorMessage">{{ errorMessage }}</div>
@@ -104,6 +107,11 @@
   </ng-container>
 
   <!-- ============================== DETAIL =============================== -->
+  <!-- Everything below is already keyed off trade.isBuyer, not off the ad's
+       order type, so it correctly reverses whether the trade originated
+       from a Sell ad or a Buy ad:
+         - if I am the buyer in THIS trade -> I upload evidence + mark paid
+         - if I am the seller in THIS trade -> I review evidence + release -->
   <ng-container *ngIf="mode === 'detail' && trade">
     <div class="dialog-header">
       <h2>Trade with &#64;{{ counterpartyName() }}</h2>
@@ -148,7 +156,7 @@
         <div class="payment-details-row" *ngIf="detail.additionalInfo"><span>Note</span><span>{{ detail.additionalInfo }}</span></div>
       </div>
 
-      <!-- ---- BUYER: mark as paid + attach evidence ---- -->
+      <!-- ---- BUYER (in this trade): mark as paid + attach evidence ---- -->
       <ng-container *ngIf="canMarkPaid">
         <div class="safety-banner">
           <mat-icon>info</mat-icon>
@@ -196,7 +204,7 @@
         </div>
       </ng-container>
 
-      <!-- ---- SELLER: review evidence + release funds ---- -->
+      <!-- ---- SELLER (in this trade): review evidence + release funds ---- -->
       <ng-container *ngIf="!trade.isBuyer && trade.status === TradeStatus.Paid">
         <div class="proof-review">
           <div class="payment-details-title"><mat-icon>receipt_long</mat-icon> Payment evidence from the buyer</div>
@@ -216,7 +224,7 @@
           <input
             type="password"
             inputmode="numeric"
-            maxlength="4"
+            maxlength="6"
             autocomplete="off"
             class="pin-input"
             [(ngModel)]="releasePin"
@@ -237,10 +245,10 @@
         </button>
       </ng-container>
 
-     <div class="trade-footer-note" *ngIf="trade.status === TradeStatus.Completed">
-  <mat-icon>check_circle</mat-icon>
-  Funds released {{ trade.releasedAt ? (trade.releasedAt | date: 'medium') : '' }}.
-</div>
+      <div class="trade-footer-note" *ngIf="trade.status === TradeStatus.Completed">
+        <mat-icon>check_circle</mat-icon>
+        Funds released {{ trade.releasedAt ? (trade.releasedAt | date: 'medium') : '' }}.
+      </div>
     </div>
   </ng-container>
 

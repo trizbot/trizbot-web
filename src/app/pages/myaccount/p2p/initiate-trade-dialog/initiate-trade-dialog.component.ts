@@ -213,7 +213,7 @@ export class InitiateTradeDialogComponent implements OnInit, OnDestroy {
     }
   }
 
-    get countdownLabel(): string {
+  get countdownLabel(): string {
     if (!this.trade || this.trade.status !== TradeStatus.Pending || !this.trade.paymentDeadline) return '';
     return formatCountdown(msUntilDeadline(this.trade.paymentDeadline, this.nowTick));
   }
@@ -229,6 +229,9 @@ export class InitiateTradeDialogComponent implements OnInit, OnDestroy {
     return msUntilDeadline(this.trade.paymentDeadline, this.nowTick) <= 0;
   }
 
+  /** True when the CURRENT USER is the buyer on THIS trade (regardless of
+   *  whether the underlying ad was a Buy or Sell order) — so this stays
+   *  correct in both directions. */
   get canMarkPaid(): boolean {
     return !!this.trade && canMarkPaid(this.trade);
   }
