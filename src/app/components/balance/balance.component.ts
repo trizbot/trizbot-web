@@ -482,17 +482,18 @@ export class WalletBalanceComponent implements OnInit, OnDestroy {
         const remaining = expiryTime - now;
 
         if (remaining > 0) {
+          const days = Math.floor(remaining / (1000 * 60 * 60 * 24));
           const hours = Math.floor((remaining / (1000 * 60 * 60)) % 24);
           const minutes = Math.floor((remaining / (1000 * 60)) % 60);
           const seconds = Math.floor((remaining / 1000) % 60);
-          this.countdowns[invest.expiry] = `${this.pad(hours)}h ${this.pad(minutes)}m ${this.pad(seconds)}s`;
+          this.countdowns[invest.expiry] = `${days}d ${this.pad(hours)}h ${this.pad(minutes)}m ${this.pad(seconds)}s`;
         } else {
           if (invest.transactionStatus !== 'Expired') {
             invest.transactionStatus = invest.investmentStatus;
 
             this.investService.autoRevertFunds().subscribe({
               next: (res: any) => {
-                this.countdowns[invest.expiry] = '00h 00m 00s';
+                this.countdowns[invest.expiry] = '0d 00h 00m 00s';
               },
             });
           }

@@ -105,12 +105,7 @@
     </div>
   </ng-container>
 
-  <!-- ============================== DETAIL =============================== -->
-  <!-- Everything below is already keyed off trade.isBuyer, not off the ad's
-       order type, so it correctly reverses whether the trade originated
-       from a Sell ad or a Buy ad:
-         - if I am the buyer in THIS trade -> I upload evidence + mark paid
-         - if I am the seller in THIS trade -> I review evidence + release -->
+
   <ng-container *ngIf="mode === 'detail' && trade">
     <div class="dialog-header">
       <h2>Trade with &#64;{{ counterpartyName() }}</h2>
