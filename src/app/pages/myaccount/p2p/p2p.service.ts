@@ -6,6 +6,7 @@ import { map } from 'rxjs/operators';
 import { environment } from '../../../../environments/environment';
 import {
   CreateOrderReqBody,
+  ExchangeRateRes,
   InitiateTradeReqBody,
   ListOrdersParams,
   P2POrder,
@@ -159,4 +160,12 @@ markTradesSeen(): Observable<{ count: number }> {
 }
 
 
+
+  getExchangeRate(coin: string, fiatCurrency: string): Observable<ExchangeRateRes> {
+    const params = new HttpParams().set('coin', coin).set('fiatCurrency', fiatCurrency);
+    return this.http
+      .get<ApiEnvelope<ExchangeRateRes> | ExchangeRateRes>(`${this.base}/exchange-rate`, { params })
+      .pipe(map((res) => this.unwrapOne(res)));
+  }
+  
 }

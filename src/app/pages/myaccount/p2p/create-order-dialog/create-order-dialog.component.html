@@ -58,6 +58,17 @@
     <span matSuffix>{{ form.value.fiatCurrency }} / {{ form.value.coin }}</span>
   </mat-form-field>
 
+  <div class="market-rate-hint" *ngIf="marketRateLoading">
+    Fetching current market rate…
+  </div>
+  <div class="market-rate-hint" *ngIf="!marketRateLoading && marketRate">
+    Market rate: {{ fiatSymbol }}{{ marketRate | number: '1.0-2' }} / {{ form.value.coin }}
+    &middot; max allowed: {{ fiatSymbol }}{{ maxAllowedPrice | number: '1.0-2' }}
+    <button type="button" class="reset-max-link" (click)="useMarketRate()">Use market rate</button>
+  </div>
+  <div class="field-error" *ngIf="!marketRateLoading && marketRateError">{{ marketRateError }}</div>
+  <div class="field-error" *ngIf="priceError">{{ priceError }}</div>
+
   <mat-label class="f-w-600 m-b-8 d-block">Total amount to trade</mat-label>
   <mat-form-field appearance="outline" class="w-100">
     <input matInput type="number" formControlName="totalAmount" placeholder="0.00" />
@@ -175,7 +186,7 @@
     color="primary"
     class="fw-bold w-100 submit-btn"
     type="button"
-    [disabled]="loading"
+    [disabled]="loading || marketRateLoading"
     (click)="submit()"
   >
     {{ loading ? (isEditMode ? 'Updating...' : 'Posting...') : (isEditMode ? 'Update Ad' : 'Post Ad') }}

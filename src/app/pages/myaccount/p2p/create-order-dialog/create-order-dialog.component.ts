@@ -67,12 +67,24 @@ export class CreateOrderDialogComponent implements OnDestroy {
   readonly fiatSuggestions: string[];
   readonly isEditMode: boolean;
 
+  /** Max % an ad's price may sit above the live market rate — mirrors the
+   *  backend's PRICE_PREMIUM_TOLERANCE_PERCENT. Keep these two in sync. */
+  readonly priceTolerancePercent = 10;
+
   loading = false;
   errorMessage = '';
 
   /** Once the user manually types into Max order limit, stop auto-overwriting it. */
   private maxLimitTouchedByUser = false;
   private subs = new Subscription();
+
+  // -----------------------------------------------------------------------
+  // Market rate
+  // -----------------------------------------------------------------------
+  marketRate: number | null = null;
+  marketRateLoading = false;
+  marketRateError = '';
+  private marketRateRequestId = 0;
 
   form = new FormGroup({
     type: new FormControl<P2POrderType>(P2POrderType.Buy, { nonNullable: true }),
@@ -132,6 +144,16 @@ export class CreateOrderDialogComponent implements OnDestroy {
     // Auto-calculate Max order limit = Total amount to trade × Price per unit.
     this.subs.add(this.form.controls.totalAmount.valueChanges.subscribe(() => this.recomputeMaxLimit()));
     this.subs.add(this.form.controls.pricePerUnit.valueChanges.subscribe(() => this.recomputeMaxLimit()));
+
+    // Load the market rate once up front (covers both create and edit mode,
+    // including when coin/fiat controls are disabled and won't re-emit).
+    this.loadMarketRate();
+
+    // In create mode the asset/currency pickers are live — refresh the rate
+    // whenever either changes. (No-op wiring in edit mode since those
+    // controls are disabled and never change.)
+    this.subs.add(this.form.controls.coin.valueChanges.subscribe(() => this.loadMarketRate()));
+    this.subs.add(this.form.controls.fiatCurrency.valueChanges.subscribe(() => this.loadMarketRate()));
   }
 
   ngOnDestroy(): void {
@@ -152,6 +174,60 @@ export class CreateOrderDialogComponent implements OnDestroy {
 
   get isSellAd(): boolean {
     return this.form.value.type === P2POrderType.Sell;
+  }
+
+  // -----------------------------------------------------------------------
+  // Market rate
+  // -----------------------------------------------------------------------
+
+  private loadMarketRate(): void {
+    const { coin, fiatCurrency } = this.form.getRawValue();
+    if (!coin || !fiatCurrency) return;
+
+    const requestId = ++this.marketRateRequestId;
+    this.marketRateLoading = true;
+    this.marketRateError = '';
+
+    this.p2pService.getExchangeRate(coin, fiatCurrency).subscribe({
+      next: (res) => {
+        if (requestId !== this.marketRateRequestId) return; // stale response, coin/fiat changed since
+        this.marketRate = res.rate;
+        this.marketRateLoading = false;
+      },
+      error: () => {
+        if (requestId !== this.marketRateRequestId) return;
+        this.marketRate = null;
+        this.marketRateLoading = false;
+        this.marketRateError = 'Could not load the current market rate. You can still continue, but please double-check your price.';
+      },
+    });
+  }
+
+  /** Highest price per unit allowed, based on the live market rate plus the
+   *  tolerance. Null while the rate hasn't loaded yet. */
+  get maxAllowedPrice(): number | null {
+    if (this.marketRate == null) return null;
+    return this.marketRate * (1 + this.priceTolerancePercent / 100);
+  }
+
+  get priceExceedsMarketRate(): boolean {
+    const price = this.form.getRawValue().pricePerUnit;
+    if (price == null || this.maxAllowedPrice == null) return false;
+    return price > this.maxAllowedPrice;
+  }
+
+  get priceError(): string | null {
+    if (this.priceExceedsMarketRate && this.marketRate != null && this.maxAllowedPrice != null) {
+      return `Price per unit cannot exceed ${this.fiatSymbol}${this.maxAllowedPrice.toFixed(2)} ` +
+        `(market rate ${this.fiatSymbol}${this.marketRate.toFixed(2)} + ${this.priceTolerancePercent}% max).`;
+    }
+    return null;
+  }
+
+  /** Lets the user snap the price down to the current market rate. */
+  useMarketRate(): void {
+    if (this.marketRate == null) return;
+    this.form.controls.pricePerUnit.setValue(Number(this.marketRate.toFixed(2)));
   }
 
   // -----------------------------------------------------------------------
@@ -279,7 +355,7 @@ export class CreateOrderDialogComponent implements OnDestroy {
   }
 
   submit(): void {
-    if (this.form.invalid || this.limitError || this.paymentDetailsError) {
+    if (this.form.invalid || this.limitError || this.paymentDetailsError || this.priceError) {
       this.form.markAllAsTouched();
       return;
     }

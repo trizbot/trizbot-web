@@ -289,3 +289,13 @@ export function formatCountdown(msLeft: number): string {
   const seconds = totalSeconds % 60;
   return `${minutes}:${seconds.toString().padStart(2, '0')}`;
 }
+
+
+
+export interface ExchangeRateRes {
+  coin: string;
+  fiatCurrency: string;
+  rate: number;
+  source?: string;
+  timestamp?: string;
+}
