@@ -806,3 +806,37 @@
   color: #f43f5e;
   &:hover { background: rgba(244, 63, 94, 0.08); }
 }
+
+
+
+
+
+.countdown-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 12px;
+  background: rgba(255, 106, 0, 0.1);
+  color: #ff6a00;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+
+  mat-icon {
+    font-size: 14px;
+    height: 14px;
+    width: 14px;
+  }
+
+  &.urgent {
+    background: rgba(244, 63, 94, 0.12);
+    color: #f43f5e;
+    animation: countdown-pulse 1s infinite;
+  }
+}
+
+@keyframes countdown-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}

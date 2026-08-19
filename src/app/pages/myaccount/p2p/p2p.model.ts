@@ -42,7 +42,6 @@ export interface UpdateOrderReqBody {
 }
 
 export interface PaymentMethodDetail {
-  /** Must match one of the strings in order.paymentMethods */
   method: string;
   accountName: string;
   accountNumber: string;
@@ -61,7 +60,6 @@ export interface P2POrder {
   minLimit: number;
   maxLimit: number;
   paymentMethods: string[];
-  /** Receiving details per payment method — populated on Sell ads. */
   paymentDetails?: PaymentMethodDetail[];
   terms?: string;
   paymentWindowMinutes?: number;
@@ -81,11 +79,6 @@ export interface P2PTrade {
   coinAmount: number;
   fiatAmount: number;
   paymentMethod: string;
-  /**
-   * The receiving account to actually pay for THIS trade. Copied from the
-   * ad's paymentDetails when the ad was a Sell ad, or supplied by the taker
-   * (who becomes the seller) when the ad taken was a Buy ad.
-   */
   sellerPaymentDetails?: PaymentMethodDetail;
   status: TradeStatus;
   paymentDeadline?: string;
@@ -122,7 +115,6 @@ export interface InitiateTradeReqBody {
   coinAmount: number;
   paymentMethod?: string;
   transactionPin?: string;
-  /** Only sent when the taker becomes the seller (taking a Buy ad). */
   sellerPaymentDetails?: PaymentMethodDetail;
 }
 
@@ -251,13 +243,24 @@ export function normalizeOrder(raw: any): P2POrder {
   };
 }
 
+/**
+ * FIX: the backend now always sends raw.isBuyer, raw.buyer, raw.seller and
+ * a lightweight raw.order snapshot (see P2pService.shapeTradeForViewer).
+ * normalizeMerchant already handles raw.buyer/raw.seller correctly since
+ * they arrive as { id, username, isVerified } — no change needed there,
+ * just make sure we read isBuyer as a real boolean and fall back sensibly
+ * if an older/uncached response is missing the new fields.
+ */
 export function normalizeTrade(raw: any): P2PTrade {
+  const buyerFallbackId = extractId(raw.buyerId);
+  const sellerFallbackId = extractId(raw.sellerId);
+
   return {
     id: extractId(raw.id || raw._id),
-    order: normalizeOrder(raw.order || {}),
-    buyer: normalizeMerchant(raw.buyer, extractId(raw.buyerId)),
-    seller: normalizeMerchant(raw.seller, extractId(raw.sellerId)),
-    isBuyer: !!raw.isBuyer,
+    order: normalizeOrder(raw.order || { coin: raw.coin, fiatCurrency: raw.fiatCurrency, pricePerUnit: raw.pricePerUnit }),
+    buyer: normalizeMerchant(raw.buyer || { username: raw.buyerName }, buyerFallbackId),
+    seller: normalizeMerchant(raw.seller || { username: raw.sellerName }, sellerFallbackId),
+    isBuyer: typeof raw.isBuyer === 'boolean' ? raw.isBuyer : String(raw.buyerId) === String(raw.viewerId || ''),
     coinAmount: raw.coinAmount,
     fiatAmount: raw.fiatAmount,
     paymentMethod: raw.paymentMethod,
@@ -266,4 +269,23 @@ export function normalizeTrade(raw: any): P2PTrade {
     paymentDeadline: raw.paymentDeadline ? extractDate(raw.paymentDeadline) : undefined,
     createdAt: extractDate(raw.createdAt),
   };
+}
+
+// ---------------------------------------------------------------------
+// Payment countdown helpers (Bybit-style mm:ss timer)
+// ---------------------------------------------------------------------
+
+/** Milliseconds remaining until a trade's payment deadline. Negative once expired. */
+export function msUntilDeadline(paymentDeadline: string | undefined, nowMs: number = Date.now()): number {
+  if (!paymentDeadline) return 0;
+  return new Date(paymentDeadline).getTime() - nowMs;
+}
+
+/** Formats remaining ms as "mm:ss", or "Expired" once the deadline has passed. */
+export function formatCountdown(msLeft: number): string {
+  if (msLeft <= 0) return 'Expired';
+  const totalSeconds = Math.floor(msLeft / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${minutes}:${seconds.toString().padStart(2, '0')}`;
 }

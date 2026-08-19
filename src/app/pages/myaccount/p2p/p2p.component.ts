@@ -19,7 +19,9 @@ import {
   SUPPORTED_FIAT,
   TradeStatus,
   fiatSymbol,
+  formatCountdown,
   getPaymentMethodsForFiat,
+  msUntilDeadline,
 } from './p2p.model';
 import { CreateOrderDialogComponent } from './create-order-dialog/create-order-dialog.component';
 import { InitiateTradeDialogComponent } from './initiate-trade-dialog/initiate-trade-dialog.component';
@@ -39,9 +41,11 @@ const REFRESH_OPTIONS = [
   { label: '60s Refresh', value: 60 },
 ];
 
-/** How often to poll the server-computed unseen-trade count so the "My Trades"
- *  badge can light up even while the user is on a different tab. */
 const TRADES_NOTIFICATION_POLL_INTERVAL_MS = 20000;
+/** Countdown ticks once a second — matches Bybit's mm:ss payment timer. */
+const TRADES_COUNTDOWN_TICK_MS = 1000;
+/** Countdown turns urgent (red) inside the final 2 minutes, like Bybit's. */
+const COUNTDOWN_URGENT_THRESHOLD_MS = 2 * 60 * 1000;
 
 @Component({
   selector: 'app-p2p',
@@ -98,6 +102,10 @@ export class P2pComponent implements OnInit, OnDestroy {
   isSuperEntityType: boolean;
   isLoading = true;
 
+  /** The signed-in trader's own id — used to filter own ads out of the
+   *  market and to block trading on them defense-in-depth on the client. */
+  currentTraderId = '';
+
   readonly coinSuggestions: string[] = SUPPORTED_COINS;
   readonly fiatSuggestions: string[] = SUPPORTED_FIAT;
   readonly quickCoins: string[] = QUICK_COINS;
@@ -145,16 +153,18 @@ export class P2pComponent implements OnInit, OnDestroy {
   togglingListedId: string | null = null;
 
   // ---------------------------------------------------------------------
-  // My Trades + notifications
+  // My Trades + notifications + countdown
   // ---------------------------------------------------------------------
   myTrades: P2PTrade[] = [];
   myTradesLoading = false;
 
-  /** Server-computed unread count shown as a badge on the "My Trades" tab,
-   *  Bybit-style. Backed by /p2p/trades/notifications/count so it's accurate
-   *  across page reloads and multiple devices, not just this session. */
   myTradesUnseenCount = 0;
   private tradesNotificationPollTimer: ReturnType<typeof setInterval> | null = null;
+
+  /** Ticks every second while there's at least one pending trade, so the
+   *  mm:ss countdown labels in the template stay live without re-fetching. */
+  private nowTick = Date.now();
+  private tradesCountdownTimer: ReturnType<typeof setInterval> | null = null;
 
   constructor(
     private traderService: TraderService,
@@ -167,6 +177,7 @@ export class P2pComponent implements OnInit, OnDestroy {
     this.getCurrentTrader();
     this.startAutoRefresh();
     this.startTradesNotificationPolling();
+    this.startTradesCountdown();
 
     this.filterForm.controls.fiatCurrency.valueChanges.subscribe(() => {
       const stillValid = this.paymentMethodOptions.includes(this.filterForm.getRawValue().paymentMethod || '');
@@ -178,6 +189,7 @@ export class P2pComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.stopAutoRefresh();
     this.stopTradesNotificationPolling();
+    this.stopTradesCountdown();
   }
 
   getCurrentTrader() {
@@ -185,6 +197,10 @@ export class P2pComponent implements OnInit, OnDestroy {
     this.traderService.getTrader().subscribe({
       next: (res: GetTraderResBody) => {
         this.isLoading = false;
+        // NOTE: adjust the field name here if GetTraderResBody exposes the
+        // trader's id under a different key than `id`/`_id` in your types.
+        this.currentTraderId = (res.data as any).id || (res.data as any)._id || '';
+
         this.phoneNumber = res.data.phoneNumber;
         this.walletBalance = res.data.walletBalance;
         this.amountInvested = res.data.amountInvested;
@@ -284,9 +300,17 @@ export class P2pComponent implements OnInit, OnDestroy {
       });
   }
 
+  /** True when this order belongs to the signed-in trader. The backend
+   *  already excludes own ads from listOrders(), this is a client-side
+   *  backstop so a stale cached list can never render a tradeable "own ad". */
+  isOwnOrder(order: P2POrder): boolean {
+    return !!this.currentTraderId && order.merchant?.id === this.currentTraderId;
+  }
+
   filteredOrders(): P2POrder[] {
     const { paymentMethod, amount, sortBy } = this.filterForm.getRawValue();
     const filtered = this.orders.filter((o) => {
+      if (this.isOwnOrder(o)) return false;
       if (paymentMethod && !o.paymentMethods.includes(paymentMethod)) return false;
       if (amount != null && amount > 0 && (amount < o.minLimit || amount > o.maxLimit)) return false;
       return true;
@@ -312,6 +336,11 @@ export class P2pComponent implements OnInit, OnDestroy {
   }
 
   tradeOrder(order: P2POrder): void {
+    if (this.isOwnOrder(order)) {
+      this.sharedService.showToast({ title: 'You cannot trade on your own ad.' });
+      return;
+    }
+
     const ref = this.dialog.open(InitiateTradeDialogComponent, {
       width: '460px',
       maxWidth: '95vw',
@@ -406,7 +435,6 @@ export class P2pComponent implements OnInit, OnDestroy {
     });
   }
 
-  /** Opens the same dialog pre-filled for an existing ad and submits an update instead of a create. */
   editOrder(order: P2POrder): void {
     const ref = this.dialog.open(CreateOrderDialogComponent, {
       width: '520px',
@@ -443,7 +471,10 @@ export class P2pComponent implements OnInit, OnDestroy {
     });
   }
 
-  /** Permanently removes an ad. Distinct from cancelOrder, which just flips status to Cancelled. */
+  /** Works on Active and Cancelled ads (the backend blocks only Completed
+   *  ones, since those are part of trade history). After a successful
+   *  delete we refresh from the server as well as filtering locally, so
+   *  the list can never drift out of sync with what's actually persisted. */
   deleteOrder(order: P2POrder): void {
     const confirmed = window.confirm('Delete this ad permanently? This cannot be undone.');
     if (!confirmed) return;
@@ -454,6 +485,7 @@ export class P2pComponent implements OnInit, OnDestroy {
         this.deletingOrderId = null;
         this.myOrders = this.myOrders.filter((o) => o.id !== order.id);
         this.sharedService.showToast({ title: 'Ad deleted.' });
+        this.loadMyOrders();
       },
       error: (err) => {
         this.deletingOrderId = null;
@@ -517,8 +549,6 @@ export class P2pComponent implements OnInit, OnDestroy {
           (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
         );
         this.myTradesLoading = false;
-        // Opening the tab clears the badge server-side so it stays cleared
-        // across reloads and other devices, not just this session.
         this.markTradesSeen();
       },
       error: () => {
@@ -532,17 +562,10 @@ export class P2pComponent implements OnInit, OnDestroy {
       next: () => {
         this.myTradesUnseenCount = 0;
       },
-      error: () => {
-        // Non-critical — badge will just re-sync on the next poll tick.
-      },
+      error: () => {},
     });
   }
 
-  /** Background poll of the server-computed unseen count so a badge can
-   *  appear on "My Trades" even while the user is on the Market or My Ads
-   *  tab — mirrors Bybit's behavior when someone takes your ad or a trade's
-   *  status changes. While the My Trades tab is open we don't need to poll
-   *  since loadMyTrades() already keeps the count at 0. */
   private startTradesNotificationPolling(): void {
     this.pollTradesNotificationCount();
     this.tradesNotificationPollTimer = setInterval(
@@ -559,7 +582,7 @@ export class P2pComponent implements OnInit, OnDestroy {
   }
 
   private pollTradesNotificationCount(): void {
-    if (this.activeTab === 'my-trades') return; // already at 0, no need to poll
+    if (this.activeTab === 'my-trades') return;
 
     this.p2pService.getTradesNotificationCount().subscribe({
       next: (res) => {
@@ -574,10 +597,64 @@ export class P2pComponent implements OnInit, OnDestroy {
           });
         }
       },
-      error: () => {
-        // Silent — badge simply won't update this cycle.
-      },
+      error: () => {},
     });
+  }
+
+  // ---------------------------------------------------------------------
+  // Payment countdown (Bybit-style mm:ss timer)
+  // ---------------------------------------------------------------------
+
+  /** Wall-clock-deadline-based tick, same pattern as the market refresh
+   *  timer, so the countdown can't drift if the tab is backgrounded. */
+  private startTradesCountdown(): void {
+    this.stopTradesCountdown();
+    this.tradesCountdownTimer = setInterval(() => {
+      this.nowTick = Date.now();
+    }, TRADES_COUNTDOWN_TICK_MS);
+  }
+
+  private stopTradesCountdown(): void {
+    if (this.tradesCountdownTimer) {
+      clearInterval(this.tradesCountdownTimer);
+      this.tradesCountdownTimer = null;
+    }
+  }
+
+  /** "14:59" style label for a trade awaiting payment; "Expired" once past
+   *  the deadline; empty string for trades that aren't in a countdown state. */
+  getTradeCountdownLabel(trade: P2PTrade): string {
+    if (trade.status !== TradeStatus.PendingPayment || !trade.paymentDeadline) return '';
+    const msLeft = msUntilDeadline(trade.paymentDeadline, this.nowTick);
+    return formatCountdown(msLeft);
+  }
+
+  /** True in the final 2 minutes of the payment window — used to turn the
+   *  countdown pill red/urgent, matching Bybit's behavior. */
+  isTradeCountdownUrgent(trade: P2PTrade): boolean {
+    if (trade.status !== TradeStatus.PendingPayment || !trade.paymentDeadline) return false;
+    const msLeft = msUntilDeadline(trade.paymentDeadline, this.nowTick);
+    return msLeft > 0 && msLeft <= COUNTDOWN_URGENT_THRESHOLD_MS;
+  }
+
+  /** Fiat symbol for a specific trade's own currency — not the market
+   *  filter's currency, since a trade can be in a different fiat than
+   *  whatever's currently selected in the Market tab filters. */
+  tradeFiatSymbol(trade: P2PTrade): string {
+    return fiatSymbol(trade.order?.fiatCurrency);
+  }
+
+  /** Counterparty label for a trade row — buyer sees the seller's name and
+   *  vice versa, driven entirely by trade.isBuyer from the backend. */
+  counterpartyName(trade: P2PTrade): string {
+    const merchant = trade.isBuyer ? trade.seller : trade.buyer;
+    return merchant?.username || 'Trader';
+  }
+
+  /** "You are buying" / "You are selling" label, mirroring Bybit's trade
+   *  detail header — driven by the same isBuyer flag. */
+  yourRoleLabel(trade: P2PTrade): string {
+    return trade.isBuyer ? 'You are buying' : 'You are selling';
   }
 
   openTrade(trade: P2PTrade): void {

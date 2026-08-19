@@ -9,19 +9,18 @@
   </div>
 
   <!-- MAIN TABS -->
-
-<div class="view-tabs" role="tablist">
-  <button class="view-tab-btn" [class.active]="activeTab === 'market'" (click)="selectTab('market')" role="tab">
-    Market
-  </button>
-  <button class="view-tab-btn" [class.active]="activeTab === 'my-orders'" (click)="selectTab('my-orders')" role="tab">
-    My Ads
-  </button>
-  <button class="view-tab-btn" [class.active]="activeTab === 'my-trades'" (click)="selectTab('my-trades')" role="tab">
-    My Trades
-    <span class="tab-badge" *ngIf="myTradesUnseenCount > 0">{{ myTradesUnseenCount > 9 ? '9+' : myTradesUnseenCount }}</span>
-  </button>
-</div>
+  <div class="view-tabs" role="tablist">
+    <button class="view-tab-btn" [class.active]="activeTab === 'market'" (click)="selectTab('market')" role="tab">
+      Market
+    </button>
+    <button class="view-tab-btn" [class.active]="activeTab === 'my-orders'" (click)="selectTab('my-orders')" role="tab">
+      My Ads
+    </button>
+    <button class="view-tab-btn" [class.active]="activeTab === 'my-trades'" (click)="selectTab('my-trades')" role="tab">
+      My Trades
+      <span class="tab-badge" *ngIf="myTradesUnseenCount > 0">{{ myTradesUnseenCount > 9 ? '9+' : myTradesUnseenCount }}</span>
+    </button>
+  </div>
 
   <!-- MARKET -->
   <ng-container *ngIf="activeTab === 'market'">
@@ -133,6 +132,9 @@
         <span class="order-empty-sub">Try widening the coin, currency, or amount you're searching for.</span>
       </div>
 
+      <!-- filteredOrders() already excludes the signed-in trader's own ads
+           (isOwnOrder() check), so this list can never render a trade button
+           against yourself. -->
       <div class="order-list" *ngIf="!ordersLoading && filteredOrders().length > 0">
         <div
           class="order-row"
@@ -149,7 +151,6 @@
                 {{ order.merchant.username || 'Merchant' }}
                 <mat-icon *ngIf="order.merchant.isVerified" class="verified-icon" matTooltip="Verified trader">verified</mat-icon>
                 <mat-icon *ngIf="order.merchant.isPremium" class="premium-icon" matTooltip="Premium merchant">workspace_premium</mat-icon>
-                <!-- <span class="ad-type-tag" [ngClass]="order.type.toLowerCase()">{{ order.type }}</span> -->
               </div>
               <div class="merchant-stats">
                 {{ order.merchant.totalTrades || 0 }} orders &middot; {{ order.merchant.completionRate || 0 }}% completion
@@ -183,24 +184,23 @@
             </span>
           </div>
 
-         <div class="action-col" style="font-size: 18px;">
-  <button
-    mat-flat-button
-    [ngClass]="marketType === P2POrderType.Buy ? 'trade-btn-buy' : 'trade-btn-sell'"
-    class="fw-bold trade-btn"
-    type="button"
-    (click)="tradeOrder(order)"
-  >
-    <!-- {{ marketType }} {{ order.coin }} -->
-    {{ marketType }}
-  </button>
-</div>
+          <div class="action-col" style="font-size: 18px;">
+            <button
+              mat-flat-button
+              [ngClass]="marketType === P2POrderType.Buy ? 'trade-btn-buy' : 'trade-btn-sell'"
+              class="fw-bold trade-btn"
+              type="button"
+              (click)="tradeOrder(order)"
+            >
+              {{ marketType }}
+            </button>
+          </div>
         </div>
       </div>
     </div>
   </ng-container>
 
-  <!-- MY ADS (unchanged) -->
+  <!-- MY ADS -->
   <ng-container *ngIf="activeTab === 'my-orders'">
 
     <div class="my-ads-toolbar">
@@ -329,43 +329,47 @@
           </button>
         </div>
 
-       <div class="action-col" [attr.data-label]="'Action'">
-  <button
-    mat-stroked-button
-    color="primary"
-    class="edit-btn"
-    type="button"
-    (click)="editOrder(order)"
-    matTooltip="Edit this ad"
-  >
-    Edit
-  </button>
-  <button
-    mat-stroked-button
-    color="warn"
-    class="cancel-btn"
-    type="button"
-    *ngIf="order.status === OrderStatus.Active"
-    [disabled]="cancellingOrderId === order.id"
-    (click)="cancelOrder(order)"
-  >
-    {{ cancellingOrderId === order.id ? 'Cancelling...' : 'Cancel' }}
-  </button>
-  <button
-    type="button"
-    class="icon-btn delete-btn"
-    [disabled]="deletingOrderId === order.id"
-    (click)="deleteOrder(order)"
-    matTooltip="Delete this ad permanently"
-  >
-    <mat-icon>delete</mat-icon>
-  </button>
-</div>
+        <!-- Delete now works on Active AND Cancelled ads — only Completed
+             ads (which have real trade history) are blocked, server-side. -->
+        <div class="action-col" [attr.data-label]="'Action'">
+          <button
+            mat-stroked-button
+            color="primary"
+            class="edit-btn"
+            type="button"
+            *ngIf="order.status === OrderStatus.Active"
+            (click)="editOrder(order)"
+            matTooltip="Edit this ad"
+          >
+            Edit
+          </button>
+          <button
+            mat-stroked-button
+            color="warn"
+            class="cancel-btn"
+            type="button"
+            *ngIf="order.status === OrderStatus.Active"
+            [disabled]="cancellingOrderId === order.id"
+            (click)="cancelOrder(order)"
+          >
+            {{ cancellingOrderId === order.id ? 'Cancelling...' : 'Cancel' }}
+          </button>
+          <button
+            type="button"
+            class="icon-btn delete-btn"
+            *ngIf="order.status === OrderStatus.Active || order.status === OrderStatus.Cancelled"
+            [disabled]="deletingOrderId === order.id"
+            (click)="deleteOrder(order)"
+            matTooltip="Delete this ad permanently"
+          >
+            <mat-icon>delete</mat-icon>
+          </button>
+        </div>
       </div>
     </div>
   </ng-container>
 
-  <!-- MY TRADES (unchanged) -->
+  <!-- MY TRADES -->
   <ng-container *ngIf="activeTab === 'my-trades'">
 
     <div class="order-loading" *ngIf="myTradesLoading">
@@ -377,6 +381,11 @@
       <span class="order-empty-sub">Start one from the Market tab.</span>
     </div>
 
+    <!-- Counterparty name/avatar is now correctly the OTHER party for both
+         sides of the trade (buyer sees seller, seller sees buyer), driven
+         by trade.isBuyer coming from the backend. A live mm:ss countdown
+         shows on any trade still awaiting payment, going red in the final
+         2 minutes — mirrors Bybit's order timer. -->
     <div class="order-list" *ngIf="!myTradesLoading && myTrades.length > 0">
       <div
         class="order-row trade-row"
@@ -386,18 +395,25 @@
       >
         <div class="merchant-col">
           <div class="merchant-avatar">
-            <span>{{ (trade.isBuyer ? trade.seller.username : trade.buyer.username).charAt(0).toUpperCase() }}</span>
+            <span>{{ counterpartyName(trade).charAt(0).toUpperCase() }}</span>
           </div>
           <div class="merchant-meta">
-            <div class="merchant-name">&#64;{{ trade.isBuyer ? trade.seller.username : trade.buyer.username }}</div>
-            <div class="merchant-stats">{{ trade.createdAt | date: 'medium' }}</div>
+            <div class="merchant-name">&#64;{{ counterpartyName(trade) }}</div>
+            <div class="merchant-stats">
+              {{ yourRoleLabel(trade) }} &middot; {{ trade.createdAt | date: 'medium' }}
+            </div>
           </div>
         </div>
 
         <div class="price-col" [attr.data-label]="'Trade'">
           <span class="price-val">{{ trade.coinAmount }} {{ trade.order.coin }}</span>
-          <span class="price-currency">{{ fiatSymbol }}{{ trade.fiatAmount | number: '1.2-2' }}</span>
+          <span class="price-currency">{{ tradeFiatSymbol(trade) }}{{ trade.fiatAmount | number: '1.2-2' }}</span>
         </div>
+
+        <span class="countdown-pill" *ngIf="trade.status === TradeStatus.PendingPayment" [class.urgent]="isTradeCountdownUrgent(trade)">
+          <mat-icon>schedule</mat-icon>
+          {{ getTradeCountdownLabel(trade) }}
+        </span>
 
         <span class="status-pill" [ngClass]="trade.status.toLowerCase()">{{ trade.status }}</span>
 
