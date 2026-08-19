@@ -198,7 +198,7 @@ export class CreateOrderDialogComponent implements OnDestroy {
         if (requestId !== this.marketRateRequestId) return;
         this.marketRate = null;
         this.marketRateLoading = false;
-        this.marketRateError = 'Could not load the current market rate. You can still continue, but please double-check your price.';
+        this.marketRateError = 'No current market rate. You can still continue, but double-check your price.';
       },
     });
   }

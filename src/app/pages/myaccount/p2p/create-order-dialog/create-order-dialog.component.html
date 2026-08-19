@@ -66,6 +66,8 @@
     &middot; max allowed: {{ fiatSymbol }}{{ maxAllowedPrice | number: '1.0-2' }}
     <button type="button" class="reset-max-link" (click)="useMarketRate()">Use market rate</button>
   </div>
+  <br>
+  <br>
   <div class="field-error" *ngIf="!marketRateLoading && marketRateError">{{ marketRateError }}</div>
   <div class="field-error" *ngIf="priceError">{{ priceError }}</div>
 

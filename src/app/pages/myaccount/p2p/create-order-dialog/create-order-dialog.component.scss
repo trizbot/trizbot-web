@@ -15,6 +15,7 @@
   background: var(--p2p-surface);
   color: var(--p2p-text);
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 13px; /* base scale for the whole dialog — everything below is relative to this */
 }
 
 * { box-sizing: border-box; }
@@ -23,17 +24,26 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-size: 17px;
+  font-size: 15px;
   font-weight: 700;
-  padding: 4px 4px 14px;
+  padding: 4px 4px 12px;
   margin: 0;
+  line-height: 1.3;
 }
 
-.close-btn { color: var(--p2p-text-muted); }
+.close-btn {
+  color: var(--p2p-text-muted);
+  width: 32px;
+  height: 32px;
+  line-height: 32px;
+
+  ::ng-deep .mat-icon { font-size: 18px; width: 18px; height: 18px; }
+}
 
 mat-dialog-content {
   padding: 4px 4px 12px;
   max-height: 72vh;
+  font-size: 13px;
 }
 
 .type-toggle {
@@ -42,7 +52,7 @@ mat-dialog-content {
   border: 1px solid var(--p2p-border);
   border-radius: var(--p2p-radius-md);
   padding: 3px;
-  margin-bottom: 18px;
+  margin-bottom: 16px;
 }
 
 .toggle-btn {
@@ -50,8 +60,8 @@ mat-dialog-content {
   appearance: none;
   border: none;
   background: transparent;
-  padding: 10px 12px;
-  font-size: 13.5px;
+  padding: 9px 12px;
+  font-size: 12.5px;
   font-weight: 700;
   border-radius: 8px;
   cursor: pointer;
@@ -65,26 +75,28 @@ mat-dialog-content {
 .field-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 14px;
+  gap: 12px;
 }
 
 .w-100 { width: 100%; }
-.m-b-8 { margin-bottom: 8px; }
+.m-b-8 { margin-bottom: 6px; }
 .d-block { display: block; }
-.f-w-600 { font-weight: 600; font-size: 13px; color: var(--p2p-text); }
+.f-w-600 { font-weight: 600; font-size: 12px; color: var(--p2p-text); }
 
-.prefix { color: var(--p2p-text-muted); }
+.prefix { color: var(--p2p-text-muted); font-size: 12.5px; }
 
 .field-error {
-  font-size: 12px;
+  font-size: 11px;
   color: var(--p2p-danger);
-  margin: -10px 0 12px;
+  margin: -8px 0 10px;
+  line-height: 1.4;
 }
 
 .alert {
   border-radius: var(--p2p-radius-sm);
-  padding: 10px 14px;
-  font-size: 13px;
+  padding: 9px 12px;
+  font-size: 12px;
+  line-height: 1.4;
 
   &.alert-danger {
     background: var(--p2p-danger-bg);
@@ -93,77 +105,84 @@ mat-dialog-content {
 }
 
 .submit-btn {
-  height: 46px !important;
+  height: 44px !important;
   border-radius: var(--p2p-radius-md) !important;
   font-weight: 700 !important;
-  font-size: 14.5px !important;
+  font-size: 13px !important;
   margin-top: 6px;
 }
 
-@media (max-width: 560px) {
-  .field-row { grid-template-columns: 1fr; gap: 0; }
-  mat-dialog-content { max-height: 78vh; }
-}
-
-
-
-
+/* -------------------------------------------------------------------- */
+/* Payment details / pay-to card                                         */
+/* -------------------------------------------------------------------- */
 .payment-details-hint {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 13px;
+  font-size: 12px;
   color: var(--text-muted, #888);
-  margin: 8px 0 12px;
+  margin: 6px 0 10px;
+  line-height: 1.4;
+
+  ::ng-deep .mat-icon { font-size: 16px; width: 16px; height: 16px; }
 }
 
 .payment-detail-card {
   border: 1px solid var(--border-color, #e5e5e5);
   border-radius: 8px;
-  padding: 12px;
-  margin-bottom: 12px;
+  padding: 10px;
+  margin-bottom: 10px;
+  font-size: 12px;
 
   .payment-detail-card-title {
     font-weight: 600;
-    margin-bottom: 8px;
+    font-size: 12.5px;
+    margin-bottom: 6px;
   }
 }
 
 .pay-to-card {
   border: 1px dashed #02c076;
   border-radius: 8px;
-  padding: 12px;
-  margin: 12px 0;
+  padding: 10px;
+  margin: 10px 0;
 
   h4 {
     display: flex;
     align-items: center;
     gap: 6px;
-    margin: 0 0 8px;
-    font-size: 14px;
+    margin: 0 0 6px;
+    font-size: 12.5px;
+    font-weight: 700;
+
+    ::ng-deep .mat-icon { font-size: 15px; width: 15px; height: 15px; }
   }
 
   .pay-to-row {
     display: flex;
     justify-content: space-between;
-    font-size: 13px;
-    padding: 3px 0;
+    gap: 8px;
+    font-size: 12px;
+    padding: 2px 0;
   }
 }
 
 .role-tag {
   color: var(--text-muted, #888);
   font-weight: 600;
+  font-size: 12px;
   margin-right: 4px;
 }
 
-
-
+/* -------------------------------------------------------------------- */
+/* Max limit hint / edit mode banner                                     */
+/* -------------------------------------------------------------------- */
 .max-limit-hint {
-  font-size: 12px;
+  font-size: 11px;
   color: rgba(0, 0, 0, 0.6);
-  margin-top: -12px;
-  margin-bottom: 12px;
+  margin-top: -10px;
+  margin-bottom: 10px;
+  line-height: 1.4;
 }
 
 .reset-max-link {
@@ -171,6 +190,7 @@ mat-dialog-content {
   border: none;
   padding: 0;
   margin-left: 6px;
+  font-size: 11px;
   color: #ff6a00;
   font-weight: 600;
   cursor: pointer;
@@ -181,16 +201,84 @@ mat-dialog-content {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 10px 12px;
-  margin-bottom: 16px;
+  padding: 9px 10px;
+  margin-bottom: 14px;
   border-radius: 8px;
   background: rgba(255, 106, 0, 0.08);
-  font-size: 13px;
+  font-size: 12px;
   color: rgba(0, 0, 0, 0.75);
+  line-height: 1.4;
 
   mat-icon {
-    font-size: 18px;
-    height: 18px;
-    width: 18px;
+    font-size: 16px;
+    height: 16px;
+    width: 16px;
+    flex-shrink: 0;
   }
+}
+
+/* ==========================================================================
+   RESPONSIVE
+   Tuned for phones, small phones and tablets — not just one breakpoint.
+   ========================================================================== */
+
+/* Tablet / small laptop */
+@media (max-width: 768px) {
+  mat-dialog-content { max-height: 76vh; }
+
+  .dialog-title { font-size: 14.5px; }
+}
+
+/* Standard phones */
+@media (max-width: 560px) {
+  :host { font-size: 12.5px; }
+
+  mat-dialog-content { max-height: 80vh; padding: 4px 2px 10px; }
+
+  .field-row { grid-template-columns: 1fr; gap: 0; }
+
+  .dialog-title { font-size: 14px; padding: 4px 2px 10px; }
+
+  .type-toggle { margin-bottom: 14px; }
+  .toggle-btn { font-size: 12px; padding: 8px 10px; }
+
+  .f-w-600 { font-size: 11.5px; }
+  .prefix { font-size: 12px; }
+
+  .submit-btn {
+    height: 42px !important;
+    font-size: 12.5px !important;
+  }
+
+  .payment-detail-card { padding: 9px; }
+  .pay-to-card { padding: 9px; }
+  .pay-to-card .pay-to-row {
+    flex-direction: column;
+    gap: 1px;
+    padding: 4px 0;
+  }
+
+  .edit-mode-banner { font-size: 11.5px; padding: 8px 9px; }
+}
+
+/* Small / narrow phones */
+@media (max-width: 380px) {
+  :host { font-size: 12px; }
+
+  .dialog-title { font-size: 13.5px; }
+
+  .toggle-btn { font-size: 11.5px; padding: 8px 6px; }
+
+  .f-w-600 { font-size: 11px; }
+
+  .field-error,
+  .max-limit-hint,
+  .reset-max-link { font-size: 10.5px; }
+
+  .submit-btn { font-size: 12px !important; }
+}
+
+/* Respect user zoom / accessibility text scaling instead of fighting it */
+@media (max-width: 560px) and (prefers-reduced-motion: no-preference) {
+  html { -webkit-text-size-adjust: 100%; }
 }
