@@ -188,7 +188,7 @@
     color="primary"
     class="fw-bold w-100 submit-btn"
     type="button"
-    [disabled]="loading || marketRateLoading"
+  [disabled]="loading || marketRateLoading || priceExceedsMarketRate"
     (click)="submit()"
   >
     {{ loading ? (isEditMode ? 'Updating...' : 'Posting...') : (isEditMode ? 'Update Ad' : 'Post Ad') }}

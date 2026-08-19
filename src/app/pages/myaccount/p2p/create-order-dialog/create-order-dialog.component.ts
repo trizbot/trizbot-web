@@ -203,8 +203,7 @@ export class CreateOrderDialogComponent implements OnDestroy {
     });
   }
 
-  /** Highest price per unit allowed, based on the live market rate plus the
-   *  tolerance. Null while the rate hasn't loaded yet. */
+
   get maxAllowedPrice(): number | null {
     if (this.marketRate == null) return null;
     return this.marketRate * (1 + this.priceTolerancePercent / 100);
