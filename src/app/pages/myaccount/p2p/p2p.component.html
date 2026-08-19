@@ -354,16 +354,18 @@
           >
             {{ cancellingOrderId === order.id ? 'Cancelling...' : 'Cancel' }}
           </button>
-          <button
-            type="button"
-            class="icon-btn delete-btn"
-            *ngIf="order.status === OrderStatus.Active || order.status === OrderStatus.Cancelled"
-            [disabled]="deletingOrderId === order.id"
-            (click)="deleteOrder(order)"
-            matTooltip="Delete this ad permanently"
-          >
-            <mat-icon>delete</mat-icon>
-          </button>
+         <button
+  type="button"
+  class="icon-btn delete-btn"
+  *ngIf="order.status === OrderStatus.Active || order.status === OrderStatus.Cancelled"
+  [disabled]="deletingOrderId === order.id"
+  (click)="deleteOrder(order)"
+  [matTooltip]="deletingOrderId === order.id ? 'Deleting…' : 'Delete this ad permanently'"
+>
+  <mat-icon [class.spinning]="deletingOrderId === order.id">
+    {{ deletingOrderId === order.id ? 'autorenew' : 'delete' }}
+  </mat-icon>
+</button>
         </div>
       </div>
     </div>

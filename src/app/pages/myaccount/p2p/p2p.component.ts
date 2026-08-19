@@ -471,29 +471,43 @@ export class P2pComponent implements OnInit, OnDestroy {
     });
   }
 
-  /** Works on Active and Cancelled ads (the backend blocks only Completed
-   *  ones, since those are part of trade history). After a successful
-   *  delete we refresh from the server as well as filtering locally, so
-   *  the list can never drift out of sync with what's actually persisted. */
-  deleteOrder(order: P2POrder): void {
-    const confirmed = window.confirm('Delete this ad permanently? This cannot be undone.');
-    if (!confirmed) return;
+ deleteOrder(order: P2POrder): void {
+  const confirmed = window.confirm('Delete this ad permanently? This cannot be undone.');
+  if (!confirmed) return;
 
-    this.deletingOrderId = order.id;
-    this.p2pService.deleteOrder(order.id).subscribe({
-      next: () => {
-        this.deletingOrderId = null;
-        this.myOrders = this.myOrders.filter((o) => o.id !== order.id);
-        this.sharedService.showToast({ title: 'Ad deleted.' });
-        this.loadMyOrders();
-      },
-      error: (err) => {
-        this.deletingOrderId = null;
-        const message = err?.error?.message || 'Could not delete this ad.';
-        this.sharedService.showToast({ title: Array.isArray(message) ? message.join(', ') : message });
-      },
-    });
-  }
+  this.deletingOrderId = order.id;
+
+  this.p2pService.deleteOrder(order.id).subscribe({
+    next: () => {
+      // Optimistic removal so the UI feels instant.
+      this.myOrders = this.myOrders.filter((o) => o.id !== order.id);
+      this.p2pService.myOrders().subscribe({
+        next: (res) => {
+          this.myOrders = res;
+          this.deletingOrderId = null;
+
+          const stillOnServer = res.some((o) => o.id === order.id);
+          if (stillOnServer) {
+            this.sharedService.showToast({
+              title: 'The server did not delete this ad. Please try again or contact support.',
+            });
+          } else {
+            this.sharedService.showToast({ title: 'Ad deleted.' });
+          }
+        },
+        error: () => {
+          this.deletingOrderId = null;
+          this.sharedService.showToast({ title: 'Ad deleted, but the list failed to refresh.' });
+        },
+      });
+    },
+    error: (err) => {
+      this.deletingOrderId = null;
+      const message = err?.error?.message || 'Could not delete this ad.';
+      this.sharedService.showToast({ title: Array.isArray(message) ? message.join(', ') : message });
+    },
+  });
+}
 
   toggleOrderListed(order: P2POrder): void {
     if (order.status !== OrderStatus.Active) return;

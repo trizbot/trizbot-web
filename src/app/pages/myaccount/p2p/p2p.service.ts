@@ -62,12 +62,23 @@ export class P2pService {
       .pipe(map((res) => normalizeOrder(this.unwrapOne(res))));
   }
 
-  /** Permanently remove an ad (distinct from cancelOrder, which just flips status). */
-  deleteOrder(orderId: string): Observable<void> {
-    return this.http
-      .delete<ApiEnvelope<any> | any>(`${this.base}/orders/${orderId}`)
-      .pipe(map(() => undefined));
-  }
+deleteOrder(orderId: string): Observable<void> {
+  return this.http
+    .delete<ApiEnvelope<any> | any>(`${this.base}/orders/${orderId}`)
+    .pipe(
+      map((res) => {
+        const body = (res as any)?.data ?? res;
+        const failed =
+          body && typeof body === 'object' &&
+          ((body.deletedCount === 0) || (body.success === false));
+        if (failed) {
+          throw new Error('Delete did not remove the ad on the serve.');
+        }
+        return undefined;
+      })
+    );
+}
+
 
   cancelOrder(orderId: string): Observable<P2POrder> {
     return this.http
