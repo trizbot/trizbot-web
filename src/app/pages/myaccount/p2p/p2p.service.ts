@@ -10,6 +10,7 @@ import {
   ListOrdersParams,
   P2POrder,
   P2PTrade,
+  UpdateOrderReqBody,
   normalizeOrder,
   normalizeTrade,
 } from './p2p.model';
@@ -54,13 +55,26 @@ export class P2pService {
       .pipe(map((res) => normalizeOrder(this.unwrapOne(res))));
   }
 
+  /** Edit an existing ad (price, amounts, limits, payment methods/details, terms, window). */
+  updateOrder(orderId: string, payload: UpdateOrderReqBody): Observable<P2POrder> {
+    return this.http
+      .patch<ApiEnvelope<any> | any>(`${this.base}/orders/${orderId}`, payload)
+      .pipe(map((res) => normalizeOrder(this.unwrapOne(res))));
+  }
+
+  /** Permanently remove an ad (distinct from cancelOrder, which just flips status). */
+  deleteOrder(orderId: string): Observable<void> {
+    return this.http
+      .delete<ApiEnvelope<any> | any>(`${this.base}/orders/${orderId}`)
+      .pipe(map(() => undefined));
+  }
+
   cancelOrder(orderId: string): Observable<P2POrder> {
     return this.http
       .post<ApiEnvelope<any> | any>(`${this.base}/orders/cancel`, { id: orderId })
       .pipe(map((res) => normalizeOrder(this.unwrapOne(res))));
   }
 
-  /** Flip an ad between Listed / Hidden without cancelling it (the "Active Mode" switch). */
   setOrderListed(orderId: string, isListed: boolean): Observable<P2POrder> {
     return this.http
       .post<ApiEnvelope<any> | any>(`${this.base}/orders/visibility`, { id: orderId, isListed })
@@ -75,6 +89,12 @@ export class P2pService {
     return this.http
       .get<ApiEnvelope<any[]> | any[]>(`${this.base}/trades/mine`)
       .pipe(map((res) => this.unwrap(res).map(normalizeTrade)));
+  }
+
+  getTrade(id: string): Observable<P2PTrade> {
+    return this.http
+      .get<ApiEnvelope<any> | any>(`${this.base}/trades/${id}`)
+      .pipe(map((res) => normalizeTrade(this.unwrapOne(res))));
   }
 
   initiateTrade(payload: InitiateTradeReqBody): Observable<P2PTrade> {
@@ -101,8 +121,6 @@ export class P2pService {
       .pipe(map((res) => normalizeTrade(this.unwrapOne(res))));
   }
 
-
-
   private unwrap<T>(res: ApiEnvelope<T[]> | T[]): T[] {
     if (Array.isArray(res)) return res;
     return res?.data ?? [];
@@ -111,8 +129,23 @@ export class P2pService {
   private unwrapOne<T>(res: ApiEnvelope<T> | T): T {
     return (res as ApiEnvelope<T>)?.data !== undefined ? (res as ApiEnvelope<T>).data : (res as T);
   }
-getTrade(id: string): Observable<P2PTrade> {
-  return this.http.get<P2PTrade>(`${this.base}/p2p/trades/${id}`);
+
+
+
+
+/** Server-computed unseen-trade count for the "My Trades" badge. */
+getTradesNotificationCount(): Observable<{ count: number }> {
+  return this.http
+    .get<ApiEnvelope<{ count: number }> | { count: number }>(`${this.base}/trades/notifications/count`)
+    .pipe(map((res) => this.unwrapOne(res)));
 }
+
+/** Call when the user opens "My Trades" to clear the badge server-side. */
+markTradesSeen(): Observable<{ count: number }> {
+  return this.http
+    .post<ApiEnvelope<{ count: number }> | { count: number }>(`${this.base}/trades/notifications/seen`, {})
+    .pipe(map((res) => this.unwrapOne(res)));
+}
+
 
 }

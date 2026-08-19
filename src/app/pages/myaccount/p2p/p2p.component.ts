@@ -39,6 +39,10 @@ const REFRESH_OPTIONS = [
   { label: '60s Refresh', value: 60 },
 ];
 
+/** How often to poll the server-computed unseen-trade count so the "My Trades"
+ *  badge can light up even while the user is on a different tab. */
+const TRADES_NOTIFICATION_POLL_INTERVAL_MS = 20000;
+
 @Component({
   selector: 'app-p2p',
   standalone: true,
@@ -124,8 +128,6 @@ export class P2pComponent implements OnInit, OnDestroy {
     return fiatSymbol(this.filterForm.getRawValue().fiatCurrency);
   }
 
-  // Uses a wall-clock deadline rather than a naive per-tick decrement, so the
-  // countdown can't drift (or silently stall) if the tab is backgrounded/throttled.
   private refreshTimer: ReturnType<typeof setInterval> | null = null;
   private refreshDeadline = 0;
   refreshSeconds = 15;
@@ -137,15 +139,22 @@ export class P2pComponent implements OnInit, OnDestroy {
   myOrders: P2POrder[] = [];
   myOrdersLoading = false;
   cancellingOrderId: string | null = null;
+  deletingOrderId: string | null = null;
   myAdsSubTab: MyAdsSubTab = 'listed';
   activeModeOn = true;
   togglingListedId: string | null = null;
 
   // ---------------------------------------------------------------------
-  // My Trades
+  // My Trades + notifications
   // ---------------------------------------------------------------------
   myTrades: P2PTrade[] = [];
   myTradesLoading = false;
+
+  /** Server-computed unread count shown as a badge on the "My Trades" tab,
+   *  Bybit-style. Backed by /p2p/trades/notifications/count so it's accurate
+   *  across page reloads and multiple devices, not just this session. */
+  myTradesUnseenCount = 0;
+  private tradesNotificationPollTimer: ReturnType<typeof setInterval> | null = null;
 
   constructor(
     private traderService: TraderService,
@@ -157,6 +166,7 @@ export class P2pComponent implements OnInit, OnDestroy {
     this.loadOrders();
     this.getCurrentTrader();
     this.startAutoRefresh();
+    this.startTradesNotificationPolling();
 
     this.filterForm.controls.fiatCurrency.valueChanges.subscribe(() => {
       const stillValid = this.paymentMethodOptions.includes(this.filterForm.getRawValue().paymentMethod || '');
@@ -167,6 +177,7 @@ export class P2pComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.stopAutoRefresh();
+    this.stopTradesNotificationPolling();
   }
 
   getCurrentTrader() {
@@ -251,10 +262,6 @@ export class P2pComponent implements OnInit, OnDestroy {
     this.ordersLoading = true;
     const { coin, fiatCurrency } = this.filterForm.getRawValue();
 
-    // Bybit-style flip: the "Buy" tab is where a user comes to BUY crypto, so it
-    // must list the SELL ads merchants posted (someone has to sell to you) — and
-    // the "Sell" tab must list BUY ads. Querying by marketType directly showed
-    // a merchant's own ad type back under the matching tab, which is backwards.
     const orderTypeToQuery =
       this.marketType === P2POrderType.Buy ? P2POrderType.Sell : P2POrderType.Buy;
 
@@ -296,9 +303,6 @@ export class P2pComponent implements OnInit, OnDestroy {
     }
   }
 
-  // The action verb is the opposite of the AD's own type: a BUY ad means the
-  // poster buys, so the taker sells to them, and vice versa. This still holds
-  // correctly now that the Buy/Sell tabs list the opposite ad type.
   actionLabelFor(order: P2POrder): string {
     return order.type === P2POrderType.Buy ? 'Sell' : 'Buy';
   }
@@ -324,7 +328,7 @@ export class P2pComponent implements OnInit, OnDestroy {
   }
 
   // ---------------------------------------------------------------------
-  // Auto-refresh (mirrors Bybit's "15s / 30s / 60s Refresh" control)
+  // Auto-refresh (market)
   // ---------------------------------------------------------------------
 
   onRefreshIntervalChange(seconds: number): void {
@@ -337,8 +341,6 @@ export class P2pComponent implements OnInit, OnDestroy {
     if (!this.refreshSeconds) return;
     this.secondsToRefresh = this.refreshSeconds;
     this.refreshDeadline = Date.now() + this.refreshSeconds * 1000;
-    // Tick at 250ms and derive the displayed seconds from a wall-clock deadline
-    // instead of decrementing a counter — avoids drift/stalling on slow tabs.
     this.refreshTimer = setInterval(() => {
       const msLeft = this.refreshDeadline - Date.now();
       this.secondsToRefresh = Math.max(0, Math.ceil(msLeft / 1000));
@@ -404,6 +406,27 @@ export class P2pComponent implements OnInit, OnDestroy {
     });
   }
 
+  /** Opens the same dialog pre-filled for an existing ad and submits an update instead of a create. */
+  editOrder(order: P2POrder): void {
+    const ref = this.dialog.open(CreateOrderDialogComponent, {
+      width: '520px',
+      maxWidth: '95vw',
+      data: {
+        defaultType: order.type,
+        coinSuggestions: this.coinSuggestions,
+        fiatSuggestions: this.fiatSuggestions,
+        order,
+      },
+    });
+
+    ref.afterClosed().subscribe((updated) => {
+      if (updated) {
+        this.loadMyOrders();
+        if (this.activeTab === 'market') this.loadOrders();
+      }
+    });
+  }
+
   cancelOrder(order: P2POrder): void {
     this.cancellingOrderId = order.id;
     this.p2pService.cancelOrder(order.id).subscribe({
@@ -415,6 +438,26 @@ export class P2pComponent implements OnInit, OnDestroy {
       error: (err) => {
         this.cancellingOrderId = null;
         const message = err?.error?.message || 'Could not cancel this ad.';
+        this.sharedService.showToast({ title: Array.isArray(message) ? message.join(', ') : message });
+      },
+    });
+  }
+
+  /** Permanently removes an ad. Distinct from cancelOrder, which just flips status to Cancelled. */
+  deleteOrder(order: P2POrder): void {
+    const confirmed = window.confirm('Delete this ad permanently? This cannot be undone.');
+    if (!confirmed) return;
+
+    this.deletingOrderId = order.id;
+    this.p2pService.deleteOrder(order.id).subscribe({
+      next: () => {
+        this.deletingOrderId = null;
+        this.myOrders = this.myOrders.filter((o) => o.id !== order.id);
+        this.sharedService.showToast({ title: 'Ad deleted.' });
+      },
+      error: (err) => {
+        this.deletingOrderId = null;
+        const message = err?.error?.message || 'Could not delete this ad.';
         this.sharedService.showToast({ title: Array.isArray(message) ? message.join(', ') : message });
       },
     });
@@ -463,7 +506,7 @@ export class P2pComponent implements OnInit, OnDestroy {
   }
 
   // ---------------------------------------------------------------------
-  // My Trades
+  // My Trades + notifications
   // ---------------------------------------------------------------------
 
   loadMyTrades(): void {
@@ -474,9 +517,65 @@ export class P2pComponent implements OnInit, OnDestroy {
           (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
         );
         this.myTradesLoading = false;
+        // Opening the tab clears the badge server-side so it stays cleared
+        // across reloads and other devices, not just this session.
+        this.markTradesSeen();
       },
       error: () => {
         this.myTradesLoading = false;
+      },
+    });
+  }
+
+  private markTradesSeen(): void {
+    this.p2pService.markTradesSeen().subscribe({
+      next: () => {
+        this.myTradesUnseenCount = 0;
+      },
+      error: () => {
+        // Non-critical — badge will just re-sync on the next poll tick.
+      },
+    });
+  }
+
+  /** Background poll of the server-computed unseen count so a badge can
+   *  appear on "My Trades" even while the user is on the Market or My Ads
+   *  tab — mirrors Bybit's behavior when someone takes your ad or a trade's
+   *  status changes. While the My Trades tab is open we don't need to poll
+   *  since loadMyTrades() already keeps the count at 0. */
+  private startTradesNotificationPolling(): void {
+    this.pollTradesNotificationCount();
+    this.tradesNotificationPollTimer = setInterval(
+      () => this.pollTradesNotificationCount(),
+      TRADES_NOTIFICATION_POLL_INTERVAL_MS
+    );
+  }
+
+  private stopTradesNotificationPolling(): void {
+    if (this.tradesNotificationPollTimer) {
+      clearInterval(this.tradesNotificationPollTimer);
+      this.tradesNotificationPollTimer = null;
+    }
+  }
+
+  private pollTradesNotificationCount(): void {
+    if (this.activeTab === 'my-trades') return; // already at 0, no need to poll
+
+    this.p2pService.getTradesNotificationCount().subscribe({
+      next: (res) => {
+        const previous = this.myTradesUnseenCount;
+        this.myTradesUnseenCount = res.count;
+        if (res.count > previous) {
+          this.sharedService.showToast({
+            title:
+              res.count - previous === 1
+                ? 'You have a new trade update.'
+                : `You have ${res.count - previous} new trade updates.`,
+          });
+        }
+      },
+      error: () => {
+        // Silent — badge simply won't update this cycle.
       },
     });
   }

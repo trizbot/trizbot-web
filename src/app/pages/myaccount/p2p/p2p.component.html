@@ -9,17 +9,19 @@
   </div>
 
   <!-- MAIN TABS -->
-  <div class="view-tabs" role="tablist">
-    <button class="view-tab-btn" [class.active]="activeTab === 'market'" (click)="selectTab('market')" role="tab">
-      Market
-    </button>
-    <button class="view-tab-btn" [class.active]="activeTab === 'my-orders'" (click)="selectTab('my-orders')" role="tab">
-      My Ads
-    </button>
-    <button class="view-tab-btn" [class.active]="activeTab === 'my-trades'" (click)="selectTab('my-trades')" role="tab">
-      My Trades
-    </button>
-  </div>
+
+<div class="view-tabs" role="tablist">
+  <button class="view-tab-btn" [class.active]="activeTab === 'market'" (click)="selectTab('market')" role="tab">
+    Market
+  </button>
+  <button class="view-tab-btn" [class.active]="activeTab === 'my-orders'" (click)="selectTab('my-orders')" role="tab">
+    My Ads
+  </button>
+  <button class="view-tab-btn" [class.active]="activeTab === 'my-trades'" (click)="selectTab('my-trades')" role="tab">
+    My Trades
+    <span class="tab-badge" *ngIf="myTradesUnseenCount > 0">{{ myTradesUnseenCount > 9 ? '9+' : myTradesUnseenCount }}</span>
+  </button>
+</div>
 
   <!-- MARKET -->
   <ng-container *ngIf="activeTab === 'market'">
@@ -327,19 +329,38 @@
           </button>
         </div>
 
-        <div class="action-col" [attr.data-label]="'Action'">
-          <button
-            mat-stroked-button
-            color="warn"
-            class="cancel-btn"
-            type="button"
-            *ngIf="order.status === OrderStatus.Active"
-            [disabled]="cancellingOrderId === order.id"
-            (click)="cancelOrder(order)"
-          >
-            {{ cancellingOrderId === order.id ? 'Cancelling...' : 'Cancel' }}
-          </button>
-        </div>
+       <div class="action-col" [attr.data-label]="'Action'">
+  <button
+    mat-stroked-button
+    color="primary"
+    class="edit-btn"
+    type="button"
+    (click)="editOrder(order)"
+    matTooltip="Edit this ad"
+  >
+    Edit
+  </button>
+  <button
+    mat-stroked-button
+    color="warn"
+    class="cancel-btn"
+    type="button"
+    *ngIf="order.status === OrderStatus.Active"
+    [disabled]="cancellingOrderId === order.id"
+    (click)="cancelOrder(order)"
+  >
+    {{ cancellingOrderId === order.id ? 'Cancelling...' : 'Cancel' }}
+  </button>
+  <button
+    type="button"
+    class="icon-btn delete-btn"
+    [disabled]="deletingOrderId === order.id"
+    (click)="deleteOrder(order)"
+    matTooltip="Delete this ad permanently"
+  >
+    <mat-icon>delete</mat-icon>
+  </button>
+</div>
       </div>
     </div>
   </ng-container>

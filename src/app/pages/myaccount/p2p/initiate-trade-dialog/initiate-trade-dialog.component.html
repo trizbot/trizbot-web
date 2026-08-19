@@ -2,14 +2,14 @@
   <ng-container *ngIf="mode === 'create'; else manageTitle">
     {{ actionVerb }} {{ order.coin }}
   </ng-container>
-  <ng-template #manageTitle>Trade with &#64;{{ counterpartyUsername }}</ng-template>
+  <ng-template #manageTitle>{{ counterpartyRoleLabel }}: &#64;{{ counterpartyUsername }}</ng-template>
   <button mat-icon-button class="close-btn" type="button" (click)="close()">
     <mat-icon>close</mat-icon>
   </button>
 </h2>
 
 <!-- ===================================================================== -->
-<!-- CREATE MODE — starting a new trade off a market ad -->
+<!-- CREATE MODE -->
 <!-- ===================================================================== -->
 <mat-dialog-content [formGroup]="form" *ngIf="mode === 'create'">
 
@@ -54,6 +54,31 @@
     </mat-select>
   </mat-form-field>
 
+  <!-- Taking a Buy ad makes you the seller in this trade — the buyer pays YOU,
+       so we need the account they should send fiat to. -->
+  <ng-container *ngIf="takerBecomesSeller">
+    <div class="payment-details-hint">
+      <mat-icon>account_balance</mat-icon>
+      You'll be the seller here — add the account the buyer should pay into.
+    </div>
+
+    <mat-label class="f-w-600 m-b-8 d-block">Account holder name</mat-label>
+    <mat-form-field appearance="outline" class="w-100">
+      <input matInput formControlName="sellerAccountName" />
+    </mat-form-field>
+
+    <mat-label class="f-w-600 m-b-8 d-block">Account/Wallet Number</mat-label>
+    <mat-form-field appearance="outline" class="w-100">
+      <input matInput formControlName="sellerAccountNumber" />
+    </mat-form-field>
+
+    <mat-label class="f-w-600 m-b-8 d-block">Bank / provider (optional)</mat-label>
+    <mat-form-field appearance="outline" class="w-100">
+      <input matInput formControlName="sellerBankName" />
+    </mat-form-field>
+    <div class="field-error" *ngIf="sellerDetailsError">{{ sellerDetailsError }}</div>
+  </ng-container>
+
   <ng-container *ngIf="requiresPin">
     <mat-label class="f-w-600 m-b-8 d-block">Transaction PIN</mat-label>
     <mat-form-field appearance="outline" class="w-100">
@@ -79,7 +104,7 @@
 </mat-dialog-content>
 
 <!-- ===================================================================== -->
-<!-- MANAGE MODE — viewing/acting on a trade already in progress -->
+<!-- MANAGE MODE -->
 <!-- ===================================================================== -->
 <mat-dialog-content *ngIf="mode === 'manage' && trade">
 
@@ -88,7 +113,10 @@
       <span>{{ counterpartyUsername.charAt(0).toUpperCase() }}</span>
     </div>
     <div>
-      <div class="merchant-name">&#64;{{ counterpartyUsername }}</div>
+      <div class="merchant-name">
+        <span class="role-tag">{{ counterpartyRoleLabel }}:</span>
+        &#64;{{ counterpartyUsername }}
+      </div>
       <div class="merchant-stats">{{ iAmBuyer ? "You're buying" : "You're selling" }} {{ trade.order.coin }}</div>
     </div>
     <span class="status-pill" [ngClass]="trade.status.toLowerCase()">{{ trade.status }}</span>
@@ -117,8 +145,17 @@
     </div>
   </div>
 
+  <!-- Where to send the money — the core of "receive funds from ad sales" -->
+  <div class="pay-to-card" *ngIf="payToDetails && trade.status === TradeStatus.PendingPayment">
+    <h4><mat-icon>account_balance</mat-icon> Pay to</h4>
+    <div class="pay-to-row"><span>Account name</span><b>{{ payToDetails.accountName }}</b></div>
+    <div class="pay-to-row"><span>Account number</span><b>{{ payToDetails.accountNumber }}</b></div>
+    <div class="pay-to-row" *ngIf="payToDetails.bankName"><span>Bank / provider</span><b>{{ payToDetails.bankName }}</b></div>
+    <div class="pay-to-row" *ngIf="payToDetails.additionalInfo"><span>Note</span><b>{{ payToDetails.additionalInfo }}</b></div>
+  </div>
+
   <p class="trade-hint" *ngIf="trade.status === TradeStatus.PendingPayment && iAmBuyer && !isExpiredLocally">
-    Send {{ currencySymbol }}{{ trade.fiatAmount | number: '1.2-2' }} to the seller using {{ trade.paymentMethod }}, then mark this trade as paid before the timer runs out.
+    Send {{ currencySymbol }}{{ trade.fiatAmount | number: '1.2-2' }} to the account above using {{ trade.paymentMethod }}, then mark this trade as paid before the timer runs out.
   </p>
   <p class="trade-hint" *ngIf="trade.status === TradeStatus.PendingPayment && isExpiredLocally">
     This trade's payment window has ended. Checking the latest status…

@@ -1,5 +1,5 @@
 <h2 mat-dialog-title class="dialog-title">
-  Post a New Ad
+  {{ isEditMode ? 'Edit Ad' : 'Post a New Ad' }}
   <button mat-icon-button class="close-btn" type="button" (click)="close()">
     <mat-icon>close</mat-icon>
   </button>
@@ -7,7 +7,7 @@
 
 <mat-dialog-content [formGroup]="form">
 
-  <div class="type-toggle">
+  <div class="type-toggle" *ngIf="!isEditMode">
     <button
       type="button"
       class="toggle-btn buy"
@@ -24,6 +24,12 @@
     >
       I want to Sell
     </button>
+  </div>
+
+  <div class="edit-mode-banner" *ngIf="isEditMode">
+    <mat-icon>edit</mat-icon>
+    Editing your {{ data.order?.type }} ad for {{ data.order?.coin }}/{{ data.order?.fiatCurrency }}.
+    Asset and currency can't be changed once an ad is live.
   </div>
 
   <div class="field-row">
@@ -47,7 +53,7 @@
 
   <mat-label class="f-w-600 m-b-8 d-block">Price per unit</mat-label>
   <mat-form-field appearance="outline" class="w-100">
-    <span matPrefix class="prefix">&#8358;&nbsp;</span>
+    <span matPrefix class="prefix">{{ fiatSymbol }}&nbsp;</span>
     <input matInput type="number" formControlName="pricePerUnit" placeholder="0.00" />
     <span matSuffix>{{ form.value.fiatCurrency }} / {{ form.value.coin }}</span>
   </mat-form-field>
@@ -62,16 +68,26 @@
     <div>
       <mat-label class="f-w-600 m-b-8 d-block">Min order limit</mat-label>
       <mat-form-field appearance="outline" class="w-100">
-        <span matPrefix class="prefix">&#8358;&nbsp;</span>
+        <span matPrefix class="prefix">{{ fiatSymbol }}&nbsp;</span>
         <input matInput type="number" formControlName="minLimit" placeholder="0" />
       </mat-form-field>
     </div>
     <div>
       <mat-label class="f-w-600 m-b-8 d-block">Max order limit</mat-label>
       <mat-form-field appearance="outline" class="w-100">
-        <span matPrefix class="prefix">&#8358;&nbsp;</span>
-        <input matInput type="number" formControlName="maxLimit" placeholder="0" />
+        <span matPrefix class="prefix">{{ fiatSymbol }}&nbsp;</span>
+        <input
+          matInput
+          type="number"
+          formControlName="maxLimit"
+          placeholder="0"
+          (input)="onMaxLimitManualEdit()"
+        />
       </mat-form-field>
+      <div class="max-limit-hint" *ngIf="computedMaxLimit">
+        Auto-calculated from amount × price: {{ fiatSymbol }}{{ computedMaxLimit | number: '1.0-2' }}
+        <button type="button" class="reset-max-link" (click)="resetMaxLimitToAuto()">Use this</button>
+      </div>
     </div>
   </div>
   <div class="field-error" *ngIf="limitError">{{ limitError }}</div>
@@ -82,6 +98,47 @@
       <mat-option *ngFor="let method of paymentMethodOptions" [value]="method">{{ method }}</mat-option>
     </mat-select>
   </mat-form-field>
+
+  <ng-container *ngIf="isSellAd && paymentDetailsArray.length > 0" formArrayName="paymentDetails">
+    <div class="payment-details-hint">
+      <mat-icon>account_balance</mat-icon>
+      Add the account details buyers should pay into for each method above.
+    </div>
+
+    <div
+      class="payment-detail-card"
+      *ngFor="let group of paymentDetailsArray.controls; let i = index"
+      [formGroupName]="i"
+    >
+      <div class="payment-detail-card-title">{{ group.get('method')?.value }}</div>
+
+      <mat-label class="f-w-600 m-b-8 d-block">Account holder name</mat-label>
+      <mat-form-field appearance="outline" class="w-100">
+        <input matInput formControlName="accountName" placeholder="Name on the account" />
+      </mat-form-field>
+
+      <mat-label class="f-w-600 m-b-8 d-block">Account number</mat-label>
+      <mat-form-field appearance="outline" class="w-100">
+        <input matInput formControlName="accountNumber" placeholder="e.g. 0123456789" />
+      </mat-form-field>
+
+      <div class="field-row">
+        <div>
+          <mat-label class="f-w-600 m-b-8 d-block">Bank / provider (optional)</mat-label>
+          <mat-form-field appearance="outline" class="w-100">
+            <input matInput formControlName="bankName" />
+          </mat-form-field>
+        </div>
+        <div>
+          <mat-label class="f-w-600 m-b-8 d-block">Note (optional)</mat-label>
+          <mat-form-field appearance="outline" class="w-100">
+            <input matInput formControlName="additionalInfo" />
+          </mat-form-field>
+        </div>
+      </div>
+    </div>
+    <div class="field-error" *ngIf="paymentDetailsError">{{ paymentDetailsError }}</div>
+  </ng-container>
 
   <mat-label class="f-w-600 m-b-8 d-block">Payment window</mat-label>
   <mat-form-field appearance="outline" class="w-100">
@@ -104,7 +161,8 @@
     <mat-label class="f-w-600 m-b-8 d-block">Transaction PIN</mat-label>
     <mat-form-field appearance="outline" class="w-100">
       <input matInput type="password" inputmode="numeric" maxlength="6" formControlName="transactionPin" />
-      <mat-hint>Your coins are locked in escrow as soon as this ad goes live.</mat-hint>
+      <mat-hint *ngIf="!isEditMode">Your coins are locked in escrow as soon as this ad goes live.</mat-hint>
+      <mat-hint *ngIf="isEditMode">Only needed if you're increasing the escrowed amount.</mat-hint>
     </mat-form-field>
   </ng-container>
 
@@ -120,6 +178,6 @@
     [disabled]="loading"
     (click)="submit()"
   >
-    {{ loading ? 'Posting...' : 'Post Ad' }}
+    {{ loading ? (isEditMode ? 'Updating...' : 'Posting...') : (isEditMode ? 'Update Ad' : 'Post Ad') }}
   </button>
 </mat-dialog-content>

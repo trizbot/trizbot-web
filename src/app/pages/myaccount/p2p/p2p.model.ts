@@ -23,12 +23,31 @@ export interface P2PMerchant {
   username: string;
   avatarUrl?: string | null;
   isVerified: boolean;
-  /** Gold "merchant" badge — high-volume traders, mirrors Bybit's merchant program. */
   isPremium?: boolean;
   totalTrades: number;
   completionRate: number;
-  /** Average release time in minutes. Used to render the "Fast release" tag. */
   avgReleaseMinutes?: number;
+}
+
+export interface UpdateOrderReqBody {
+  pricePerUnit?: number;
+  totalAmount?: number;
+  minLimit?: number;
+  maxLimit?: number;
+  paymentMethods?: string[];
+  paymentDetails?: PaymentMethodDetail[];
+  terms?: string;
+  paymentWindowMinutes?: number;
+  transactionPin?: string;
+}
+
+export interface PaymentMethodDetail {
+  /** Must match one of the strings in order.paymentMethods */
+  method: string;
+  accountName: string;
+  accountNumber: string;
+  bankName?: string;
+  additionalInfo?: string;
 }
 
 export interface P2POrder {
@@ -42,12 +61,12 @@ export interface P2POrder {
   minLimit: number;
   maxLimit: number;
   paymentMethods: string[];
+  /** Receiving details per payment method — populated on Sell ads. */
+  paymentDetails?: PaymentMethodDetail[];
   terms?: string;
   paymentWindowMinutes?: number;
   status: OrderStatus;
-  /** Whether the ad is currently visible to other traders (My Ads → Listed / Hidden). */
   isListed?: boolean;
-  /** Maker fee, shown as a % in My Ads. Defaults to 0. */
   feePercent?: number;
   merchant: P2PMerchant;
   createdAt: string;
@@ -62,13 +81,19 @@ export interface P2PTrade {
   coinAmount: number;
   fiatAmount: number;
   paymentMethod: string;
+  /**
+   * The receiving account to actually pay for THIS trade. Copied from the
+   * ad's paymentDetails when the ad was a Sell ad, or supplied by the taker
+   * (who becomes the seller) when the ad taken was a Buy ad.
+   */
+  sellerPaymentDetails?: PaymentMethodDetail;
   status: TradeStatus;
   paymentDeadline?: string;
   createdAt: string;
 }
 
 // ---------------------------------------------------------------------
-// Request bodies — kept in sync with the backend DTOs
+// Request bodies
 // ---------------------------------------------------------------------
 
 export interface CreateOrderReqBody {
@@ -80,9 +105,9 @@ export interface CreateOrderReqBody {
   minLimit: number;
   maxLimit: number;
   paymentMethods: string[];
+  paymentDetails?: PaymentMethodDetail[];
   terms?: string;
   paymentWindowMinutes?: number;
-  /** Required by the backend when posting a Sell ad — locks coins in escrow. */
   transactionPin?: string;
 }
 
@@ -96,8 +121,9 @@ export interface InitiateTradeReqBody {
   orderId: string;
   coinAmount: number;
   paymentMethod?: string;
-  /** Required when the taker will be the seller in the resulting trade. */
   transactionPin?: string;
+  /** Only sent when the taker becomes the seller (taking a Buy ad). */
+  sellerPaymentDetails?: PaymentMethodDetail;
 }
 
 export const PAYMENT_WINDOW_OPTIONS: number[] = [15, 30, 45];
@@ -107,7 +133,6 @@ export const SUPPORTED_COINS: string[] = [
   'TON', 'TRX', 'DOGE', 'ADA', 'MATIC', 'DOT', 'SHIB', 'AVAX', 'LINK', 'ATOM', 'BCH', 'ETC',
 ];
 
-/** Coins pinned to the quick-select row, same idea as Bybit's "USDT BTC ETH USDC ..." strip. */
 export const QUICK_COINS: string[] = ['USDT', 'BTC', 'ETH', 'USDC', 'SOL', 'BNB', 'XRP', 'LTC'];
 
 export const SUPPORTED_FIAT: string[] = [
@@ -115,14 +140,13 @@ export const SUPPORTED_FIAT: string[] = [
   'CAD', 'AUD', 'JPY', 'BRL', 'TRY', 'PKR', 'EGP', 'UGX', 'TZS', 'XOF',
 ];
 
-
 export const PAYMENT_METHODS_BY_FIAT: Record<string, string[]> = {
-  NGN: ['Solidpyco','Bank Transfer', 'Opay', 'PalmPay', 'Kuda', 'Moniepoint'],
-  USD: ['Solidpyco','Zelle', 'Wise', 'PayPal', 'ACH Bank Transfer', 'Cash App', 'Venmo'],
-  EUR: ['Solidpyco','SEPA Transfer', 'Wise', 'Revolut', 'N26'],
-  GBP: ['Solidpyco','Faster Payments', 'Wise', 'Revolut', 'UK Bank Transfer'],
-  GHS: ['Solidpyco','MTN Mobile Money', 'Vodafone Cash', 'AirtelTigo Money', 'Bank Transfer'],
-  KES: ['Solidpyco','M-Pesa', 'Bank Transfer', 'Airtel Money'],
+  NGN: ['Solidpyco', 'Bank Transfer', 'Opay', 'PalmPay', 'Kuda', 'Moniepoint'],
+  USD: ['Solidpyco', 'Zelle', 'Wise', 'PayPal', 'ACH Bank Transfer', 'Cash App', 'Venmo'],
+  EUR: ['Solidpyco', 'SEPA Transfer', 'Wise', 'Revolut', 'N26'],
+  GBP: ['Solidpyco', 'Faster Payments', 'Wise', 'Revolut', 'UK Bank Transfer'],
+  GHS: ['Solidpyco', 'MTN Mobile Money', 'Vodafone Cash', 'AirtelTigo Money', 'Bank Transfer'],
+  KES: ['Solidpyco', 'M-Pesa', 'Bank Transfer', 'Airtel Money'],
   ZAR: ['Bank Transfer (EFT)', 'Capitec Pay', 'FNB eWallet'],
   INR: ['UPI', 'IMPS', 'Paytm', 'Bank Transfer'],
   CNY: ['Alipay', 'WeChat Pay', 'Bank Transfer'],
@@ -134,12 +158,11 @@ export const PAYMENT_METHODS_BY_FIAT: Record<string, string[]> = {
   TRY: ['Papara', 'Bank Transfer', 'Wise'],
   PKR: ['Easypaisa', 'JazzCash', 'Bank Transfer'],
   EGP: ['Vodafone Cash', 'InstaPay', 'Bank Transfer'],
-  UGX: ['Solidpyco','MTN Mobile Money', 'Airtel Money'],
+  UGX: ['Solidpyco', 'MTN Mobile Money', 'Airtel Money'],
   TZS: ['M-Pesa', 'Tigo Pesa', 'Airtel Money'],
-  XOF: ['Solidpyco','Orange Money', 'Wave', 'MTN Mobile Money'],
+  XOF: ['Solidpyco', 'Orange Money', 'Wave', 'MTN Mobile Money'],
 };
 
-/** Kept for any code still importing the old flat NGN-only list. */
 export const PAYMENT_METHODS: string[] = PAYMENT_METHODS_BY_FIAT['NGN'];
 
 export function getPaymentMethodsForFiat(fiat: string | null | undefined): string[] {
@@ -147,7 +170,6 @@ export function getPaymentMethodsForFiat(fiat: string | null | undefined): strin
   return PAYMENT_METHODS_BY_FIAT[key] || PAYMENT_METHODS_BY_FIAT['NGN'];
 }
 
-/** Fiat currency symbol used for price / limit formatting across the module. */
 const FIAT_SYMBOLS: Record<string, string> = {
   NGN: '₦', USD: '$', EUR: '€', GBP: '£', GHS: 'GH₵', KES: 'KSh', ZAR: 'R',
   INR: '₹', CNY: '¥', AED: 'AED ', CAD: 'CA$', AUD: 'A$', JPY: '¥', BRL: 'R$',
@@ -158,7 +180,6 @@ export function fiatSymbol(fiat: string | null | undefined): string {
   const key = (fiat || 'NGN').toUpperCase();
   return FIAT_SYMBOLS[key] || `${key} `;
 }
-
 
 function extractId(raw: any): string {
   if (!raw) return '';
@@ -177,7 +198,6 @@ function extractDate(raw: any): string {
 function placeholderName(id?: string): string {
   return id ? `Trader ${id.slice(-6).toUpperCase()}` : 'Merchant';
 }
-
 
 export function normalizeMerchant(raw: any, fallbackId?: string): P2PMerchant {
   const nested = raw && typeof raw === 'object' ? raw.merchant : null;
@@ -220,6 +240,7 @@ export function normalizeOrder(raw: any): P2POrder {
     minLimit: raw.minLimit,
     maxLimit: raw.maxLimit,
     paymentMethods: raw.paymentMethods || [],
+    paymentDetails: raw.paymentDetails || [],
     terms: raw.terms,
     paymentWindowMinutes: raw.paymentWindowMinutes,
     status: raw.status,
@@ -240,6 +261,7 @@ export function normalizeTrade(raw: any): P2PTrade {
     coinAmount: raw.coinAmount,
     fiatAmount: raw.fiatAmount,
     paymentMethod: raw.paymentMethod,
+    sellerPaymentDetails: raw.sellerPaymentDetails || undefined,
     status: raw.status,
     paymentDeadline: raw.paymentDeadline ? extractDate(raw.paymentDeadline) : undefined,
     createdAt: extractDate(raw.createdAt),

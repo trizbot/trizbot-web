@@ -777,3 +777,32 @@
 .trade-btn-buy:hover { background-color: #128a3e !important; }
 .trade-btn-sell:hover { background-color: #cf3f44 !important; }
 
+
+
+
+.tab-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  margin-left: 6px;
+  border-radius: 9px;
+  background: #f43f5e;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  vertical-align: middle;
+}
+
+.action-col {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.delete-btn {
+  color: #f43f5e;
+  &:hover { background: rgba(244, 63, 94, 0.08); }
+}

@@ -6,7 +6,7 @@ import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/materia
 import { MaterialModule } from '../../../../material.module';
 import { SharedService } from '../../../../shared/shared.service';
 import { P2pService } from '../p2p.service';
-import { P2POrder, P2POrderType, P2PTrade, TradeStatus, fiatSymbol } from '../p2p.model';
+import { P2POrder, P2POrderType, P2PTrade, PaymentMethodDetail, TradeStatus, fiatSymbol } from '../p2p.model';
 
 export interface InitiateTradeDialogData {
   order?: P2POrder;
@@ -15,16 +15,8 @@ export interface InitiateTradeDialogData {
 
 type DialogMode = 'create' | 'manage';
 
-/** Below this, the countdown turns "urgent" (red) — mirrors Bybit's warning state near timeout. */
 const URGENT_THRESHOLD_MS = 5 * 60 * 1000;
 const COUNTDOWN_TICK_MS = 250;
-/**
- * Never trust a client-side timer alone for anything fraud-sensitive: the tab
- * can be backgrounded, throttled, or the local clock can be wrong. This polls
- * the server's copy of the trade regularly so expiry/dispute/release triggered
- * elsewhere is always reflected here — the countdown is a UX aid, the server
- * response is the source of truth.
- */
 const SERVER_SYNC_INTERVAL_MS = 10 * 1000;
 
 @Component({
@@ -56,9 +48,13 @@ export class InitiateTradeDialogComponent implements OnInit, OnDestroy {
     coinAmount: new FormControl<number | null>(null, [Validators.required, Validators.min(0.00000001)]),
     paymentMethod: new FormControl<string>('', { nonNullable: true, validators: [Validators.required] }),
     transactionPin: new FormControl<string>('', { nonNullable: true }),
+    // Only used when taking a Buy ad — the taker becomes the seller and must
+    // supply the account the buyer will pay into.
+    sellerAccountName: new FormControl<string>('', { nonNullable: true }),
+    sellerAccountNumber: new FormControl<string>('', { nonNullable: true }),
+    sellerBankName: new FormControl<string>('', { nonNullable: true }),
   });
 
-  // ---- payment-deadline countdown state ----
   remainingMs = 0;
   remainingLabel = '--:--';
   isUrgent = false;
@@ -87,6 +83,10 @@ export class InitiateTradeDialogComponent implements OnInit, OnDestroy {
       if (this.requiresPin) {
         this.form.controls.transactionPin.setValidators([Validators.required, Validators.minLength(4)]);
       }
+      if (this.takerBecomesSeller) {
+        this.form.controls.sellerAccountName.setValidators([Validators.required]);
+        this.form.controls.sellerAccountNumber.setValidators([Validators.required]);
+      }
     }
   }
 
@@ -99,12 +99,6 @@ export class InitiateTradeDialogComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.clearTimers();
   }
-
-  // -----------------------------------------------------------------
-  // Currency — everything renders off the order's own fiatCurrency,
-  // never a hardcoded symbol, so this dialog works for any market
-  // (NGN, USD, GHS, KES, ...) exactly like Bybit's P2P modal does.
-  // -----------------------------------------------------------------
 
   get activeOrder(): P2POrder | null {
     return this.mode === 'manage' ? this.trade?.order ?? null : this.order;
@@ -119,7 +113,7 @@ export class InitiateTradeDialogComponent implements OnInit, OnDestroy {
   }
 
   // -----------------------------------------------------------------
-  // Payment-deadline countdown
+  // Payment-deadline countdown (unchanged)
   // -----------------------------------------------------------------
 
   private setupDeadlineWatch(): void {
@@ -154,10 +148,6 @@ export class InitiateTradeDialogComponent implements OnInit, OnDestroy {
     return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
   }
 
-  /** Reaching zero locally only blocks further buyer/seller action in this
-   *  dialog — it never mutates trade state itself. We immediately re-pull the
-   *  trade so the UI reflects whatever the server (the actual clock of record)
-   *  decided, rather than trusting the client's countdown as ground truth. */
   private handleLocalExpiry(): void {
     if (this.countdownTimer) {
       clearInterval(this.countdownTimer);
@@ -175,9 +165,7 @@ export class InitiateTradeDialogComponent implements OnInit, OnDestroy {
           this.clearTimers();
         }
       },
-      error: () => {
-        // Retry on the next sync tick; canMarkPaid already blocks action locally.
-      },
+      error: () => undefined,
     });
   }
 
@@ -197,6 +185,12 @@ export class InitiateTradeDialogComponent implements OnInit, OnDestroy {
   // -----------------------------------------------------------------
 
   get requiresPin(): boolean {
+    return this.order.type === P2POrderType.Buy;
+  }
+
+  /** Taking a Buy ad means you fill the seller side — you get paid, so we
+   *  need to collect the account the buyer should send fiat to. */
+  get takerBecomesSeller(): boolean {
     return this.order.type === P2POrderType.Buy;
   }
 
@@ -230,8 +224,17 @@ export class InitiateTradeDialogComponent implements OnInit, OnDestroy {
     return null;
   }
 
+  get sellerDetailsError(): string | null {
+    if (!this.takerBecomesSeller) return null;
+    const { sellerAccountName, sellerAccountNumber } = this.form.value;
+    if (!sellerAccountName || !sellerAccountNumber) {
+      return 'Add the account the buyer should pay into.';
+    }
+    return null;
+  }
+
   submit(): void {
-    if (this.form.invalid || this.amountError) {
+    if (this.form.invalid || this.amountError || this.sellerDetailsError) {
       this.form.markAllAsTouched();
       return;
     }
@@ -240,12 +243,22 @@ export class InitiateTradeDialogComponent implements OnInit, OnDestroy {
     this.loading = true;
     const value = this.form.getRawValue();
 
+    const sellerPaymentDetails: PaymentMethodDetail | undefined = this.takerBecomesSeller
+      ? {
+          method: value.paymentMethod,
+          accountName: value.sellerAccountName,
+          accountNumber: value.sellerAccountNumber,
+          bankName: value.sellerBankName || undefined,
+        }
+      : undefined;
+
     this.p2pService
       .initiateTrade({
         orderId: this.order.id,
         coinAmount: value.coinAmount!,
         paymentMethod: value.paymentMethod,
         transactionPin: this.requiresPin ? value.transactionPin : undefined,
+        sellerPaymentDetails,
       })
       .subscribe({
         next: (trade) => {
@@ -265,13 +278,26 @@ export class InitiateTradeDialogComponent implements OnInit, OnDestroy {
   // Manage mode
   // -----------------------------------------------------------------
 
+  /** Buyer's name when you're the seller, seller's name when you're the buyer —
+   *  i.e. always the counterparty, labeled explicitly via counterpartyRoleLabel. */
   get counterpartyUsername(): string {
     if (!this.trade) return '';
     return this.trade.isBuyer ? this.trade.seller.username : this.trade.buyer.username;
   }
 
+  get counterpartyRoleLabel(): 'Buyer' | 'Seller' {
+    return this.trade?.isBuyer ? 'Seller' : 'Buyer';
+  }
+
   get iAmBuyer(): boolean {
     return !!this.trade?.isBuyer;
+  }
+
+  /** The account to pay into for this trade — from whichever side supplied it. */
+  get payToDetails(): PaymentMethodDetail | undefined {
+    if (!this.trade) return undefined;
+    if (this.trade.sellerPaymentDetails) return this.trade.sellerPaymentDetails;
+    return this.trade.order.paymentDetails?.find((d) => d.method === this.trade!.paymentMethod);
   }
 
   get canMarkPaid(): boolean {

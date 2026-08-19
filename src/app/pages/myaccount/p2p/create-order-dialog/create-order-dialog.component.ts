@@ -1,14 +1,17 @@
 import { CommonModule } from '@angular/common';
-import { Component, Inject } from '@angular/core';
-import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Component, Inject, OnDestroy } from '@angular/core';
+import { FormArray, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
+import { Subscription } from 'rxjs';
 
 import { MaterialModule } from '../../../../material.module';
 import { SharedService } from '../../../../shared/shared.service';
 import { P2pService } from '../p2p.service';
 import {
+  P2POrder,
   P2POrderType,
   PAYMENT_WINDOW_OPTIONS,
+  PaymentMethodDetail,
   SUPPORTED_COINS,
   SUPPORTED_FIAT,
   fiatSymbol,
@@ -19,6 +22,30 @@ export interface CreateOrderDialogData {
   defaultType: P2POrderType;
   coinSuggestions?: string[];
   fiatSuggestions?: string[];
+  /** Pass an existing ad here to open the dialog in "edit" mode instead of "create". */
+  order?: P2POrder;
+}
+
+/** One receiving-account row per selected payment method (Sell ads only).
+ *  `existing` prefills the row when editing an ad that already has details saved. */
+function buildPaymentDetailGroup(
+  method: string,
+  required: boolean,
+  existing?: Partial<PaymentMethodDetail>
+): FormGroup {
+  return new FormGroup({
+    method: new FormControl<string>(method, { nonNullable: true }),
+    accountName: new FormControl<string>(existing?.accountName || '', {
+      nonNullable: true,
+      validators: required ? [Validators.required] : [],
+    }),
+    accountNumber: new FormControl<string>(existing?.accountNumber || '', {
+      nonNullable: true,
+      validators: required ? [Validators.required] : [],
+    }),
+    bankName: new FormControl<string>(existing?.bankName || '', { nonNullable: true }),
+    additionalInfo: new FormControl<string>(existing?.additionalInfo || '', { nonNullable: true }),
+  });
 }
 
 @Component({
@@ -33,14 +60,19 @@ export interface CreateOrderDialogData {
   templateUrl: './create-order-dialog.component.html',
   styleUrls: ['./create-order-dialog.component.scss'],
 })
-export class CreateOrderDialogComponent {
+export class CreateOrderDialogComponent implements OnDestroy {
   readonly P2POrderType = P2POrderType;
   readonly paymentWindowOptions = PAYMENT_WINDOW_OPTIONS;
   readonly coinSuggestions: string[];
   readonly fiatSuggestions: string[];
+  readonly isEditMode: boolean;
 
   loading = false;
   errorMessage = '';
+
+  /** Once the user manually types into Max order limit, stop auto-overwriting it. */
+  private maxLimitTouchedByUser = false;
+  private subs = new Subscription();
 
   form = new FormGroup({
     type: new FormControl<P2POrderType>(P2POrderType.Buy, { nonNullable: true }),
@@ -54,6 +86,7 @@ export class CreateOrderDialogComponent {
     paymentWindowMinutes: new FormControl<number>(30, { nonNullable: true }),
     terms: new FormControl('', { nonNullable: true }),
     transactionPin: new FormControl('', { nonNullable: true }),
+    paymentDetails: new FormArray<FormGroup>([]),
   });
 
   constructor(
@@ -62,43 +95,120 @@ export class CreateOrderDialogComponent {
     private sharedService: SharedService,
     @Inject(MAT_DIALOG_DATA) public data: CreateOrderDialogData
   ) {
+    this.isEditMode = !!data.order;
     this.coinSuggestions = data.coinSuggestions?.length ? data.coinSuggestions : SUPPORTED_COINS;
     this.fiatSuggestions = data.fiatSuggestions?.length ? data.fiatSuggestions : SUPPORTED_FIAT;
-    this.form.patchValue({ type: data.defaultType });
-    this.syncPinValidator(data.defaultType);
 
-    // Payment rails are currency-specific (e.g. Pix only exists for BRL, UPI only for INR).
-    // Whenever the fiat currency changes, drop any previously-selected methods that no
-    // longer apply to the new currency, exactly like the main market filter does.
-    this.form.controls.fiatCurrency.valueChanges.subscribe((fiat) => {
-      const validForFiat = getPaymentMethodsForFiat(fiat);
-      const current = this.form.controls.paymentMethods.value;
-      const stillValid = current.filter((m) => validForFiat.includes(m));
-      if (stillValid.length !== current.length) {
-        this.form.controls.paymentMethods.setValue(stillValid);
-      }
-    });
+    if (this.isEditMode) {
+      this.patchFromExistingOrder(data.order!);
+      // Coin / fiat / type can't change on an existing ad — could invalidate open trades.
+      this.form.controls.coin.disable();
+      this.form.controls.fiatCurrency.disable();
+      // The saved maxLimit was a deliberate choice — don't silently recompute it.
+      this.maxLimitTouchedByUser = true;
+    } else {
+      this.form.patchValue({ type: data.defaultType });
+    }
+
+    this.syncPinValidator(this.form.getRawValue().type);
+
+    this.subs.add(
+      this.form.controls.fiatCurrency.valueChanges.subscribe((fiat) => {
+        const validForFiat = getPaymentMethodsForFiat(fiat);
+        const current = this.form.controls.paymentMethods.value;
+        const stillValid = current.filter((m) => validForFiat.includes(m));
+        if (stillValid.length !== current.length) {
+          this.form.controls.paymentMethods.setValue(stillValid);
+        }
+      })
+    );
+
+    this.subs.add(
+      this.form.controls.paymentMethods.valueChanges.subscribe((methods) =>
+        this.syncPaymentDetailRows(methods)
+      )
+    );
+
+    // Auto-calculate Max order limit = Total amount to trade × Price per unit.
+    this.subs.add(this.form.controls.totalAmount.valueChanges.subscribe(() => this.recomputeMaxLimit()));
+    this.subs.add(this.form.controls.pricePerUnit.valueChanges.subscribe(() => this.recomputeMaxLimit()));
   }
 
-  /** Payment methods offered depend on the currently selected fiat currency. */
+  ngOnDestroy(): void {
+    this.subs.unsubscribe();
+  }
+
   get paymentMethodOptions(): string[] {
-    return getPaymentMethodsForFiat(this.form.value.fiatCurrency);
+    return getPaymentMethodsForFiat(this.form.getRawValue().fiatCurrency);
   }
 
-  /** Currency symbol for the currently selected fiat currency (₦, $, €, R$, ₹, ...). */
   get fiatSymbol(): string {
-    return fiatSymbol(this.form.value.fiatCurrency);
+    return fiatSymbol(this.form.getRawValue().fiatCurrency);
   }
 
-  setType(type: P2POrderType): void {
-    this.form.patchValue({ type });
-    this.syncPinValidator(type);
+  get paymentDetailsArray(): FormArray<FormGroup> {
+    return this.form.controls.paymentDetails;
   }
 
-  /** Selling an ad locks coins in escrow immediately, so a PIN is required. */
+  get isSellAd(): boolean {
+    return this.form.value.type === P2POrderType.Sell;
+  }
+
+  // -----------------------------------------------------------------------
+  // Auto max-limit calculation
+  // -----------------------------------------------------------------------
+
+  /** Total amount × price = the most fiat this ad could ever be worth. */
+  get computedMaxLimit(): number | null {
+    const { totalAmount, pricePerUnit } = this.form.getRawValue();
+    if (!totalAmount || !pricePerUnit) return null;
+    return totalAmount * pricePerUnit;
+  }
+
+  /** Bound to (input) on the Max order limit field so we can tell a manual
+   *  edit apart from our own programmatic patch. */
+  onMaxLimitManualEdit(): void {
+    this.maxLimitTouchedByUser = true;
+  }
+
+  /** Lets the user snap back to the auto-calculated value after overriding it. */
+  resetMaxLimitToAuto(): void {
+    this.maxLimitTouchedByUser = false;
+    this.recomputeMaxLimit();
+  }
+
+  private recomputeMaxLimit(): void {
+    if (this.maxLimitTouchedByUser) return;
+    const computed = this.computedMaxLimit;
+    if (computed != null) {
+      // emitEvent:false so this patch doesn't loop back through valueChanges.
+      this.form.controls.maxLimit.setValue(Math.floor(computed), { emitEvent: false });
+    }
+  }
+
+  // -----------------------------------------------------------------------
+  // Edit mode
+  // -----------------------------------------------------------------------
+
+  private patchFromExistingOrder(order: P2POrder): void {
+    this.form.patchValue({
+      type: order.type,
+      coin: order.coin,
+      fiatCurrency: order.fiatCurrency,
+      pricePerUnit: order.pricePerUnit,
+      totalAmount: order.availableAmount ?? order.totalAmount,
+      minLimit: order.minLimit,
+      maxLimit: order.maxLimit,
+      paymentMethods: order.paymentMethods,
+      paymentWindowMinutes: order.paymentWindowMinutes ?? 30,
+      terms: order.terms || '',
+    });
+    this.syncPaymentDetailRows(order.paymentMethods, order.paymentDetails);
+  }
+
   private syncPinValidator(type: P2POrderType): void {
     const pinControl = this.form.controls.transactionPin;
-    if (type === P2POrderType.Sell) {
+    if (type === P2POrderType.Sell && !this.isEditMode) {
       pinControl.setValidators([Validators.required, Validators.minLength(4)]);
     } else {
       pinControl.clearValidators();
@@ -106,8 +216,34 @@ export class CreateOrderDialogComponent {
     pinControl.updateValueAndValidity();
   }
 
-  get isSellAd(): boolean {
-    return this.form.value.type === P2POrderType.Sell;
+  private syncPaymentDetailRows(methods: string[], existingDetails?: PaymentMethodDetail[]): void {
+    const array = this.paymentDetailsArray;
+    const required = this.isSellAd;
+    const existingMethods = array.controls.map((g) => g.get('method')?.value);
+
+    for (let i = array.length - 1; i >= 0; i--) {
+      if (!methods.includes(array.at(i).get('method')?.value)) array.removeAt(i);
+    }
+    methods.forEach((method) => {
+      if (!existingMethods.includes(method)) {
+        const prefill = existingDetails?.find((d) => d.method === method);
+        array.push(buildPaymentDetailGroup(method, required, prefill));
+      }
+    });
+    array.controls.forEach((g) => {
+      const validators = required ? [Validators.required] : [];
+      g.get('accountName')?.setValidators(validators);
+      g.get('accountNumber')?.setValidators(validators);
+      g.get('accountName')?.updateValueAndValidity();
+      g.get('accountNumber')?.updateValueAndValidity();
+    });
+  }
+
+  setType(type: P2POrderType): void {
+    if (this.isEditMode) return; // type is locked once an ad exists
+    this.form.patchValue({ type });
+    this.syncPinValidator(type);
+    this.syncPaymentDetailRows(this.form.controls.paymentMethods.value);
   }
 
   get limitError(): string | null {
@@ -124,8 +260,26 @@ export class CreateOrderDialogComponent {
     return null;
   }
 
+  get paymentDetailsError(): string | null {
+    if (!this.isSellAd) return null;
+    if (this.form.controls.paymentMethods.value.length > 0 && this.paymentDetailsArray.invalid) {
+      return 'Add your receiving account details for each selected payment method.';
+    }
+    return null;
+  }
+
+  private toPaymentDetails(raw: any[]): PaymentMethodDetail[] {
+    return raw.map((pd) => ({
+      method: pd.method,
+      accountName: pd.accountName,
+      accountNumber: pd.accountNumber,
+      bankName: pd.bankName || undefined,
+      additionalInfo: pd.additionalInfo || undefined,
+    }));
+  }
+
   submit(): void {
-    if (this.form.invalid || this.limitError) {
+    if (this.form.invalid || this.limitError || this.paymentDetailsError) {
       this.form.markAllAsTouched();
       return;
     }
@@ -133,6 +287,37 @@ export class CreateOrderDialogComponent {
     this.errorMessage = '';
     this.loading = true;
     const value = this.form.getRawValue();
+    const paymentDetails =
+      value.type === P2POrderType.Sell ? this.toPaymentDetails(value.paymentDetails) : undefined;
+
+    if (this.isEditMode) {
+      const orderId = this.data.order!.id;
+      this.p2pService
+        .updateOrder(orderId, {
+          pricePerUnit: value.pricePerUnit!,
+          totalAmount: value.totalAmount!,
+          minLimit: value.minLimit!,
+          maxLimit: value.maxLimit!,
+          paymentMethods: value.paymentMethods,
+          paymentDetails,
+          terms: value.terms || undefined,
+          paymentWindowMinutes: value.paymentWindowMinutes,
+          transactionPin: value.transactionPin || undefined,
+        })
+        .subscribe({
+          next: () => {
+            this.loading = false;
+            this.sharedService.showToast({ title: 'Your ad has been updated.' });
+            this.dialogRef.close(true);
+          },
+          error: (err) => {
+            this.loading = false;
+            const message = err?.error?.message || 'Could not update this ad. Please try again.';
+            this.errorMessage = Array.isArray(message) ? message.join(', ') : message;
+          },
+        });
+      return;
+    }
 
     this.p2pService
       .createOrder({
@@ -144,6 +329,7 @@ export class CreateOrderDialogComponent {
         minLimit: value.minLimit!,
         maxLimit: value.maxLimit!,
         paymentMethods: value.paymentMethods,
+        paymentDetails,
         terms: value.terms || undefined,
         paymentWindowMinutes: value.paymentWindowMinutes,
         transactionPin: value.type === P2POrderType.Sell ? value.transactionPin : undefined,
