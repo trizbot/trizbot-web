@@ -619,8 +619,6 @@ export class P2pComponent implements OnInit, OnDestroy {
   // Payment countdown (Bybit-style mm:ss timer)
   // ---------------------------------------------------------------------
 
-  /** Wall-clock-deadline-based tick, same pattern as the market refresh
-   *  timer, so the countdown can't drift if the tab is backgrounded. */
   private startTradesCountdown(): void {
     this.stopTradesCountdown();
     this.tradesCountdownTimer = setInterval(() => {
@@ -636,23 +634,17 @@ export class P2pComponent implements OnInit, OnDestroy {
   }
 
 
-
-  /** Fiat symbol for a specific trade's own currency — not the market
-   *  filter's currency, since a trade can be in a different fiat than
-   *  whatever's currently selected in the Market tab filters. */
   tradeFiatSymbol(trade: P2PTrade): string {
     return fiatSymbol(trade.order?.fiatCurrency);
   }
 
-  /** Counterparty label for a trade row — buyer sees the seller's name and
-   *  vice versa, driven entirely by trade.isBuyer from the backend. */
+ 
   counterpartyName(trade: P2PTrade): string {
     const merchant = trade.isBuyer ? trade.seller : trade.buyer;
     return merchant?.username || 'Trader';
   }
 
-  /** "You are buying" / "You are selling" label, mirroring Bybit's trade
-   *  detail header — driven by the same isBuyer flag. */
+
   yourRoleLabel(trade: P2PTrade): string {
     return trade.isBuyer ? 'You are buying' : 'You are selling';
   }
