@@ -72,7 +72,7 @@ deleteOrder(orderId: string): Observable<void> {
           body && typeof body === 'object' &&
           ((body.deletedCount === 0) || (body.success === false));
         if (failed) {
-          throw new Error('Delete did not remove the ad on the serve.');
+          throw new Error('Delete did not remove the ad.');
         }
         return undefined;
       })
