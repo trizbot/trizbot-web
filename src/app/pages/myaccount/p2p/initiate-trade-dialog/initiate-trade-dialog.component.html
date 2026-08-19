@@ -98,7 +98,6 @@
         mat-flat-button
         color="primary"
         type="button"
-        [disabled]="!initiateFormValid || submitting"
         (click)="submitInitiateTrade()"
       >
         {{ submitting ? 'Starting...' : (order.type === P2POrderType.Sell ? 'Buy ' : 'Sell ') + order.coin }}
