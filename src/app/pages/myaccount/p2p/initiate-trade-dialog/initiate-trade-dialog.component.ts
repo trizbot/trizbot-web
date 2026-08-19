@@ -1,408 +1,349 @@
 import { CommonModule } from '@angular/common';
 import { Component, Inject, OnDestroy, OnInit } from '@angular/core';
-import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
+import { FormsModule } from '@angular/forms';
+import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 
 import { MaterialModule } from '../../../../material.module';
 import { SharedService } from '../../../../shared/shared.service';
 import { P2pService } from '../p2p.service';
-import { P2POrder, P2POrderType, P2PTrade, PaymentMethodDetail, TradeStatus, fiatSymbol } from '../p2p.model';
+import {
+  P2POrder,
+  P2POrderType,
+  P2PTrade,
+  PaymentMethodDetail,
+  TradeStatus,
+  canMarkPaid,
+  canReleaseFunds,
+  fiatSymbol,
+  formatCountdown,
+  getPaymentMethodsForFiat,
+  msUntilDeadline,
+} from '../p2p.model';
 
 export interface InitiateTradeDialogData {
   order?: P2POrder;
   trade?: P2PTrade;
 }
 
-type DialogMode = 'create' | 'manage';
-
-const URGENT_THRESHOLD_MS = 5 * 60 * 1000;
-const COUNTDOWN_TICK_MS = 250;
-const SERVER_SYNC_INTERVAL_MS = 10 * 1000;
+const COUNTDOWN_TICK_MS = 1000;
+const COUNTDOWN_URGENT_THRESHOLD_MS = 2 * 60 * 1000;
+const MAX_PROOF_FILE_BYTES = 4 * 1024 * 1024; // 4MB cap so the base64 payload stays reasonable
+const PIN_PATTERN = /^\d{4,6}$/; // 4-6 digit transaction PIN
 
 @Component({
   selector: 'app-initiate-trade-dialog',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, MaterialModule, MatDialogModule],
+  imports: [CommonModule, FormsModule, MaterialModule],
   templateUrl: './initiate-trade-dialog.component.html',
   styleUrls: ['./initiate-trade-dialog.component.scss'],
 })
 export class InitiateTradeDialogComponent implements OnInit, OnDestroy {
-  readonly TradeStatus = TradeStatus;
   readonly P2POrderType = P2POrderType;
+  readonly TradeStatus = TradeStatus;
 
-  mode: DialogMode;
-  order: P2POrder;
-  trade: P2PTrade | null = null;
+  mode: 'initiate' | 'detail' = 'initiate';
+  order?: P2POrder;
+  trade?: P2PTrade;
 
-  loading = false;
+  // ---- Initiate-trade form state ----
+  coinAmount: number | null = null;
+  paymentMethod = '';
+  sellerAccountName = '';
+  sellerAccountNumber = '';
+  sellerBankName = '';
+  sellerAdditionalInfo = '';
+  transactionPin = ''; // required to lock funds into escrow when starting a trade
+  submitting = false;
   errorMessage = '';
 
-  showDisputeForm = false;
-  disputeReason = new FormControl<string>('', { nonNullable: true, validators: [Validators.required] });
-  releasePin = new FormControl<string>('', {
-    nonNullable: true,
-    validators: [Validators.required, Validators.minLength(4)],
-  });
+  // ---- Trade-detail / payment-proof state ----
+  showPaidForm = false;
+  proofUrl = '';
+  proofNote = '';
+  proofFileError = '';
+  markingPaid = false;
+  releasing = false;
+  releasePin = ''; // required to release escrowed funds to the buyer
+  releasePinError = '';
 
-  form = new FormGroup({
-    coinAmount: new FormControl<number | null>(null, [Validators.required, Validators.min(0.00000001)]),
-    paymentMethod: new FormControl<string>('', { nonNullable: true, validators: [Validators.required] }),
-    transactionPin: new FormControl<string>('', { nonNullable: true }),
-    // Only used when taking a Buy ad — the taker becomes the seller and must
-    // supply the account the buyer will pay into.
-    sellerAccountName: new FormControl<string>('', { nonNullable: true }),
-    sellerAccountNumber: new FormControl<string>('', { nonNullable: true }),
-    sellerBankName: new FormControl<string>('', { nonNullable: true }),
-  });
-
-  remainingMs = 0;
-  remainingLabel = '--:--';
-  isUrgent = false;
-  isExpiredLocally = false;
-
+  private nowTick = Date.now();
   private countdownTimer: ReturnType<typeof setInterval> | null = null;
-  private serverSyncTimer: ReturnType<typeof setInterval> | null = null;
-  private deadlineMs: number | null = null;
 
   constructor(
-    private dialogRef: MatDialogRef<InitiateTradeDialogComponent, P2PTrade | undefined>,
+    private dialogRef: MatDialogRef<InitiateTradeDialogComponent>,
     private p2pService: P2pService,
     private sharedService: SharedService,
     @Inject(MAT_DIALOG_DATA) public data: InitiateTradeDialogData
-  ) {
-    if (data.trade) {
-      this.mode = 'manage';
-      this.trade = data.trade;
-      this.order = data.trade.order;
-    } else {
-      this.mode = 'create';
-      this.order = data.order!;
-      if (this.order.paymentMethods.length === 1) {
-        this.form.patchValue({ paymentMethod: this.order.paymentMethods[0] });
-      }
-      if (this.requiresPin) {
-        this.form.controls.transactionPin.setValidators([Validators.required, Validators.minLength(4)]);
-      }
-      if (this.takerBecomesSeller) {
-        this.form.controls.sellerAccountName.setValidators([Validators.required]);
-        this.form.controls.sellerAccountNumber.setValidators([Validators.required]);
-      }
-    }
-  }
+  ) {}
 
   ngOnInit(): void {
-    if (this.mode === 'manage' && this.trade) {
-      this.setupDeadlineWatch();
+    if (this.data.trade) {
+      this.mode = 'detail';
+      this.trade = this.data.trade;
+    } else if (this.data.order) {
+      this.mode = 'initiate';
+      this.order = this.data.order;
+      const options = getPaymentMethodsForFiat(this.order.fiatCurrency);
+      this.paymentMethod = this.order.paymentMethods.find((m) => options.includes(m)) || options[0] || '';
     }
+    this.startCountdown();
   }
 
   ngOnDestroy(): void {
-    this.clearTimers();
+    this.stopCountdown();
   }
 
-  get activeOrder(): P2POrder | null {
-    return this.mode === 'manage' ? this.trade?.order ?? null : this.order;
+  close(result?: P2PTrade): void {
+    this.dialogRef.close(result);
   }
 
-  get currencySymbol(): string {
-    return fiatSymbol(this.activeOrder?.fiatCurrency);
-  }
+  // =======================================================================
+  // INITIATE TRADE
+  // =======================================================================
 
-  get currencyCode(): string {
-    return this.activeOrder?.fiatCurrency ?? '';
-  }
-
-  // -----------------------------------------------------------------
-  // Payment-deadline countdown (unchanged)
-  // -----------------------------------------------------------------
-
-  private setupDeadlineWatch(): void {
-    this.clearTimers();
-    if (!this.trade?.paymentDeadline || this.trade.status !== TradeStatus.PendingPayment) {
-      return;
-    }
-    this.deadlineMs = new Date(this.trade.paymentDeadline).getTime();
-    this.isExpiredLocally = false;
-    this.tickCountdown();
-    this.countdownTimer = setInterval(() => this.tickCountdown(), COUNTDOWN_TICK_MS);
-    this.serverSyncTimer = setInterval(() => this.syncFromServer(), SERVER_SYNC_INTERVAL_MS);
-  }
-
-  private tickCountdown(): void {
-    if (this.deadlineMs == null) return;
-    const msLeft = this.deadlineMs - Date.now();
-    this.remainingMs = Math.max(0, msLeft);
-    this.isUrgent = this.remainingMs > 0 && this.remainingMs <= URGENT_THRESHOLD_MS;
-    this.remainingLabel = this.formatRemaining(this.remainingMs);
-
-    if (msLeft <= 0 && !this.isExpiredLocally) {
-      this.isExpiredLocally = true;
-      this.handleLocalExpiry();
-    }
-  }
-
-  private formatRemaining(ms: number): string {
-    const totalSeconds = Math.floor(ms / 1000);
-    const minutes = Math.floor(totalSeconds / 60);
-    const seconds = totalSeconds % 60;
-    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-  }
-
-  private handleLocalExpiry(): void {
-    if (this.countdownTimer) {
-      clearInterval(this.countdownTimer);
-      this.countdownTimer = null;
-    }
-    this.syncFromServer();
-  }
-
-  private syncFromServer(): void {
-    if (!this.trade) return;
-    this.p2pService.getTrade(this.trade.id).subscribe({
-      next: (updated) => {
-        this.trade = updated;
-        if (updated.status !== TradeStatus.PendingPayment) {
-          this.clearTimers();
-        }
-      },
-      error: () => undefined,
-    });
-  }
-
-  private clearTimers(): void {
-    if (this.countdownTimer) {
-      clearInterval(this.countdownTimer);
-      this.countdownTimer = null;
-    }
-    if (this.serverSyncTimer) {
-      clearInterval(this.serverSyncTimer);
-      this.serverSyncTimer = null;
-    }
-  }
-
-  // -----------------------------------------------------------------
-  // Create mode
-  // -----------------------------------------------------------------
-
-  get requiresPin(): boolean {
-    return this.order.type === P2POrderType.Buy;
-  }
-
-  /** Taking a Buy ad means you fill the seller side — you get paid, so we
-   *  need to collect the account the buyer should send fiat to. */
-  get takerBecomesSeller(): boolean {
-    return this.order.type === P2POrderType.Buy;
-  }
-
-  get actionVerb(): string {
-    return this.order.type === P2POrderType.Buy ? 'Sell' : 'Buy';
-  }
-
-  get isBuyAction(): boolean {
-    return this.actionVerb === 'Buy';
+  get paymentMethodOptions(): string[] {
+    if (!this.order) return [];
+    const supported = getPaymentMethodsForFiat(this.order.fiatCurrency);
+    return this.order.paymentMethods.filter((m) => supported.includes(m));
   }
 
   get fiatAmount(): number {
-    const amount = this.form.value.coinAmount || 0;
-    return amount * this.order.pricePerUnit;
+    if (!this.order || !this.coinAmount) return 0;
+    return this.coinAmount * this.order.pricePerUnit;
   }
 
-  get limitHint(): string {
-    return `Limit: ${this.currencySymbol}${this.order.minLimit.toLocaleString()} – ${this.currencySymbol}${this.order.maxLimit.toLocaleString()}`;
+  get fiatSymbolForOrder(): string {
+    return fiatSymbol(this.order?.fiatCurrency);
   }
 
-  get amountError(): string | null {
-    const amount = this.form.value.coinAmount;
-    if (amount == null) return null;
-    if (amount > this.order.availableAmount) {
-      return `Only ${this.order.availableAmount} ${this.order.coin} available.`;
-    }
-    const fiat = amount * this.order.pricePerUnit;
-    if (fiat < this.order.minLimit || fiat > this.order.maxLimit) {
-      return `Amount must be between ${this.currencySymbol}${this.order.minLimit.toLocaleString()} and ${this.currencySymbol}${this.order.maxLimit.toLocaleString()}.`;
-    }
-    return null;
+  /** Ad owner is the seller — the order already carries their payment
+   *  details, so the buyer (me) just needs to see them. */
+  get orderCarriesSellerDetails(): boolean {
+    return this.order?.type === P2POrderType.Sell;
   }
 
-  get sellerDetailsError(): string | null {
-    if (!this.takerBecomesSeller) return null;
-    const { sellerAccountName, sellerAccountNumber } = this.form.value;
-    if (!sellerAccountName || !sellerAccountNumber) {
-      return 'Add the account the buyer should pay into.';
-    }
-    return null;
+  /** Ad owner is the buyer — I'm the one selling coin, so I must supply
+   *  my own payment details for the buyer to pay into. */
+  get mustSupplySellerDetails(): boolean {
+    return this.order?.type === P2POrderType.Buy;
   }
 
-  submit(): void {
-    if (this.form.invalid || this.amountError || this.sellerDetailsError) {
-      this.form.markAllAsTouched();
-      return;
-    }
+  get matchedOrderPaymentDetail(): PaymentMethodDetail | undefined {
+    if (!this.order?.paymentDetails?.length) return undefined;
+    return this.order.paymentDetails.find((d) => d.method === this.paymentMethod) || this.order.paymentDetails[0];
+  }
 
+  get amountValid(): boolean {
+    if (!this.order || !this.coinAmount) return false;
+    const amt = this.fiatAmount;
+    return (
+      this.coinAmount > 0 &&
+      amt >= this.order.minLimit &&
+      amt <= this.order.maxLimit &&
+      this.coinAmount <= this.order.availableAmount
+    );
+  }
+
+  get pinValid(): boolean {
+    return PIN_PATTERN.test(this.transactionPin);
+  }
+
+  get initiateFormValid(): boolean {
+    if (!this.amountValid || !this.paymentMethod || !this.pinValid) return false;
+    if (this.mustSupplySellerDetails) {
+      return !!this.sellerAccountName.trim() && !!this.sellerAccountNumber.trim();
+    }
+    return true;
+  }
+
+  submitInitiateTrade(): void {
+    if (!this.order || !this.initiateFormValid || this.submitting) return;
+
+    this.submitting = true;
     this.errorMessage = '';
-    this.loading = true;
-    const value = this.form.getRawValue();
 
-    const sellerPaymentDetails: PaymentMethodDetail | undefined = this.takerBecomesSeller
+    const sellerPaymentDetails: PaymentMethodDetail | undefined = this.mustSupplySellerDetails
       ? {
-          method: value.paymentMethod,
-          accountName: value.sellerAccountName,
-          accountNumber: value.sellerAccountNumber,
-          bankName: value.sellerBankName || undefined,
+          method: this.paymentMethod,
+          accountName: this.sellerAccountName.trim(),
+          accountNumber: this.sellerAccountNumber.trim(),
+          bankName: this.sellerBankName.trim() || undefined,
+          additionalInfo: this.sellerAdditionalInfo.trim() || undefined,
         }
       : undefined;
 
     this.p2pService
       .initiateTrade({
         orderId: this.order.id,
-        coinAmount: value.coinAmount!,
-        paymentMethod: value.paymentMethod,
-        transactionPin: this.requiresPin ? value.transactionPin : undefined,
+        coinAmount: this.coinAmount as number,
+        paymentMethod: this.paymentMethod,
         sellerPaymentDetails,
+        transactionPin: this.transactionPin,
       })
       .subscribe({
         next: (trade) => {
-          this.loading = false;
-          this.sharedService.showToast({ title: 'Trade started. Follow the next steps to complete it.' });
-          this.dialogRef.close(trade);
+          this.submitting = false;
+          this.transactionPin = '';
+          this.sharedService.showToast({ title: 'Trade started. Check the payment window below.' });
+          this.close(trade);
         },
         error: (err) => {
-          this.loading = false;
-          const message = err?.error?.message || 'Could not start this trade. Please try again.';
+          this.submitting = false;
+          const message = err?.error?.message || 'Could not start this trade.';
           this.errorMessage = Array.isArray(message) ? message.join(', ') : message;
         },
       });
   }
 
-  // -----------------------------------------------------------------
-  // Manage mode
-  // -----------------------------------------------------------------
+  // =======================================================================
+  // TRADE DETAIL — countdown, mark-paid, release
+  // =======================================================================
 
-  /** Buyer's name when you're the seller, seller's name when you're the buyer —
-   *  i.e. always the counterparty, labeled explicitly via counterpartyRoleLabel. */
-  get counterpartyUsername(): string {
-    if (!this.trade) return '';
-    return this.trade.isBuyer ? this.trade.seller.username : this.trade.buyer.username;
+  private startCountdown(): void {
+    this.stopCountdown();
+    this.countdownTimer = setInterval(() => {
+      this.nowTick = Date.now();
+    }, COUNTDOWN_TICK_MS);
   }
 
-  get counterpartyRoleLabel(): 'Buyer' | 'Seller' {
-    return this.trade?.isBuyer ? 'Seller' : 'Buyer';
+  private stopCountdown(): void {
+    if (this.countdownTimer) {
+      clearInterval(this.countdownTimer);
+      this.countdownTimer = null;
+    }
   }
 
-  get iAmBuyer(): boolean {
-    return !!this.trade?.isBuyer;
+    get countdownLabel(): string {
+    if (!this.trade || this.trade.status !== TradeStatus.Pending || !this.trade.paymentDeadline) return '';
+    return formatCountdown(msUntilDeadline(this.trade.paymentDeadline, this.nowTick));
   }
 
-  /** The account to pay into for this trade — from whichever side supplied it. */
-  get payToDetails(): PaymentMethodDetail | undefined {
-    if (!this.trade) return undefined;
-    if (this.trade.sellerPaymentDetails) return this.trade.sellerPaymentDetails;
-    return this.trade.order.paymentDetails?.find((d) => d.method === this.trade!.paymentMethod);
+  get countdownUrgent(): boolean {
+    if (!this.trade || this.trade.status !== TradeStatus.Pending || !this.trade.paymentDeadline) return false;
+    const msLeft = msUntilDeadline(this.trade.paymentDeadline, this.nowTick);
+    return msLeft > 0 && msLeft <= COUNTDOWN_URGENT_THRESHOLD_MS;
+  }
+
+  get countdownExpired(): boolean {
+    if (!this.trade || this.trade.status !== TradeStatus.Pending || !this.trade.paymentDeadline) return false;
+    return msUntilDeadline(this.trade.paymentDeadline, this.nowTick) <= 0;
   }
 
   get canMarkPaid(): boolean {
-    return (
-      !!this.trade &&
-      this.trade.status === TradeStatus.PendingPayment &&
-      this.iAmBuyer &&
-      !this.isExpiredLocally
-    );
+    return !!this.trade && canMarkPaid(this.trade);
   }
 
-  get canRelease(): boolean {
-    return !!this.trade && this.trade.status === TradeStatus.Paid && !this.iAmBuyer;
+  get canReleaseFunds(): boolean {
+    return !!this.trade && canReleaseFunds(this.trade);
   }
 
-  get canDispute(): boolean {
-    return (
-      !!this.trade &&
-      (this.trade.status === TradeStatus.PendingPayment || this.trade.status === TradeStatus.Paid)
-    );
+  get releasePinValid(): boolean {
+    return PIN_PATTERN.test(this.releasePin);
   }
 
-  get isFinalStatus(): boolean {
-    if (!this.trade) return false;
-    return (
-      this.trade.status === TradeStatus.Released ||
-      this.trade.status === TradeStatus.Cancelled ||
-      this.trade.status === TradeStatus.Expired
-    );
+  get proofLooksLikeImage(): boolean {
+    const url = this.trade?.paymentProofUrl || this.proofUrl;
+    return /\.(png|jpe?g|gif|webp)($|\?)/i.test(url) || url.startsWith('data:image/');
   }
 
-  markPaid(): void {
-    if (!this.trade) return;
-    if (this.isExpiredLocally) {
-      this.errorMessage = 'The payment window has ended. Checking the latest trade status…';
-      this.syncFromServer();
+  togglePaidForm(): void {
+    this.showPaidForm = !this.showPaidForm;
+    this.proofFileError = '';
+  }
+
+  onProofFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      this.proofFileError = 'Please choose an image file.';
       return;
     }
-    this.errorMessage = '';
-    this.loading = true;
-    this.p2pService.markPaid(this.trade.id).subscribe({
-      next: (updated) => {
-        this.loading = false;
-        this.trade = updated;
-        this.clearTimers();
-        this.sharedService.showToast({ title: 'Marked as paid. Waiting for the seller to release.' });
-      },
-      error: (err) => {
-        this.loading = false;
-        const message = err?.error?.message || 'Could not mark this trade as paid.';
-        this.errorMessage = Array.isArray(message) ? message.join(', ') : message;
-      },
-    });
-  }
-
-  release(): void {
-    if (!this.trade || this.releasePin.invalid) {
-      this.releasePin.markAsTouched();
+    if (file.size > MAX_PROOF_FILE_BYTES) {
+      this.proofFileError = 'Image is too large (max 4MB).';
       return;
     }
-    this.errorMessage = '';
-    this.loading = true;
-    this.p2pService.releaseTrade(this.trade.id, this.releasePin.value).subscribe({
+
+    this.proofFileError = '';
+    const reader = new FileReader();
+    reader.onload = () => {
+      // Embeds the screenshot as a data URL for now. Swap this for a real
+      // upload-to-storage call once the backend exposes one, and set
+      // this.proofUrl to the returned hosted URL instead.
+      this.proofUrl = reader.result as string;
+    };
+    reader.onerror = () => {
+      this.proofFileError = 'Could not read that file, please try again.';
+    };
+    reader.readAsDataURL(file);
+  }
+
+  submitMarkPaid(): void {
+    if (!this.trade || this.markingPaid) return;
+    if (!this.proofUrl.trim()) {
+      this.proofFileError = 'Attach a screenshot or paste a link to your payment evidence.';
+      return;
+    }
+
+    this.markingPaid = true;
+    this.p2pService
+      .markTradePaid(this.trade.id, {
+        paymentProofUrl: this.proofUrl.trim(),
+        paymentProofNote: this.proofNote.trim() || undefined,
+      })
+      .subscribe({
+        next: (updated) => {
+          this.markingPaid = false;
+          this.trade = updated;
+          this.showPaidForm = false;
+          this.sharedService.showToast({ title: 'Marked as paid. Waiting for the seller to confirm.' });
+        },
+        error: (err) => {
+          this.markingPaid = false;
+          const message = err?.error?.message || 'Could not mark this trade as paid.';
+          this.proofFileError = Array.isArray(message) ? message.join(', ') : message;
+        },
+      });
+  }
+
+  confirmReleaseFunds(): void {
+    if (!this.trade || this.releasing) return;
+
+    this.releasePinError = '';
+    if (!this.releasePinValid) {
+      this.releasePinError = 'Enter your 4–6 digit transaction PIN.';
+      return;
+    }
+
+    const confirmed = window.confirm(
+      'Only confirm once you have verified the money has actually landed in your account. This releases the coins and cannot be undone.'
+    );
+    if (!confirmed) return;
+
+    this.releasing = true;
+    this.p2pService.releaseTrade(this.trade.id, { transactionPin: this.releasePin }).subscribe({
       next: (updated) => {
-        this.loading = false;
+        this.releasing = false;
+        this.releasePin = '';
         this.trade = updated;
-        this.clearTimers();
-        this.sharedService.showToast({ title: 'Crypto released. Trade complete.' });
+        this.sharedService.showToast({ title: 'Payment confirmed. Coins released to the buyer.' });
       },
       error: (err) => {
-        this.loading = false;
+        this.releasing = false;
         const message = err?.error?.message || 'Could not release this trade.';
-        this.errorMessage = Array.isArray(message) ? message.join(', ') : message;
+        this.releasePinError = Array.isArray(message) ? message.join(', ') : message;
       },
     });
   }
 
-  openDisputeForm(): void {
-    this.showDisputeForm = true;
+  tradeFiatSymbol(): string {
+    return fiatSymbol(this.trade?.order?.fiatCurrency);
   }
 
-  submitDispute(): void {
-    if (!this.trade || this.disputeReason.invalid) {
-      this.disputeReason.markAsTouched();
-      return;
-    }
-    this.errorMessage = '';
-    this.loading = true;
-    this.p2pService.disputeTrade(this.trade.id, this.disputeReason.value).subscribe({
-      next: (updated) => {
-        this.loading = false;
-        this.trade = updated;
-        this.showDisputeForm = false;
-        this.clearTimers();
-        this.sharedService.showToast({ title: 'Dispute raised. Support will step in shortly.' });
-      },
-      error: (err) => {
-        this.loading = false;
-        const message = err?.error?.message || 'Could not raise a dispute.';
-        this.errorMessage = Array.isArray(message) ? message.join(', ') : message;
-      },
-    });
-  }
-
-  close(): void {
-    this.dialogRef.close(this.mode === 'manage' ? this.trade ?? undefined : undefined);
+  counterpartyName(): string {
+    if (!this.trade) return 'Trader';
+    const merchant = this.trade.isBuyer ? this.trade.seller : this.trade.buyer;
+    return merchant?.username || 'Trader';
   }
 }

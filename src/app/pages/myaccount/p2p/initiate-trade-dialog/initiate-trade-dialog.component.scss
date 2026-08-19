@@ -1,224 +1,377 @@
-:host {
-  --p2p-surface: #ffffff;
-  --p2p-surface-2: #fafafa;
-  --p2p-border: #e6e8eb;
-  --p2p-text: #14151a;
-  --p2p-text-muted: #74767e;
-  --p2p-buy: #16a34a;
-  --p2p-buy-bg: #e9f9ef;
-  --p2p-sell: #e5484d;
-  --p2p-sell-bg: #fdecec;
-  --p2p-accent: #f7a600;
-  --p2p-danger-bg: #fdecec;
-  --p2p-danger: #c2262b;
-  --p2p-radius-md: 10px;
-  --p2p-radius-sm: 8px;
-
-  display: block;
-  background: var(--p2p-surface);
-  color: var(--p2p-text);
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-}
-
-* { box-sizing: border-box; }
-
-.dialog-title {
+.trade-dialog {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-size: 17px;
-  font-weight: 700;
-  padding: 4px 4px 14px;
-  margin: 0;
-}
-
-.close-btn { color: var(--p2p-text-muted); }
-
-mat-dialog-content {
-  padding: 4px 4px 12px;
-  max-height: 74vh;
-}
-
-.merchant-strip {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  background: var(--p2p-surface-2);
-  border: 1px solid var(--p2p-border);
-  border-radius: var(--p2p-radius-md);
-  padding: 12px 14px;
-  margin-bottom: 16px;
-}
-
-.merchant-avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: #fff;
-  border: 1px solid var(--p2p-border);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  color: var(--p2p-text-muted);
-  overflow: hidden;
-  flex-shrink: 0;
-
-  img { width: 100%; height: 100%; object-fit: cover; }
-}
-
-.merchant-name {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-weight: 700;
+  flex-direction: column;
+  width: 100%;
+  max-width: 480px;
+  max-height: 90vh;
+  max-height: 90dvh; // dynamic viewport height, avoids mobile browser chrome jumping the layout
   font-size: 14px;
-}
+  overflow: hidden; // scrolling happens in .dialog-body, not the whole dialog
 
-.verified-icon { color: #2f88ff; font-size: 15px; width: 15px; height: 15px; }
+  // ---------------------------------------------------------------------
+  // Header — sticky so it stays visible while the body scrolls
+  // ---------------------------------------------------------------------
+  .dialog-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: #fff;
+    padding: 4px 4px 12px;
+    border-bottom: 1px solid #f3f4f6;
 
-.merchant-stats { font-size: 12px; color: var(--p2p-text-muted); margin-top: 2px; }
+    h2 {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 700;
+      line-height: 1.3;
+      word-break: break-word;
+    }
 
-.price-tag {
-  margin-left: auto;
-  text-align: right;
-  font-weight: 700;
-  font-size: 15px;
-  white-space: nowrap;
+    .icon-btn {
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      color: #6b7280;
+      display: flex;
+      align-items: center;
+      flex-shrink: 0;
+      padding: 8px;
+      margin: -8px -8px -8px 8px;
+      border-radius: 50%;
+      &:hover { color: #111827; background: #f3f4f6; }
+    }
+  }
 
-  span { display: block; font-size: 11px; font-weight: 500; color: var(--p2p-text-muted); }
-}
+  // ---------------------------------------------------------------------
+  // Scrollable content region
+  // ---------------------------------------------------------------------
+  .dialog-body {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch; // momentum scroll on iOS
+    padding: 14px 4px 4px;
+    // keep the last element's margin from getting clipped by the scroll edge
+    padding-bottom: 4px;
+  }
 
-.limit-hint {
-  font-size: 12.5px;
-  color: var(--p2p-text-muted);
-  margin: 0 0 12px;
-}
+  // ---------------------------------------------------------------------
+  // Sticky footer actions (initiate flow's Cancel/Submit row)
+  // ---------------------------------------------------------------------
+  .dialog-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    flex-shrink: 0;
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
+    background: #fff;
+    padding: 12px 4px 4px;
+    border-top: 1px solid #f3f4f6;
+    margin-top: 6px;
 
-.w-100 { width: 100%; }
-.m-b-8 { margin-bottom: 8px; }
-.d-block { display: block; }
-.f-w-600 { font-weight: 600; font-size: 13px; color: var(--p2p-text); }
+    // the mark-paid confirm/cancel row lives inside .dialog-body and
+    // shouldn't be pinned to the screen edge — opt it out of sticky styling
+    &.inline {
+      position: static;
+      border-top: none;
+      padding: 0;
+      margin-top: 0;
+      background: transparent;
+    }
 
-.field-error {
-  font-size: 12px;
-  color: var(--p2p-danger);
-  margin: -10px 0 12px;
-}
+    button { min-height: 40px; }
+  }
 
-.fiat-total {
-  font-size: 13.5px;
-  color: var(--p2p-text-muted);
-  background: var(--p2p-surface-2);
-  border-radius: var(--p2p-radius-sm);
-  padding: 10px 12px;
-  margin-bottom: 14px;
+  .order-summary, .trade-amounts {
+    background: #f9fafb;
+    border-radius: 10px;
+    padding: 12px 14px;
+    margin-bottom: 14px;
+  }
 
-  b { color: var(--p2p-text); }
-}
+  .summary-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 10px;
+    padding: 4px 0;
+    color: #4b5563;
 
-.alert {
-  border-radius: var(--p2p-radius-sm);
-  padding: 10px 14px;
-  font-size: 13px;
+    .summary-val {
+      color: #111827;
+      font-weight: 600;
+      text-align: right;
+      word-break: break-word;
+    }
+  }
 
-  &.alert-danger { background: var(--p2p-danger-bg); color: var(--p2p-danger); }
-}
+  .form-group {
+    margin-bottom: 14px;
 
-.submit-btn {
-  height: 46px !important;
-  border-radius: var(--p2p-radius-md) !important;
-  font-weight: 700 !important;
-  font-size: 14.5px !important;
-  margin-top: 6px;
-}
+    label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: #4b5563;
+      margin-bottom: 4px;
+    }
 
-/* Buy = green, Sell = red — same palette as the market list buttons.
-   Material's [color] input only understands primary/accent/warn, so we
-   override background/text directly instead of relying on it. */
-.submit-btn-buy {
-  background-color: var(--p2p-buy) !important;
-  color: #fff !important;
+    input[type='text'],
+    input[type='number'],
+    input[type='password'],
+    select {
+      width: 100%;
+      padding: 9px 10px;
+      border-radius: 8px;
+      border: 1px solid #d1d5db;
+      font-size: 14px;
+      min-height: 40px;
+      box-sizing: border-box;
+      -webkit-appearance: none; // avoid iOS's native select/input chrome fighting the layout
+      appearance: none;
 
-  &:hover { background-color: #128a3e !important; }
-  &:disabled { background-color: var(--p2p-buy) !important; opacity: 0.6; }
-}
+      &:focus { outline: none; border-color: #6366f1; }
+    }
 
-.submit-btn-sell {
-  background-color: var(--p2p-sell) !important;
-  color: #fff !important;
+    select {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%236b7280'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      padding-right: 30px;
+    }
 
-  &:hover { background-color: #cf3f44 !important; }
-  &:disabled { background-color: var(--p2p-sell) !important; opacity: 0.6; }
-}
+    input[type='file'] { width: 100%; font-size: 13px; }
+  }
 
-/* ---- manage mode ---- */
-.trade-summary {
-  background: var(--p2p-surface-2);
-  border: 1px solid var(--p2p-border);
-  border-radius: var(--p2p-radius-md);
-  padding: 14px;
-  margin: 14px 0;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
+  .fiat-preview { margin-top: 4px; color: #6b7280; font-size: 13px; }
 
-.summary-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-size: 13.5px;
-  color: var(--p2p-text-muted);
+  .pin-group {
+    .pin-input {
+      max-width: 160px;
+      text-align: center;
+      letter-spacing: 8px;
+      font-family: 'Courier New', monospace;
+      font-weight: 700;
+      font-size: 16px; // also keeps iOS from auto-zooming on focus
+    }
+  }
 
-  b { color: var(--p2p-text); font-weight: 700; text-align: right; }
-}
+  .field-error {
+    color: #dc2626;
+    font-size: 12.5px;
+    margin: -6px 0 12px;
+    word-break: break-word;
+  }
 
-.trade-hint {
-  font-size: 13px;
-  color: var(--p2p-text-muted);
-  line-height: 1.5;
-  margin: 0 0 14px;
-}
+  .payment-details-box, .payment-details-form, .proof-review {
+    border: 1px dashed #c7d2fe;
+    background: #eef2ff;
+    border-radius: 10px;
+    padding: 12px 14px;
+    margin-bottom: 14px;
+  }
 
-.status-pill {
-  display: inline-block;
-  font-size: 11px;
-  font-weight: 700;
-  padding: 4px 10px;
-  border-radius: 999px;
-  text-transform: capitalize;
-  margin-left: auto;
-  background: #f1f1f2;
-  color: var(--p2p-text-muted);
+  .payment-details-title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 700;
+    color: #3730a3;
+    margin-bottom: 8px;
+    font-size: 13px;
 
-  &.pendingpayment { background: #fff3d6; color: #a5720a; }
-  &.paid { background: #e6f0ff; color: #2f5fd8; }
-  &.released { background: var(--p2p-buy-bg); color: var(--p2p-buy); }
-  &.disputed { background: var(--p2p-sell-bg); color: var(--p2p-sell); }
-  &.cancelled,
-  &.expired { background: #f1f1f2; color: var(--p2p-text-muted); }
-}
+    mat-icon { font-size: 18px; width: 18px; height: 18px; flex-shrink: 0; }
+  }
 
-.manage-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  margin-top: 8px;
-}
+  .payment-details-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 10px;
+    padding: 3px 0;
+    font-size: 13px;
+    color: #374151;
 
-.dispute-btn {
-  height: 44px !important;
-  border-radius: var(--p2p-radius-md) !important;
-  font-weight: 700 !important;
-}
+    span:first-child { flex-shrink: 0; }
+    span:last-child { font-weight: 600; color: #111827; text-align: right; word-break: break-word; }
+  }
 
-@media (max-width: 480px) {
-  .merchant-strip { flex-wrap: wrap; }
-  .price-tag { margin-left: 0; text-align: left; }
-}
+  .safety-banner {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    color: #92400e;
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 12.5px;
+    margin-bottom: 14px;
 
-.countdown {
-  font-variant-numeric: tabular-nums;
-  &.urgent { color: #dc2626; }
+    mat-icon { font-size: 18px; width: 18px; height: 18px; flex-shrink: 0; }
+  }
+
+  .full-width-btn {
+    width: 100%;
+    min-height: 44px; // comfortable mobile tap target
+  }
+
+  .paid-form {
+    border-top: 1px solid #e5e7eb;
+    padding-top: 12px;
+    margin-top: 4px;
+  }
+
+  .proof-preview {
+    width: 100%;
+    max-height: 220px;
+    object-fit: contain;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+    margin-bottom: 10px;
+    background: #fff;
+  }
+
+  .proof-note {
+    font-size: 13px;
+    color: #374151;
+    margin: 4px 0;
+    word-break: break-word;
+
+    &.muted { color: #9ca3af; font-size: 12px; }
+  }
+
+  .trade-status-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+
+  .status-pill {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: capitalize;
+    background: #e5e7eb;
+    color: #374151;
+
+    &.pendingpayment { background: #fef3c7; color: #92400e; }
+    &.paid { background: #dbeafe; color: #1e40af; }
+    &.released { background: #d1fae5; color: #065f46; }
+    &.disputed { background: #fee2e2; color: #991b1b; }
+    &.cancelled, &.expired { background: #e5e7eb; color: #6b7280; }
+  }
+
+  .countdown-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+    background: #f3f4f6;
+    color: #374151;
+    white-space: nowrap;
+
+    mat-icon { font-size: 15px; width: 15px; height: 15px; }
+
+    &.urgent { background: #fee2e2; color: #b91c1c; }
+  }
+
+  .trade-footer-note {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #065f46;
+    background: #d1fae5;
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 13px;
+    margin-top: 4px;
+
+    mat-icon { font-size: 18px; width: 18px; height: 18px; flex-shrink: 0; }
+  }
+
+  // -----------------------------------------------------------------------
+  // Mobile breakpoint (Angular Material's standard xs cutoff)
+  // -----------------------------------------------------------------------
+  @media (max-width: 599px) {
+    max-width: 100%;
+    max-height: 100vh;
+    max-height: 100dvh;
+    font-size: 13.5px;
+
+    .dialog-header {
+      padding: 2px 2px 10px;
+
+      h2 { font-size: 16.5px; }
+    }
+
+    .dialog-body {
+      padding: 12px 2px 2px;
+    }
+
+    .dialog-actions {
+      padding: 10px 2px 2px;
+      // stack Cancel/Submit full-width on very narrow screens instead of
+      // squeezing them side by side
+      flex-wrap: wrap;
+
+      button {
+        flex: 1 1 auto;
+        min-height: 44px;
+      }
+
+      &.inline button { min-height: 40px; }
+    }
+
+    .order-summary, .trade-amounts,
+    .payment-details-box, .payment-details-form, .proof-review {
+      padding: 10px 12px;
+    }
+
+    .summary-row, .payment-details-row {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 2px;
+
+      span:last-child { text-align: left; }
+    }
+
+    .safety-banner {
+      font-size: 12px;
+    }
+
+    .form-group {
+      input[type='text'],
+      input[type='password'],
+      input[type='number'],
+      select {
+        min-height: 44px;
+        font-size: 16px; // >=16px prevents iOS Safari auto-zoom on focus
+      }
+    }
+
+    .pin-group .pin-input {
+      max-width: 100%;
+      min-height: 44px;
+    }
+  }
+
+  @media (max-width: 380px) {
+    .dialog-actions:not(.inline) {
+      flex-direction: column-reverse;
+      align-items: stretch;
+    }
+  }
 }

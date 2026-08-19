@@ -9,8 +9,10 @@ import {
   ExchangeRateRes,
   InitiateTradeReqBody,
   ListOrdersParams,
+  MarkTradePaidReqBody,
   P2POrder,
   P2PTrade,
+  ReleaseTradeReqBody,
   UpdateOrderReqBody,
   normalizeOrder,
   normalizeTrade,
@@ -121,11 +123,11 @@ deleteOrder(orderId: string): Observable<void> {
       .pipe(map((res) => normalizeTrade(this.unwrapOne(res))));
   }
 
-  releaseTrade(tradeId: string, transactionPin: string): Observable<P2PTrade> {
-    return this.http
-      .post<ApiEnvelope<any> | any>(`${this.base}/trades/release`, { tradeId, transactionPin })
-      .pipe(map((res) => normalizeTrade(this.unwrapOne(res))));
-  }
+  // releaseTrade(tradeId: string, transactionPin: string): Observable<P2PTrade> {
+  //   return this.http
+  //     .post<ApiEnvelope<any> | any>(`${this.base}/trades/release`, { tradeId, transactionPin })
+  //     .pipe(map((res) => normalizeTrade(this.unwrapOne(res))));
+  // }
 
   disputeTrade(tradeId: string, reason: string): Observable<P2PTrade> {
     return this.http
@@ -167,5 +169,16 @@ markTradesSeen(): Observable<{ count: number }> {
       .get<ApiEnvelope<ExchangeRateRes> | ExchangeRateRes>(`${this.base}/exchange-rate`, { params })
       .pipe(map((res) => this.unwrapOne(res)));
   }
-  
+  markTradePaid(tradeId: string, body: MarkTradePaidReqBody): Observable<P2PTrade> {
+  return this.http
+    .post<any>(`${this.base}/trades/${tradeId}/mark-paid`, body)
+    .pipe(map((res) => normalizeTrade(res.data ?? res)));
+}
+
+releaseTrade(tradeId: string, body: ReleaseTradeReqBody = {}): Observable<P2PTrade> {
+  return this.http
+    .post<any>(`${this.base}/trades/${tradeId}/release`, body)
+    .pipe(map((res) => normalizeTrade(res.data ?? res)));
+}
+
 }

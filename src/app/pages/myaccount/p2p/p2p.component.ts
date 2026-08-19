@@ -635,21 +635,7 @@ export class P2pComponent implements OnInit, OnDestroy {
     }
   }
 
-  /** "14:59" style label for a trade awaiting payment; "Expired" once past
-   *  the deadline; empty string for trades that aren't in a countdown state. */
-  getTradeCountdownLabel(trade: P2PTrade): string {
-    if (trade.status !== TradeStatus.PendingPayment || !trade.paymentDeadline) return '';
-    const msLeft = msUntilDeadline(trade.paymentDeadline, this.nowTick);
-    return formatCountdown(msLeft);
-  }
 
-  /** True in the final 2 minutes of the payment window — used to turn the
-   *  countdown pill red/urgent, matching Bybit's behavior. */
-  isTradeCountdownUrgent(trade: P2PTrade): boolean {
-    if (trade.status !== TradeStatus.PendingPayment || !trade.paymentDeadline) return false;
-    const msLeft = msUntilDeadline(trade.paymentDeadline, this.nowTick);
-    return msLeft > 0 && msLeft <= COUNTDOWN_URGENT_THRESHOLD_MS;
-  }
 
   /** Fiat symbol for a specific trade's own currency — not the market
    *  filter's currency, since a trade can be in a different fiat than
@@ -681,9 +667,6 @@ export class P2pComponent implements OnInit, OnDestroy {
     ref.afterClosed().subscribe(() => this.loadMyTrades());
   }
 
-  isActiveTrade(trade: P2PTrade): boolean {
-    return trade.status === TradeStatus.PendingPayment || trade.status === TradeStatus.Paid;
-  }
 
   trackByOrderId(_index: number, order: P2POrder): string {
     return order.id;
@@ -691,5 +674,22 @@ export class P2pComponent implements OnInit, OnDestroy {
 
   trackByTradeId(_index: number, trade: P2PTrade): string {
     return trade.id;
+  }
+
+
+    getTradeCountdownLabel(trade: P2PTrade): string {
+    if (trade.status !== TradeStatus.Pending || !trade.paymentDeadline) return '';
+    const msLeft = msUntilDeadline(trade.paymentDeadline, this.nowTick);
+    return formatCountdown(msLeft);
+  }
+
+  isTradeCountdownUrgent(trade: P2PTrade): boolean {
+    if (trade.status !== TradeStatus.Pending || !trade.paymentDeadline) return false;
+    const msLeft = msUntilDeadline(trade.paymentDeadline, this.nowTick);
+    return msLeft > 0 && msLeft <= COUNTDOWN_URGENT_THRESHOLD_MS;
+  }
+
+  isActiveTrade(trade: P2PTrade): boolean {
+    return trade.status === TradeStatus.Pending || trade.status === TradeStatus.Paid;
   }
 }

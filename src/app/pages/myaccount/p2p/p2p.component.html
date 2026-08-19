@@ -383,11 +383,7 @@
       <span class="order-empty-sub">Start one from the Market tab.</span>
     </div>
 
-    <!-- Counterparty name/avatar is now correctly the OTHER party for both
-         sides of the trade (buyer sees seller, seller sees buyer), driven
-         by trade.isBuyer coming from the backend. A live mm:ss countdown
-         shows on any trade still awaiting payment, going red in the final
-         2 minutes — mirrors Bybit's order timer. -->
+   
     <div class="order-list" *ngIf="!myTradesLoading && myTrades.length > 0">
       <div
         class="order-row trade-row"
@@ -412,10 +408,10 @@
           <span class="price-currency">{{ tradeFiatSymbol(trade) }}{{ trade.fiatAmount | number: '1.2-2' }}</span>
         </div>
 
-        <span class="countdown-pill" *ngIf="trade.status === TradeStatus.PendingPayment" [class.urgent]="isTradeCountdownUrgent(trade)">
-          <mat-icon>schedule</mat-icon>
-          {{ getTradeCountdownLabel(trade) }}
-        </span>
+      <span class="countdown-pill" *ngIf="trade.status === TradeStatus.Pending" [class.urgent]="isTradeCountdownUrgent(trade)">
+  <mat-icon>schedule</mat-icon>
+  {{ getTradeCountdownLabel(trade) }}
+</span>
 
         <span class="status-pill" [ngClass]="trade.status.toLowerCase()">{{ trade.status }}</span>
 

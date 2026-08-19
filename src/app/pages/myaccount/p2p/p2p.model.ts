@@ -9,10 +9,14 @@ export enum OrderStatus {
   Cancelled = 'Cancelled',
 }
 
+// FIX: values must match backend P2PTradeStatus exactly ('Pending', 'Completed'),
+// not 'PendingPayment' / 'Released'. The mismatch meant every status check in
+// the UI (countdown timer, "mark as paid" button, "released" footer) silently
+// failed because trade.status from the API never equalled these enum members.
 export enum TradeStatus {
-  PendingPayment = 'PendingPayment',
+  Pending = 'Pending',
   Paid = 'Paid',
-  Released = 'Released',
+  Completed = 'Completed',
   Disputed = 'Disputed',
   Cancelled = 'Cancelled',
   Expired = 'Expired',
@@ -83,6 +87,11 @@ export interface P2PTrade {
   status: TradeStatus;
   paymentDeadline?: string;
   createdAt: string;
+
+  paymentProofUrl?: string;
+  paymentProofNote?: string;
+  paidAt?: string;
+  releasedAt?: string;
 }
 
 // ---------------------------------------------------------------------
@@ -243,14 +252,6 @@ export function normalizeOrder(raw: any): P2POrder {
   };
 }
 
-/**
- * FIX: the backend now always sends raw.isBuyer, raw.buyer, raw.seller and
- * a lightweight raw.order snapshot (see P2pService.shapeTradeForViewer).
- * normalizeMerchant already handles raw.buyer/raw.seller correctly since
- * they arrive as { id, username, isVerified } — no change needed there,
- * just make sure we read isBuyer as a real boolean and fall back sensibly
- * if an older/uncached response is missing the new fields.
- */
 export function normalizeTrade(raw: any): P2PTrade {
   const buyerFallbackId = extractId(raw.buyerId);
   const sellerFallbackId = extractId(raw.sellerId);
@@ -268,12 +269,31 @@ export function normalizeTrade(raw: any): P2PTrade {
     status: raw.status,
     paymentDeadline: raw.paymentDeadline ? extractDate(raw.paymentDeadline) : undefined,
     createdAt: extractDate(raw.createdAt),
+    paymentProofUrl: raw.paymentProofUrl || undefined,
+    paymentProofNote: raw.paymentProofNote || undefined,
+    paidAt: raw.paidAt ? extractDate(raw.paidAt) : undefined,
+    releasedAt: raw.releasedAt ? extractDate(raw.releasedAt) : undefined,
   };
 }
 
-// ---------------------------------------------------------------------
-// Payment countdown helpers (Bybit-style mm:ss timer)
-// ---------------------------------------------------------------------
+export interface MarkTradePaidReqBody {
+  paymentProofUrl: string;
+  paymentProofNote?: string;
+}
+
+export interface ReleaseTradeReqBody {
+  transactionPin?: string;
+}
+
+/** Buyer can mark paid only while still within the payment window. */
+export function canMarkPaid(trade: P2PTrade): boolean {
+  return trade.isBuyer && trade.status === TradeStatus.Pending;
+}
+
+/** Seller can release only after the buyer has marked the trade paid. */
+export function canReleaseFunds(trade: P2PTrade): boolean {
+  return !trade.isBuyer && trade.status === TradeStatus.Paid;
+}
 
 /** Milliseconds remaining until a trade's payment deadline. Negative once expired. */
 export function msUntilDeadline(paymentDeadline: string | undefined, nowMs: number = Date.now()): number {
@@ -289,8 +309,6 @@ export function formatCountdown(msLeft: number): string {
   const seconds = totalSeconds % 60;
   return `${minutes}:${seconds.toString().padStart(2, '0')}`;
 }
-
-
 
 export interface ExchangeRateRes {
   coin: string;
