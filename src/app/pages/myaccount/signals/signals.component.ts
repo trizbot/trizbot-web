@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { FormControl, FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
-import { SignalCategoryEnum, SIGNAL_CATEGORY_LABELS,  } from './model/signal.model';
+import { SignalCategoryEnum, SIGNAL_CATEGORY_LABELS } from './model/signal.model';
 import { MatDialog } from '@angular/material/dialog';
 import { Subject, of, forkJoin } from 'rxjs';
 import { catchError, debounceTime, switchMap, takeUntil } from 'rxjs/operators';
@@ -229,7 +229,13 @@ export class SignalsComponent implements OnInit, OnDestroy {
           this.activeTab = 'signals';
         }
 
-        if (this.activeTab === 'manage' && this.isSuperAdmin && this.manageSignals.length === 0) {
+        // Always (re)load the manage list once admin status is known —
+        // not gated on manageSignals.length === 0. On a fresh page load
+        // manageSignals is always empty anyway, so this fires exactly
+        // once here; it also means a hard reload while already on the
+        // Manage tab reliably repopulates from the server instead of
+        // silently staying empty.
+        if (this.activeTab === 'manage' && this.isSuperAdmin) {
           this.loadManageSignals();
         }
       });
@@ -259,7 +265,7 @@ export class SignalsComponent implements OnInit, OnDestroy {
       this.loadSubscriptions();
     }
 
-    if (tab === 'manage' && this.isSuperAdmin && this.manageSignals.length === 0) {
+    if (tab === 'manage' && this.isSuperAdmin) {
       this.loadManageSignals();
     }
   }
@@ -291,7 +297,7 @@ export class SignalsComponent implements OnInit, OnDestroy {
 
           this.loadSignals();
         },
-        error: (err) => {
+        error: () => {
           this.subscriptionLoading = false;
           this.subscriptionHistoryLoading = false;
         },
@@ -396,18 +402,21 @@ export class SignalsComponent implements OnInit, OnDestroy {
 
       this.sharedService.showToast({ title: 'Subscription activated.' });
 
-      this.subscriptionHistory = [created, ...this.subscriptionHistory];
-
-      if (this.getPeriodStatus(created) === SubscriptionPeriodStatus.Active) {
-        this.subscription = created;
-      }
-
-      this.loadSignals();
+      // Refetch from the server instead of trusting the dialog payload as
+      // final truth — keeps this list identical to what a reload will show.
+      this.loadSubscriptions();
     });
   }
 
   // ─── Manage (super admin) ────────────────────────────────
 
+  /**
+   * Always fetches the canonical list from the backend and sorts it
+   * newest-first client-side. Sorting here (rather than assuming the API
+   * already orders by createdAt) is what stops a freshly created signal
+   * from getting buried past the fetch limit or appearing "missing" simply
+   * because it landed lower in an unsorted response.
+   */
   loadManageSignals(): void {
     if (!this.isSuperAdmin) return;
 
@@ -417,7 +426,9 @@ export class SignalsComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (res) => {
-          this.manageSignals = res.items;
+          this.manageSignals = [...res.items].sort(
+            (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          );
           this.manageLoading = false;
         },
         error: () => {
@@ -440,12 +451,16 @@ export class SignalsComponent implements OnInit, OnDestroy {
 
       this.sharedService.showToast({ title: 'Signal created successfully.' });
 
-      this.signals = [created, ...this.signals];
-      this.total += 1;
-
-      if (this.isSuperAdmin) {
-        this.manageSignals = [created, ...this.manageSignals];
-      }
+      // Re-fetch both lists from the backend rather than only splicing the
+      // dialog's returned object into local arrays. Splicing alone makes
+      // the create *look* successful in the current session even if the
+      // save didn't actually persist — the signal would then vanish on the
+      // next reload with no indication anything was wrong. Reloading here
+      // surfaces that immediately: if it's not in the refetched list, the
+      // create didn't really persist server-side.
+      this.loadManageSignals();
+      this.page = 1;
+      this.loadSignals();
     });
   }
 
@@ -463,8 +478,10 @@ export class SignalsComponent implements OnInit, OnDestroy {
 
       this.sharedService.showToast({ title: 'Signal updated successfully.' });
 
-      this.signals = this.signals.map((s) => (s.id === updated.id ? updated : s));
-      this.manageSignals = this.manageSignals.map((s) => (s.id === updated.id ? updated : s));
+      // Same reasoning as create: confirm against the server rather than
+      // trusting the dialog's return value as final.
+      this.loadManageSignals();
+      this.loadSignals();
     });
   }
 
@@ -507,7 +524,6 @@ export class SignalsComponent implements OnInit, OnDestroy {
   }
 
   trackById(_: number, item: SignalItem): string {
-  return item.id;
-}
-
+    return item.id;
+  }
 }
