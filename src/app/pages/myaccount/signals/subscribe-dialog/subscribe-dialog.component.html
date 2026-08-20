@@ -53,7 +53,7 @@
         <div class="wd-meter-caption">
           <ng-container *ngIf="hasSufficientBalance">
             <mat-icon class="wd-meter-icon ok">task_alt</mat-icon>
-            <span>{{ balanceAfter | number: '1.2-2' }} {{ data.plan.currency }} remaining after this transfer</span>
+            <span>{{ balanceAfter | number: '1.2-2' }} {{ data.plan.currency }} remaining after subscription</span>
           </ng-container>
           <ng-container *ngIf="!hasSufficientBalance">
             <mat-icon class="wd-meter-icon warn">error_outline</mat-icon>
@@ -102,7 +102,7 @@
         type="submit"
         [disabled]="saving || form.invalid || walletLoading"
       >
-        <span *ngIf="!saving">Confirm transfer</span>
+        <span *ngIf="!saving">Subscribe</span>
         <span *ngIf="saving" class="wd-btn-loading"><span class="wd-btn-spinner"></span> Processing…</span>
       </button>
 

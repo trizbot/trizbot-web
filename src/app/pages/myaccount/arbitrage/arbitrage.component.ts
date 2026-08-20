@@ -18,6 +18,18 @@ import {
   ExchangeConfig,
 } from './model/arbitrage.model';
 
+// Subscription gate deps — mirrors the same rule used on the merged
+// dashboard view: the scanner unlocks with an active Signals subscription,
+// or automatically for super admins.
+import { TraderService } from '../../../appstate/trader.service';
+import { GetTraderResBody } from '../../../services/auth.type';
+import { SignalsService } from '../signals/signals.service';
+import {
+  MySubscription,
+  SubscriptionPeriodStatus,
+  getSubscriptionPeriodStatus,
+} from '../signals/model/signal.model';
+
 const AUTO_REFRESH_SECONDS = 20;
 const PAGE_SIZE_OPTIONS = [5,10,15, 25,20,30,35,40, 50] as const;
 
@@ -31,6 +43,8 @@ const PAGE_SIZE_OPTIONS = [5,10,15, 25,20,30,35,40, 50] as const;
 })
 export class ArbitrageComponent implements OnInit, OnDestroy {
   private sharedService = inject(SharedService);
+  private traderService = inject(TraderService);
+  private signalsService = inject(SignalsService);
   private destroy$ = new Subject<void>();
 
   readonly exchangeIds = EXCHANGE_IDS;
@@ -59,14 +73,35 @@ export class ArbitrageComponent implements OnInit, OnDestroy {
   currentPage = 1;
   pageSize: number = PAGE_SIZE_OPTIONS[1]; // default 25
 
+  // ---------------------------------------------------------------------
+  // Access gate — requires an active Signals subscription (or super admin)
+  // ---------------------------------------------------------------------
+  isSuperAdmin = false;
+  hasActiveSignalSubscription = false;
+  signalSubscriptionLoading = true;
+  activeSignalSubscription: MySubscription | null = null;
+
+  private arbBootstrapped = false;
+  private traderResolved = false;
+
+  get canViewArbitrage(): boolean {
+    return this.hasActiveSignalSubscription || this.isSuperAdmin;
+  }
+
   constructor(private arbitrageService: ArbitrageService, private dialog: MatDialog) {}
 
   ngOnInit(): void {
-    this.loadOpportunities();
+    this.checkTraderStatus();
+    this.checkSignalSubscription();
 
     interval(1000)
       .pipe(takeUntil(this.destroy$))
       .subscribe(() => {
+        if (!this.canViewArbitrage) {
+          this.secondsToRefresh = AUTO_REFRESH_SECONDS;
+          return;
+        }
+
         this.secondsToRefresh -= 1;
         if (this.secondsToRefresh <= 0) {
           this.secondsToRefresh = AUTO_REFRESH_SECONDS;
@@ -76,13 +111,75 @@ export class ArbitrageComponent implements OnInit, OnDestroy {
 
     this.filterForm.valueChanges
       .pipe(debounceTime(250), takeUntil(this.destroy$))
-      .subscribe(() => this.loadOpportunities());
+      .subscribe(() => {
+        if (this.canViewArbitrage) {
+          this.loadOpportunities();
+        }
+      });
   }
 
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
   }
+
+  // =========================================================================
+  // SIGNAL SUBSCRIPTION GATE
+  // =========================================================================
+
+  private checkTraderStatus(): void {
+    this.traderService.getTrader().subscribe({
+      next: (res: GetTraderResBody) => {
+        this.isSuperAdmin = !!res?.data?.isSuperAdmin;
+        this.traderResolved = true;
+        this.maybeLoadArbitrage();
+      },
+      error: () => {
+        this.isSuperAdmin = false;
+        this.traderResolved = true;
+        this.maybeLoadArbitrage();
+      },
+    });
+  }
+
+  private checkSignalSubscription(): void {
+    this.signalSubscriptionLoading = true;
+
+    this.signalsService.getMySubscriptions().subscribe({
+      next: (subs: MySubscription[]) => {
+        this.activeSignalSubscription =
+          (subs || []).find((s) => getSubscriptionPeriodStatus(s) === SubscriptionPeriodStatus.Active) ?? null;
+        this.hasActiveSignalSubscription = !!this.activeSignalSubscription;
+        this.signalSubscriptionLoading = false;
+        this.maybeLoadArbitrage();
+      },
+      error: () => {
+        this.hasActiveSignalSubscription = false;
+        this.activeSignalSubscription = null;
+        this.signalSubscriptionLoading = false;
+        this.maybeLoadArbitrage();
+      },
+    });
+  }
+
+  /**
+   * Loads opportunities exactly once, and only once both the trader's admin
+   * status and their signal-subscription status are resolved — so an
+   * unentitled visitor never triggers the opportunities request at all.
+   */
+  private maybeLoadArbitrage(): void {
+    if (this.arbBootstrapped) return;
+    if (!this.traderResolved || this.signalSubscriptionLoading) return;
+
+    if (this.canViewArbitrage) {
+      this.arbBootstrapped = true;
+      this.loadOpportunities();
+    }
+  }
+
+  // =========================================================================
+  // ARBITRAGE
+  // =========================================================================
 
   get activeConfig(): ExchangeConfig {
     return this.exchangeConfig[this.activeExchange];
@@ -201,6 +298,8 @@ export class ArbitrageComponent implements OnInit, OnDestroy {
   }
 
   loadOpportunities(silent = false): void {
+    if (!this.canViewArbitrage) return;
+
     if (!silent) this.loading = true;
     this.error = null;
     const { token, minSpreadPercent } = this.filterForm.getRawValue();
@@ -246,6 +345,7 @@ export class ArbitrageComponent implements OnInit, OnDestroy {
   }
 
   refreshNow(): void {
+    if (!this.canViewArbitrage) return;
     this.secondsToRefresh = AUTO_REFRESH_SECONDS;
     this.loadOpportunities();
   }
@@ -256,6 +356,8 @@ export class ArbitrageComponent implements OnInit, OnDestroy {
   }
 
   openTradeDialog(o: ArbitrageOpportunity): void {
+    if (!this.canViewArbitrage) return;
+
     const ref = this.dialog.open(PlaceTradeDialogComponent, {
       width: '480px',
       maxWidth: '95vw',
