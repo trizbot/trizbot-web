@@ -1,36 +1,53 @@
 <div class="signals-wrapper">
 
   <!-- HERO HEADER -->
-  <div class="signals-hero">
+  <header class="signals-hero">
     <div class="signals-hero-text">
       <span class="signals-eyebrow">Desk Calls · Live</span>
       <h1 class="signals-title">Signals</h1>
-      <p class="signals-subtitle" *ngIf="!accessLoading && !canBypassSubscription">Entry, take-profit and stop-loss calls from the desk — subscribe to unlock.</p>
+      <p class="signals-subtitle" *ngIf="!accessLoading && !canBypassSubscription">
+        Entry, take-profit and stop-loss calls from the desk.
+      </p>
     </div>
     <button
       *ngIf="canManageSignals"
       mat-flat-button
       color="primary"
-      class="fw-bold new-signal-btn"
+      class="btn-primary new-signal-btn"
       type="button"
       (click)="openCreateDialog()"
     >
       <mat-icon>add_chart</mat-icon>
-      CREATE NEW SIGNAL
+      New signal
     </button>
-  </div>
+  </header>
 
   <!-- TABS -->
-  <div class="signals-tabs" role="tablist" >
-    <button class="signals-tab" role="tab" [attr.aria-selected]="activeTab === 'signals'" [class.active]="activeTab === 'signals'" (click)="selectTab('signals')">
+  <nav class="signals-tabs" role="tablist">
+    <button
+      class="signals-tab"
+      role="tab"
+      [attr.aria-selected]="activeTab === 'signals'"
+      [class.active]="activeTab === 'signals'"
+      (click)="selectTab('signals')"
+    >
       <mat-icon>show_chart</mat-icon>
-      Signals
+      <span>Signals</span>
     </button>
 
-    <button *ngIf="!isSuperAdmin" type="button" class="signals-tab" role="tab" [attr.aria-selected]="activeTab === 'plans'" [class.active]="activeTab === 'plans'" (click)="selectTab('plans')">
+    <button
+      *ngIf="!isSuperAdmin"
+      type="button"
+      class="signals-tab"
+      role="tab"
+      [attr.aria-selected]="activeTab === 'plans'"
+      [class.active]="activeTab === 'plans'"
+      (click)="selectTab('plans')"
+    >
       <mat-icon>workspace_premium</mat-icon>
-      Plans
+      <span>Plans</span>
     </button>
+
     <button
       *ngIf="isSuperAdmin"
       class="signals-tab"
@@ -40,35 +57,42 @@
       (click)="selectTab('manage')"
     >
       <mat-icon>settings</mat-icon>
-      Manage
+      <span>Manage</span>
     </button>
-  </div>
+  </nav>
 
-  <!-- SIGNALS -->
+  <!-- SIGNALS TAB -->
   <section *ngIf="activeTab === 'signals'" class="signals-section">
 
-    <!-- Single loading state while access (subscription + admin status) resolves together. -->
-    <div class="signals-loading" *ngIf="accessLoading">
+    <!-- Single loading state while access (subscription + admin status) resolves together -->
+    <div class="state-block" *ngIf="accessLoading">
       <div class="spinner" aria-label="Checking access"></div>
+      <p class="state-caption">Checking your access…</p>
     </div>
 
     <ng-container *ngIf="!accessLoading">
-      <div class="subscription-banner" *ngIf="!isSubscribed && !canBypassSubscription">
-        <mat-icon>lock</mat-icon>
-        <div class="subscription-banner-text">
-          <strong>Subscribe to unlock live signals.</strong>
-          <span>Get real-time entry, take-profit and stop-loss calls from the desk.</span>
+
+      <!-- LOCKED STATE: no active subscription and not a super admin -->
+      <div class="lock-panel" *ngIf="!isSubscribed && !canBypassSubscription">
+        <div class="lock-icon" aria-hidden="true">
+          <mat-icon>lock</mat-icon>
         </div>
-        <button mat-flat-button color="primary" type="button" (click)="selectTab('plans')">
+        <h2 class="lock-title">Subscribe to see live signals</h2>
+        <p class="lock-copy">
+          Entry, take-profit and stop-loss calls are reserved for active subscribers.
+          Pick a plan to unlock the desk's live opportunities.
+        </p>
+        <button mat-flat-button color="primary" class="btn-primary" type="button" (click)="selectTab('plans')">
           View plans
         </button>
       </div>
 
       <!--
         Super admins can always browse the list without a subscription.
-        Regular clients only get here with an active subscription.
+        Regular clients only reach this branch with an active subscription.
       -->
       <ng-container *ngIf="canBypassSubscription || isSubscribed">
+
         <form class="signals-filters" [formGroup]="filterForm">
           <div class="search-field">
             <mat-icon class="search-icon">search</mat-icon>
@@ -90,22 +114,28 @@
           </button>
         </form>
 
-        <div class="signals-loading" *ngIf="signalsLoading">
+        <div class="state-block" *ngIf="signalsLoading">
           <div class="spinner" aria-label="Loading signals"></div>
         </div>
 
-        <div class="signals-empty" *ngIf="!signalsLoading && signals.length === 0">
-          <mat-icon class="signals-empty-icon">show_chart</mat-icon>
-          <p>No signals match your filters right now.</p>
+        <div class="empty-panel" *ngIf="!signalsLoading && signals.length === 0">
+          <mat-icon class="empty-icon">show_chart</mat-icon>
+          <p class="empty-title">No signals match your filters</p>
+          <p class="empty-copy">Try a different pair, or clear your search to see everything live.</p>
         </div>
 
         <div class="signals-grid" *ngIf="!signalsLoading && signals.length > 0">
-          <article class="signal-card" *ngFor="let item of signals" [class.closed]="!item.isActive">
+          <article
+            class="signal-card"
+            *ngFor="let item of signals; trackBy: trackById"
+            [class.closed]="!item.isActive"
+            [style.--accent]="categoryColors[item.category]"
+          >
             <header class="signal-card-top">
               <span class="pair-name">{{ item.pair }}</span>
               <span
                 class="type-badge"
-                [style.background]="categoryColors[item.category] + '1a'"
+                [style.background]="categoryColors[item.category] + '14'"
                 [style.color]="categoryColors[item.category]"
               >
                 <span class="type-dot" [style.background]="categoryColors[item.category]"></span>
@@ -171,7 +201,7 @@
     </ng-container>
   </section>
 
-  <!-- PLANS -->
+  <!-- PLANS TAB -->
   <section *ngIf="activeTab === 'plans'" class="signals-section">
 
     <div class="current-plan-banner" *ngIf="isSubscribed && subscription">
@@ -182,10 +212,8 @@
       </span>
     </div>
 
-
-
     <ng-container *ngIf="!canBypassSubscription">
-      <div class="signals-loading" *ngIf="plansLoading">
+      <div class="state-block" *ngIf="plansLoading">
         <div class="spinner" aria-label="Loading plans"></div>
       </div>
 
@@ -199,7 +227,7 @@
           <button
             mat-flat-button
             color="primary"
-            class="fw-bold plan-cta"
+            class="btn-primary plan-cta"
             type="button"
             (click)="openSubscribeDialog(plan)"
           >
@@ -209,60 +237,62 @@
       </div>
     </ng-container>
 
-
     <div class="sub-history">
-      <h3 class="sub-history-title">My Subscriptions ({{ visibleSubscriptionHistory.length }})</h3>
+      <h3 class="sub-history-title">My subscriptions ({{ visibleSubscriptionHistory.length }})</h3>
 
-      <div class="signals-loading" *ngIf="subscriptionHistoryLoading">
+      <div class="state-block" *ngIf="subscriptionHistoryLoading">
         <div class="spinner" aria-label="Loading subscription history"></div>
       </div>
 
-      <div class="signals-empty" *ngIf="!subscriptionHistoryLoading && visibleSubscriptionHistory.length === 0">
-        <mat-icon class="signals-empty-icon">history</mat-icon>
-        <p>You haven't got an active or upcoming subscription right now.</p>
+      <div class="empty-panel" *ngIf="!subscriptionHistoryLoading && visibleSubscriptionHistory.length === 0">
+        <mat-icon class="empty-icon">history</mat-icon>
+        <p class="empty-title">Nothing here yet</p>
+        <p class="empty-copy">You haven't got an active or upcoming subscription right now.</p>
       </div>
 
-      <table class="manage-table" *ngIf="!subscriptionHistoryLoading && visibleSubscriptionHistory.length > 0">
-        <thead>
-          <tr>
-            <th>Plan</th>
-            <th>Amount</th>
-            <th>Payment</th>
-            <th>Starts</th>
-            <th>Expires</th>
-            <th>Period</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let sub of visibleSubscriptionHistory">
-            <td class="manage-pair-cell">{{ planLabels[sub.plan] }}</td>
-            <td class="mono-num">{{ sub.amount | number: '1.2-2' }}</td>
-            <td>
-              <span class="status-pill" [ngClass]="sub.status === 'Completed' ? 'active' : 'closed'">
-                {{ statusLabels[sub.status] }}
-              </span>
-            </td>
-            <td>{{ sub.startsAt | date: 'mediumDate' }}</td>
-            <td>{{ sub.expiresAt | date: 'mediumDate' }}</td>
-            <td>
-              <span
-                class="status-pill"
-                [ngClass]="{
-                  active: getPeriodStatus(sub) === 'active',
-                  upcoming: getPeriodStatus(sub) === 'upcoming',
-                  closed: getPeriodStatus(sub) === 'expired'
-                }"
-              >
-                {{ periodLabels[getPeriodStatus(sub)] }}
-              </span>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+      <div class="table-scroll" *ngIf="!subscriptionHistoryLoading && visibleSubscriptionHistory.length > 0">
+        <table class="manage-table">
+          <thead>
+            <tr>
+              <th>Plan</th>
+              <th>Amount</th>
+              <th>Payment</th>
+              <th>Starts</th>
+              <th>Expires</th>
+              <th>Period</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let sub of visibleSubscriptionHistory">
+              <td class="manage-pair-cell">{{ planLabels[sub.plan] }}</td>
+              <td class="mono-num">{{ sub.amount | number: '1.2-2' }}</td>
+              <td>
+                <span class="status-pill" [ngClass]="sub.status === 'Completed' ? 'active' : 'closed'">
+                  {{ statusLabels[sub.status] }}
+                </span>
+              </td>
+              <td>{{ sub.startsAt | date: 'mediumDate' }}</td>
+              <td>{{ sub.expiresAt | date: 'mediumDate' }}</td>
+              <td>
+                <span
+                  class="status-pill"
+                  [ngClass]="{
+                    active: getPeriodStatus(sub) === 'active',
+                    upcoming: getPeriodStatus(sub) === 'upcoming',
+                    closed: getPeriodStatus(sub) === 'expired'
+                  }"
+                >
+                  {{ periodLabels[getPeriodStatus(sub)] }}
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   </section>
 
-  <!-- MANAGE (super admin) -->
+  <!-- MANAGE TAB (super admin) -->
   <section *ngIf="activeTab === 'manage' && isSuperAdmin" class="signals-section">
     <div class="manage-header">
       <p class="manage-caption">{{ manageSignals.length }} signal(s)</p>
@@ -270,76 +300,79 @@
         *ngIf="canManageSignals"
         mat-flat-button
         color="primary"
-        class="fw-bold"
+        class="btn-primary"
         type="button"
         (click)="openCreateDialog()"
       >
         <mat-icon>add</mat-icon>
-       CREATE NEW SIGNAL
+        New signal
       </button>
     </div>
 
-    <div class="signals-loading" *ngIf="manageLoading">
+    <div class="state-block" *ngIf="manageLoading">
       <div class="spinner" aria-label="Loading signals"></div>
     </div>
 
-    <div class="signals-empty" *ngIf="!manageLoading && manageSignals.length === 0">
-      <mat-icon class="signals-empty-icon">post_add</mat-icon>
-      <p>No signals yet. Create your first one.</p>
+    <div class="empty-panel" *ngIf="!manageLoading && manageSignals.length === 0">
+      <mat-icon class="empty-icon">post_add</mat-icon>
+      <p class="empty-title">No signals yet</p>
+      <p class="empty-copy">Create your first one to get it live for subscribers.</p>
     </div>
 
-    <table class="manage-table" *ngIf="!manageLoading && manageSignals.length > 0">
-      <thead>
-        <tr>
-          <th>Pair</th>
-          <th>Category</th>
-          <th>Entry</th>
-          <th>Take Profit</th>
-          <th>Stop</th>
-          <th>Status</th>
-          <th>Date</th>
-          <th *ngIf="canManageSignals"></th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let item of manageSignals">
-          <td class="manage-pair-cell">{{ item.pair }}</td>
-          <td>
-            <span
-              class="type-badge table"
-              [style.background]="categoryColors[item.category] + '1a'"
-              [style.color]="categoryColors[item.category]"
-            >
-              {{ categoryLabels[item.category] }}
-            </span>
-          </td>
-          <td class="mono-num">{{ item.entryPrice }}</td>
-          <td class="mono-num">{{ takeProfitSummary(item) }}</td>
-          <td class="mono-num">{{ item.stopLoss ?? '—' }}</td>
-          <td>
-            <span class="status-pill" [ngClass]="item.isActive ? 'active' : 'closed'">
-              {{ item.isActive ? 'Active' : 'Closed' }}
-            </span>
-          </td>
-          <td>{{ item.createdAt | date: 'mediumDate' }}</td>
-          <td class="manage-actions" *ngIf="canManageSignals">
-            <button mat-icon-button type="button" (click)="openEditDialog(item)" aria-label="Edit signal">
-              <mat-icon>edit</mat-icon>
-            </button>
-            <button
-              mat-icon-button
-              color="warn"
-              type="button"
-              [disabled]="deletingId === item.id"
-              (click)="deleteSignal(item)"
-              aria-label="Delete signal"
-            >
-              <mat-icon>{{ deletingId === item.id ? 'hourglass_empty' : 'delete' }}</mat-icon>
-            </button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+    <div class="table-scroll" *ngIf="!manageLoading && manageSignals.length > 0">
+      <table class="manage-table">
+        <thead>
+          <tr>
+            <th>Pair</th>
+            <th>Category</th>
+            <th>Entry</th>
+            <th>Take profit</th>
+            <th>Stop</th>
+            <th>Status</th>
+            <th>Date</th>
+            <th *ngIf="canManageSignals"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of manageSignals; trackBy: trackById">
+            <td class="manage-pair-cell">{{ item.pair }}</td>
+            <td>
+              <span
+                class="type-badge table"
+                [style.background]="categoryColors[item.category] + '14'"
+                [style.color]="categoryColors[item.category]"
+              >
+                {{ categoryLabels[item.category] }}
+              </span>
+            </td>
+            <td class="mono-num">{{ item.entryPrice }}</td>
+            <td class="mono-num">{{ takeProfitSummary(item) }}</td>
+            <td class="mono-num">{{ item.stopLoss ?? '—' }}</td>
+            <td>
+              <span class="status-pill" [ngClass]="item.isActive ? 'active' : 'closed'">
+                {{ item.isActive ? 'Active' : 'Closed' }}
+              </span>
+            </td>
+            <td>{{ item.createdAt | date: 'mediumDate' }}</td>
+            <td class="manage-actions" *ngIf="canManageSignals">
+              <button mat-icon-button type="button" (click)="openEditDialog(item)" aria-label="Edit signal">
+                <mat-icon>edit</mat-icon>
+              </button>
+              <button
+                mat-icon-button
+                color="warn"
+                type="button"
+                [disabled]="deletingId === item.id"
+                (click)="deleteSignal(item)"
+                aria-label="Delete signal"
+              >
+                <mat-icon>{{ deletingId === item.id ? 'hourglass_empty' : 'delete' }}</mat-icon>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </section>
 
   <div class="bottom-nav-spacer"></div>

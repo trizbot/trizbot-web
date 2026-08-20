@@ -505,4 +505,9 @@ export class SignalsComponent implements OnInit, OnDestroy {
     if (item.takeProfit3 != null) levels.push(`TP3: ${item.takeProfit3}`);
     return levels.length ? levels.join(' / ') : '—';
   }
+
+  trackById(_: number, item: SignalItem): string {
+  return item.id;
+}
+
 }
