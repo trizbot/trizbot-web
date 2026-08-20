@@ -35,6 +35,16 @@ import {
 } from '../../../app/pages/myaccount/arbitrage/model/arbitrage.model';
 import { SharedService } from '../../../app/shared/shared.service';
 
+// NOTE: adjust this import path if the Signals feature lives at a different
+// location in your project — it mirrors the sibling "arbitrage" import above
+// (../../../app/pages/myaccount/<feature>/...).
+import { SignalsService } from '../../../app/pages/myaccount/signals/signals.service';
+import {
+  MySubscription,
+  SubscriptionPeriodStatus,
+  getSubscriptionPeriodStatus,
+} from '../../../app/pages/myaccount/signals/model/signal.model';
+
 const AUTO_REFRESH_SECONDS = 20;
 const PAGE_SIZE_OPTIONS = [5, 10, 15, 25, 20, 30, 35, 40, 50] as const;
 
@@ -129,6 +139,22 @@ export class WalletBalanceComponent implements OnInit, OnDestroy {
   arbCurrentPage = 1;
   arbPageSize: number = PAGE_SIZE_OPTIONS[1]; // default 25
 
+  // ---------------------------------------------------------------------
+  // Arbitrage access gate — requires an active Signals subscription
+  // (or super-admin bypass, mirroring the Signals component's own rule).
+  // ---------------------------------------------------------------------
+  hasActiveSignalSubscription = false;
+  signalSubscriptionLoading = true;
+  activeSignalSubscription: MySubscription | null = null;
+
+  private arbBootstrapped = false;
+  private traderResolved = false;
+
+  /** Whether the arbitrage panel should be shown, unlocked, to this user. */
+  get canViewArbitrage(): boolean {
+    return this.hasActiveSignalSubscription || !!this.isSuperAdmin;
+  }
+
   constructor(
     private store: Store,
     private traderService: TraderService,
@@ -138,7 +164,8 @@ export class WalletBalanceComponent implements OnInit, OnDestroy {
     private router: Router,
     private arbitrageService: ArbitrageService,
     private dialog: MatDialog,
-    private sharedService: SharedService
+    private sharedService: SharedService,
+    private signalsService: SignalsService
   ) {
     this.trader$ = this.store.select(selectTrader);
     this.loading$ = this.store.select(selectTraderLoading);
@@ -156,12 +183,20 @@ export class WalletBalanceComponent implements OnInit, OnDestroy {
     this.getWeeklyStatistics();
     this.startCountdown();
 
-    // Arbitrage bootstrap
-    this.loadOpportunities();
+    // Arbitrage bootstrap — resolve subscription access before ever
+    // fetching/displaying opportunity data.
+    this.checkSignalSubscription();
 
     interval(1000)
       .pipe(takeUntil(this.destroy$))
       .subscribe(() => {
+        if (!this.canViewArbitrage) {
+          // Keep the countdown pinned while access is locked so it reads
+          // correctly the moment the user unlocks the panel.
+          this.secondsToRefresh = AUTO_REFRESH_SECONDS;
+          return;
+        }
+
         this.secondsToRefresh -= 1;
         if (this.secondsToRefresh <= 0) {
           this.secondsToRefresh = AUTO_REFRESH_SECONDS;
@@ -171,7 +206,11 @@ export class WalletBalanceComponent implements OnInit, OnDestroy {
 
     this.arbFilterForm.valueChanges
       .pipe(debounceTime(250), takeUntil(this.destroy$))
-      .subscribe(() => this.applyArbFilters());
+      .subscribe(() => {
+        if (this.canViewArbitrage) {
+          this.applyArbFilters();
+        }
+      });
   }
 
   getWeeklyStatistics() {
@@ -267,10 +306,15 @@ export class WalletBalanceComponent implements OnInit, OnDestroy {
           this.isAdminDashBoardType = false;
           this.isTradersDashBoardType = true;
         }
+
+        this.traderResolved = true;
+        this.maybeLoadArbitrage();
       },
       error: (err) => {
         this.errorMessage = '';
         this.isLoading = false;
+        this.traderResolved = true;
+        this.maybeLoadArbitrage();
       },
     });
   }
@@ -507,6 +551,50 @@ export class WalletBalanceComponent implements OnInit, OnDestroy {
   }
 
   // =========================================================================
+  // SIGNAL SUBSCRIPTION GATE (drives access to the arbitrage scanner)
+  // =========================================================================
+
+  /**
+   * Resolves whether the trader has an active Signals subscription. Until
+   * this settles, the arbitrage panel shows a loading state rather than
+   * flashing a "subscribe" prompt that might immediately flip to unlocked.
+   */
+  private checkSignalSubscription(): void {
+    this.signalSubscriptionLoading = true;
+
+    this.signalsService.getMySubscriptions().subscribe({
+      next: (subs: MySubscription[]) => {
+        this.activeSignalSubscription =
+          (subs || []).find((s) => getSubscriptionPeriodStatus(s) === SubscriptionPeriodStatus.Active) ?? null;
+        this.hasActiveSignalSubscription = !!this.activeSignalSubscription;
+        this.signalSubscriptionLoading = false;
+        this.maybeLoadArbitrage();
+      },
+      error: () => {
+        this.hasActiveSignalSubscription = false;
+        this.activeSignalSubscription = null;
+        this.signalSubscriptionLoading = false;
+        this.maybeLoadArbitrage();
+      },
+    });
+  }
+
+  /**
+   * Fetches arbitrage opportunities exactly once, and only once BOTH the
+   * trader's admin status and their signal-subscription status are known —
+   * so unentitled users never trigger the opportunities request at all.
+   */
+  private maybeLoadArbitrage(): void {
+    if (this.arbBootstrapped) return;
+    if (!this.traderResolved || this.signalSubscriptionLoading) return;
+
+    if (this.canViewArbitrage) {
+      this.arbBootstrapped = true;
+      this.loadOpportunities();
+    }
+  }
+
+  // =========================================================================
   // ARBITRAGE (merged from ArbitrageComponent)
   // =========================================================================
 
@@ -622,6 +710,8 @@ export class WalletBalanceComponent implements OnInit, OnDestroy {
   }
 
   loadOpportunities(silent = false): void {
+    if (!this.canViewArbitrage) return;
+
     if (!silent) this.arbLoading = true;
     this.arbError = null;
     const { token, minSpreadPercent } = this.arbFilterForm.getRawValue();
@@ -665,6 +755,7 @@ export class WalletBalanceComponent implements OnInit, OnDestroy {
   }
 
   refreshArbNow(): void {
+    if (!this.canViewArbitrage) return;
     this.secondsToRefresh = AUTO_REFRESH_SECONDS;
     this.loadOpportunities();
   }
@@ -675,6 +766,8 @@ export class WalletBalanceComponent implements OnInit, OnDestroy {
   }
 
   openTradeDialog(o: ArbitrageOpportunity): void {
+    if (!this.canViewArbitrage) return;
+
     const ref = this.dialog.open(PlaceTradeDialogComponent, {
       width: '480px',
       maxWidth: '95vw',

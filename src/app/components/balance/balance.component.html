@@ -1,684 +1,704 @@
 <div *ngIf="isLoading" class="bb-loading">
   <div class="bb-loading-card">
-    <mat-spinner diameter="44" strokeWidth="3" class="bb-spinner"></mat-spinner>
-    <h5>Loading dashboard&hellip;</h5>
+    <mat-spinner diameter="40" strokeWidth="3" class="bb-spinner"></mat-spinner>
+    <p>Loading dashboard&hellip;</p>
   </div>
 </div>
 
-
-<div class="bb-shell" *ngIf="!isLoading">
-
+<div class="bb-page" *ngIf="!isLoading">
 
   <ng-container *ngIf="isTradersDashBoardType">
 
-    <!-- ---------- Top balance strip ---------- -->
-    <div class="bb-stat-grid">
-
-      <div class="bb-stat-card bb-stat-primary">
-        <div class="bb-stat-top">
-          <span class="bb-stat-icon"><i class="bi bi-wallet2"></i></span>
-          <span class="bb-stat-label">Wallet Balance</span>
-        </div>
-        <div class="bb-stat-value">
-          &#36;{{ walletBalance || 0.0 | number: '1.2-2' }}
-        </div>
-        <div class="bb-stat-sub bb-stat-sub-row">
-          <span class="bb-stat-sub-label">Stake Booster</span>
-          <span class="bb-stat-sub-value">&#36;{{ tradeRewardCashWalletBalance || 0.0 | number: '1.2-2' }}</span>
-        </div>
-        <div class="bb-stat-actions">
-          <button [routerLink]="['/myaccount/deposit']" class="bb-btn bb-btn-outline bb-btn-up">
-            <i class="bi bi-arrow-down-circle"></i> Deposit
-          </button>
-          <button [routerLink]="['/myaccount/transfer']" class="bb-btn bb-btn-outline bb-btn-down">
-            <i class="bi bi-send"></i> Transfer
-          </button>
-          <button [routerLink]="['/myaccount/withdraw']" class="bb-btn bb-btn-outline bb-btn-down">
-            <i class="bi bi-arrow-up-circle"></i> Withdraw
-          </button>
-        </div>
-      </div>
-
-      <div class="bb-stat-card">
-        <div class="bb-stat-top">
-          <span class="bb-stat-icon up"><i class="bi bi-graph-up-arrow"></i></span>
-          <span class="bb-stat-label">Weekly Earnings</span>
-        </div>
-        <div class="bb-stat-value up">&#36;{{ profit || 0.0 | number: '1.2-2' }}</div>
-      </div>
-
-      <div class="bb-stat-card">
-        <div class="bb-stat-top">
-          <span class="bb-stat-icon warn"><i class="bi bi-graph-down-arrow"></i></span>
-          <span class="bb-stat-label">Weekly Deposit</span>
-        </div>
-        <div class="bb-stat-value warn">&#36;{{ depositBalance || 0.0 | number: '1.2-2' }}</div>
-      </div>
-
-    </div>
-
     <!-- ================================================================ -->
-    <!-- ARBITRAGE — placed before the Available Trades table, per spec    -->
+    <!-- OVERVIEW — wallet balance + weekly metrics                        -->
     <!-- ================================================================ -->
-    <section class="bb-panel bb-arb-panel">
+    <section class="bb-section">
+      <div class="bb-overview-grid">
 
-      <div class="bb-arb-header">
-        <div>
-          <h2 class="bb-panel-title">
-            <span class="bb-panel-title-icon"><i class="bi bi-lightning-charge-fill"></i></span>
-            Arbitrage Opportunities
-          </h2>
-          <p class="bb-panel-subtitle">
-            Live cross-exchange spreads &middot; refreshes every {{ refreshIntervalSeconds }}s
-          </p>
-        </div>
-        <div class="bb-arb-header-actions">
-          <span class="bb-last-updated" *ngIf="arbLastUpdated">
-            <span class="bb-live-dot"></span>
-            Updated {{ arbLastUpdated | date: 'HH:mm:ss' }}
-          </span>
-          <button type="button" class="bb-btn bb-btn-primary" (click)="refreshArbNow()">
-            <i class="bi bi-arrow-clockwise" [class.bb-spin]="arbLoading"></i>
-            Refresh &middot; {{ secondsToRefresh }}s
-          </button>
-        </div>
-      </div>
-
-      <!-- Exchange tabs -->
-      <div class="bb-exchange-tabs">
-        <button
-          *ngFor="let id of exchangeIds"
-          type="button"
-          class="bb-exchange-tab"
-          [class.active]="activeExchange === id"
-          [style.--tab-color]="exchangeConfig[id].colorPrimary"
-          (click)="selectExchange(id)"
-        >
-          <span class="bb-tab-dot"></span>
-          {{ exchangeConfig[id].label }}
-        </button>
-      </div>
-
-      <!-- Filters -->
-      <form class="bb-filters-bar" [formGroup]="arbFilterForm">
-        <mat-form-field appearance="outline" class="bb-filter-field">
-          <mat-select formControlName="token">
-            <mat-option value="">All tokens</mat-option>
-            <mat-option *ngFor="let t of arbTokenOptions" [value]="t">{{ t }}</mat-option>
-          </mat-select>
-        </mat-form-field>
-
-        <mat-form-field appearance="outline" class="bb-filter-field">
-          <input
-            matInput
-            type="number"
-            min="0"
-            placeholder="Min spread %"
-            formControlName="minSpreadPercent"
-          />
-        </mat-form-field>
-      </form>
-
-      <!-- Opportunities panel -->
-      <div class="bb-exchange-panel">
-        <div class="bb-arb-panel-header">
-          <span class="bb-panel-exchange-name">{{ activeConfig.label }}</span>
-          <span class="bb-panel-count">{{ visibleOpportunities.length }} opportunities</span>
-        </div>
-
-        <div class="bb-table-loading" *ngIf="arbLoading">
-          <mat-spinner diameter="28" strokeWidth="3"></mat-spinner>
-        </div>
-
-        <div class="bb-table-error" *ngIf="!arbLoading && arbError">
-          <i class="bi bi-exclamation-triangle"></i> {{ arbError }}
-        </div>
-
-        <div class="bb-table-empty" *ngIf="!arbLoading && !arbError && visibleOpportunities.length === 0">
-          <i class="bi bi-inboxes"></i>
-          No arbitrage opportunities found for {{ activeConfig.label }} right now.
-        </div>
-
-        <div class="bb-table-scroll" *ngIf="!arbLoading && !arbError && visibleOpportunities.length > 0">
-          <table class="bb-opp-table">
-            <thead>
-              <tr>
-                <th>Token</th>
-                <th>{{ activeConfig.label }}</th>
-                <th>Counterparty</th>
-                <th>Spread</th>
-                <th>Est. Profit</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let o of pagedOpportunities; trackBy: trackByOpportunity">
-                <td class="bb-token-cell">{{ o.token }}</td>
-
-                <td>
-                  <span class="bb-leg-badge" [ngClass]="isActiveBuyLeg(o) ? 'buy' : 'sell'">
-                    {{ isActiveBuyLeg(o) ? 'BUY' : 'SELL' }}
-                  </span>
-                  <span class="bb-price-val">&#36;{{ activePriceFor(o) | number: '1.2-6' }}</span>
-                </td>
-
-                <td>
-                  <div class="bb-counterparty-cell">
-                    <span
-                      class="bb-counterparty-dot"
-                      [style.background]="counterpartyColor(o)"
-                    ></span>
-                    <span class="bb-counterparty-name">{{ counterpartyLabel(o) }}</span>
-                    <span class="bb-price-val muted">&#36;{{ counterpartyPriceFor(o) | number: '1.2-6' }}</span>
-                  </div>
-                </td>
-
-                <td>
-                  <span class="bb-spread-pill" [ngClass]="spreadTier(o.spreadPercent)">
-                    {{ o.spreadPercent | number: '1.2-2' }}%
-                  </span>
-                </td>
-
-                <td class="bb-profit-cell">&#36;{{ o.estimatedProfit | number: '1.2-2' }}</td>
-
-                <td class="bb-action-cell">
-                  <button
-                    type="button"
-                    class="bb-trade-btn"
-                    (click)="openTradeDialog(o)"
-                  >
-                    Trade
-                  </button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <!-- Pagination -->
-        <div class="bb-pagination-bar" *ngIf="!arbLoading && !arbError && visibleOpportunities.length > 0">
-          <div class="bb-pagination-info">
-            Showing {{ arbPageRangeStart }}&ndash;{{ arbPageRangeEnd }} of {{ visibleOpportunities.length }}
+        <div class="bb-wallet-card">
+          <div class="bb-wallet-top">
+            <span class="bb-wallet-icon"><i class="bi bi-wallet2"></i></span>
+            <span class="bb-wallet-label">Wallet balance</span>
           </div>
 
-          <div class="bb-pagination-controls">
-            <button
-              type="button"
-              class="bb-page-nav-btn"
-              [disabled]="arbCurrentPage === 1"
-              (click)="prevArbPage()"
-              aria-label="Previous page"
-            >
-              <i class="bi bi-chevron-left"></i>
-            </button>
+          <div class="bb-wallet-value">&#36;{{ walletBalance || 0.0 | number: '1.2-2' }}</div>
 
-            <ng-container *ngFor="let p of arbPageNumbers">
-              <button
-                *ngIf="p !== '…'; else arbEllipsis"
-                type="button"
-                class="bb-page-num-btn"
-                [class.active]="p === arbCurrentPage"
-                (click)="goToArbPage(p)"
-              >
-                {{ p }}
-              </button>
-              <ng-template #arbEllipsis>
-                <span class="bb-page-ellipsis">&hellip;</span>
-              </ng-template>
-            </ng-container>
-
-            <button
-              type="button"
-              class="bb-page-nav-btn"
-              [disabled]="arbCurrentPage === arbTotalPages"
-              (click)="nextArbPage()"
-              aria-label="Next page"
-            >
-              <i class="bi bi-chevron-right"></i>
-            </button>
+          <div class="bb-wallet-booster">
+            <span>Stake booster</span>
+            <strong>&#36;{{ tradeRewardCashWalletBalance || 0.0 | number: '1.2-2' }}</strong>
           </div>
 
-          <mat-form-field appearance="outline" class="bb-page-size-field">
-            <mat-select
-              [value]="arbPageSize"
-              (selectionChange)="changeArbPageSize($event.value)"
-            >
-              <mat-option *ngFor="let size of pageSizeOptions" [value]="size">
-                {{ size }} / page
-              </mat-option>
-            </mat-select>
-          </mat-form-field>
+          <div class="bb-wallet-actions">
+            <button type="button" [routerLink]="['/myaccount/deposit']" class="bb-btn bb-btn-light">
+              <i class="bi bi-arrow-down-circle"></i><span>Deposit</span>
+            </button>
+            <button type="button" [routerLink]="['/myaccount/transfer']" class="bb-btn bb-btn-light">
+              <i class="bi bi-send"></i><span>Transfer</span>
+            </button>
+            <button type="button" [routerLink]="['/myaccount/withdraw']" class="bb-btn bb-btn-light">
+              <i class="bi bi-arrow-up-circle"></i><span>Withdraw</span>
+            </button>
+          </div>
         </div>
+
+        <div class="bb-metrics-col">
+          <div class="bb-metric-card">
+            <div class="bb-metric-top">
+              <span class="bb-metric-icon up"><i class="bi bi-graph-up-arrow"></i></span>
+              <span class="bb-metric-label">Weekly earnings</span>
+            </div>
+            <div class="bb-metric-value up">&#36;{{ profit || 0.0 | number: '1.2-2' }}</div>
+          </div>
+
+          <div class="bb-metric-card">
+            <div class="bb-metric-top">
+              <span class="bb-metric-icon neutral"><i class="bi bi-graph-down-arrow"></i></span>
+              <span class="bb-metric-label">Weekly deposit</span>
+            </div>
+            <div class="bb-metric-value neutral">&#36;{{ depositBalance || 0.0 | number: '1.2-2' }}</div>
+          </div>
+        </div>
+
       </div>
     </section>
 
     <!-- ================================================================ -->
-    <!-- TRADE TABS — Available / Running / Executed                       -->
+    <!-- ARBITRAGE — gated behind an active Signals subscription           -->
     <!-- ================================================================ -->
-    <section class="bb-panel bb-trade-tabs-panel">
-      <mat-tab-group animationDuration="200ms" class="bb-mat-tabs">
+    <section class="bb-section">
+      <div class="bb-panel bb-arb-panel">
 
-        <!-- Available trades -->
-        <mat-tab>
-          <ng-template mat-tab-label>
-            <i class="bi bi-graph-up-arrow bb-tab-icon"></i> Available Staking
-          </ng-template>
-          <div class="bb-tab-content">
+        <div class="bb-panel-header">
+          <div class="bb-panel-heading">
+            <span class="bb-panel-icon"><i class="bi bi-lightning-charge-fill"></i></span>
+            <div>
+              <h2>Arbitrage opportunities</h2>
+              <p *ngIf="canViewArbitrage">Live cross-exchange spreads &middot; refreshes every {{ refreshIntervalSeconds }}s</p>
+              <p *ngIf="!canViewArbitrage && !signalSubscriptionLoading">Unlocks with an active Signals subscription</p>
+            </div>
+          </div>
 
-            <p class="bb-muted-note" *ngIf="!isCryptoAvailableStatus">
-              <strong>{{ isCryptoAvailableDescription }}</strong>
+          <div class="bb-panel-header-actions" *ngIf="canViewArbitrage">
+            <span class="bb-updated-tag" *ngIf="arbLastUpdated">
+              <span class="bb-live-dot"></span>
+              Updated {{ arbLastUpdated | date: 'HH:mm:ss' }}
+            </span>
+            <button type="button" class="bb-btn bb-btn-primary" (click)="refreshArbNow()">
+              <i class="bi bi-arrow-clockwise" [class.bb-spin]="arbLoading"></i>
+              <span>Refresh &middot; {{ secondsToRefresh }}s</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Resolving access -->
+        <div class="bb-gate-loading" *ngIf="signalSubscriptionLoading">
+          <mat-spinner diameter="24" strokeWidth="3"></mat-spinner>
+          <span>Checking your subscription&hellip;</span>
+        </div>
+
+        <ng-container *ngIf="!signalSubscriptionLoading">
+
+          <!-- LOCKED: no active signal subscription -->
+          <div class="bb-locked-panel" *ngIf="!canViewArbitrage">
+            <div class="bb-locked-icon"><i class="bi bi-lock-fill"></i></div>
+            <h3>Unlock the arbitrage scanner</h3>
+            <p>
+              Live cross-exchange spreads and one-click trade execution are reserved for traders
+              with an active Signals subscription. Subscribe to any plan to start scanning.
             </p>
+            <button type="button" class="bb-btn bb-btn-primary" [routerLink]="['/myaccount/signals']">
+              <i class="bi bi-stars"></i><span>View subscription plans</span>
+            </button>
+          </div>
 
-            <ng-container *ngIf="availableCryptoList.length > 0; else noData">
-              <div class="bb-crypto-grid">
-                <div *ngFor="let crypto of pagedCryptoList">
-                  <div class="bb-crypto-card" *ngIf="crypto.status">
-                    <div class="bb-crypto-card-inner">
-                      <div class="bb-crypto-left">
-                        <img
-                          *ngIf="crypto.imageUrl"
-                          [src]="crypto.imageUrl"
-                          alt="Crypto Image"
-                          class="bb-crypto-avatar"
-                        />
-                      </div>
-                      <div class="bb-crypto-right">
-                        <div class="bb-crypto-title-row">
-                          <span class="bb-crypto-title">{{ crypto.title }}</span>
-                          <span class="bb-crypto-pct-chip">+{{ crypto.percentage }}%</span>
+          <!-- UNLOCKED: full arbitrage experience -->
+          <ng-container *ngIf="canViewArbitrage">
+
+            <div class="bb-exchange-tabs">
+              <button
+                *ngFor="let id of exchangeIds"
+                type="button"
+                class="bb-exchange-tab"
+                [class.active]="activeExchange === id"
+                [style.--tab-color]="exchangeConfig[id].colorPrimary"
+                (click)="selectExchange(id)"
+              >
+                <span class="bb-tab-dot"></span>
+                {{ exchangeConfig[id].label }}
+              </button>
+            </div>
+
+            <form class="bb-filters-bar" [formGroup]="arbFilterForm">
+              <mat-form-field appearance="outline" class="bb-filter-field">
+                <mat-select formControlName="token">
+                  <mat-option value="">All tokens</mat-option>
+                  <mat-option *ngFor="let t of arbTokenOptions" [value]="t">{{ t }}</mat-option>
+                </mat-select>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="bb-filter-field">
+                <input
+                  matInput
+                  type="number"
+                  min="0"
+                  placeholder="Min spread %"
+                  formControlName="minSpreadPercent"
+                />
+              </mat-form-field>
+            </form>
+
+            <div class="bb-exchange-panel">
+              <div class="bb-exchange-panel-header">
+                <span class="bb-panel-exchange-name">{{ activeConfig.label }}</span>
+                <span class="bb-panel-count">{{ visibleOpportunities.length }} opportunities</span>
+              </div>
+
+              <div class="bb-table-loading" *ngIf="arbLoading">
+                <mat-spinner diameter="26" strokeWidth="3"></mat-spinner>
+              </div>
+
+              <div class="bb-table-error" *ngIf="!arbLoading && arbError">
+                <i class="bi bi-exclamation-triangle"></i> {{ arbError }}
+              </div>
+
+              <div class="bb-table-empty" *ngIf="!arbLoading && !arbError && visibleOpportunities.length === 0">
+                <i class="bi bi-inboxes"></i>
+                No arbitrage opportunities found for {{ activeConfig.label }} right now.
+              </div>
+
+              <!-- Table — tablet and up -->
+              <div class="bb-table-scroll" *ngIf="!arbLoading && !arbError && visibleOpportunities.length > 0">
+                <table class="bb-opp-table">
+                  <thead>
+                    <tr>
+                      <th>Token</th>
+                      <th>{{ activeConfig.label }}</th>
+                      <th>Counterparty</th>
+                      <th>Spread</th>
+                      <th>Est. profit</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let o of pagedOpportunities; trackBy: trackByOpportunity">
+                      <td class="bb-token-cell">{{ o.token }}</td>
+
+                      <td>
+                        <span class="bb-leg-badge" [ngClass]="isActiveBuyLeg(o) ? 'buy' : 'sell'">
+                          {{ isActiveBuyLeg(o) ? 'BUY' : 'SELL' }}
+                        </span>
+                        <span class="bb-price-val">&#36;{{ activePriceFor(o) | number: '1.2-6' }}</span>
+                      </td>
+
+                      <td>
+                        <div class="bb-counterparty-cell">
+                          <span class="bb-counterparty-dot" [style.background]="counterpartyColor(o)"></span>
+                          <span class="bb-counterparty-name">{{ counterpartyLabel(o) }}</span>
+                          <span class="bb-price-val muted">&#36;{{ counterpartyPriceFor(o) | number: '1.2-6' }}</span>
                         </div>
+                      </td>
 
-                        <div class="bb-crypto-meta">
-                          <div class="bb-meta-row">
-                            <span class="bb-meta-label">Min Amount</span>
-                            <span class="bb-meta-value">&#36;{{ crypto.minAmount }}</span>
-                          </div>
-                          <div class="bb-meta-row">
-                            <span class="bb-meta-label">Yield</span>
-                            <span class="bb-meta-value bb-accent-text">{{ crypto.percentage }}%</span>
-                          </div>
-                          <div class="bb-meta-row">
-                            <span class="bb-meta-label">Expires</span>
-                            <span class="bb-meta-value">{{ crypto.expiry }}h</span>
-                          </div>
-                          <!-- <div class="bb-meta-row">
-                            <span class="bb-meta-label">Buy Exchange</span>
-                            <span class="bb-meta-value">{{ crypto.buyExchange }}</span>
-                          </div>
-                          <div class="bb-meta-row">
-                            <span class="bb-meta-label">Sell Exchange</span>
-                            <span class="bb-meta-value">{{ crypto.sellExchange }}</span>
-                          </div> -->
-                        </div>
+                      <td>
+                        <span class="bb-spread-pill" [ngClass]="spreadTier(o.spreadPercent)">
+                          {{ o.spreadPercent | number: '1.2-2' }}%
+                        </span>
+                      </td>
 
-                        <button class="bb-btn bb-btn-primary bb-full-w" (click)="onSetupTrade(crypto.id)">
-                          Setup Stake
-                        </button>
-                      </div>
+                      <td class="bb-profit-cell">&#36;{{ o.estimatedProfit | number: '1.2-2' }}</td>
+
+                      <td class="bb-action-cell">
+                        <button type="button" class="bb-trade-btn" (click)="openTradeDialog(o)">Trade</button>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- Cards — mobile -->
+              <div class="bb-opp-cards" *ngIf="!arbLoading && !arbError && visibleOpportunities.length > 0">
+                <div class="bb-opp-card" *ngFor="let o of pagedOpportunities; trackBy: trackByOpportunity">
+                  <div class="bb-opp-card-top">
+                    <span class="bb-token-cell">{{ o.token }}</span>
+                    <span class="bb-spread-pill" [ngClass]="spreadTier(o.spreadPercent)">
+                      {{ o.spreadPercent | number: '1.2-2' }}%
+                    </span>
+                  </div>
+
+                  <div class="bb-opp-card-row">
+                    <div class="bb-opp-leg">
+                      <span class="bb-leg-badge" [ngClass]="isActiveBuyLeg(o) ? 'buy' : 'sell'">
+                        {{ isActiveBuyLeg(o) ? 'BUY' : 'SELL' }}
+                      </span>
+                      <span class="bb-price-val">&#36;{{ activePriceFor(o) | number: '1.2-6' }}</span>
                     </div>
+                    <div class="bb-opp-leg">
+                      <span class="bb-counterparty-dot" [style.background]="counterpartyColor(o)"></span>
+                      <span class="bb-counterparty-name">{{ counterpartyLabel(o) }}</span>
+                      <span class="bb-price-val muted">&#36;{{ counterpartyPriceFor(o) | number: '1.2-6' }}</span>
+                    </div>
+                  </div>
+
+                  <div class="bb-opp-card-bottom">
+                    <span class="bb-profit-cell">Est. profit &#36;{{ o.estimatedProfit | number: '1.2-2' }}</span>
+                    <button type="button" class="bb-trade-btn" (click)="openTradeDialog(o)">Trade</button>
                   </div>
                 </div>
               </div>
 
-              <nav *ngIf="totalPages.length > 1" class="bb-pagination-bar bb-pagination-center">
+              <!-- Pagination -->
+              <div class="bb-pagination-bar" *ngIf="!arbLoading && !arbError && visibleOpportunities.length > 0">
+                <div class="bb-pagination-info">
+                  Showing {{ arbPageRangeStart }}&ndash;{{ arbPageRangeEnd }} of {{ visibleOpportunities.length }}
+                </div>
+
                 <div class="bb-pagination-controls">
-                  <button type="button" class="bb-page-nav-btn" [disabled]="currentPage === 1" (click)="changePage(currentPage - 1)">
-                    <i class="bi bi-chevron-left"></i>
-                  </button>
-                  <button
-                    *ngFor="let page of totalPages"
-                    type="button"
-                    class="bb-page-num-btn"
-                    [class.active]="page === currentPage"
-                    (click)="changePage(page)"
-                  >
-                    {{ page }}
-                  </button>
                   <button
                     type="button"
                     class="bb-page-nav-btn"
-                    [disabled]="currentPage === totalPages.length"
-                    (click)="changePage(currentPage + 1)"
+                    [disabled]="arbCurrentPage === 1"
+                    (click)="prevArbPage()"
+                    aria-label="Previous page"
+                  >
+                    <i class="bi bi-chevron-left"></i>
+                  </button>
+
+                  <ng-container *ngFor="let p of arbPageNumbers">
+                    <button
+                      *ngIf="p !== '…'; else arbEllipsis"
+                      type="button"
+                      class="bb-page-num-btn"
+                      [class.active]="p === arbCurrentPage"
+                      (click)="goToArbPage(p)"
+                    >
+                      {{ p }}
+                    </button>
+                    <ng-template #arbEllipsis>
+                      <span class="bb-page-ellipsis">&hellip;</span>
+                    </ng-template>
+                  </ng-container>
+
+                  <button
+                    type="button"
+                    class="bb-page-nav-btn"
+                    [disabled]="arbCurrentPage === arbTotalPages"
+                    (click)="nextArbPage()"
+                    aria-label="Next page"
                   >
                     <i class="bi bi-chevron-right"></i>
                   </button>
                 </div>
-              </nav>
-            </ng-container>
 
-            <ng-template #noData>
-              <div class="bb-empty-state">
-                <i class="bi bi-inboxes"></i>
-                <p class="bb-muted-note">No available staking opportunities.</p>
+                <mat-form-field appearance="outline" class="bb-page-size-field">
+                  <mat-select [value]="arbPageSize" (selectionChange)="changeArbPageSize($event.value)">
+                    <mat-option *ngFor="let size of pageSizeOptions" [value]="size">
+                      {{ size }} / page
+                    </mat-option>
+                  </mat-select>
+                </mat-form-field>
               </div>
-            </ng-template>
-          </div>
-        </mat-tab>
+            </div>
+          </ng-container>
+        </ng-container>
+      </div>
+    </section>
 
-        <!-- Running staking -->
-        <mat-tab>
-          <ng-template mat-tab-label>
-            <i class="bi bi-arrow-repeat bb-tab-icon"></i> Running Staking
-          </ng-template>
-          <div class="bb-tab-content">
-            <div *ngIf="investmentList.length > 0; else noRunningData">
-              <div class="bb-crypto-grid bb-crypto-grid-3">
-                <div *ngFor="let runningTrade of pagedInvestmentList">
-                  <div class="bb-crypto-card" *ngIf="runningOperation; else noRunningData">
-                    <div class="bb-crypto-card-inner">
-                      <div class="bb-crypto-left">
+    <!-- ================================================================ -->
+    <!-- STAKING — Available / Running / Executed                          -->
+    <!-- ================================================================ -->
+    <section class="bb-section">
+      <div class="bb-panel bb-staking-panel">
+        <mat-tab-group animationDuration="200ms" class="bb-mat-tabs">
+
+          <!-- Available -->
+          <mat-tab>
+            <ng-template mat-tab-label>
+              <i class="bi bi-graph-up-arrow bb-tab-icon"></i> Available
+            </ng-template>
+            <div class="bb-tab-content">
+
+              <p class="bb-muted-note" *ngIf="!isCryptoAvailableStatus">
+                <strong>{{ isCryptoAvailableDescription }}</strong>
+              </p>
+
+              <ng-container *ngIf="availableCryptoList.length > 0; else noData">
+                <div class="bb-stake-grid">
+                  <div *ngFor="let crypto of pagedCryptoList">
+                    <div class="bb-stake-card" *ngIf="crypto.status">
+                      <div class="bb-stake-card-head">
+                        <img
+                          *ngIf="crypto.imageUrl"
+                          [src]="crypto.imageUrl"
+                          alt="{{ crypto.title }}"
+                          class="bb-stake-avatar"
+                        />
+                        <div class="bb-stake-head-text">
+                          <span class="bb-stake-title">{{ crypto.title }}</span>
+                          <span class="bb-stake-yield-chip">+{{ crypto.percentage }}% yield</span>
+                        </div>
+                      </div>
+
+                      <div class="bb-stake-meta">
+                        <div class="bb-stake-meta-row">
+                          <span>Min. amount</span>
+                          <strong>&#36;{{ crypto.minAmount }}</strong>
+                        </div>
+                        <div class="bb-stake-meta-row">
+                          <span>Yield</span>
+                          <strong class="bb-accent-text">{{ crypto.percentage }}%</strong>
+                        </div>
+                        <div class="bb-stake-meta-row">
+                          <span>Expires in</span>
+                          <strong>{{ crypto.expiry }}h</strong>
+                        </div>
+                      </div>
+
+                      <button class="bb-btn bb-btn-primary bb-full-w" (click)="onSetupTrade(crypto.id)">
+                        Set up stake
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <nav *ngIf="totalPages.length > 1" class="bb-pagination-bar bb-pagination-center">
+                  <div class="bb-pagination-controls">
+                    <button type="button" class="bb-page-nav-btn" [disabled]="currentPage === 1" (click)="changePage(currentPage - 1)">
+                      <i class="bi bi-chevron-left"></i>
+                    </button>
+                    <button
+                      *ngFor="let page of totalPages"
+                      type="button"
+                      class="bb-page-num-btn"
+                      [class.active]="page === currentPage"
+                      (click)="changePage(page)"
+                    >
+                      {{ page }}
+                    </button>
+                    <button
+                      type="button"
+                      class="bb-page-nav-btn"
+                      [disabled]="currentPage === totalPages.length"
+                      (click)="changePage(currentPage + 1)"
+                    >
+                      <i class="bi bi-chevron-right"></i>
+                    </button>
+                  </div>
+                </nav>
+              </ng-container>
+
+              <ng-template #noData>
+                <div class="bb-empty-state">
+                  <i class="bi bi-inboxes"></i>
+                  <p>No available staking opportunities.</p>
+                </div>
+              </ng-template>
+            </div>
+          </mat-tab>
+
+          <!-- Running -->
+          <mat-tab>
+            <ng-template mat-tab-label>
+              <i class="bi bi-arrow-repeat bb-tab-icon"></i> Running
+            </ng-template>
+            <div class="bb-tab-content">
+              <div *ngIf="investmentList.length > 0; else noRunningData">
+                <div class="bb-stake-grid">
+                  <div *ngFor="let runningTrade of pagedInvestmentList">
+                    <div class="bb-stake-card" *ngIf="runningOperation; else noRunningData">
+                      <div class="bb-stake-card-head">
                         <img
                           *ngIf="runningTrade.imageUrl"
                           [src]="runningTrade.imageUrl"
-                          alt="{{ runningTrade.cryptoName }} Image"
-                          class="bb-crypto-avatar"
+                          alt="{{ runningTrade.cryptoName }}"
+                          class="bb-stake-avatar"
                         />
-                      </div>
-                      <div class="bb-crypto-right">
-                        <div class="bb-crypto-title-row">
-                          <span class="bb-crypto-title">{{ runningTrade.cryptoName }}</span>
+                        <div class="bb-stake-head-text">
+                          <span class="bb-stake-title">{{ runningTrade.cryptoName }}</span>
                           <span class="bb-status-chip bb-status-running">
                             <i class="bi bi-arrow-repeat"></i> {{ runningTrade.investmentStatus }}
                           </span>
                         </div>
+                      </div>
 
-                        <div class="bb-crypto-meta">
-                          <div class="bb-meta-row">
-                            <span class="bb-meta-label">Amount</span>
-                            <span class="bb-meta-value">&#36;{{ runningTrade.amount }}</span>
-                          </div>
-                          <div class="bb-meta-row">
-                            <span class="bb-meta-label">Created</span>
-                            <span class="bb-meta-value">{{ runningTrade.updatedAt | date: 'medium' }}</span>
-                          </div>
-                          <div class="bb-meta-row">
-                            <span class="bb-meta-label">Expiry</span>
-                            <span class="bb-meta-value">{{ runningTrade.expiry | date: 'medium' }}</span>
-                          </div>
-                          <div class="bb-meta-row bb-countdown-row">
-                            <span class="bb-meta-label">
-                              <i class="bi bi-alarm"></i> Time left
-                            </span>
-                            <span class="bb-meta-value bb-accent-text">
-                              {{ countdowns[runningTrade.expiry] || 'Loading...' }}
-                            </span>
-                          </div>
+                      <div class="bb-stake-meta">
+                        <div class="bb-stake-meta-row">
+                          <span>Amount</span>
+                          <strong>&#36;{{ runningTrade.amount }}</strong>
+                        </div>
+                        <div class="bb-stake-meta-row">
+                          <span>Created</span>
+                          <strong>{{ runningTrade.updatedAt | date: 'medium' }}</strong>
+                        </div>
+                        <div class="bb-stake-meta-row">
+                          <span>Expiry</span>
+                          <strong>{{ runningTrade.expiry | date: 'medium' }}</strong>
+                        </div>
+                        <div class="bb-stake-meta-row bb-countdown-row">
+                          <span><i class="bi bi-alarm"></i> Time left</span>
+                          <strong class="bb-accent-text">{{ countdowns[runningTrade.expiry] || 'Loading...' }}</strong>
                         </div>
                       </div>
                     </div>
                   </div>
                 </div>
+
+                <nav *ngIf="totalInvestPages.length > 1" class="bb-pagination-bar bb-pagination-center">
+                  <div class="bb-pagination-controls">
+                    <button type="button" class="bb-page-nav-btn" [disabled]="currentInvestPage === 1" (click)="changeInvestPage(currentInvestPage - 1)">
+                      <i class="bi bi-chevron-left"></i>
+                    </button>
+                    <button
+                      *ngFor="let page of totalInvestPages"
+                      type="button"
+                      class="bb-page-num-btn"
+                      [class.active]="page === currentInvestPage"
+                      (click)="changeInvestPage(page)"
+                    >
+                      {{ page }}
+                    </button>
+                    <button
+                      type="button"
+                      class="bb-page-nav-btn"
+                      [disabled]="currentInvestPage === totalInvestPages.length"
+                      (click)="changeInvestPage(currentInvestPage + 1)"
+                    >
+                      <i class="bi bi-chevron-right"></i>
+                    </button>
+                  </div>
+                </nav>
               </div>
 
-              <nav *ngIf="totalInvestPages.length > 1" class="bb-pagination-bar bb-pagination-center">
-                <div class="bb-pagination-controls">
-                  <button type="button" class="bb-page-nav-btn" [disabled]="currentInvestPage === 1" (click)="changeInvestPage(currentInvestPage - 1)">
-                    <i class="bi bi-chevron-left"></i>
-                  </button>
-                  <button
-                    *ngFor="let page of totalInvestPages"
-                    type="button"
-                    class="bb-page-num-btn"
-                    [class.active]="page === currentInvestPage"
-                    (click)="changeInvestPage(page)"
-                  >
-                    {{ page }}
-                  </button>
-                  <button
-                    type="button"
-                    class="bb-page-nav-btn"
-                    [disabled]="currentInvestPage === totalInvestPages.length"
-                    (click)="changeInvestPage(currentInvestPage + 1)"
-                  >
-                    <i class="bi bi-chevron-right"></i>
-                  </button>
+              <ng-template #noRunningData>
+                <div class="bb-empty-state">
+                  <i class="bi bi-slash-circle"></i>
+                  <p>No running staking opportunities.</p>
                 </div>
-              </nav>
+              </ng-template>
             </div>
+          </mat-tab>
 
-            <ng-template #noRunningData>
-              <div class="bb-empty-state">
-                <i class="bi bi-slash-circle"></i>
-                <p class="bb-muted-note bb-text-center">No running staking opportunities.</p>
-              </div>
+          <!-- Executed -->
+          <mat-tab>
+            <ng-template mat-tab-label>
+              <i class="bi bi-check-circle-fill bb-tab-icon"></i> Executed
             </ng-template>
-          </div>
-        </mat-tab>
-
-        <!-- Executed staking -->
-        <mat-tab>
-          <ng-template mat-tab-label>
-            <i class="bi bi-check-circle-fill bb-tab-icon"></i> Executed Staking
-          </ng-template>
-          <div class="bb-tab-content">
-            <div *ngIf="completedInvestmentList.length > 0; else noCompletedData">
-              <div class="bb-crypto-grid bb-crypto-grid-3">
-                <div *ngFor="let invest of pagedCompletedInvestmentList">
-                  <div class="bb-crypto-card">
-                    <div class="bb-crypto-card-inner">
-                      <div class="bb-crypto-left">
+            <div class="bb-tab-content">
+              <div *ngIf="completedInvestmentList.length > 0; else noCompletedData">
+                <div class="bb-stake-grid">
+                  <div *ngFor="let invest of pagedCompletedInvestmentList">
+                    <div class="bb-stake-card">
+                      <div class="bb-stake-card-head">
                         <img
                           *ngIf="invest.imageUrl"
                           [src]="invest.imageUrl"
-                          alt="{{ invest.cryptoName }} Image"
-                          class="bb-crypto-avatar"
+                          alt="{{ invest.cryptoName }}"
+                          class="bb-stake-avatar"
                         />
-                      </div>
-                      <div class="bb-crypto-right">
-                        <div class="bb-crypto-title-row">
-                          <span class="bb-crypto-title">{{ invest.cryptoName }}</span>
+                        <div class="bb-stake-head-text">
+                          <span class="bb-stake-title">{{ invest.cryptoName }}</span>
                           <span class="bb-status-chip bb-status-done">
                             <i class="bi bi-check-circle"></i> {{ invest.transactionStatus }}
                           </span>
                         </div>
+                      </div>
 
-                        <div class="bb-crypto-meta">
-                          <div class="bb-meta-row">
-                            <span class="bb-meta-label">Amount</span>
-                            <span class="bb-meta-value">&#36;{{ invest.amount }}</span>
-                          </div>
-                          <div class="bb-meta-row">
-                            <span class="bb-meta-label">Profit</span>
-                            <span class="bb-meta-value bb-accent-text">&#36;{{ invest.profit }}</span>
-                          </div>
-                          <div class="bb-meta-row">
-                            <span class="bb-meta-label">Created</span>
-                            <span class="bb-meta-value">{{ invest.createdAt | date: 'medium' }}</span>
-                          </div>
-                          <div class="bb-meta-row">
-                            <span class="bb-meta-label">Expiry</span>
-                            <span class="bb-meta-value">{{ invest.expiry | date: 'medium' }}</span>
-                          </div>
+                      <div class="bb-stake-meta">
+                        <div class="bb-stake-meta-row">
+                          <span>Amount</span>
+                          <strong>&#36;{{ invest.amount }}</strong>
+                        </div>
+                        <div class="bb-stake-meta-row">
+                          <span>Profit</span>
+                          <strong class="bb-accent-text">&#36;{{ invest.profit }}</strong>
+                        </div>
+                        <div class="bb-stake-meta-row">
+                          <span>Created</span>
+                          <strong>{{ invest.createdAt | date: 'medium' }}</strong>
+                        </div>
+                        <div class="bb-stake-meta-row">
+                          <span>Expiry</span>
+                          <strong>{{ invest.expiry | date: 'medium' }}</strong>
                         </div>
                       </div>
                     </div>
                   </div>
                 </div>
+
+                <nav *ngIf="totalCompletedInvestPages.length > 1" class="bb-pagination-bar bb-pagination-center">
+                  <div class="bb-pagination-controls">
+                    <button type="button" class="bb-page-nav-btn" [disabled]="currentCompletedInvestPage === 1" (click)="changeCompletedInvestPage(currentCompletedInvestPage - 1)">
+                      <i class="bi bi-chevron-left"></i>
+                    </button>
+                    <button
+                      *ngFor="let page of totalCompletedInvestPages"
+                      type="button"
+                      class="bb-page-num-btn"
+                      [class.active]="page === currentCompletedInvestPage"
+                      (click)="changeCompletedInvestPage(page)"
+                    >
+                      {{ page }}
+                    </button>
+                    <button
+                      type="button"
+                      class="bb-page-nav-btn"
+                      [disabled]="currentCompletedInvestPage === totalCompletedInvestPages.length"
+                      (click)="changeCompletedInvestPage(currentCompletedInvestPage + 1)"
+                    >
+                      <i class="bi bi-chevron-right"></i>
+                    </button>
+                  </div>
+                </nav>
               </div>
 
-              <nav *ngIf="totalCompletedInvestPages.length > 1" class="bb-pagination-bar bb-pagination-center">
-                <div class="bb-pagination-controls">
-                  <button type="button" class="bb-page-nav-btn" [disabled]="currentCompletedInvestPage === 1" (click)="changeCompletedInvestPage(currentCompletedInvestPage - 1)">
-                    <i class="bi bi-chevron-left"></i>
-                  </button>
-                  <button
-                    *ngFor="let page of totalCompletedInvestPages"
-                    type="button"
-                    class="bb-page-num-btn"
-                    [class.active]="page === currentCompletedInvestPage"
-                    (click)="changeCompletedInvestPage(page)"
-                  >
-                    {{ page }}
-                  </button>
-                  <button
-                    type="button"
-                    class="bb-page-nav-btn"
-                    [disabled]="currentCompletedInvestPage === totalCompletedInvestPages.length"
-                    (click)="changeCompletedInvestPage(currentCompletedInvestPage + 1)"
-                  >
-                    <i class="bi bi-chevron-right"></i>
-                  </button>
+              <ng-template #noCompletedData>
+                <div class="bb-empty-state">
+                  <i class="bi bi-slash-circle"></i>
+                  <p>No executed staking opportunities.</p>
                 </div>
-              </nav>
+              </ng-template>
             </div>
+          </mat-tab>
 
-            <ng-template #noCompletedData>
-              <div class="bb-empty-state">
-                <i class="bi bi-slash-circle"></i>
-                <p class="bb-muted-note bb-text-center">No executed staking opportunities.</p>
-              </div>
-            </ng-template>
-          </div>
-        </mat-tab>
-
-      </mat-tab-group>
+        </mat-tab-group>
+      </div>
     </section>
   </ng-container>
 
-  <!-- ============================================================ -->
-  <!-- ADMIN DASHBOARD                                               -->
-  <!-- ============================================================ -->
+  <!-- ================================================================ -->
+  <!-- ADMIN DASHBOARD                                                    -->
+  <!-- ================================================================ -->
   <ng-container *ngIf="isAdminDashBoardType">
 
-    <!-- ---------- Top overview strip ---------- -->
-    <div class="bb-stat-grid">
+    <section class="bb-section">
+      <div class="bb-stat-grid">
 
-      <div class="bb-stat-card">
-        <div class="bb-stat-top">
-          <span class="bb-stat-icon"><i class="bi bi-people"></i></span>
-          <span class="bb-stat-label">Total Users</span>
-        </div>
-        <div class="bb-stat-value">{{ totalUsers || 0 }}</div>
-      </div>
-
-      <div class="bb-stat-card">
-        <div class="bb-stat-top">
-          <span class="bb-stat-icon up"><i class="bi bi-graph-up-arrow"></i></span>
-          <span class="bb-stat-label">Users Active</span>
-        </div>
-        <div class="bb-stat-value up">{{ totalActiveUsers || 0 }}</div>
-      </div>
-
-      <div class="bb-stat-card">
-        <div class="bb-stat-top">
-          <span class="bb-stat-icon warn"><i class="bi bi-bar-chart-line"></i></span>
-          <span class="bb-stat-label">Weekly Deposit</span>
-        </div>
-        <div class="bb-stat-value warn">&#36;{{ totalWeeklyFunds | number: '1.2-2' }}</div>
-      </div>
-
-      <div class="bb-stat-card">
-        <div class="bb-stat-top">
-          <span class="bb-stat-icon up"><i class="bi bi-bar-chart-line"></i></span>
-          <span class="bb-stat-label">Stakes Weekly Profit</span>
-        </div>
-        <div class="bb-stat-value up">&#36;{{ totalWeeklyProfits || 0.0 | number: '1.2-2' }}</div>
-      </div>
-      <div class="bb-stat-card">
-        <div class="bb-stat-top">
-          <span class="bb-stat-icon up"><i class="bi bi-bar-chart"></i></span>
-          <span class="bb-stat-label">Course Weekly total</span>
-        </div>
-        <div class="bb-stat-value up">&#36;{{  adminCourseStats.totalAmount || 0.0 | number: '1.2-2' }}</div>
-      </div>
-      <div class="bb-stat-card">
-        <div class="bb-stat-top">
-          <span class="bb-stat-icon up"><i class="bi bi-bar-chart"></i></span>
-          <span class="bb-stat-label">Course + Stake Weekly total</span>
-        </div>
-        <div class="bb-stat-value up">&#36;{{  adminCourseStats.totalAmount + totalWeeklyProfits || 0.0 | number: '1.2-2' }}</div>
-      </div>
-
-    </div>
-
-
-    <div class="bb-stat-grid bb-stat-grid-3">
-
-      <div class="bb-stat-card">
-        <div class="bb-stat-top">
-          <span class="bb-stat-icon"><i class="bi bi-broadcast"></i></span>
-          <span class="bb-stat-label">Signal Subscribers</span>
-        </div>
-        <div class="bb-stat-value">{{ signalStats.totalSubscribers || 0 }}</div>
-        <div class="bb-stat-sub bb-stat-sub-row">
-          <span class="bb-stat-sub-label">Total Amount</span>
-          <span class="bb-stat-sub-value">&#36;{{ signalStats.totalAmount || 0 | number: '1.2-2' }}</span>
-        </div>
-      </div>
-
-      <div class="bb-stat-card">
-        <div class="bb-stat-top">
-          <span class="bb-stat-icon"><i class="bi bi-lightning-charge-fill"></i></span>
-          <span class="bb-stat-label">Arbitrage Scanner</span>
-        </div>
-        <div class="bb-stat-value">{{ arbitrageScannerStats.totalSubscribers || 0 }}</div>
-        
-      </div>
-
-      <div class="bb-stat-card">
-        <div class="bb-stat-top">
-          <span class="bb-stat-icon"><i class="bi bi-mortarboard-fill"></i></span>
-          <span class="bb-stat-label">Admin Course Sales</span>
-        </div>
-        <div class="bb-stat-value">{{ adminCourseStats.totalSales || 0 }}</div>
-       
-      </div>
-
-    </div>
-
-  
-    <section class="bb-panel">
-      <div class="bb-arb-header">
-        <div>
-          <h2 class="bb-panel-title">
-            <span class="bb-panel-title-icon"><i class="bi bi-pie-chart-fill"></i></span>
-            Subscriptions by Plan
-          </h2>
-          <p class="bb-panel-subtitle">
-            Breakdown of active subscribers and revenue per billing plan
-          </p>
-        </div>
-      </div>
-
-      <div class="bb-plan-breakdown-grid">
-
-        <!-- Signal plan breakdown -->
-        <div class="bb-plan-breakdown-col">
-          <h5 class="bb-plan-breakdown-heading">
-            <i class="bi bi-broadcast"></i> Signal
-          </h5>
-
-          <div class="bb-table-scroll" *ngIf="signalStats.byPlan?.length; else noSignalPlans">
-            <table class="bb-plan-table">
-              <thead>
-                <tr>
-                  <th>Plan</th>
-                  <th>Subscribers</th>
-                  <th>Amount</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr *ngFor="let plan of signalStats.byPlan" class="bb-plan-total-row">
-                  <td><span class="bb-plan-name">{{ plan.plan }}</span></td>
-                  <td><span class="bb-plan-subs">{{ plan.subscribers }} subs</span></td>
-                  <td><span class="bb-plan-amount">&#36;{{ plan.amount | number: '1.2-2' }}</span></td>
-                </tr>
-              </tbody>
-             
-            </table>
+        <div class="bb-metric-card compact">
+          <div class="bb-metric-top">
+            <span class="bb-metric-icon"><i class="bi bi-people"></i></span>
+            <span class="bb-metric-label">Total users</span>
           </div>
-
-          <ng-template #noSignalPlans>
-            <div class="bb-empty-state bb-empty-state-inline">
-              <i class="bi bi-inboxes"></i>
-              <p class="bb-muted-note">No signal subscriptions yet.</p>
-            </div>
-          </ng-template>
+          <div class="bb-metric-value">{{ totalUsers || 0 }}</div>
         </div>
 
-        
-       
-        
+        <div class="bb-metric-card compact">
+          <div class="bb-metric-top">
+            <span class="bb-metric-icon up"><i class="bi bi-graph-up-arrow"></i></span>
+            <span class="bb-metric-label">Active users</span>
+          </div>
+          <div class="bb-metric-value up">{{ totalActiveUsers || 0 }}</div>
+        </div>
+
+        <div class="bb-metric-card compact">
+          <div class="bb-metric-top">
+            <span class="bb-metric-icon neutral"><i class="bi bi-bar-chart-line"></i></span>
+            <span class="bb-metric-label">Weekly deposit</span>
+          </div>
+          <div class="bb-metric-value neutral">&#36;{{ totalWeeklyFunds | number: '1.2-2' }}</div>
+        </div>
+
+        <div class="bb-metric-card compact">
+          <div class="bb-metric-top">
+            <span class="bb-metric-icon up"><i class="bi bi-bar-chart-line"></i></span>
+            <span class="bb-metric-label">Stakes weekly profit</span>
+          </div>
+          <div class="bb-metric-value up">&#36;{{ totalWeeklyProfits || 0.0 | number: '1.2-2' }}</div>
+        </div>
+
+        <div class="bb-metric-card compact">
+          <div class="bb-metric-top">
+            <span class="bb-metric-icon up"><i class="bi bi-bar-chart"></i></span>
+            <span class="bb-metric-label">Course weekly total</span>
+          </div>
+          <div class="bb-metric-value up">&#36;{{ adminCourseStats.totalAmount || 0.0 | number: '1.2-2' }}</div>
+        </div>
+
+        <div class="bb-metric-card compact">
+          <div class="bb-metric-top">
+            <span class="bb-metric-icon up"><i class="bi bi-bar-chart"></i></span>
+            <span class="bb-metric-label">Course + stake weekly total</span>
+          </div>
+          <div class="bb-metric-value up">&#36;{{ adminCourseStats.totalAmount + totalWeeklyProfits || 0.0 | number: '1.2-2' }}</div>
+        </div>
+
+      </div>
+    </section>
+
+    <section class="bb-section">
+      <div class="bb-stat-grid bb-stat-grid-3">
+
+        <div class="bb-metric-card compact">
+          <div class="bb-metric-top">
+            <span class="bb-metric-icon"><i class="bi bi-broadcast"></i></span>
+            <span class="bb-metric-label">Signal subscribers</span>
+          </div>
+          <div class="bb-metric-value">{{ signalStats.totalSubscribers || 0 }}</div>
+          <div class="bb-metric-sub">
+            <span>Total amount</span>
+            <strong>&#36;{{ signalStats.totalAmount || 0 | number: '1.2-2' }}</strong>
+          </div>
+        </div>
+
+        <div class="bb-metric-card compact">
+          <div class="bb-metric-top">
+            <span class="bb-metric-icon"><i class="bi bi-lightning-charge-fill"></i></span>
+            <span class="bb-metric-label">Arbitrage scanner</span>
+          </div>
+          <div class="bb-metric-value">{{ arbitrageScannerStats.totalSubscribers || 0 }}</div>
+        </div>
+
+        <div class="bb-metric-card compact">
+          <div class="bb-metric-top">
+            <span class="bb-metric-icon"><i class="bi bi-mortarboard-fill"></i></span>
+            <span class="bb-metric-label">Admin course sales</span>
+          </div>
+          <div class="bb-metric-value">{{ adminCourseStats.totalSales || 0 }}</div>
+        </div>
+
+      </div>
+    </section>
+
+    <section class="bb-section">
+      <div class="bb-panel">
+        <div class="bb-panel-header">
+          <div class="bb-panel-heading">
+            <span class="bb-panel-icon"><i class="bi bi-pie-chart-fill"></i></span>
+            <div>
+              <h2>Subscriptions by plan</h2>
+              <p>Breakdown of active subscribers and revenue per billing plan</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="bb-plan-breakdown-grid">
+          <div class="bb-plan-breakdown-col">
+            <h5 class="bb-plan-breakdown-heading"><i class="bi bi-broadcast"></i> Signal</h5>
+
+            <div class="bb-table-scroll" *ngIf="signalStats.byPlan?.length; else noSignalPlans">
+              <table class="bb-plan-table">
+                <thead>
+                  <tr>
+                    <th>Plan</th>
+                    <th>Subscribers</th>
+                    <th>Amount</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let plan of signalStats.byPlan">
+                    <td><span class="bb-plan-name">{{ plan.plan }}</span></td>
+                    <td><span class="bb-plan-subs">{{ plan.subscribers }} subs</span></td>
+                    <td><span class="bb-plan-amount">&#36;{{ plan.amount | number: '1.2-2' }}</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <ng-template #noSignalPlans>
+              <div class="bb-empty-state bb-empty-state-inline">
+                <i class="bi bi-inboxes"></i>
+                <p>No signal subscriptions yet.</p>
+              </div>
+            </ng-template>
+          </div>
+        </div>
       </div>
     </section>
 
