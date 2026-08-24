@@ -1,86 +1,105 @@
 <div class="sig-dialog">
-  <h2 mat-dialog-title class="dialog-title">
-    <mat-icon>{{ isEdit ? 'edit' : 'add_chart' }}</mat-icon>
-    {{ isEdit ? 'Edit signal' : 'New signal' }}
-  </h2>
+  <header class="dialog-head">
+    <div class="dialog-head-left">
+      <span class="head-badge" [class.head-badge--edit]="isEdit">
+        <mat-icon>{{ isEdit ? 'edit' : 'add_chart' }}</mat-icon>
+      </span>
+      <div class="head-text">
+        <h2 mat-dialog-title>{{ isEdit ? 'Edit signal' : 'New signal' }}</h2>
+        <p class="head-sub">{{ isEdit ? 'Update the ticket and re-publish' : 'Build an order ticket for publishing' }}</p>
+      </div>
+    </div>
+    <button mat-icon-button type="button" class="head-close" (click)="close()" [disabled]="saving" aria-label="Close">
+      <mat-icon>close</mat-icon>
+    </button>
+  </header>
 
   <form [formGroup]="form" (ngSubmit)="save()">
     <div mat-dialog-content class="dialog-content">
 
-      <!-- Category -->
+      <!-- Category: segmented ticket toggle -->
       <div class="field-block">
         <label class="field-block-label">Category</label>
-        <mat-radio-group formControlName="category" class="category-group">
-          <mat-radio-button
-            *ngFor="let c of categories"
-            [value]="c"
-            class="category-option"
-          >
+        <mat-radio-group formControlName="category" class="segmented" aria-label="Category">
+          <mat-radio-button *ngFor="let c of categories" [value]="c" class="segmented-option" [class.is-spot]="(c | lowercase) === 'spot'" [class.is-futures]="(c | lowercase) === 'futures'">
             {{ c | titlecase }}
           </mat-radio-button>
         </mat-radio-group>
-        <mat-error *ngIf="form.get('category')?.invalid && form.get('category')?.touched" class="category-error">
+        <p class="field-error" *ngIf="form.get('category')?.invalid && form.get('category')?.touched">
           Category is required
-        </mat-error>
+        </p>
       </div>
 
       <div class="field-row">
         <!-- Pair -->
         <mat-form-field appearance="outline" class="half-field">
           <mat-label>Pair</mat-label>
-          <input matInput formControlName="pair" maxlength="50" placeholder="BTC/USDT" />
+          <input matInput formControlName="pair" maxlength="50" placeholder="BTC/USDT" class="mono-input" />
           <mat-error *ngIf="form.get('pair')?.hasError('required')">Pair is required</mat-error>
         </mat-form-field>
 
         <!-- Type -->
         <mat-form-field appearance="outline" class="half-field">
           <mat-label>Type</mat-label>
-          <mat-select formControlName="type">
-            <mat-option *ngFor="let t of types" [value]="t">{{ t | titlecase }}</mat-option>
+          <mat-select formControlName="type" panelClass="sig-select-panel">
+            <mat-option *ngFor="let t of types" [value]="t">
+              <span class="type-option" [class]="'type-option--' + (t | lowercase)">{{ t | titlecase }}</span>
+            </mat-option>
           </mat-select>
           <mat-error *ngIf="form.get('type')?.hasError('required')">Type is required</mat-error>
         </mat-form-field>
       </div>
 
-      <!-- Entry -->
-      <mat-form-field appearance="outline" class="full-field">
-        <mat-label>Entry</mat-label>
-        <input matInput type="number" formControlName="entryPrice" placeholder="Entry price" />
-        <mat-error *ngIf="form.get('entryPrice')?.hasError('required')">Entry is required</mat-error>
-      </mat-form-field>
+      <!-- Entry: hero field -->
+      <div class="hero-field">
+        <mat-form-field appearance="outline" class="full-field entry-field">
+          <mat-label>Entry price</mat-label>
+          <span matPrefix class="field-prefix">＄</span>
+          <input matInput type="number" formControlName="entryPrice" placeholder="0.00" class="mono-input mono-input--lg" />
+          <mat-error *ngIf="form.get('entryPrice')?.hasError('required')">Entry is required</mat-error>
+        </mat-form-field>
+      </div>
 
-      <!-- Take Profit -->
+      <!-- Take Profit ladder -->
       <div class="field-block">
-        <label class="field-block-label">Take Profit <span class="field-block-optional">(optional)</span></label>
-        <div class="field-row three">
-          <mat-form-field appearance="outline" class="third-field">
-            <mat-label>TP 1</mat-label>
-            <input matInput type="number" formControlName="takeProfit1" />
-          </mat-form-field>
-
-          <mat-form-field appearance="outline" class="third-field">
-            <mat-label>TP 2</mat-label>
-            <input matInput type="number" formControlName="takeProfit2" />
-          </mat-form-field>
-
-          <mat-form-field appearance="outline" class="third-field">
-            <mat-label>TP 3</mat-label>
-            <input matInput type="number" formControlName="takeProfit3" />
-          </mat-form-field>
+        <label class="field-block-label">
+          Take profit <span class="field-block-optional">optional · laddered exit</span>
+        </label>
+        <div class="ladder">
+          <div class="ladder-rail" aria-hidden="true">
+            <span class="ladder-dot ladder-dot--1"></span>
+            <span class="ladder-dot ladder-dot--2"></span>
+            <span class="ladder-dot ladder-dot--3"></span>
+          </div>
+          <div class="ladder-fields">
+            <mat-form-field appearance="outline" class="ladder-field">
+              <mat-label>TP 1</mat-label>
+              <input matInput type="number" formControlName="takeProfit1" class="mono-input" />
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="ladder-field">
+              <mat-label>TP 2</mat-label>
+              <input matInput type="number" formControlName="takeProfit2" class="mono-input" />
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="ladder-field">
+              <mat-label>TP 3</mat-label>
+              <input matInput type="number" formControlName="takeProfit3" class="mono-input" />
+            </mat-form-field>
+          </div>
         </div>
       </div>
 
       <!-- Stop Loss -->
-      <mat-form-field appearance="outline" class="full-field">
-        <mat-label>Stop Loss</mat-label>
-        <input matInput type="number" formControlName="stopLoss" />
+      <mat-form-field appearance="outline" class="full-field stop-field">
+        <mat-label>Stop loss</mat-label>
+        <mat-icon matPrefix class="stop-icon">trending_down</mat-icon>
+        <input matInput type="number" formControlName="stopLoss" placeholder="0.00" class="mono-input" />
       </mat-form-field>
 
       <!-- Analysis -->
-      <mat-form-field appearance="outline" class="full-field">
+      <mat-form-field appearance="outline" class="full-field analysis-field">
         <mat-label>Analysis</mat-label>
         <textarea matInput formControlName="analysis" rows="4" maxlength="1000"></textarea>
-        <mat-hint align="end">{{ form.get('analysis')?.value?.length || 0 }}/1000</mat-hint>
+        <mat-hint align="end" class="mono-input">{{ form.get('analysis')?.value?.length || 0 }}/1000</mat-hint>
       </mat-form-field>
 
     </div>

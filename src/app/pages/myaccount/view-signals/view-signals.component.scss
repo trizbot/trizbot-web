@@ -175,3 +175,31 @@
     font-weight: 700;
   }
 }
+
+
+
+
+.form-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 480px;
+  max-width: 100%;
+}
+
+.row {
+  display: flex;
+  gap: 12px;
+}
+
+.row.two-col mat-form-field {
+  flex: 1;
+}
+
+.row.three-col mat-form-field {
+  flex: 1;
+}
+
+.grow {
+  flex: 1;
+}

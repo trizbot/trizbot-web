@@ -76,11 +76,13 @@ export class ViewSignalsComponent implements OnInit, OnDestroy {
         takeUntil(this.destroy$)
       )
       .subscribe((res) => {
-        console.log(res);
-       this.signalsLoading = true;
+        // FIX: this was previously set back to `true` here, so the
+        // "!signalsLoading" spinner never cleared and the grid never rendered.
+        this.signalsLoading = false;
         if (!res) return;
         this.signals = res.items;
         this.total = res.total;
+        this.page = res.page;
         this.totalPages = res.totalPages;
       });
 
@@ -123,8 +125,9 @@ export class ViewSignalsComponent implements OnInit, OnDestroy {
   }
 
   riskReward(item: SignalItem): string | null {
-    if (item.targetPrice == null || item.stopLoss == null) return null;
-    const reward = Math.abs(item.targetPrice - item.entryPrice);
+    const target = item.targetPrice ?? item.takeProfit1;
+    if (target == null || item.stopLoss == null) return null;
+    const reward = Math.abs(target - item.entryPrice);
     const risk = Math.abs(item.entryPrice - item.stopLoss);
     if (risk === 0) return null;
     return (reward / risk).toFixed(2);

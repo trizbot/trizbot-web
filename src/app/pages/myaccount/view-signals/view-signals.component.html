@@ -29,8 +29,8 @@
       <div class="card-top">
         <div class="pair-block">
           <span class="pair-name">{{ item.pair }}</span>
-          <span class="badge category-badge" [style.background]="categoryColors[item.category]">
-            {{ categoryLabels[item.category] }}
+          <span class="badge category-badge" [style.background]="categoryColors[item.category] || '#616161'">
+            {{ categoryLabels[item.category] || item.category }}
           </span>
           <span class="badge type-badge" *ngIf="item.type" [style.background]="typeColors[item.type]">
             {{ typeLabels[item.type] }}

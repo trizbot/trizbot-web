@@ -1,88 +1,429 @@
-.sig-dialog {
-  --sig-bg:            #FFFFFF;
-  --sig-surface:       #FFFFFF;
-  --sig-elevated:      #F5F5F5;
-  --sig-border:        #D9D9D9;
-  --sig-border-soft:   #E5E5E5;
-  --sig-text:          #000000;
-  --sig-text-muted:    #4A4A4A;
-  --sig-text-faint:    #6B6B6B;
-  --sig-gold:          #C9A227;
-  --sig-gold-soft:     rgba(201, 162, 39, 0.12);
-  --sig-buy:           #2FBF71;
-  --sig-buy-soft:      rgba(47, 191, 113, 0.12);
-  --sig-sell:          #E5484D;
-  --sig-sell-soft:     rgba(229, 72, 77, 0.12);
+/*
+  Order-ticket theme for the signal create/edit dialog — light surface.
+  Fonts: add once, globally (index.html <head> or angular.json styles):
+    https://fonts.googleapis.com/css2?family=Sora:wght@600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap
+*/
 
-  --font-display: 'General Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-body:    'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-mono:    'IBM Plex Mono', 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+:host {
+  --canvas: #ffffff;
+  --surface: #f6f7f9;
+  --surface-raised: #ffffff;
+  --input-bg: #f5f6f8;
+  --border: #e3e6ec;
+  --border-strong: #cbd0da;
+  --text-primary: #171a21;
+  --text-muted: #626b80;
+  --text-faint: #8991a3;
+  --accent: #0f9d76;
+  --accent-dim: #0c7f5f;
+  --accent-soft: rgba(15, 157, 118, 0.09);
+  --accent-rgb: 15, 157, 118;
+  --danger: #d6304f;
+  --danger-soft: rgba(214, 48, 79, 0.08);
+  --info: #3b6fe0;
+  --info-soft: rgba(59, 111, 224, 0.09);
+  --radius: 10px;
+  --font-display: 'Sora', 'Inter', sans-serif;
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'IBM Plex Mono', 'SFMono-Regular', Menlo, monospace;
 
-  background: var(--sig-surface);
-  color: var(--sig-text);
-  border-radius: 14px;
-  min-width: 360px;
-  max-width: 440px;
+  display: block;
+  background: var(--canvas);
+  color: var(--text-primary);
   font-family: var(--font-body);
+  width: 100%;
+  max-width: 560px;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(20, 24, 33, 0.06);
 }
 
-.mono-num {
-  font-family: var(--font-mono);
-  font-variant-numeric: tabular-nums;
+/* ---------- Header ---------- */
+
+.dialog-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 20px 22px 16px;
+  border-bottom: 1px solid var(--border);
+  background: linear-gradient(180deg, rgba(var(--accent-rgb), 0.05), transparent 70%);
 }
 
-.dialog-title {
+.dialog-head-left {
   display: flex;
   align-items: center;
-  gap: 10px;
-  font-family: var(--font-display);
-  font-size: 17px;
-  font-weight: 650;
-  padding: 20px 22px 4px;
-  margin: 0;
-  color: var(--sig-text);
+  gap: 14px;
+}
+
+.head-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  border-radius: 10px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  border: 1px solid rgba(var(--accent-rgb), 0.25);
 
   mat-icon {
-    color: var(--sig-gold);
     font-size: 20px;
     width: 20px;
     height: 20px;
   }
+
+  &--edit {
+    background: var(--info-soft);
+    border-color: rgba(59, 111, 224, 0.25);
+    color: var(--info);
+  }
 }
 
+.head-text {
+  h2[mat-dialog-title] {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    color: var(--text-primary);
+    line-height: 1.3;
+  }
+}
+
+.head-sub {
+  margin: 2px 0 0;
+  font-size: 12.5px;
+  color: var(--text-muted);
+}
+
+.head-close {
+  color: var(--text-faint);
+  &:hover:not(:disabled) {
+    color: var(--text-primary);
+  }
+}
+
+/* ---------- Content ---------- */
+
 .dialog-content {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  padding: 16px 22px 4px;
+  padding: 20px 22px 4px;
+  max-height: 62vh;
+  overflow-y: auto;
+  background: var(--canvas);
+
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: var(--border-strong);
+    border-radius: 8px;
+  }
+}
+
+.field-block {
+  margin-bottom: 18px;
+}
+
+.field-block-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+.field-block-optional {
+  text-transform: none;
+  letter-spacing: normal;
+  font-weight: 400;
+  color: var(--text-faint);
+}
+
+.field-error {
+  margin: 6px 2px 0;
+  font-size: 12px;
+  color: var(--danger);
 }
 
 .field-row {
   display: flex;
   gap: 12px;
+  margin-bottom: 4px;
 
-  &.three .third-field { flex: 1; }
+  &.three {
+    gap: 10px;
+  }
 }
 
-.half-field { flex: 1; }
-.full-field { width: 100%; }
+.half-field {
+  flex: 1;
+  min-width: 0;
+}
+
+.full-field {
+  width: 100%;
+}
+
+.mono-input {
+  font-family: var(--font-mono) !important;
+  letter-spacing: 0.01em;
+}
+
+.mono-input--lg {
+  font-size: 22px !important;
+  font-weight: 600;
+}
+
+/* ---------- Segmented category toggle ---------- */
+
+.segmented {
+  display: inline-flex;
+  padding: 3px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  gap: 2px;
+}
+
+::ng-deep .sig-dialog .segmented-option {
+  .mdc-radio {
+    display: none;
+  }
+
+  .mdc-form-field {
+    padding: 7px 18px;
+    border-radius: 7px;
+    font-family: var(--font-body);
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  &.mat-mdc-radio-checked .mdc-form-field {
+    background: var(--surface-raised);
+    color: var(--text-primary);
+    box-shadow: inset 0 0 0 1px var(--border-strong), 0 1px 2px rgba(20, 24, 33, 0.06);
+  }
+
+  &.is-spot.mat-mdc-radio-checked .mdc-form-field {
+    color: var(--accent);
+  }
+
+  &.is-futures.mat-mdc-radio-checked .mdc-form-field {
+    color: var(--info);
+  }
+}
+
+/* ---------- Take profit ladder (signature element) ---------- */
+
+.ladder {
+  display: flex;
+  gap: 14px;
+}
+
+.ladder-rail {
+  position: relative;
+  width: 12px;
+  flex-shrink: 0;
+  margin-top: 8px;
+
+  &::before {
+    content: '';
+    position: absolute;
+    left: 5px;
+    top: 6px;
+    bottom: 6px;
+    width: 2px;
+    background: linear-gradient(180deg, var(--accent), var(--accent-dim) 80%);
+    opacity: 0.45;
+    border-radius: 2px;
+  }
+}
+
+.ladder-dot {
+  position: absolute;
+  left: 0;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid var(--canvas);
+  background: var(--accent);
+  box-shadow: 0 0 0 1px var(--border);
+
+  &--1 { top: 6px; opacity: 1; }
+  &--2 { top: 50%; transform: translateY(-50%); opacity: 0.75; }
+  &--3 { bottom: 6px; opacity: 0.5; }
+}
+
+.ladder-fields {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ladder-field {
+  width: 100%;
+}
+
+/* ---------- Stop loss ---------- */
+
+.stop-field {
+  margin-top: 4px;
+}
+
+.stop-icon {
+  color: var(--danger);
+  opacity: 0.9;
+  margin-right: 4px;
+}
+
+/* ---------- Analysis ---------- */
+
+.analysis-field {
+  margin-top: 4px;
+  margin-bottom: 8px;
+}
+
+/* ---------- Material field re-skin ---------- */
+
+::ng-deep .sig-dialog {
+  .mat-mdc-form-field {
+    width: 100%;
+  }
+
+  .mat-mdc-text-field-wrapper {
+    background: var(--input-bg) !important;
+    border-radius: 8px !important;
+  }
+
+  .mdc-notched-outline__leading,
+  .mdc-notched-outline__notch,
+  .mdc-notched-outline__trailing {
+    border-color: var(--border) !important;
+  }
+
+  .mat-mdc-form-field:hover .mdc-notched-outline__leading,
+  .mat-mdc-form-field:hover .mdc-notched-outline__notch,
+  .mat-mdc-form-field:hover .mdc-notched-outline__trailing {
+    border-color: var(--border-strong) !important;
+  }
+
+  .mat-focused .mdc-notched-outline__leading,
+  .mat-focused .mdc-notched-outline__notch,
+  .mat-focused .mdc-notched-outline__trailing {
+    border-color: var(--accent) !important;
+    border-width: 1.5px !important;
+  }
+
+  .mat-mdc-form-field-label,
+  .mdc-floating-label {
+    color: var(--text-faint) !important;
+    font-size: 13px;
+  }
+
+  .mat-focused .mdc-floating-label {
+    color: var(--accent) !important;
+  }
+
+  input.mat-mdc-input-element,
+  textarea.mat-mdc-input-element {
+    color: var(--text-primary) !important;
+    caret-color: var(--accent);
+  }
+
+  input.mat-mdc-input-element::placeholder {
+    color: var(--text-faint);
+    opacity: 0.8;
+  }
+
+  .mat-mdc-form-field-hint {
+    color: var(--text-faint) !important;
+  }
+
+  .mat-mdc-form-field-error {
+    color: var(--danger) !important;
+    font-size: 12px;
+  }
+
+  .field-prefix {
+    color: var(--text-faint);
+    font-family: var(--font-mono);
+    margin-right: 2px;
+  }
+}
+
+/* mat-select overlay panel is appended to <body>, so it needs a global (unscoped) rule */
+::ng-deep .sig-select-panel {
+  background: #ffffff;
+  border: 1px solid #cbd0da;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(20, 24, 33, 0.12);
+
+  .mat-mdc-option {
+    font-family: 'Inter', sans-serif;
+    color: #171a21;
+    font-size: 13.5px;
+
+    &:hover:not(.mdc-list-item--disabled) {
+      background: #f2f3f5;
+    }
+
+    &.mdc-list-item--selected {
+      background: rgba(15, 157, 118, 0.09);
+    }
+  }
+}
+
+.type-option {
+  &--buy, &--long { color: var(--accent); }
+  &--sell, &--short { color: var(--danger); }
+}
+
+/* ---------- Actions ---------- */
 
 .dialog-actions {
   display: flex;
   justify-content: flex-end;
   gap: 10px;
-  padding: 18px 22px 22px;
+  padding: 16px 22px 20px;
+  border-top: 1px solid var(--border);
+  background: var(--surface);
 }
 
 .btn-ghost {
+  color: var(--text-muted) !important;
+  border-color: var(--border-strong) !important;
+  font-weight: 600;
   border-radius: 8px !important;
-  color: var(--sig-text-muted) !important;
-  border-color: var(--sig-border) !important;
+
+  &:hover:not(:disabled) {
+    color: var(--text-primary) !important;
+    background: rgba(20, 24, 33, 0.03) !important;
+  }
 }
 
 .btn-primary {
+  background: var(--accent) !important;
+  color: #ffffff !important;
+  font-weight: 700;
   border-radius: 8px !important;
   min-width: 132px;
+
+  &:hover:not(:disabled) {
+    background: var(--accent-dim) !important;
+  }
+
+  &:disabled {
+    opacity: 0.55;
+  }
 }
 
 .btn-loading {
@@ -94,192 +435,50 @@
 .btn-spinner {
   width: 14px;
   height: 14px;
-  border: 2px solid rgba(0, 0, 0, 0.15);
-  border-top-color: #000;
   border-radius: 50%;
-  animation: sig-spin 0.7s linear infinite;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-top-color: #ffffff;
+  animation: spin 0.7s linear infinite;
 }
 
-@keyframes sig-spin {
+@keyframes spin {
   to { transform: rotate(360deg); }
 }
 
-.dialog-error {
-  margin: -4px 0 0;
-  font-size: 12.5px;
-  color: var(--sig-sell);
-  background: var(--sig-sell-soft);
-  border: 1px solid rgba(229, 72, 77, 0.3);
-  border-radius: 8px;
-  padding: 8px 12px;
-}
+/* ---------- Responsive ---------- */
 
-// ------------------------------------------------------------
-// Wallet transfer specific
-// ------------------------------------------------------------
-.plan-summary {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  background: var(--sig-elevated);
-  border: 1px solid var(--sig-border-soft);
-  border-radius: 10px;
-  padding: 14px 16px;
-}
-
-.plan-summary-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 13px;
-
-  &.total {
-    padding-top: 8px;
-    margin-top: 2px;
-    border-top: 1px solid var(--sig-border-soft);
-    font-size: 14px;
-  }
-}
-
-.plan-summary-label {
-  color: var(--sig-text-faint);
-}
-
-.plan-summary-name,
-.plan-summary-value {
-  color: var(--sig-text);
-  font-weight: 600;
-}
-
-.plan-summary-amount {
-  color: var(--sig-gold);
-  font-weight: 650;
-  font-size: 15px;
-}
-
-.wallet-balance-card {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  border: 1px solid rgba(47, 191, 113, 0.25);
-  background: var(--sig-buy-soft);
-  border-radius: 10px;
-  padding: 14px 16px;
-
-  &.insufficient {
-    border-color: rgba(229, 72, 77, 0.3);
-    background: var(--sig-sell-soft);
-  }
-}
-
-.wallet-balance-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 13px;
-
-  &.muted {
-    color: var(--sig-text-faint);
-    font-size: 12px;
-  }
-}
-
-.wallet-balance-label {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  color: var(--sig-text-muted);
-
-  mat-icon {
-    font-size: 16px;
-    width: 16px;
-    height: 16px;
-    color: var(--sig-buy);
-  }
-}
-
-.wallet-balance-amount {
-  font-weight: 650;
-  font-size: 15px;
-  color: var(--sig-text);
-}
-
-.insufficient-notice {
-  display: flex;
-  gap: 10px;
-  padding: 12px 14px;
-  background: var(--sig-sell-soft);
-  border: 1px solid rgba(229, 72, 77, 0.3);
-  border-radius: 10px;
-
-  mat-icon {
-    color: var(--sig-sell);
-    font-size: 18px;
-    width: 18px;
-    height: 18px;
-    flex-shrink: 0;
-  }
-}
-
-.insufficient-notice-text {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  font-size: 12.5px;
-
-  strong {
-    color: var(--sig-text);
-    font-size: 13px;
-  }
-
-  span {
-    color: var(--sig-text-muted);
-  }
-}
-
-@media (max-width: 480px) {
-  .sig-dialog {
-    min-width: 0;
-    width: 100%;
+@media (max-width: 599px) {
+  :host {
     max-width: 100%;
-    border-radius: 14px 14px 0 0;
+    border-radius: 0;
   }
-  .field-row { flex-direction: column; }
-}
 
+  .dialog-head {
+    padding: 16px 16px 14px;
+  }
 
+  .dialog-content {
+    padding: 16px 16px 4px;
+    max-height: 68vh;
+  }
 
-// Add these rules to signal-form-dialog.component.scss alongside your
-// existing .field-row / .third-field / .full-field styles.
+  .field-row {
+    flex-direction: column;
+    gap: 4px;
+  }
 
-.field-block {
-  margin-bottom: 16px;
+  .dialog-actions {
+    padding: 14px 16px 16px;
 
-  .field-block-label {
-    display: block;
-    font-size: 12px;
-    font-weight: 500;
-    color: rgba(0, 0, 0, 0.6);
-    margin-bottom: 6px;
-
-    .field-block-optional {
-      font-weight: 400;
-      color: rgba(0, 0, 0, 0.38);
+    .btn-ghost,
+    .btn-primary {
+      flex: 1;
     }
   }
 }
 
-.category-group {
-  display: flex;
-  gap: 24px;
-}
-
-.category-option {
-  font-size: 14px;
-}
-
-.category-error {
-  font-size: 12px;
-  color: var(--mat-error-color, #f44336);
-  margin-top: 4px;
+@media (prefers-reduced-motion: reduce) {
+  .btn-spinner {
+    animation: none;
+  }
 }

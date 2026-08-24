@@ -30,7 +30,7 @@ export class ViewSignalsService {
     if (params.limit != null) httpParams = httpParams.set('limit', params.limit);
 
     return this.http
-      .get<ApiListResponse<RawSignal>>(`${this.baseUrl}/admin` , { params: httpParams })
+      .get<ApiListResponse<RawSignal>>(`${this.baseUrl}/admin`, { params: httpParams })
       .pipe(
         map((res) => ({
           items: (res.data ?? []).map(normalizeSignal),
