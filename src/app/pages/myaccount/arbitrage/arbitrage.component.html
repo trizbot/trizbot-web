@@ -3,14 +3,16 @@
   <div class="arb-header">
     <div>
       <h2 class="arb-title">Arbitrage Opportunities</h2>
-      <p class="arb-subtitle" *ngIf="accessState === 'unlocked'">
+      <h4 *ngIf="canViewArbitrage">Status {{ arbitradeState }}</h4>
+
+      <p class="arb-subtitle" *ngIf="canViewArbitrage">
         Live cross-exchange spreads &middot; refreshes every {{ refreshIntervalSeconds }}s
       </p>
-      <p class="arb-subtitle" *ngIf="accessState === 'locked'">
-        Unlocks with an active arbitrage subscription
+      <p class="arb-subtitle" *ngIf="!canViewArbitrage && !arbitrageSubscriptionLoading">
+        Free preview &middot; higher-profit opportunities are subscriber-only
       </p>
     </div>
-    <div class="arb-header-actions" *ngIf="accessState === 'unlocked'">
+    <div class="arb-header-actions">
       <span class="last-updated" *ngIf="lastUpdated">
         <span class="live-dot"></span>
         Updated {{ lastUpdated | date: 'HH:mm:ss' }}
@@ -22,33 +24,16 @@
     </div>
   </div>
 
-  <!-- CHECKING: single, always-resolving state -->
-  <div class="gate-loading" *ngIf="accessState === 'checking'">
+  <!-- Resolving access — the only gate in the whole component. Once this
+       clears, the full panel (tabs, filters, table) renders; individual
+       high-profit rows are locked per-row via isSpreadLocked(), same as
+       the trader dashboard. -->
+  <div class="gate-loading" *ngIf="arbitrageSubscriptionLoading">
     <mat-spinner diameter="24" strokeWidth="3"></mat-spinner>
     <span>Checking your arbitrage subscription&hellip;</span>
   </div>
 
-  <!-- LOCKED: no active subscription (also the safe fallback if the check failed) -->
-  <div class="locked-panel" *ngIf="accessState === 'locked'">
-    <div class="locked-icon"><mat-icon>lock</mat-icon></div>
-    <h3>Unlock the arbitrage scanner</h3>
-    <p>
-      Live cross-exchange spreads and one-click trade execution are reserved for traders
-      with an active arbitrage subscription. Subscribe to any plan to start scanning.
-    </p>
-    <div class="locked-actions">
-      <button mat-flat-button color="primary" type="button" class="fw-bold" (click)="openArbitrageSubscribePrompt()">
-        View subscription plans
-      </button>
-      <button mat-stroked-button type="button" (click)="checkAccess()">
-        <mat-icon>refresh</mat-icon>
-        Re-check access
-      </button>
-    </div>
-  </div>
-
-  <!-- UNLOCKED: full arbitrage experience -->
-  <ng-container *ngIf="accessState === 'unlocked'">
+  <ng-container *ngIf="!arbitrageSubscriptionLoading">
 
     <div class="active-plan-banner" *ngIf="activeArbitrageSubscription">
       <mat-icon>verified</mat-icon>
@@ -78,7 +63,7 @@
 
     <form class="filters-bar" [formGroup]="filterForm">
       <mat-form-field appearance="outline" class="filter-field">
-        <mat-select formControlName="token" (selectionChange)="applyFilters()">
+        <mat-select formControlName="token">
           <mat-option value="">All tokens</mat-option>
           <mat-option *ngFor="let t of tokenOptions" [value]="t">{{ t }}</mat-option>
         </mat-select>
@@ -91,7 +76,6 @@
           min="0"
           placeholder="Min spread %"
           formControlName="minSpreadPercent"
-          (change)="applyFilters()"
         />
       </mat-form-field>
     </form>
@@ -129,44 +113,61 @@
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let o of pagedOpportunities; trackBy: trackByOpportunity">
+            <tr
+              *ngFor="let o of pagedOpportunities; trackBy: trackByOpportunity"
+              [class.row-locked]="isSpreadLocked(o)"
+            >
               <td class="token-cell" data-label="Token">{{ o.token }}</td>
 
-              <td [attr.data-label]="activeConfig.label">
-                <span class="leg-badge" [ngClass]="isActiveBuyLeg(o) ? 'buy' : 'sell'">
-                  {{ isActiveBuyLeg(o) ? 'BUY' : 'SELL' }}
-                </span>
-                <span class="price-val">&#36;{{ activePriceFor(o) | number: '1.2-6' }}</span>
-              </td>
+              <ng-container *ngIf="!isSpreadLocked(o); else lockedRowCells">
+                <td [attr.data-label]="activeConfig.label">
+                  <span class="leg-badge" [ngClass]="isActiveBuyLeg(o) ? 'buy' : 'sell'">
+                    {{ isActiveBuyLeg(o) ? 'BUY' : 'SELL' }}
+                  </span>
+                  <span class="price-val">&#36;{{ activePriceFor(o) | number: '1.2-6' }}</span>
+                </td>
 
-              <td data-label="Counterparty">
-                <div class="counterparty-cell">
-                  <span class="counterparty-dot" [style.background]="counterpartyColor(o)"></span>
-                  <span class="counterparty-name">{{ counterpartyLabel(o) }}</span>
-                  <span class="price-val muted">&#36;{{ counterpartyPriceFor(o) | number: '1.2-6' }}</span>
-                </div>
-              </td>
+                <td data-label="Counterparty">
+                  <div class="counterparty-cell">
+                    <span class="counterparty-dot" [style.background]="counterpartyColor(o)"></span>
+                    <span class="counterparty-name">{{ counterpartyLabel(o) }}</span>
+                    <span class="price-val muted">&#36;{{ counterpartyPriceFor(o) | number: '1.2-6' }}</span>
+                  </div>
+                </td>
 
-              <td data-label="Spread">
-                <span class="spread-pill" [ngClass]="spreadTier(o.spreadPercent)">
-                  {{ o.spreadPercent | number: '1.2-2' }}%
-                </span>
-              </td>
+                <td data-label="Spread">
+                  <span class="spread-pill" [ngClass]="spreadTier(o.spreadPercent)">
+                    {{ o.spreadPercent | number: '1.2-2' }}%
+                  </span>
+                </td>
 
-              <td class="profit-cell" data-label="Est. Profit">&#36;{{ o.estimatedProfit | number: '1.2-2' }}</td>
+                <td class="profit-cell" data-label="Est. Profit">&#36;{{ o.estimatedProfit | number: '1.2-2' }}</td>
 
-              <td class="action-cell">
-                <button
-                  mat-flat-button
-                  type="button"
-                  class="fw-bold trade-btn"
-                  [style.background]="activeConfig.colorPrimary"
-                  [style.color]="activeConfig.textOnPrimary"
-                  (click)="openTradeDialog(o)"
-                >
-                  Trade
-                </button>
-              </td>
+                <td class="action-cell">
+                  <button
+                    mat-flat-button
+                    type="button"
+                    class="fw-bold trade-btn"
+                    [style.background]="activeConfig.colorPrimary"
+                    [style.color]="activeConfig.textOnPrimary"
+                    (click)="openTradeDialog(o)"
+                  >
+                    Trade
+                  </button>
+                </td>
+              </ng-container>
+
+              <ng-template #lockedRowCells>
+                <td colspan="5" class="locked-cell">
+                  <div class="row-lock-content">
+                    <mat-icon>lock</mat-icon>
+                    <span>Subscribe to unlock this opportunity</span>
+                    <button mat-flat-button color="primary" type="button" class="fw-bold" (click)="openArbitrageSubscribePrompt()">
+                      Unlock
+                    </button>
+                  </div>
+                </td>
+              </ng-template>
             </tr>
           </tbody>
         </table>
@@ -174,7 +175,11 @@
 
       <!-- Cards — mobile -->
       <div class="opp-cards" *ngIf="!loading && !error && visibleOpportunities.length > 0">
-        <div class="opp-card" *ngFor="let o of pagedOpportunities; trackBy: trackByOpportunity">
+        <div
+          class="opp-card"
+          *ngFor="let o of pagedOpportunities; trackBy: trackByOpportunity"
+          [class.row-locked]="isSpreadLocked(o)"
+        >
           <div class="opp-card-top">
             <span class="token-cell">{{ o.token }}</span>
             <span class="spread-pill" [ngClass]="spreadTier(o.spreadPercent)">
@@ -182,33 +187,45 @@
             </span>
           </div>
 
-          <div class="opp-card-row">
-            <div class="opp-leg">
-              <span class="leg-badge" [ngClass]="isActiveBuyLeg(o) ? 'buy' : 'sell'">
-                {{ isActiveBuyLeg(o) ? 'BUY' : 'SELL' }}
-              </span>
-              <span class="price-val">&#36;{{ activePriceFor(o) | number: '1.2-6' }}</span>
+          <ng-container *ngIf="!isSpreadLocked(o); else lockedCardContent">
+            <div class="opp-card-row">
+              <div class="opp-leg">
+                <span class="leg-badge" [ngClass]="isActiveBuyLeg(o) ? 'buy' : 'sell'">
+                  {{ isActiveBuyLeg(o) ? 'BUY' : 'SELL' }}
+                </span>
+                <span class="price-val">&#36;{{ activePriceFor(o) | number: '1.2-6' }}</span>
+              </div>
+              <div class="opp-leg">
+                <span class="counterparty-dot" [style.background]="counterpartyColor(o)"></span>
+                <span class="counterparty-name">{{ counterpartyLabel(o) }}</span>
+                <span class="price-val muted">&#36;{{ counterpartyPriceFor(o) | number: '1.2-6' }}</span>
+              </div>
             </div>
-            <div class="opp-leg">
-              <span class="counterparty-dot" [style.background]="counterpartyColor(o)"></span>
-              <span class="counterparty-name">{{ counterpartyLabel(o) }}</span>
-              <span class="price-val muted">&#36;{{ counterpartyPriceFor(o) | number: '1.2-6' }}</span>
-            </div>
-          </div>
 
-          <div class="opp-card-bottom">
-            <span class="profit-cell">Est. profit &#36;{{ o.estimatedProfit | number: '1.2-2' }}</span>
-            <button
-              mat-flat-button
-              type="button"
-              class="fw-bold trade-btn"
-              [style.background]="activeConfig.colorPrimary"
-              [style.color]="activeConfig.textOnPrimary"
-              (click)="openTradeDialog(o)"
-            >
-              Trade
-            </button>
-          </div>
+            <div class="opp-card-bottom">
+              <span class="profit-cell">Est. profit &#36;{{ o.estimatedProfit | number: '1.2-2' }}</span>
+              <button
+                mat-flat-button
+                type="button"
+                class="fw-bold trade-btn"
+                [style.background]="activeConfig.colorPrimary"
+                [style.color]="activeConfig.textOnPrimary"
+                (click)="openTradeDialog(o)"
+              >
+                Trade
+              </button>
+            </div>
+          </ng-container>
+
+          <ng-template #lockedCardContent>
+            <div class="row-lock-content">
+              <mat-icon>lock</mat-icon>
+              <span>Subscribe to unlock this opportunity</span>
+              <button mat-flat-button color="primary" type="button" class="fw-bold" (click)="openArbitrageSubscribePrompt()">
+                Unlock
+              </button>
+            </div>
+          </ng-template>
         </div>
       </div>
 
