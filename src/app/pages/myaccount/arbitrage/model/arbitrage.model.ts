@@ -3,16 +3,18 @@ export interface ArbitrageOpportunity {
   token: string;
   buyExchange: string;
   sellExchange: string;
-  buyPrice: number;
-  sellPrice: number;
-  spreadPercent: number;
-  spreadAmount: number;
-  estimatedProfit: number;
+  buyPrice: number | null;       
+  sellPrice: number | null;       
+  spreadPercent: number;         
+  spreadAmount: number | null;   
+  estimatedProfit: number | null; 
   buyVolume24h?: number;
   sellVolume24h?: number;
   buyLiquidity?: number;
   sellLiquidity?: number;
   updatedAt: string;
+  locked: boolean;
+  prices: { exchange: string; price: number }[]; 
 }
 
 export interface GetOpportunitiesParams {

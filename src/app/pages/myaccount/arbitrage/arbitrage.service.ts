@@ -22,12 +22,13 @@ interface RawPricePoint {
 interface RawOpportunity {
   token: string;
   buyExchange: string;
-  buyPrice: number;
+  buyPrice: number | null;
   sellExchange: string;
-  sellPrice: number;
-  spread: number;          // raw $ diff for 1 unit, NOT spreadAmount in the model's sense necessarily
+  sellPrice: number | null;
+  spread: number | null;
   spreadPercent: number;
   prices: RawPricePoint[];
+  locked: boolean;
 }
 
 interface RawApiMeta {
@@ -110,21 +111,21 @@ export class ArbitrageService {
   }
 
   private mapOpportunity(raw: RawOpportunity, updatedAt: string): ArbitrageOpportunity {
- 
-    return {
-      id: `${raw.token}-${raw.buyExchange}-${raw.sellExchange}-${updatedAt}`,
-      token: raw.token,
-      buyExchange: raw.buyExchange,
-      sellExchange: raw.sellExchange,
-      buyPrice: raw.buyPrice,
-      sellPrice: raw.sellPrice,
-      spreadPercent: raw.spreadPercent,
-      spreadAmount: raw.spread,
-      // Placeholder only — real profit needs quoteAmount, fees, and slippage.
-      estimatedProfit: raw.spread,
-      updatedAt,
-    };
-  }
+  return {
+    id: `${raw.token}-${raw.buyExchange}-${raw.sellExchange}-${updatedAt}`,
+    token: raw.token,
+    buyExchange: raw.buyExchange,
+    sellExchange: raw.sellExchange,
+    buyPrice: raw.buyPrice,
+    sellPrice: raw.sellPrice,
+    spreadPercent: raw.spreadPercent,
+    spreadAmount: raw.spread,
+    estimatedProfit: raw.spread,
+    updatedAt,
+    locked: raw.locked,
+    prices: raw.prices ?? [],
+  };
+}
 
   placeTrade(payload: PlaceTradeReqBody): Observable<PlaceTradeResBody> {
     return this.http.post<PlaceTradeResBody>(`${environment.apiBaseUrl}/arbitrage/trade`, payload).pipe(

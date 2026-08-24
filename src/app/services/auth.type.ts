@@ -138,7 +138,9 @@ export type GetTraderResBody = {
     tradeRewardCashWalletBalance: any;
       
   isWalletDisabled?: boolean;
-
+  arbitradeStatus: boolean;
+  arbitradeState: string;
+  arbitradeExpiry: string;
   
   isWithdrawalDisabled?: boolean;
  

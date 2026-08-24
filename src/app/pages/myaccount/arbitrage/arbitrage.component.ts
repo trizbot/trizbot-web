@@ -4,8 +4,8 @@ import { FormControl, FormGroup, FormsModule, ReactiveFormsModule } from '@angul
 import { Router, RouterModule } from '@angular/router';
 
 import { MatDialog } from '@angular/material/dialog';
-import { Subject, interval } from 'rxjs';
-import { debounceTime, takeUntil } from 'rxjs/operators';
+import { Subject, Subscription, interval, of } from 'rxjs';
+import { catchError, debounceTime, takeUntil, timeout } from 'rxjs/operators';
 
 import { MaterialModule } from '../../../material.module';
 import { SharedService } from '../../../shared/shared.service';
@@ -14,6 +14,7 @@ import { PlaceTradeDialogComponent } from './place-trade-dialog/place-trade-dial
 import {
   SubscribePromptDialogComponent,
   SubscribePromptDialogData,
+  SubscribePromptPlan,
 } from './subscribe-dialog/subscribe-prompt-dialog.component';
 import {
   ArbitrageOpportunity,
@@ -22,21 +23,21 @@ import {
   ExchangeConfig,
 } from './model/arbitrage.model';
 
-// Subscription gate deps — mirrors the same rule used on the merged
-// dashboard view: the scanner unlocks with an active Signals subscription,
-// or automatically for super admins.
 import { TraderService } from '../../../appstate/trader.service';
 import { GetTraderResBody } from '../../../services/auth.type';
-import { SignalsService } from '../signals/signals.service';
 import {
-  MySubscription,
-  SubscriptionPeriodStatus,
-  getSubscriptionPeriodStatus,
-} from '../signals/model/signal.model';
+  ARBITRAGE_SUBSCRIPTION_PLANS,
+  MyArbitrageSubscription,
+  ArbitrageSubscriptionPlan,
+  getArbitrageSubscriptionPeriodStatus,
+  ArbitrageSubscriptionPeriodStatus,
+} from './model/arbitrage-subscription.model';
 
 const AUTO_REFRESH_SECONDS = 20;
-const PAGE_SIZE_OPTIONS = [5,10,15, 25,20,30,35,40, 50] as const;
+const PAGE_SIZE_OPTIONS = [5, 10, 15, 25, 20, 30, 35, 40, 50] as const;
 
+/** Single source of truth for what the arbitrage panel should show. */
+type ArbAccessState = 'checking' | 'unlocked' | 'locked';
 
 @Component({
   selector: 'app-arbitrage',
@@ -48,14 +49,13 @@ const PAGE_SIZE_OPTIONS = [5,10,15, 25,20,30,35,40, 50] as const;
 export class ArbitrageComponent implements OnInit, OnDestroy {
   private sharedService = inject(SharedService);
   private traderService = inject(TraderService);
-  private signalsService = inject(SignalsService);
   private destroy$ = new Subject<void>();
 
   readonly exchangeIds = EXCHANGE_IDS;
   readonly exchangeConfig = EXCHANGE_CONFIG;
   readonly refreshIntervalSeconds = AUTO_REFRESH_SECONDS;
   readonly pageSizeOptions = PAGE_SIZE_OPTIONS;
-
+  readonly arbSubscriptionPlans = ARBITRAGE_SUBSCRIPTION_PLANS;
 
   tokenOptions: string[] = [];
   private knownTokens = new Set<string>();
@@ -77,19 +77,30 @@ export class ArbitrageComponent implements OnInit, OnDestroy {
   currentPage = 1;
   pageSize: number = PAGE_SIZE_OPTIONS[1]; // default 25
 
-  // ---------------------------------------------------------------------
-  // Access gate — requires an active Signals subscription (or super admin)
-  // ---------------------------------------------------------------------
+
+  accessState: ArbAccessState = 'checking';
   isSuperAdmin = false;
-  hasActiveSignalSubscription = false;
-  signalSubscriptionLoading = true;
-  activeSignalSubscription: MySubscription | null = null;
+  activeArbitrageSubscription: MyArbitrageSubscription | null = null;
 
-  private arbBootstrapped = false;
-  private traderResolved = false;
+  arbitradeStatus: boolean;
+  arbitradeState: string;
+  arbitradeExpiry: string;
 
-  get canViewArbitrage(): boolean {
-    return this.hasActiveSignalSubscription || this.isSuperAdmin;
+  countdownToArbExpiry = '';
+  private arbCountdownSub: Subscription | null = null;
+
+   get canViewArbitrage(): boolean {
+    if (!this.arbitradeStatus){
+      return this.accessState == 'unlocked';
+    }
+    return this.accessState == 'unlocked';
+  }
+
+  get arbSubscriptionPlanList(): { key: ArbitrageSubscriptionPlan; label: string; price: number; durationDays: number }[] {
+    return (Object.keys(this.arbSubscriptionPlans) as ArbitrageSubscriptionPlan[]).map((key) => ({
+      key,
+      ...this.arbSubscriptionPlans[key],
+    }));
   }
 
   constructor(
@@ -99,8 +110,8 @@ export class ArbitrageComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    this.checkTraderStatus();
-    this.checkSignalSubscription();
+    // this.checkAccess();
+this.getCurrentTrader();
 
     interval(1000)
       .pipe(takeUntil(this.destroy$))
@@ -109,7 +120,6 @@ export class ArbitrageComponent implements OnInit, OnDestroy {
           this.secondsToRefresh = AUTO_REFRESH_SECONDS;
           return;
         }
-
         this.secondsToRefresh -= 1;
         if (this.secondsToRefresh <= 0) {
           this.secondsToRefresh = AUTO_REFRESH_SECONDS;
@@ -120,102 +130,165 @@ export class ArbitrageComponent implements OnInit, OnDestroy {
     this.filterForm.valueChanges
       .pipe(debounceTime(250), takeUntil(this.destroy$))
       .subscribe(() => {
-        if (this.canViewArbitrage) {
-          this.loadOpportunities();
-        }
+        if (this.canViewArbitrage) this.applyFilters();
       });
   }
 
   ngOnDestroy(): void {
+    this.arbCountdownSub?.unsubscribe();
     this.destroy$.next();
     this.destroy$.complete();
   }
 
-  // =========================================================================
-  // SIGNAL SUBSCRIPTION GATE
-  // =========================================================================
-
-  private checkTraderStatus(): void {
-    this.traderService.getTrader().subscribe({
-      next: (res: GetTraderResBody) => {
-        this.isSuperAdmin = !!res?.data?.isSuperAdmin;
-        this.traderResolved = true;
-        this.maybeLoadArbitrage();
-      },
-      error: () => {
-        this.isSuperAdmin = false;
-        this.traderResolved = true;
-        this.maybeLoadArbitrage();
-      },
-    });
-  }
-
-  private checkSignalSubscription(): void {
-    this.signalSubscriptionLoading = true;
-
-    this.signalsService.getMySubscriptions().subscribe({
-      next: (subs: MySubscription[]) => {
-        this.activeSignalSubscription =
-          (subs || []).find((s) => getSubscriptionPeriodStatus(s) === SubscriptionPeriodStatus.Active) ?? null;
-        this.hasActiveSignalSubscription = !!this.activeSignalSubscription;
-        this.signalSubscriptionLoading = false;
-        this.maybeLoadArbitrage();
-      },
-      error: () => {
-        this.hasActiveSignalSubscription = false;
-        this.activeSignalSubscription = null;
-        this.signalSubscriptionLoading = false;
-        this.maybeLoadArbitrage();
-      },
-    });
-  }
-
-  /**
-   * Loads opportunities exactly once, and only once both the trader's admin
-   * status and their signal-subscription status are resolved — so an
-   * unentitled visitor never triggers the opportunities request at all.
-   */
-  private maybeLoadArbitrage(): void {
-    if (this.arbBootstrapped) return;
-    if (!this.traderResolved || this.signalSubscriptionLoading) return;
-
-    if (this.canViewArbitrage) {
-      this.arbBootstrapped = true;
-      this.loadOpportunities();
+isSpreadLocked(o: { estimatedProfit: any }): boolean {
+  if (o.estimatedProfit >=2){
+    if (this.arbitradeStatus){
+      return !this.canViewArbitrage;
+    }else{
+    return this.canViewArbitrage;
     }
+    
+  }else{
+  return o.estimatedProfit <=1 && !this.canViewArbitrage;
+}
+}
+
+  
+    getCurrentTrader() {
+      
+      this.traderService.getTrader().subscribe({
+        next: (res: GetTraderResBody) => {
+           
+          this.arbitradeStatus = res.data.arbitradeStatus ?? false;
+          this.arbitradeState = res.data.arbitradeState ?? 'Active';
+          this.arbitradeExpiry = res.data.arbitradeExpiry ?? '';
+  
+  
+      
+    
+        },
+        error: (err) => {
+        
+          this.countdownToArbExpiry = '';
+        },
+      });
+    }
+  
+
+ checkAccess(): void {
+  this.traderService
+    .getTrader()
+    .pipe(timeout(15000), catchError(() => of(null as GetTraderResBody | null)), takeUntil(this.destroy$))
+    .subscribe((trader) => {
+      this.isSuperAdmin = !!trader?.data?.isSuperAdmin;
+      const rawSub = (trader?.data as any)?.arbitrageSubscription as MyArbitrageSubscription | null | undefined;
+      this.activeArbitrageSubscription =
+        rawSub && getArbitrageSubscriptionPeriodStatus(rawSub) === ArbitrageSubscriptionPeriodStatus.Active
+          ? rawSub
+          : null;
+      this.restartArbCountdown();
+      this.loadOpportunities(); // always — server masks per-row now
+    });
+}
+
+
+
+  private restartArbCountdown(): void {
+    this.arbCountdownSub?.unsubscribe();
+    this.arbCountdownSub = null;
+    this.countdownToArbExpiry = '';
+
+    if (!this.activeArbitrageSubscription) return;
+
+    this.arbCountdownSub = interval(1000)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => this.tickArbCountdown());
+
+    this.tickArbCountdown();
   }
 
-  /**
-   * Opens a professional in-context prompt explaining the Signals gate,
-   * instead of immediately navigating the trader away from the page. The
-   * trader confirms in the dialog before we route them to the plans page.
-   */
-  openSignalsSubscribePrompt(): void {
+  private tickArbCountdown(): void {
+    if (!this.activeArbitrageSubscription) {
+      this.countdownToArbExpiry = '';
+      return;
+    }
+
+    const endTime = new Date(this.activeArbitrageSubscription.endDate).getTime();
+    const remaining = endTime - Date.now();
+
+    if (remaining <= 0) {
+      this.countdownToArbExpiry = 'Expired';
+      this.onArbSubscriptionExpired();
+      return;
+    }
+
+    const days = Math.floor(remaining / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((remaining / (1000 * 60 * 60)) % 24);
+    const minutes = Math.floor((remaining / (1000 * 60)) % 60);
+    const seconds = Math.floor((remaining / 1000) % 60);
+    this.countdownToArbExpiry = `${days}d ${this.pad(hours)}h ${this.pad(minutes)}m ${this.pad(seconds)}s`;
+  }
+
+  private onArbSubscriptionExpired(): void {
+    if (this.accessState !== 'unlocked') return;
+
+    this.activeArbitrageSubscription = null;
+    this.allOpportunities = [];
+    this.currentPage = 1;
+    this.arbCountdownSub?.unsubscribe();
+    this.arbCountdownSub = null;
+
+    this.sharedService.showToast({ title: 'Your arbitrage subscription has expired.' });
+    this.checkAccess();
+  }
+
+  private pad(num: number): string {
+    return num < 10 ? '0' + num : num.toString();
+  }
+
+  openArbitrageSubscribePrompt(): void {
+    const plansList = this.arbSubscriptionPlanList;
+    if (plansList.length === 0) return;
+
+    const bestValue = plansList.reduce((best, p) =>
+      p.price / p.durationDays < best.price / best.durationDays ? p : best,
+    plansList[0]);
+
+    const plans: SubscribePromptPlan[] = plansList.map((plan) => ({
+      key: plan.key,
+      label: plan.label,
+      price: plan.price,
+      durationDays: plan.durationDays,
+      recommended: plan.key === bestValue.key,
+    }));
+
     const data: SubscribePromptDialogData = {
       title: 'Unlock the arbitrage scanner',
       description:
-        'Live cross-exchange spreads and one-click trade execution are reserved for traders with an active Signals subscription. Subscribe to any plan to start scanning.',
+        'Live cross-exchange spreads and one-click trade execution are reserved for traders with an active arbitrage subscription. Choose a plan below to unlock.',
       icon: 'bolt',
-      mode: 'navigate',
-      navigateLabel: 'View subscription plans',
+      mode: 'plans',
+      plans,
+      onSubscribe: (planKey: string) => this.arbitrageService.subscribe(planKey as ArbitrageSubscriptionPlan),
     };
 
     const ref = this.dialog.open(SubscribePromptDialogComponent, {
-      width: '420px',
+      width: '440px',
       maxWidth: '95vw',
       panelClass: 'spd-dialog-panel',
       data,
     });
 
     ref.afterClosed().subscribe((result) => {
-      if (result?.navigate) {
-        this.router.navigate(['/myaccount/signals']);
+      if (result?.subscribed) {
+        this.sharedService.showToast({ title: `Arbitrage ${result.plan} subscription activated.` });
+        this.checkAccess();
       }
     });
   }
 
   // =========================================================================
-  // ARBITRAGE
+  // ARBITRAGE — opportunities table (unchanged)
   // =========================================================================
 
   get activeConfig(): ExchangeConfig {
@@ -228,16 +301,12 @@ export class ArbitrageComponent implements OnInit, OnDestroy {
     this.currentPage = 1;
   }
 
-  // Filtered + sorted, but NOT yet paginated — used to compute totals.
   get visibleOpportunities(): ArbitrageOpportunity[] {
     return this.allOpportunities
-      .filter(
-        (o) => o.buyExchange === this.activeExchange || o.sellExchange === this.activeExchange
-      )
+      .filter((o) => o.buyExchange === this.activeExchange || o.sellExchange === this.activeExchange)
       .sort((a, b) => b.spreadPercent - a.spreadPercent);
   }
 
-  // What the table actually renders: one page's worth of visibleOpportunities.
   get pagedOpportunities(): ArbitrageOpportunity[] {
     const start = (this.currentPage - 1) * this.pageSize;
     return this.visibleOpportunities.slice(start, start + this.pageSize);
@@ -256,19 +325,14 @@ export class ArbitrageComponent implements OnInit, OnDestroy {
     return Math.min(this.currentPage * this.pageSize, this.visibleOpportunities.length);
   }
 
-  // Compact page-number list with ellipses, e.g. [1, '…', 4, 5, 6, '…', 12]
   get pageNumbers(): (number | '…')[] {
     const total = this.totalPages;
     const current = this.currentPage;
     if (total <= 7) {
       return Array.from({ length: total }, (_, i) => i + 1);
     }
-
     const pages = new Set<number>([1, total, current, current - 1, current + 1]);
-    const sorted = Array.from(pages)
-      .filter((p) => p >= 1 && p <= total)
-      .sort((a, b) => a - b);
-
+    const sorted = Array.from(pages).filter((p) => p >= 1 && p <= total).sort((a, b) => a - b);
     const result: (number | '…')[] = [];
     let prev = 0;
     for (const p of sorted) {
@@ -316,13 +380,13 @@ export class ArbitrageComponent implements OnInit, OnDestroy {
     return this.exchangeConfig[id]?.colorPrimary ?? '#999999';
   }
 
-  activePriceFor(o: ArbitrageOpportunity): number {
-    return this.isActiveBuyLeg(o) ? o.buyPrice : o.sellPrice;
-  }
+activePriceFor(o: ArbitrageOpportunity): number | null {
+  return this.isActiveBuyLeg(o) ? o.buyPrice : o.sellPrice;
+}
 
-  counterpartyPriceFor(o: ArbitrageOpportunity): number {
-    return this.isActiveBuyLeg(o) ? o.sellPrice : o.buyPrice;
-  }
+counterpartyPriceFor(o: ArbitrageOpportunity): number | null {
+  return this.isActiveBuyLeg(o) ? o.sellPrice : o.buyPrice;
+}
 
   spreadTier(spreadPercent: number): 'high' | 'medium' | 'low' {
     if (spreadPercent >= 1.5) return 'high';
@@ -352,8 +416,6 @@ export class ArbitrageComponent implements OnInit, OnDestroy {
         next: (res) => {
           this.allOpportunities = res;
           this.updateTokenOptions(res);
-          // Filters/refresh can shrink the result set — clamp back onto
-          // a valid page instead of showing an empty table on a stale page.
           if (this.currentPage > this.totalPages) {
             this.currentPage = this.totalPages;
           }
@@ -388,29 +450,32 @@ export class ArbitrageComponent implements OnInit, OnDestroy {
   }
 
   applyFilters(): void {
+    if (!this.canViewArbitrage) return;
     this.currentPage = 1;
     this.loadOpportunities();
   }
 
   openTradeDialog(o: ArbitrageOpportunity): void {
-    if (!this.canViewArbitrage) return;
-
-    const ref = this.dialog.open(PlaceTradeDialogComponent, {
-      width: '480px',
-      maxWidth: '95vw',
-      data: {
-        opportunity: o,
-        activeExchange: this.activeExchange,
-        buyConfig: this.exchangeConfig[o.buyExchange],
-        sellConfig: this.exchangeConfig[o.sellExchange],
-      },
-    });
-
-    ref.afterClosed().subscribe((placed) => {
-      if (placed) {
-        this.sharedService.showToast({ title: 'Trade executed successfully.' });
-        this.loadOpportunities(true);
-      }
-    });
+  if (o.locked) {
+    this.openArbitrageSubscribePrompt();
+    return;
   }
+  const ref = this.dialog.open(PlaceTradeDialogComponent, {
+    width: '480px',
+    maxWidth: '95vw',
+    data: {
+      opportunity: o,
+      activeExchange: this.activeExchange,
+      buyConfig: this.exchangeConfig[o.buyExchange],
+      sellConfig: this.exchangeConfig[o.sellExchange],
+    },
+  });
+  ref.afterClosed().subscribe((placed) => {
+    if (placed) {
+      this.sharedService.showToast({ title: 'Trade executed successfully.' });
+      this.loadOpportunities(true);
+    }
+  });
+}
+
 }
