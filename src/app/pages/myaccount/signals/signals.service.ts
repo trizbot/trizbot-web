@@ -36,7 +36,6 @@ export class SignalsService {
   constructor(private http: HttpClient) {}
 
   // ---- Plans & subscriptions ----
-
   getPlans(): Observable<PlanOption[]> {
     return this.http
       .get<ApiResponse<PlanOption[]>>(`${this.baseUrl}/plans`)
