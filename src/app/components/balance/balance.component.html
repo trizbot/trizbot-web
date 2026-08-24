@@ -85,10 +85,11 @@
           </div>
 
           <div class="bb-panel-header-actions">
-            <span class="bb-updated-tag" *ngIf="arbLastUpdated">
-              <span class="bb-live-dot"></span>
-            Status: {{ arbitradeState }} &nbsp;&nbsp;&nbsp;&nbsp; Expiry: {{ arbitradeExpiry}}
-            </span>
+          <span class="bb-updated-tag" *ngIf="arbLastUpdated">
+  <span class="bb-live-dot"></span>
+  Status: {{ arbitradeState }} &nbsp;&nbsp;&nbsp;&nbsp;
+  Expiry: {{ arbitradeExpiry | date:'medium' }}
+</span>
 
             <!-- Eye-catching header CTA — shown whenever the trader is unsubscribed -->
             <button
