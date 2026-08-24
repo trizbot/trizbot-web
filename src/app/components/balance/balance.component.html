@@ -102,13 +102,9 @@
         </div>
       </div>
       <div class="bb-arb-subscribe-plans">
-        <button
-          type="button"
-          class="bb-btn bb-btn-primary"
-          *ngFor="let plan of arbSubscriptionPlanList"
-          (click)="subscribeToArbitrage(plan.key)"
-        >
-          {{ plan.label }} &middot; &#36;{{ plan.price }} USDT
+        <button type="button" class="bb-btn bb-btn-primary" (click)="openArbitrageSubscribeDialog()">
+          <i class="bi bi-unlock-fill"></i>
+          <span>View plans &amp; subscribe</span>
         </button>
       </div>
     </div>
@@ -226,7 +222,7 @@
 
               <td class="bb-action-cell">
                 <button type="button" class="bb-trade-btn" *ngIf="!isOpportunityLocked(o)" (click)="openTradeDialog(o)">Trade</button>
-                <button type="button" class="bb-trade-btn bb-trade-btn-locked" *ngIf="isOpportunityLocked(o)" (click)="scrollToArbSubscribeBanner()">
+                <button type="button" class="bb-trade-btn bb-trade-btn-locked" *ngIf="isOpportunityLocked(o)" (click)="openArbitrageSubscribeDialog()">
                   <i class="bi bi-lock-fill"></i> Unlock
                 </button>
               </td>
@@ -265,7 +261,7 @@
             <span class="bb-profit-cell" *ngIf="!isOpportunityLocked(o)">Est. profit &#36;{{ o.estimatedProfit | number: '1.2-2' }}</span>
             <span class="bb-profit-cell muted" *ngIf="isOpportunityLocked(o)">Est. profit &#36;&bull;&bull;&bull;&bull;</span>
             <button type="button" class="bb-trade-btn" *ngIf="!isOpportunityLocked(o)" (click)="openTradeDialog(o)">Trade</button>
-            <button type="button" class="bb-trade-btn bb-trade-btn-locked" *ngIf="isOpportunityLocked(o)" (click)="scrollToArbSubscribeBanner()">
+            <button type="button" class="bb-trade-btn bb-trade-btn-locked" *ngIf="isOpportunityLocked(o)" (click)="openArbitrageSubscribeDialog()">
               <i class="bi bi-lock-fill"></i> Unlock
             </button>
           </div>

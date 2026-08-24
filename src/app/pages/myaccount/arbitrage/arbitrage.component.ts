@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { FormControl, FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { RouterModule } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 
 import { MatDialog } from '@angular/material/dialog';
 import { Subject, interval } from 'rxjs';
@@ -11,6 +11,10 @@ import { MaterialModule } from '../../../material.module';
 import { SharedService } from '../../../shared/shared.service';
 import { ArbitrageService } from './arbitrage.service';
 import { PlaceTradeDialogComponent } from './place-trade-dialog/place-trade-dialog.component';
+import {
+  SubscribePromptDialogComponent,
+  SubscribePromptDialogData,
+} from './subscribe-dialog/subscribe-prompt-dialog.component';
 import {
   ArbitrageOpportunity,
   EXCHANGE_CONFIG,
@@ -88,7 +92,11 @@ export class ArbitrageComponent implements OnInit, OnDestroy {
     return this.hasActiveSignalSubscription || this.isSuperAdmin;
   }
 
-  constructor(private arbitrageService: ArbitrageService, private dialog: MatDialog) {}
+  constructor(
+    private arbitrageService: ArbitrageService,
+    private dialog: MatDialog,
+    private router: Router,
+  ) {}
 
   ngOnInit(): void {
     this.checkTraderStatus();
@@ -175,6 +183,35 @@ export class ArbitrageComponent implements OnInit, OnDestroy {
       this.arbBootstrapped = true;
       this.loadOpportunities();
     }
+  }
+
+  /**
+   * Opens a professional in-context prompt explaining the Signals gate,
+   * instead of immediately navigating the trader away from the page. The
+   * trader confirms in the dialog before we route them to the plans page.
+   */
+  openSignalsSubscribePrompt(): void {
+    const data: SubscribePromptDialogData = {
+      title: 'Unlock the arbitrage scanner',
+      description:
+        'Live cross-exchange spreads and one-click trade execution are reserved for traders with an active Signals subscription. Subscribe to any plan to start scanning.',
+      icon: 'bolt',
+      mode: 'navigate',
+      navigateLabel: 'View subscription plans',
+    };
+
+    const ref = this.dialog.open(SubscribePromptDialogComponent, {
+      width: '420px',
+      maxWidth: '95vw',
+      panelClass: 'spd-dialog-panel',
+      data,
+    });
+
+    ref.afterClosed().subscribe((result) => {
+      if (result?.navigate) {
+        this.router.navigate(['/myaccount/signals']);
+      }
+    });
   }
 
   // =========================================================================

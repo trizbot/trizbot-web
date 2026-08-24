@@ -1,0 +1,56 @@
+<div class="spd-wrapper">
+  <button type="button" class="spd-close" (click)="dismiss()" aria-label="Close">
+    <mat-icon>close</mat-icon>
+  </button>
+
+  <div class="spd-header">
+    <span class="spd-icon"><mat-icon>{{ data.icon || 'lock' }}</mat-icon></span>
+    <h2 class="spd-title">{{ data.title }}</h2>
+    <p class="spd-description">{{ data.description }}</p>
+  </div>
+
+  <div class="spd-error" *ngIf="errorMessage">
+    <mat-icon>error_outline</mat-icon>
+    <span>{{ errorMessage }}</span>
+  </div>
+
+  <!-- Plan selection -->
+  <div class="spd-plans" *ngIf="isPlansMode">
+    <button
+      type="button"
+      class="spd-plan-card"
+      *ngFor="let plan of data.plans"
+      [class.recommended]="plan.recommended"
+      [disabled]="!!submittingPlan"
+      (click)="selectPlan(plan)"
+    >
+      <span class="spd-plan-badge" *ngIf="plan.recommended">Best value</span>
+      <div class="spd-plan-main">
+        <span class="spd-plan-label">{{ plan.label }}</span>
+        <span class="spd-plan-duration">{{ plan.durationDays }} day access</span>
+      </div>
+      <div class="spd-plan-price">
+        <ng-container *ngIf="submittingPlan !== plan.key; else spinner">
+          &#36;{{ plan.price }} <span class="spd-plan-currency">USDT</span>
+        </ng-container>
+        <ng-template #spinner>
+          <mat-spinner diameter="20" strokeWidth="3"></mat-spinner>
+        </ng-template>
+      </div>
+    </button>
+  </div>
+
+  <!-- Navigate confirmation -->
+  <div class="spd-navigate" *ngIf="!isPlansMode">
+    <button type="button" mat-flat-button color="primary" class="spd-cta" (click)="confirmNavigate()">
+      {{ data.navigateLabel || 'View subscription plans' }}
+    </button>
+    <button type="button" mat-button class="spd-secondary" (click)="dismiss()">
+      Not now
+    </button>
+  </div>
+
+  <p class="spd-footnote" *ngIf="isPlansMode">
+    Plans renew manually — no auto-billing. You can subscribe to a new plan any time.
+  </p>
+</div>

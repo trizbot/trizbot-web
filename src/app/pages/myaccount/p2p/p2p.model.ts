@@ -130,11 +130,15 @@ export interface InitiateTradeReqBody {
 export const PAYMENT_WINDOW_OPTIONS: number[] = [15, 30, 45];
 
 export const SUPPORTED_COINS: string[] = [
-  'USDT', 'BTC', 'ETH', 'USDC', 'SOL', 'BNB', 'CORE', 'XRP', 'LTC',
-  'TON', 'TRX', 'DOGE', 'ADA', 'MATIC', 'DOT', 'SHIB', 'AVAX', 'LINK', 'ATOM', 'BCH', 'ETC',
+  'USDT', 'BTC',
 ];
+// export const SUPPORTED_COINS: string[] = [
+//   'USDT', 'BTC', 'ETH', 'USDC', 'SOL', 'BNB', 'CORE', 'XRP', 'LTC',
+//   'TON', 'TRX', 'DOGE', 'ADA', 'MATIC', 'DOT', 'SHIB', 'AVAX', 'LINK', 'ATOM', 'BCH', 'ETC',
+// ];
 
-export const QUICK_COINS: string[] = ['USDT', 'BTC', 'ETH', 'USDC', 'SOL', 'BNB', 'XRP', 'LTC'];
+// export const QUICK_COINS: string[] = ['USDT', 'BTC', 'ETH', 'USDC', 'SOL', 'BNB', 'XRP', 'LTC'];
+export const QUICK_COINS: string[] = ['USDT', 'BTC'];
 
 export const SUPPORTED_FIAT: string[] = [
   'NGN', 'USD', 'EUR', 'GBP', 'GHS', 'KES', 'ZAR', 'INR', 'CNY', 'AED',
@@ -158,9 +162,9 @@ export const PAYMENT_METHODS_BY_FIAT: Record<string, string[]> = {
   BRL: ['Pix', 'Bank Transfer'],
   TRY: ['Papara', 'Bank Transfer', 'Wise'],
   PKR: ['Easypaisa', 'JazzCash', 'Bank Transfer'],
-  EGP: ['Vodafone Cash', 'InstaPay', 'Bank Transfer'],
+  EGP: ['Solidpyco','Vodafone Cash', 'InstaPay', 'Bank Transfer'],
   UGX: ['Solidpyco', 'MTN Mobile Money', 'Airtel Money'],
-  TZS: ['M-Pesa', 'Tigo Pesa', 'Airtel Money'],
+  TZS: ['Solidpyco','M-Pesa', 'Tigo Pesa', 'Airtel Money'],
   XOF: ['Solidpyco', 'Orange Money', 'Wave', 'MTN Mobile Money'],
 };
 

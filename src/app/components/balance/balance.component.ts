@@ -28,6 +28,11 @@ import { MatDialog } from '@angular/material/dialog';
 import { ArbitrageService } from '../../../app/pages/myaccount/arbitrage/arbitrage.service';
 import { PlaceTradeDialogComponent } from '../../../app/pages/myaccount/arbitrage/place-trade-dialog/place-trade-dialog.component';
 import {
+  SubscribePromptDialogComponent,
+  SubscribePromptDialogData,
+  SubscribePromptPlan,
+} from '../../../app/pages/myaccount/arbitrage/subscribe-dialog/subscribe-prompt-dialog.component';
+import {
   ArbitrageOpportunity,
   EXCHANGE_CONFIG,
   EXCHANGE_IDS,
@@ -588,20 +593,53 @@ export class WalletBalanceComponent implements OnInit, OnDestroy {
     });
   }
 
-  subscribeToArbitrage(plan: ArbitrageSubscriptionPlan): void {
-    this.arbitrageService.subscribe(plan).subscribe({
-      next: () => {
-        this.sharedService.showToast({ title: `Arbitrage ${plan} subscription activated.` });
-        this.checkArbitrageSubscription();
-      },
-      error: () => {
-        this.sharedService.showToast({ title: 'Could not process subscription. Please try again.' });
-      },
-    });
-  }
+  /**
+   * Opens a professional subscription dialog listing every arbitrage plan.
+   * Replaces the old "scroll down to the banner" behaviour — the trader
+   * can now pick a plan, see a loading state on the button they clicked,
+   * and get a real error message inline if the subscribe call fails,
+   * all without leaving the dashboard.
+   */
+  openArbitrageSubscribeDialog(): void {
+    const plansList = this.arbSubscriptionPlanList;
+    if (plansList.length === 0) return;
 
-  scrollToArbSubscribeBanner(): void {
-    document.getElementById('arb-subscribe-banner')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    // Flag whichever plan has the lowest price-per-day as "best value"
+    // instead of hard-coding a specific plan key.
+    const bestValue = plansList.reduce((best, p) =>
+      p.price / p.durationDays < best.price / best.durationDays ? p : best,
+    plansList[0]);
+
+    const plans: SubscribePromptPlan[] = plansList.map((plan) => ({
+      key: plan.key,
+      label: plan.label,
+      price: plan.price,
+      durationDays: plan.durationDays,
+      recommended: plan.key === bestValue.key,
+    }));
+
+    const data: SubscribePromptDialogData = {
+      title: 'Unlock full arbitrage access',
+      description: `Spreads at or above ${this.FREE_SPREAD_THRESHOLD}% are reserved for subscribers. Choose a plan below to unlock live pricing, profit estimates, and one-click trading on every opportunity.`,
+      icon: 'lock_open',
+      mode: 'plans',
+      plans,
+      onSubscribe: (planKey: string) => this.arbitrageService.subscribe(planKey as ArbitrageSubscriptionPlan),
+    };
+
+    const ref = this.dialog.open(SubscribePromptDialogComponent, {
+      width: '440px',
+      maxWidth: '95vw',
+      panelClass: 'spd-dialog-panel',
+      data,
+    });
+
+    ref.afterClosed().subscribe((result) => {
+      if (result?.subscribed) {
+        this.sharedService.showToast({ title: `Arbitrage ${result.plan} subscription activated.` });
+        this.checkArbitrageSubscription();
+      }
+    });
   }
 
   // =========================================================================
@@ -774,7 +812,7 @@ export class WalletBalanceComponent implements OnInit, OnDestroy {
 
   openTradeDialog(o: ArbitrageOpportunity): void {
     if (this.isOpportunityLocked(o)) {
-      this.scrollToArbSubscribeBanner();
+      this.openArbitrageSubscribeDialog();
       return;
     }
 

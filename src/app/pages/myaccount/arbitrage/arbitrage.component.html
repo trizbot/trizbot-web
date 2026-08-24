@@ -38,7 +38,7 @@
         Live cross-exchange spreads and one-click trade execution are reserved for traders
         with an active Signals subscription. Subscribe to any plan to start scanning.
       </p>
-      <button mat-flat-button color="primary" type="button" class="fw-bold" [routerLink]="['/myaccount/signals']">
+      <button mat-flat-button color="primary" type="button" class="fw-bold" (click)="openSignalsSubscribePrompt()">
         View subscription plans
       </button>
     </div>
