@@ -15,8 +15,26 @@
     <div class="arb-header-actions">
       <span class="last-updated" *ngIf="lastUpdated">
         <span class="live-dot"></span>
-        Updated {{ lastUpdated | date: 'HH:mm:ss' }}
+      Status: {{ arbitradeState }} &nbsp;&nbsp;&nbsp;&nbsp; Expiry: {{ arbitradeExpiry }}
+
       </span>
+
+         <!-- Eye-catching header CTA — shown whenever the trader is unsubscribed -->
+             <p *ngIf="canViewArbitrage">
+                Live cross-exchange spreads every {{ refreshIntervalSeconds }}
+                Subscribe to a higher profit arbitrage opportunities
+              </p>
+
+            <button
+              type="button"
+              class="bb-btn bb-btn-primary"
+              *ngIf="canViewArbitrage && !arbitrageSubscriptionLoading"
+              (click)="openArbitrageSubscribeDialog()"
+            >
+              <i class="bi bi-lightning-charge-fill bb-arb-subscribe-icon"></i>
+              <span>Unlock full Arbitrage</span>
+            </button>
+
       <button mat-stroked-button type="button" class="refresh-btn" (click)="refreshNow()">
         <mat-icon [class.spin]="loading">refresh</mat-icon>
         Refresh &middot; {{ secondsToRefresh }}s

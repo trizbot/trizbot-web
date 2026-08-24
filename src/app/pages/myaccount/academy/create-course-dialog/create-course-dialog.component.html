@@ -7,9 +7,10 @@
 
 <mat-dialog-content [formGroup]="form">
 
-  <mat-label class="f-w-600 m-b-8 d-block">Title</mat-label>
+  <mat-label class="f-w-600 m-b-8 d-block">Title <span class="required-marker">*</span></mat-label>
   <mat-form-field appearance="outline" class="w-100">
     <input matInput formControlName="title" placeholder="e.g. Mastering RSI Divergence" />
+    <mat-error *ngIf="form.get('title')?.hasError('required')">Title is required.</mat-error>
   </mat-form-field>
 
   <mat-label class="f-w-600 m-b-8 d-block">Short description (optional)</mat-label>
@@ -19,21 +20,21 @@
 
   <div class="field-row">
     <div>
-      <mat-label class="f-w-600 m-b-8 d-block">Category</mat-label>
+      <mat-label class="f-w-600 m-b-8 d-block">Category <span class="required-marker">*</span></mat-label>
       <mat-form-field appearance="outline" class="w-100">
         <mat-select formControlName="category" [disabled]="categoriesLoading">
-          <mat-option value="">None</mat-option>
           <mat-option *ngFor="let c of categories" [value]="c.category">{{ c.category }}</mat-option>
         </mat-select>
+        <mat-error *ngIf="form.get('category')?.hasError('required')">Category is required.</mat-error>
       </mat-form-field>
     </div>
     <div>
-      <mat-label class="f-w-600 m-b-8 d-block">Level</mat-label>
+      <mat-label class="f-w-600 m-b-8 d-block">Level <span class="required-marker">*</span></mat-label>
       <mat-form-field appearance="outline" class="w-100">
         <mat-select formControlName="level">
-          <mat-option value="">None</mat-option>
           <mat-option *ngFor="let l of levelOptions" [value]="l.value">{{ l.label }}</mat-option>
         </mat-select>
+        <mat-error *ngIf="form.get('level')?.hasError('required')">Level is required.</mat-error>
       </mat-form-field>
     </div>
   </div>
@@ -43,14 +44,16 @@
     <input matInput type="url" formControlName="attachmentUrl" placeholder="Link to video/resources hosted elsewhere" />
   </mat-form-field>
 
-  <mat-label class="f-w-600 m-b-8 d-block">Price</mat-label>
+  <mat-label class="f-w-600 m-b-8 d-block">Price <span class="required-marker">*</span></mat-label>
   <mat-form-field appearance="outline" class="w-100">
     <span matPrefix>&#36;&nbsp;</span>
     <input matInput type="number" min="0" formControlName="price" placeholder="0 for free" />
+    <mat-error *ngIf="form.get('price')?.hasError('required')">Price is required (enter 0 for a free course).</mat-error>
+    <mat-error *ngIf="form.get('price')?.hasError('min')">Price cannot be negative.</mat-error>
   </mat-form-field>
 
   <!-- Cover Photo dropzone -->
-  <mat-label class="f-w-600 m-b-8 d-block">Cover Photo</mat-label>
+  <mat-label class="f-w-600 m-b-8 d-block">Cover Photo <span class="required-marker">*</span></mat-label>
   <ngx-dropzone
     class="course-dropzone cover-dropzone"
     [class.has-preview]="hasCoverPhoto"
@@ -80,9 +83,10 @@
       </div>
     </ng-template>
   </ngx-dropzone>
+  <span class="field-hint field-hint--error" *ngIf="!hasCoverPhoto">A cover photo is required.</span>
 
   <!-- Course material dropzone: pdf, docx, audio, or video -->
-  <mat-label class="f-w-600 m-b-8 d-block m-t-3">Course Material</mat-label>
+  <mat-label class="f-w-600 m-b-8 d-block m-t-3">Course Material <span class="required-marker">*</span></mat-label>
   <ngx-dropzone
     class="course-dropzone material-dropzone"
     [class.has-preview]="hasMaterial"
@@ -95,7 +99,7 @@
       <ngx-dropzone-label>
         <span class="dz-title">Click or drag to upload a lesson file</span>
         <span class="dz-sub">{{ materialAcceptHint }}</span>
-        <span class="dz-sub dz-sub-limits">Docs up to 1MB · Audio up to 1MB · Video up to 10MB</span>
+        <span class="dz-sub dz-sub-limits">Max {{ materialMaxLabel }} — docs, audio, or video</span>
       </ngx-dropzone-label>
     </ng-container>
 
@@ -114,6 +118,7 @@
       </div>
     </ng-template>
   </ngx-dropzone>
+  <span class="field-hint field-hint--error" *ngIf="!hasMaterial">A course material file is required.</span>
 
   <mat-label class="f-w-600 m-b-8 d-block m-t-3">Tags (comma-separated, optional)</mat-label>
   <mat-form-field appearance="outline" class="w-100">
@@ -121,7 +126,7 @@
   </mat-form-field>
 
   <mat-label class="f-w-600 m-b-8 d-block">
-    Course content / syllabus
+    Course content / syllabus <span class="required-marker">*</span>
     <span class="char-count">{{ contentLength }} / {{ maxContentLength }}</span>
   </mat-label>
   <mat-form-field appearance="outline" class="w-100">
@@ -131,6 +136,10 @@
       formControlName="content"
       placeholder="Write your course outline or full syllabus here."
     ></textarea>
+    <mat-error *ngIf="form.get('content')?.hasError('required')">Course content / syllabus is required.</mat-error>
+    <mat-error *ngIf="form.get('content')?.hasError('maxlength')">
+      Course content / syllabus must be {{ maxContentLength }} characters or fewer.
+    </mat-error>
   </mat-form-field>
 
   <div *ngIf="errorMessage" class="alert alert-danger m-t-2">

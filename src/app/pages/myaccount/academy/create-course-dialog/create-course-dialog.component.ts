@@ -22,31 +22,22 @@ import {
   UpdateCourseReqBody,
 } from '../model/academy.model';
 
-/**
- * NOTE: MAX_COURSE_FILE_SIZE_BYTES / MAX_COURSE_FILE_SIZE_LABEL from
- * academy.model.ts are now used ONLY for the cover photo (2MB).
- * Course material (pdf/docx/audio/video) uses the per-kind limits below
- * because a 2MB cap is unusable for audio/video lessons.
- *
- * These constants should really live in academy.model.ts alongside
- * MAX_COURSE_FILE_SIZE_BYTES so the backend/service layer can enforce the
- * same limits — see NOTES.md.
- */
-const COVER_PHOTO_MAX_BYTES = MAX_COURSE_FILE_SIZE_BYTES; // 2MB, unchanged
-const COVER_PHOTO_MAX_LABEL = MAX_COURSE_FILE_SIZE_LABEL;
+
+const COVER_PHOTO_MAX_BYTES = MAX_COURSE_FILE_SIZE_BYTES; // 2MB
+const COVER_PHOTO_MAX_LABEL = MAX_COURSE_FILE_SIZE_LABEL; // "2MB"
+
+const REQUIRED_FILE_MAX_BYTES = 2 * 1024 * 1024; // 2MB
+const REQUIRED_FILE_MAX_LABEL = '2MB';
 
 const MATERIAL_LIMITS: Record<'document' | 'audio' | 'video', { bytes: number; label: string }> = {
-  document: { bytes: 20 * 1024 * 1024, label: '20MB' }, // pdf / docx / doc
-  audio: { bytes: 50 * 1024 * 1024, label: '50MB' },
-  video: { bytes: 500 * 1024 * 1024, label: '500MB' },
+  document: { bytes: REQUIRED_FILE_MAX_BYTES, label: REQUIRED_FILE_MAX_LABEL }, // pdf / docx / doc
+  audio: { bytes: REQUIRED_FILE_MAX_BYTES, label: REQUIRED_FILE_MAX_LABEL },
+  video: { bytes: REQUIRED_FILE_MAX_BYTES, label: REQUIRED_FILE_MAX_LABEL },
 };
 
 const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 
-// Maps every accepted MIME type to a CourseFileKind + which limit bucket applies.
-// NOTE: 'kind' values here must match AcademyService.resourceTypeForKind's cases
-// ('pdf' | 'docx' | 'audio' | 'video' | 'other') — using 'word' there would
-// silently fall through to the 'raw' default, so we normalize to 'docx' here.
+
 const MATERIAL_TYPE_MAP: Record<string, { kind: CourseFileKind; bucket: keyof typeof MATERIAL_LIMITS }> = {
   'application/pdf': { kind: 'pdf', bucket: 'document' },
   'application/msword': { kind: 'docx', bucket: 'document' },
@@ -83,6 +74,7 @@ export class CreateCourseDialogComponent implements OnInit, OnDestroy {
   readonly levelOptions = LEVEL_OPTIONS;
   readonly maxContentLength = 20000;
   readonly coverPhotoMaxLabel = COVER_PHOTO_MAX_LABEL;
+  readonly materialMaxLabel = REQUIRED_FILE_MAX_LABEL;
   readonly materialAcceptString = MATERIAL_ACCEPT_STRING;
 
   // Categories are loaded from the backend.
@@ -107,16 +99,20 @@ export class CreateCourseDialogComponent implements OnInit, OnDestroy {
 
   form = new FormGroup({
     title: new FormControl<string>('', { nonNullable: true, validators: [Validators.required] }),
+    // Optional fields — no `required` validator on purpose.
     description: new FormControl<string>(''),
-    category: new FormControl<string>(''),
-    level: new FormControl<string>(''),
-    price: new FormControl<number>(0, {
-      nonNullable: true,
+    attachmentUrl: new FormControl<string>(''),
+    tags: new FormControl<string>(''),
+    // Everything else is required for a course to be publishable.
+    category: new FormControl<string>('', { nonNullable: true, validators: [Validators.required] }),
+    level: new FormControl<string>('', { nonNullable: true, validators: [Validators.required] }),
+    price: new FormControl<number | null>(null, {
       validators: [Validators.required, Validators.min(0)],
     }),
-    tags: new FormControl<string>(''),
-    attachmentUrl: new FormControl<string>(''),
-    content: new FormControl<string>('', { validators: [Validators.maxLength(this.maxContentLength)] }),
+    content: new FormControl<string>('', {
+      nonNullable: true,
+      validators: [Validators.required, Validators.maxLength(this.maxContentLength)],
+    }),
   });
 
   get isEditing(): boolean {
@@ -185,8 +181,6 @@ export class CreateCourseDialogComponent implements OnInit, OnDestroy {
         content: c.content || '',
       });
       this.existingCoverPhotoUrl = c.coverPhotoUrl || null;
-      // pdfUrl is the legacy/major-file field; courseFileUrl is current.
-      // Prefer courseFileUrl but fall back to pdfUrl for older records.
       const existingUrl = c.courseFileUrl || c.pdfUrl || null;
       if (existingUrl) {
         this.existingMaterialUrl = existingUrl;
@@ -261,7 +255,7 @@ export class CreateCourseDialogComponent implements OnInit, OnDestroy {
 
     const limit = MATERIAL_LIMITS[match.bucket];
     if (file.size > limit.bytes) {
-      this.errorMessage = `Course material: file is too large (max ${limit.label} for ${match.kind} files).`;
+      this.errorMessage = `Course material: file is too large (max ${limit.label}).`;
       return;
     }
 
@@ -320,27 +314,63 @@ export class CreateCourseDialogComponent implements OnInit, OnDestroy {
     this.dialogRef.close(false);
   }
 
-  submit(): void {
-    this.errorMessage = '';
 
-    if (this.form.invalid) {
-      this.form.markAllAsTouched();
-      this.errorMessage = 'Please fill in the required fields.';
-      return;
+  private collectValidationErrors(): string[] {
+    const errors: string[] = [];
+    const raw = this.form.getRawValue();
+
+    if (!raw.title?.trim()) {
+      errors.push('Course Title is very important.');
+    }
+    if (!raw.category) {
+      errors.push('Category is required.');
+    }
+    if (!raw.level) {
+      errors.push('Level is required.');
+    }
+    if (raw.price === null || raw.price === undefined || (raw.price as any) === '') {
+      errors.push('Price is required (enter 0 for a free course).');
+    } else if (raw.price < 0) {
+      errors.push('Price cannot be negative.');
+    }
+    if (!raw.content?.trim()) {
+      errors.push('Course content / syllabus is required.');
+    } else if (raw.content.length <= 12) {
+      errors.push(`Course content / syllabus is too short.`);
+    
+    } else if (raw.content.length > this.maxContentLength) {
+      errors.push(`Course content / syllabus must be ${this.maxContentLength} characters or fewer.`);
+    }
+    if (!this.hasCoverPhoto) {
+      errors.push('A cover photo is required.');
+    }
+    if (!this.hasMaterial) {
+      errors.push('A course material file is required.');
     }
 
-    // Defensive re-check right before submit.
-    if (this.coverPhotoFile && this.coverPhotoFile.size > COVER_PHOTO_MAX_BYTES) {
-      this.errorMessage = `Cover photo: file is too large (max ${COVER_PHOTO_MAX_LABEL}).`;
-      return;
+    if (this.coverPhotoFile!=null && this.coverPhotoFile.size > COVER_PHOTO_MAX_BYTES) {
+      errors.push(`Cover photo file is too large (max ${COVER_PHOTO_MAX_LABEL}).`);
     }
-    if (this.materialFile && this.materialFileKind) {
+    if (this.materialFile!=null) {
       const bucket = MATERIAL_TYPE_MAP[this.materialFile.type]?.bucket;
       const limit = bucket ? MATERIAL_LIMITS[bucket] : null;
       if (limit && this.materialFile.size > limit.bytes) {
-        this.errorMessage = `Course material: file is too large (max ${limit.label}).`;
-        return;
+        errors.push(`Course material file is too large (max ${limit.label}).`);
       }
+    }
+
+    return errors;
+  }
+
+  submit(): void {
+    this.errorMessage = '';
+
+    this.form.markAllAsTouched();
+
+    const errors = this.collectValidationErrors();
+    if (errors.length > 0) {
+      this.errorMessage = errors.join(' ');
+      return;
     }
 
     this.loading = true;
@@ -354,11 +384,7 @@ export class CreateCourseDialogComponent implements OnInit, OnDestroy {
     forkJoin({ coverPhoto: coverPhoto$, material: material$ })
       .pipe(
         switchMap(({ coverPhoto, material }) => {
-          // The uploaded/kept course material is the "major" file for this
-          // course. It's written to courseFileUrl (current field) AND
-          // mirrored onto pdfUrl (legacy/fallback field), since downstream
-          // consumers (downloadPurchase, downloadCourseFile, share links)
-          // read pdfUrl as a fallback when courseFileUrl is absent.
+        
           const materialUrl = material ? material.secure_url : this.existingMaterialUrl || undefined;
 
           const payload: CreateCourseReqBody | UpdateCourseReqBody = {
@@ -367,7 +393,7 @@ export class CreateCourseDialogComponent implements OnInit, OnDestroy {
             attachmentUrl: raw.attachmentUrl?.trim() || undefined,
             category: (raw.category as CourseCategory) || undefined,
             level: (raw.level as CourseLevel) || undefined,
-            price: raw.price,
+            price: raw.price as number,
             coverPhotoUrl: coverPhoto ? coverPhoto.secure_url : this.existingCoverPhotoUrl || undefined,
             courseFileUrl: materialUrl,
             pdfUrl: materialUrl,

@@ -509,4 +509,47 @@ export class ArbitrageComponent implements OnInit, OnDestroy {
       }
     });
   }
+
+    openArbitrageSubscribeDialog(): void {
+      const plansList = this.arbSubscriptionPlanList;
+      if (plansList.length === 0) return;
+  
+      const bestValue = plansList.reduce((best, p) =>
+        p.price / p.durationDays < best.price / best.durationDays ? p : best,
+      plansList[0]);
+  
+      const plans: SubscribePromptPlan[] = plansList.map((plan) => ({
+        key: plan.key,
+        label: plan.label,
+        price: plan.price,
+        durationDays: plan.durationDays,
+        recommended: plan.key === bestValue.key,
+      }));
+  
+      const data: SubscribePromptDialogData = {
+        title: 'Unlock the arbitrage scanner',
+        description: `Cross-exchange arbitrage opportunities are only visible to subscribers. Choose a plan below to unlock live pricing, profit estimates, and one-click trading.`,
+        icon: 'lock_open',
+        mode: 'plans',
+        plans,
+        onSubscribe: (planKey: string) => this.arbitrageService.subscribe(planKey as ArbitrageSubscriptionPlan),
+      };
+  
+      const ref = this.dialog.open(SubscribePromptDialogComponent, {
+        width: '440px',
+        maxWidth: '95vw',
+        panelClass: 'spd-dialog-panel',
+        data,
+      });
+  
+      ref.afterClosed().subscribe((result) => {
+        if (result?.subscribed) {
+          this.sharedService.showToast({ title: `Arbitrage ${result.plan} subscription activated.` });
+       
+          this.getCurrentTrader();
+        }
+      });
+    }
+  
+
 }

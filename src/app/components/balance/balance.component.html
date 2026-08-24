@@ -62,11 +62,7 @@
       </div>
     </section>
 
-    <!-- ================================================================ -->
-    <!-- ARBITRAGE — free preview for everyone; opportunities whose        -->
-    <!-- estimatedProfit is above the threshold are locked per-row until   -->
-    <!-- the trader has an active arbitrage subscription (canViewArbitrage)-->
-    <!-- ================================================================ -->
+
     <section class="bb-section">
       <div class="bb-panel bb-arb-panel">
 
@@ -74,16 +70,16 @@
           <div class="bb-panel-heading">
             <span class="bb-panel-icon"><i class="bi bi-lightning-charge-fill"></i></span>
             <div>
-              <h2>Arbitrage opportunities</h2>
-              <h4 *ngIf="canViewArbitrage">
-                Status {{ arbitradeState }}
+              <h4>
+                Arbitrage opportunities
+                <span class="bb-pro-badge" *ngIf="!canViewArbitrage && !arbitrageSubscriptionLoading">
+                  <i class="bi bi-star-fill"></i> 
+                </span>
+            
               </h4>
 
               <p *ngIf="canViewArbitrage">
-                Live cross-exchange spreads &middot; refreshes every {{ refreshIntervalSeconds }}s
-              </p>
-              <p *ngIf="!canViewArbitrage && !arbitrageSubscriptionLoading">
-                Free preview &middot; higher-profit opportunities are subscriber-only
+                Subscribe to a higher Live cross-exchange spreads profit arbitrage opportunities 
               </p>
             </div>
           </div>
@@ -91,9 +87,21 @@
           <div class="bb-panel-header-actions">
             <span class="bb-updated-tag" *ngIf="arbLastUpdated">
               <span class="bb-live-dot"></span>
-              Updated {{ arbLastUpdated | date: 'HH:mm:ss' }}
+            Status: {{ arbitradeState }} &nbsp;&nbsp;&nbsp;&nbsp; Expiry: {{ arbitradeExpiry}}
             </span>
-            <button type="button" class="bb-btn bb-btn-primary" (click)="refreshArbNow()">
+
+            <!-- Eye-catching header CTA — shown whenever the trader is unsubscribed -->
+            <button
+              type="button"
+              class="bb-btn bb-btn-primary"
+              *ngIf="canViewArbitrage && !arbitrageSubscriptionLoading"
+              (click)="openArbitrageSubscribeDialog()"
+            >
+              <i class="bi bi-lightning-charge-fill bb-arb-subscribe-icon"></i>
+              <span>SubScribe</span>
+            </button>
+
+            <button type="button" class="bb-btn bb-btn-arb-subscribe " (click)="refreshArbNow()">
               <i class="bi bi-arrow-clockwise" [class.bb-spin]="arbLoading"></i>
               <span>Refresh &middot; {{ secondsToRefresh }}s</span>
             </button>
@@ -119,15 +127,17 @@
             </span>
           </div>
 
-          <!-- FREE TIER NOTICE: shown only while unsubscribed -->
-          <!-- <div class="bb-arb-free-banner" *ngIf="!canViewArbitrage">
-            <i class="bi bi-lock-fill"></i>
-            <span>You're viewing free opportunities &middot; subscribe to unlock the higher-profit rows.</span>
-            <button type="button" class="bb-btn bb-btn-primary bb-btn-sm" (click)="openArbitrageSubscribeDialog()">
-              <i class="bi bi-unlock-fill"></i>
+          <!-- FREE TIER NOTICE — eye-catching CTA shown only while unsubscribed -->
+          <div class="bb-arb-free-banner" *ngIf="!canViewArbitrage">
+            <div class="bb-arb-free-banner-text">
+              <i class="bi bi-lock-fill"></i>
+              <span>You're viewing free opportunities &middot; subscribe to unlock the higher-profit rows.</span>
+            </div>
+            <button type="button" class="bb-btn bb-btn-arb-subscribe bb-btn-arb-subscribe-lg" (click)="openArbitrageSubscribeDialog()">
+              <i class="bi bi-unlock-fill bb-arb-subscribe-icon"></i>
               <span>View plans</span>
             </button>
-          </div> -->
+          </div>
 
           <div class="bb-exchange-tabs">
             <button
