@@ -31,6 +31,7 @@ import { FeedComponent } from './feed/feed.component';
 import { SignalsComponent } from './signals/signals.component';
 import { KycComponent } from './kyc/kyc.component';
 import { ViewKycComponent } from './view-kyc/view-kyc.component';
+import { ViewSignalsComponent } from './view-signals/view-signals.component';
 
 export const UiComponentsRoutes: Routes = [
   {
@@ -170,6 +171,10 @@ export const UiComponentsRoutes: Routes = [
       {
         path: 'view-kyc',
         component: ViewKycComponent
+      },      
+      {
+        path: 'view-signals',
+        component: ViewSignalsComponent
       },      
  
 

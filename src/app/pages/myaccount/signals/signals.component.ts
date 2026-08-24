@@ -153,9 +153,7 @@ export class SignalsComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    // Single pipeline for all signal-list loads. switchMap guarantees that
-    // only the most recently triggered request's response is ever applied,
-    // regardless of network timing.
+
     this.reloadSignals$
       .pipe(
         switchMap(() => {
@@ -172,7 +170,7 @@ export class SignalsComponent implements OnInit, OnDestroy {
           // every signal (active + closed), not just what a paying
           // subscriber would see.
           if (this.canBypassSubscription) {
-            params['bypassSubscription'] = true;
+            // params['bypassSubscription'] = true;
           }
 
           return this.signalsService.getSignals(params as any).pipe(
@@ -214,7 +212,7 @@ export class SignalsComponent implements OnInit, OnDestroy {
         this.subscription =
           sorted.find((s) => this.getPeriodStatus(s) === SubscriptionPeriodStatus.Active) ?? null;
 
-        this.isSuperAdmin = !!trader?.data?.isSuperAdmin;
+        this.isSuperAdmin = trader?.data?.isSuperAdmin ?? false;
 
         this.subscriptionLoading = false;
         this.subscriptionHistoryLoading = false;
@@ -223,6 +221,8 @@ export class SignalsComponent implements OnInit, OnDestroy {
         // isSuperAdmin is already known by this line, so
         // canBypassSubscription is correct on this very first request:
         // admins always get the full, bypassed list on the first try.
+
+        
         this.loadSignals();
       });
 
@@ -393,18 +393,13 @@ export class SignalsComponent implements OnInit, OnDestroy {
       if (!created) return;
 
       this.sharedService.showToast({ title: 'Subscription activated.' });
-
-      // Refetch from the server instead of trusting the dialog payload as
-      // final truth — keeps this list identical to what a reload will show.
       this.loadSubscriptions();
     });
   }
 
   // ─── Manage (admin) — now lives inline on the Signals tab ───
-
   openCreateDialog(): void {
     if (!this.canManageSignals) return;
-
     const ref = this.dialog.open(SignalFormDialogComponent, {
       width: '560px',
       maxWidth: '95vw',
@@ -413,16 +408,7 @@ export class SignalsComponent implements OnInit, OnDestroy {
 
     ref.afterClosed().subscribe((created: SignalItem | null | undefined) => {
       if (!created) return;
-
       this.sharedService.showToast({ title: 'Signal created successfully.' });
-
-      // Re-fetch from the backend rather than only splicing the dialog's
-      // returned object into the local array. Splicing alone makes the
-      // create *look* successful in the current session even if the save
-      // didn't actually persist — the signal would then vanish on the next
-      // reload with no indication anything was wrong. Reloading here
-      // surfaces that immediately: if it's not in the refetched list, the
-      // create didn't really persist server-side.
       this.page = 1;
       this.loadSignals();
     });
@@ -430,7 +416,6 @@ export class SignalsComponent implements OnInit, OnDestroy {
 
   openEditDialog(item: SignalItem): void {
     if (!this.canManageSignals) return;
-
     const ref = this.dialog.open(SignalFormDialogComponent, {
       width: '560px',
       maxWidth: '95vw',
@@ -442,8 +427,6 @@ export class SignalsComponent implements OnInit, OnDestroy {
 
       this.sharedService.showToast({ title: 'Signal updated successfully.' });
 
-      // Same reasoning as create: confirm against the server rather than
-      // trusting the dialog's return value as final.
       this.loadSignals();
     });
   }

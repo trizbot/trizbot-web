@@ -1,0 +1,105 @@
+<div class="signals-admin">
+  <div class="admin-header">
+    <div class="header-title">
+      <h1>Signals</h1>
+      <p class="header-subtitle">Create, edit, and manage trading signals</p>
+    </div>
+    <button mat-flat-button color="primary" class="btn-new" (click)="openCreateDialog()">
+      <mat-icon>add_chart</mat-icon>
+      New Signal
+    </button>
+  </div>
+
+  <form [formGroup]="filterForm" class="filter-bar">
+    <mat-form-field appearance="outline" class="filter-field">
+      <mat-label>Search pair</mat-label>
+      <input matInput formControlName="pair" placeholder="e.g. BTC/USDT" />
+      <mat-icon matPrefix>search</mat-icon>
+    </mat-form-field>
+    <button mat-stroked-button type="button" (click)="clearFilters()">Clear</button>
+  </form>
+
+  <div class="signals-grid" *ngIf="!signalsLoading; else loadingTpl">
+    <div class="empty-state" *ngIf="signals.length === 0">
+      <mat-icon>show_chart</mat-icon>
+      <p>No signals yet. Create your first one.</p>
+    </div>
+
+    <div class="signal-card" *ngFor="let item of signals; trackBy: trackById">
+      <div class="card-top">
+        <div class="pair-block">
+          <span class="pair-name">{{ item.pair }}</span>
+          <span class="badge category-badge" [style.background]="categoryColors[item.category]">
+            {{ categoryLabels[item.category] }}
+          </span>
+          <span class="badge type-badge" *ngIf="item.type" [style.background]="typeColors[item.type]">
+            {{ typeLabels[item.type] }}
+          </span>
+          <span class="badge status-badge" [class.inactive]="!item.isActive">
+            {{ item.isActive ? 'Active' : 'Closed' }}
+          </span>
+        </div>
+        <div class="card-actions">
+          <button mat-icon-button (click)="openEditDialog(item)" matTooltip="Edit">
+            <mat-icon>edit</mat-icon>
+          </button>
+          <button
+            mat-icon-button
+            (click)="deleteSignal(item)"
+            [disabled]="deletingId === item.id"
+            matTooltip="Delete"
+          >
+            <mat-icon>{{ deletingId === item.id ? 'hourglass_empty' : 'delete' }}</mat-icon>
+          </button>
+        </div>
+      </div>
+
+      <div class="card-body">
+        <div class="price-row">
+          <div class="price-item">
+            <span class="price-label">Entry</span>
+            <span class="price-value">{{ item.entryPrice }}</span>
+          </div>
+          <div class="price-item" *ngIf="item.stopLoss != null">
+            <span class="price-label">Stop Loss</span>
+            <span class="price-value sl">{{ item.stopLoss }}</span>
+          </div>
+          <div class="price-item" *ngIf="riskReward(item) as rr">
+            <span class="price-label">R:R</span>
+            <span class="price-value">{{ rr }}</span>
+          </div>
+        </div>
+
+        <div class="tp-row">
+          <span class="price-label">Take Profit</span>
+          <span class="tp-value">{{ takeProfitSummary(item) }}</span>
+        </div>
+
+        <p class="analysis" *ngIf="item.analysis">{{ item.analysis }}</p>
+      </div>
+
+      <div class="card-footer">
+        <span class="posted-by" *ngIf="item.postedByName">by {{ item.postedByName }}</span>
+        <span class="posted-time">{{ timeAgo(item.createdAt) }}</span>
+      </div>
+    </div>
+  </div>
+
+  <ng-template #loadingTpl>
+    <div class="loading-state">
+      <mat-spinner diameter="36"></mat-spinner>
+    </div>
+  </ng-template>
+
+  <div class="pagination" *ngIf="totalPages > 1">
+    <button mat-icon-button (click)="goToPage(page - 1)" [disabled]="page === 1">
+      <mat-icon>chevron_left</mat-icon>
+    </button>
+    <button mat-button *ngFor="let p of pageRange()" [class.active-page]="p === page" (click)="goToPage(p)">
+      {{ p }}
+    </button>
+    <button mat-icon-button (click)="goToPage(page + 1)" [disabled]="page === totalPages">
+      <mat-icon>chevron_right</mat-icon>
+    </button>
+  </div>
+</div>

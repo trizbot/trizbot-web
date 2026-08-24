@@ -12,7 +12,7 @@
         Admin view — every signal, active or closed.
       </p>
     </div>
-    <button
+    <!-- <button
       *ngIf="canManageSignals && activeTab === 'signals'"
       mat-flat-button
       color="primary"
@@ -22,7 +22,7 @@
     >
       <mat-icon>add_chart</mat-icon>
       New signal
-    </button>
+    </button> -->
   </header>
 
   <!-- TABS -->
@@ -40,6 +40,7 @@
 
     <button
       type="button"
+       *ngIf="!isSuperAdmin"
       class="signals-tab"
       role="tab"
       [attr.aria-selected]="activeTab === 'plans'"
@@ -77,11 +78,7 @@
         </button>
       </div>
 
-      <!--
-        Admins always reach this branch (canBypassSubscription) and see
-        every signal, active or closed. Regular users only reach it with an
-        active subscription.
-      -->
+   
       <ng-container *ngIf="canBypassSubscription || isSubscribed">
 
         <form class="signals-filters" [formGroup]="filterForm">
@@ -293,8 +290,7 @@
                     active: getPeriodStatus(sub) === 'active',
                     upcoming: getPeriodStatus(sub) === 'upcoming',
                     closed: getPeriodStatus(sub) === 'expired'
-                  }"
-                >
+                  }">
                   {{ periodLabels[getPeriodStatus(sub)] }}
                 </span>
               </td>
