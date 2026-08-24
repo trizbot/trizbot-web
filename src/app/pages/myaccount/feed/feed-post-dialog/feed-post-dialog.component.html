@@ -30,7 +30,7 @@
            not a static enum. See FeedPostDialogComponent.categories. -->
       <mat-form-field appearance="outline" class="fpd-field">
         <mat-label>Category</mat-label>
-        <mat-select formControlName="category">
+        <mat-select formControlName="category" panelClass="fpd-select-panel">
           <mat-option value="">None</mat-option>
           <mat-option *ngFor="let cat of categories" [value]="cat.category">
             {{ cat.category }}
@@ -43,25 +43,25 @@
 
       <mat-form-field appearance="outline" class="fpd-field">
         <mat-label>Coin symbol</mat-label>
-        <input matInput formControlName="coinSymbol" placeholder="e.g. BTC" />
+        <input matInput formControlName="coinSymbol" placeholder="e.g. BTC" class="fpd-mono" />
       </mat-form-field>
     </div>
 
     <div class="fpd-row">
       <mat-form-field appearance="outline" class="fpd-field">
-        <mat-label>Source(Optional)</mat-label>
+        <mat-label>Source (optional)</mat-label>
         <input matInput formControlName="source" maxlength="200" />
       </mat-form-field>
 
       <mat-form-field appearance="outline" class="fpd-field">
-        <mat-label>Source URL(optional)</mat-label>
-        <input matInput formControlName="sourceUrl" placeholder="https://..." />
+        <mat-label>Source URL (optional)</mat-label>
+        <input matInput formControlName="sourceUrl" placeholder="https://..." class="fpd-mono" />
       </mat-form-field>
     </div>
 
     <!-- Image upload (dropzone, with pinch/scroll zoom on the preview) -->
     <div class="fpd-field">
-      <mat-label class="fpd-image-label">* Image</mat-label>
+      <mat-label class="fpd-image-label">Image <span class="fpd-required">Required</span></mat-label>
 
       <ngx-dropzone
         class="fpd-dropzone"
@@ -71,11 +71,15 @@
         (change)="onSelectImage($event)"
       >
         <ng-container *ngIf="!displayImageUrl; else imagePreview">
-          <mat-icon class="dz-icon">cloud_upload</mat-icon>
-          <ngx-dropzone-label>
-            <span class="dz-title">Click or drag to upload</span>
-            <span class="dz-sub">Post image (JPG, PNG, WEBP, max 5MB)</span>
-          </ngx-dropzone-label>
+          <div class="fpd-dz-empty">
+            <span class="dz-icon-ring">
+              <mat-icon class="dz-icon">cloud_upload</mat-icon>
+            </span>
+            <ngx-dropzone-label>
+              <span class="dz-title">Click or drag to upload</span>
+              <span class="dz-sub">JPG, PNG or WEBP · max 5MB</span>
+            </ngx-dropzone-label>
+          </div>
         </ng-container>
 
         <ng-template #imagePreview>
@@ -128,15 +132,22 @@
     <mat-form-field appearance="outline" class="fpd-field">
       <mat-label>Tags</mat-label>
       <input matInput formControlName="tagsRaw" placeholder="comma, separated, tags" />
+      <mat-icon matPrefix class="fpd-tag-icon">sell</mat-icon>
     </mat-form-field>
 
-    <p class="fpd-error" *ngIf="error">{{ error }}</p>
+    <p class="fpd-error" *ngIf="error">
+      <mat-icon>error_outline</mat-icon>
+      {{ error }}
+    </p>
   </div>
 
   <div mat-dialog-actions align="end" class="fpd-actions">
-    <button mat-button type="button" (click)="close()" [disabled]="saving">Cancel</button>
-    <button mat-flat-button color="primary" type="submit" [disabled]="saving">
-      {{ saving ? 'Saving...' : (isEdit ? 'Save Changes' : 'Create Post') }}
+    <button mat-stroked-button type="button" class="fpd-btn-ghost" (click)="close()" [disabled]="saving">Cancel</button>
+    <button mat-flat-button color="primary" type="submit" class="fpd-btn-primary" [disabled]="saving">
+      <span *ngIf="!saving">{{ isEdit ? 'Save changes' : 'Create post' }}</span>
+      <span *ngIf="saving" class="fpd-btn-loading">
+        <span class="fpd-spinner"></span> Saving…
+      </span>
     </button>
   </div>
 </form>
