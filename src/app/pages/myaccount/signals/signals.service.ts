@@ -119,7 +119,7 @@ export class SignalsService {
 
   updateSignal(id: string, payload: UpdateSignalPayload): Observable<SignalItem> {
     return this.http
-      .patch<ApiResponse<RawSignal>>(`${this.baseUrl}/${id}`, payload)
+      .patch<ApiResponse<RawSignal>>(`${this.baseUrl}/${id}/admin`, payload)
       .pipe(map((res) => normalizeSignal(res.data)));
   }
 

@@ -44,12 +44,7 @@ export class SignalsComponent implements OnInit, OnDestroy {
   private traderService = inject(TraderService);
   private destroy$ = new Subject<void>();
 
-  /**
-   * Every call to loadSignals() pushes here instead of calling the service
-   * directly. switchMap guarantees only the response to the LATEST trigger
-   * is ever applied — stale, out-of-order responses are dropped
-   * automatically instead of racing to overwrite the signals list.
-   */
+
   private reloadSignals$ = new Subject<void>();
 
   readonly typeLabels = SIGNAL_TYPE_LABELS;
