@@ -25,6 +25,7 @@
   <!-- TABS -->
   <nav class="signals-tabs" role="tablist">
     <button
+     *ngIf="!isSuperAdmin"
       class="signals-tab"
       role="tab"
       [attr.aria-selected]="activeTab === 'signals'"

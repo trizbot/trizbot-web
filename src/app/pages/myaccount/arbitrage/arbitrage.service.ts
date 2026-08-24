@@ -11,6 +11,7 @@ import {
   PlaceTradeReqBody,
   PlaceTradeResBody,
 } from './model/arbitrage.model';
+import { MyArbitrageSubscription, ArbitrageSubscriptionPlan } from './model/arbitrage-subscription.model';
 
 
 interface RawPricePoint {
@@ -133,4 +134,15 @@ export class ArbitrageService {
       })
     );
   }
+
+
+ getMySubscriptions(): Observable<MyArbitrageSubscription[]> {
+    return this.http.get<MyArbitrageSubscription[]>(`${this.apiBaseUrl}/arbitrage/mysub`);
+  }
+
+  subscribe(plan: ArbitrageSubscriptionPlan): Observable<MyArbitrageSubscription> {
+    return this.http.post<MyArbitrageSubscription>(`${this.apiBaseUrl}/arbitrage/subscribe`, { plan });
+  }
+
+
 }
