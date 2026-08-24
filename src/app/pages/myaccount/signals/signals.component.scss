@@ -637,3 +637,14 @@
   .signals-grid { grid-template-columns: 1fr; }
   .plans-grid { grid-template-columns: 1fr; }
 }
+
+
+
+.signal-card-admin-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 4px;
+  margin-top: 8px;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+  padding-top: 6px;
+}

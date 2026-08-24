@@ -19,7 +19,6 @@ import {
   UpdateSignalPayload,
 } from './model/signal.model';
 
-
 export interface SubscribeWithWalletPayload extends SubscribePayload {
   transactionPin: string;
 }
@@ -50,23 +49,12 @@ export class SignalsService {
       .pipe(map((res) => res.data));
   }
 
-  /** The single "currently active" subscription, if any (kept for compatibility). */
-  mySubscription(): Observable<MySubscription | null> {
-    return this.http
-      .get<ApiResponse<MySubscription | null>>(`${this.baseUrl}/subscription/mine`)
-      .pipe(map((res) => res.data));
-  }
-
-
   getMySubscriptions(): Observable<MySubscription[]> {
     return this.http
       .get<ApiResponse<MySubscription[]>>(`${this.baseUrl}/subscription/mine`)
       .pipe(
         map((res) => res.data ?? []),
-        catchError((err: HttpErrorResponse) => {
-    
-          return throwError(() => err);
-        })
+        catchError((err: HttpErrorResponse) => throwError(() => err))
       );
   }
 
@@ -76,42 +64,32 @@ export class SignalsService {
       .get<ApiResponse<WalletBalanceResponse>>(`${this.baseUrl}/wallet/balance`)
       .pipe(
         map((res) => res.data?.balance ?? 0),
-        catchError((err: HttpErrorResponse) => {
-          return throwError(() => err);
-        })
+        catchError((err: HttpErrorResponse) => throwError(() => err))
       );
   }
 
   subscribeWithWallet(data: SubscribeWithWalletPayload): Observable<MySubscription> {
-    let payload={
+    const payload = {
       plan: data.plan,
       transactionPin: data.transactionPin,
-      reference: data.reference|| Math.random().toString(36).substring(2, 15), 
-    }
+      reference: data.reference || Math.random().toString(36).substring(2, 15),
+    };
     return this.http
       .post<ApiResponse<MySubscription>>(`${this.baseUrl}/subscribe`, payload)
       .pipe(
         map((res) => res.data),
-        catchError((err: HttpErrorResponse) => {
-          return throwError(() => err);
-        })
+        catchError((err: HttpErrorResponse) => throwError(() => err))
       );
   }
 
   // ---- Signals ----
-
 
   getSignals(params: GetSignalsParams): Observable<SignalListResponse> {
     let httpParams = new HttpParams();
     if (params.pair) httpParams = httpParams.set('pair', params.pair);
     if (params.page != null) httpParams = httpParams.set('page', params.page);
     if (params.limit != null) httpParams = httpParams.set('limit', params.limit);
-    // Admins pass bypassSubscription: true so the backend skips the
-    // subscription gate and returns the full signals list. This was
-    // previously being silently dropped here — it was accepted as an
-    // input param but never actually added to the outgoing HttpParams,
-    // so the backend never saw it and always applied the normal
-    // subscription-gated filtering, even for admins.
+
     if (params.bypassSubscription) httpParams = httpParams.set('bypassSubscription', true);
 
     return this.http
@@ -124,10 +102,7 @@ export class SignalsService {
           limit: res.meta?.limit ?? params.limit ?? 12,
           totalPages: res.meta?.totalPages ?? 1,
         })),
-        catchError((err: HttpErrorResponse) => {
-          // console.error('[SignalsService] getSignals failed:', err.status, err.error ?? err.message);
-          return throwError(() => err);
-        })
+        catchError((err: HttpErrorResponse) => throwError(() => err))
       );
   }
 
