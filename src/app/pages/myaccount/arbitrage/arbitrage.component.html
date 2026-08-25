@@ -26,13 +26,16 @@
               </p>
 
             <button
-              type="button"
-              class="bb-btn bb-btn-primary"
+               mat-flat-button
+                    type="button"
+                    class="fw-bold trade-btn"
+                    [style.background]="activeConfig.colorPrimary"
+                    [style.color]="activeConfig.textOnPrimary"
               *ngIf="canViewArbitrage && !arbitrageSubscriptionLoading"
               (click)="openArbitrageSubscribeDialog()"
             >
               <i class="bi bi-lightning-charge-fill bb-arb-subscribe-icon"></i>
-              <span>Unlock full Arbitrage</span>
+              <span>Subscribe</span>
             </button>
 
       <button mat-stroked-button type="button" class="refresh-btn" (click)="refreshNow()">
