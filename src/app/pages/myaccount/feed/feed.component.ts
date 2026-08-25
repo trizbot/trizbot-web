@@ -139,8 +139,7 @@ export class FeedComponent implements OnInit, OnDestroy {
           }
         },
         error: () => {
-          // Fail closed: isSuperAdmin stays false if this lookup fails,
-          // and any admin-only tab view bounces back to read-only feed.
+         
           this.isSuperAdmin = false;
           if (this.activeTab === 'manage' || this.activeTab === 'categories') {
             this.activeTab = 'feed';
@@ -155,9 +154,6 @@ export class FeedComponent implements OnInit, OnDestroy {
   }
 
   selectTab(tab: FeedTab): void {
-    // 'manage' and 'categories' are super-admin-only surfaces. A
-    // non-super-admin can never land on them, even by manipulating the
-    // DOM to click a hidden button.
     if ((tab === 'manage' || tab === 'categories') && !this.isSuperAdmin) {
       return;
     }
@@ -183,8 +179,7 @@ export class FeedComponent implements OnInit, OnDestroy {
       .getFeed({
         search: search || undefined,
         coinSymbol: coinSymbol || undefined,
-        // activeCategory is '' for "All" — the service strips empty values
-        // so this never sends a stray `category=` param.
+     
         category: this.activeCategory || undefined,
         page: this.page,
         limit: this.limit,
@@ -207,7 +202,6 @@ export class FeedComponent implements OnInit, OnDestroy {
   clearFilters(): void {
     this.activeCategory = '';
     this.page = 1;
-    // reset() re-triggers valueChanges, which already calls loadItems().
     this.filterForm.reset({ search: '', coinSymbol: '' });
   }
 
@@ -251,13 +245,7 @@ export class FeedComponent implements OnInit, OnDestroy {
     return range;
   }
 
-  // ─── International formatting helpers ────────────────────────
-  // All formatting below relies on the runtime's Intl APIs with no
-  // hard-coded locale, so dates, numbers, currency and relative times
-  // automatically render in whichever locale/region the visitor's browser
-  // is set to (no manual locale strings scattered through the template).
-
-  /** Locale-aware relative time, e.g. "2 hours ago" / "il y a 2 heures". */
+    /** Locale-aware relative time, e.g. "2 hours ago" / "il y a 2 heures". */
   timeAgo(item: FeedItem): string {
     const date = item.publishedAt || item.createdAt;
     const then = new Date(date).getTime();
@@ -407,8 +395,6 @@ export class FeedComponent implements OnInit, OnDestroy {
   }
 
   // ─── Post detail modal ("View More") — view-only, available to everyone ─
-
-  /** Opens the full-post detail modal for the given item. */
   openDetail(item: FeedItem, event?: Event): void {
     event?.stopPropagation();
     this.detailItem = item;
@@ -585,6 +571,7 @@ export class FeedComponent implements OnInit, OnDestroy {
           title: wasEditing ? 'Category updated.' : 'Category created.',
         });
         this.cancelCategoryEdit();
+        this.loadCategories();
       },
       error: (err) => {
         this.savingCategory = false;
@@ -592,6 +579,7 @@ export class FeedComponent implements OnInit, OnDestroy {
         this.categoryError =
           (Array.isArray(backendMessage) ? backendMessage.join(' ') : backendMessage) ||
           'Save category successfully.';
+          this.loadCategories();
       },
     });
   }

@@ -15,8 +15,8 @@
     <div class="arb-header-actions">
       <span class="last-updated" *ngIf="lastUpdated">
         <span class="live-dot"></span>
-      Status: {{ arbitradeState }} &nbsp;&nbsp;&nbsp;&nbsp; Expiry: {{ arbitradeExpiry }}
-
+  Status: {{ arbitradeState }} &nbsp;&nbsp;&nbsp;&nbsp;
+  Expiry: {{ arbitradeExpiry | date:'medium' }}
       </span>
 
          <!-- Eye-catching header CTA — shown whenever the trader is unsubscribed -->
