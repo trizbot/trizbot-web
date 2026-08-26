@@ -338,7 +338,7 @@ export class AcademyComponent implements OnInit, OnDestroy {
     this.academyService.getCourseById(purchase.course.id).subscribe({
       next: (course) => {
        
-        const fileUrl = course.courseFileUrl || course.pdfUrl || course.attachmentUrl;
+        const fileUrl = course.attachmentUrl || course.courseFileUrl;
 
         if (!fileUrl) {
           this.downloadingPurchaseId = null;
