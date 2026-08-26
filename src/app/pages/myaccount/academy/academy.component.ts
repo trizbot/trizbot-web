@@ -311,9 +311,16 @@ export class AcademyComponent implements OnInit, OnDestroy {
     });
   }
 
-  /** Resolves the best-known file URL for a purchase, across current + legacy fields. */
+  
+  private resolveCourseFileUrl(
+    course?: Pick<Course, 'attachmentUrl' | 'pdfUrl'> | null,
+  ): string | undefined {
+    return course?.attachmentUrl || course?.pdfUrl || undefined;
+  }
+
+  /** Resolves the best-known file URL for a purchase (external source first, then pdfUrl). */
   private purchaseFileUrl(purchase: CoursePurchase): string | undefined {
-    return purchase.course?.attachmentUrl || purchase.course?.courseFileUrl || undefined;
+    return this.resolveCourseFileUrl(purchase.course);
   }
 
   downloadPurchase(purchase: CoursePurchase): void {
@@ -333,12 +340,10 @@ export class AcademyComponent implements OnInit, OnDestroy {
       return;
     }
 
- 
     this.downloadingPurchaseId = purchase.id;
     this.academyService.getCourseById(purchase.course.id).subscribe({
       next: (course) => {
-       
-        const fileUrl = course.attachmentUrl || course.courseFileUrl;
+        const fileUrl = this.resolveCourseFileUrl(course);
 
         if (!fileUrl) {
           this.downloadingPurchaseId = null;
@@ -357,8 +362,7 @@ export class AcademyComponent implements OnInit, OnDestroy {
   }
 
   downloadCourseFile(course: Course): void {
-    const url = course.courseFileUrl || course.pdfUrl || course.attachmentUrl;
-
+    const url = this.resolveCourseFileUrl(course);
 
     if (!url) {
       this.sharedService.showToast({ title: 'No downloadable file is attached to this course.' });
@@ -367,13 +371,11 @@ export class AcademyComponent implements OnInit, OnDestroy {
     this.fetchAndDownload(url, course.title, course.courseFileName || undefined);
   }
 
-
   private async fetchAndDownload(url: string, title: string, explicitFileName?: string): Promise<void> {
     if (!url) {
       this.sharedService.showToast({ title: 'No downloadable file is attached to this course.' });
       return;
     }
-
 
     try {
       const response = await fetch(url, { mode: 'cors' });
@@ -438,15 +440,13 @@ export class AcademyComponent implements OnInit, OnDestroy {
   // Social sharing (purchased courses)
   // ---------------------------------------------------------------------
 
-  
-  private buildCourseUrl(courseId: string): any {
-    return ;
-    // return `${window.location.origin}/academy/courses/${courseId}`;
+  private buildCourseUrl(courseId: string): string {
+    return `${window.location.origin}/academy/courses/${courseId}`;
   }
 
   /** Builds the platform share links + caption for a purchased course. */
   getShareLinks(purchase: CoursePurchase): CourseShareLinks {
-    const url = this.buildCourseUrl(purchase.course.pdfUrl)||this.buildCourseUrl(purchase.course.attachmentUrl);
+    const url = this.buildCourseUrl(purchase.course.id);
     const text = buildCourseShareText(purchase.course.title, purchase.course.instructor?.userName);
     return buildCourseShareLinks(url, text);
   }
