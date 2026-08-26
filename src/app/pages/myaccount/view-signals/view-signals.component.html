@@ -64,10 +64,14 @@
             <span class="price-label">Stop Loss</span>
             <span class="price-value sl">{{ item.stopLoss }}</span>
           </div>
-          <div class="price-item" *ngIf="riskReward(item) as rr">
+          <div class="price-item" *ngIf="item.riskRewardRatio != null">
+            <span class="price-label">Risk Reward Ratio</span>
+            <span class="price-value sl">{{ item.riskRewardRatio }}</span>
+          </div>
+          <!-- <div class="price-item" *ngIf="riskReward(item) as rr">
             <span class="price-label">R:R</span>
             <span class="price-value">{{ rr }}</span>
-          </div>
+          </div> -->
         </div>
 
         <div class="tp-row">

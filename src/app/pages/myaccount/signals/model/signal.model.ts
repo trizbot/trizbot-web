@@ -7,7 +7,6 @@ export enum SignalTypeEnum {
  
 }
 
-/** New: replaces "type" (Buy/Sell) as the primary classification on the create/edit form */
 export enum SignalCategoryEnum {
   Futures = 'Futures',
   Spot = 'Spot',
@@ -19,14 +18,12 @@ export enum SubscriptionPlanEnum {
   Monthly = 'Monthly',
 }
 
-/** Matches the real `status` values returned by the payment/subscription API */
 export enum SubscriptionStatusEnum {
   Completed = 'Completed',
   Pending = 'Pending',
   Failed = 'Failed',
 }
 
-/** Derived (not from API) — whether a subscription's date window is in effect right now */
 export enum SubscriptionPeriodStatus {
   Upcoming = 'upcoming',
   Active = 'active',
@@ -72,7 +69,6 @@ export const SUBSCRIPTION_PERIOD_LABELS: Record<SubscriptionPeriodStatus, string
   [SubscriptionPeriodStatus.Expired]: 'Expired',
 };
 
-/** Generic API envelope: backend wraps every payload as { message, data } */
 export interface ApiResponse<T> {
   message: string;
   data: T;
@@ -90,7 +86,6 @@ export interface ApiListResponse<T> {
   };
 }
 
-/** Raw shape exactly as returned by the API (before normalization) */
 export interface RawSignal {
   _id: string;
   pair: string;
@@ -107,6 +102,7 @@ export interface RawSignal {
   analysis?: string;
   postedBy?: string;
   postedByName?: string;
+  riskRewardRatio?: string;
   isActive: boolean;
   postedAt?: string;
   createdAt: string;
@@ -162,6 +158,7 @@ export interface CreateSignalPayload {
   targetPrice?: number;
   stopLoss?: number;
   analysis?: string;
+  riskRewardRatio?: string;
   isActive?: boolean;
 }
 
@@ -221,6 +218,7 @@ export function normalizeSignal(raw: RawSignal): SignalItem {
     stopLoss: raw.stopLoss,
     analysis: raw.analysis,
     postedByName: raw.postedByName,
+    riskRewardRatio: raw.riskRewardRatio,
     isActive: raw.isActive,
     createdAt: raw.createdAt,
     updatedAt: raw.updatedAt,

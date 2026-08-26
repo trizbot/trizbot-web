@@ -72,28 +72,15 @@ export class SignalsComponent implements OnInit, OnDestroy {
     pair: new FormControl<string>(''),
   });
 
-  // Signals list — the SAME list serves both the subscriber view and the
-  // admin management view. There is no separate "manage" dataset anymore:
-  // admins just get extra controls (New/Edit/Delete) rendered on top of it.
+
   signals: SignalItem[] = [];
   signalsLoading = false;
   deletingId: string | null = null;
 
-  /**
-   * Single source of truth for elevated access, resolved from the backend
-   * via traderService.getTrader() (see ngOnInit). Do NOT derive this from
-   * localStorage — that value can be stale or missing.
-   */
+ 
   isSuperAdmin = false;
 
-  /**
-   * True until the initial access check (subscription + admin status,
-   * resolved together via forkJoin) completes. The signals grid stays
-   * hidden behind a loading spinner during this window instead of behind
-   * two independently-resolving flags, which previously caused the grid to
-   * flicker between "subscribe" and "grid" depending on which network call
-   * happened to land first.
-   */
+
   accessLoading = true;
 
   page = 1;
@@ -120,10 +107,6 @@ export class SignalsComponent implements OnInit, OnDestroy {
     return this.isSuperAdmin;
   }
 
-  /**
-   * Admins always see every signal, active or not, without needing a
-   * subscription. Regular users only see signals while subscribed.
-   */
   get canBypassSubscription(): boolean {
     return this.isSuperAdmin;
   }
@@ -161,9 +144,7 @@ export class SignalsComponent implements OnInit, OnDestroy {
             limit: this.limit,
           };
 
-          // Admins bypass the subscription gate so the backend returns
-          // every signal (active + closed), not just what a paying
-          // subscriber would see.
+        
           if (this.canBypassSubscription) {
             // params['bypassSubscription'] = true;
           }
@@ -182,11 +163,7 @@ export class SignalsComponent implements OnInit, OnDestroy {
         this.totalPages = res.totalPages;
       });
 
-    // Resolve subscription status AND admin status TOGETHER before the
-    // signals grid is ever shown or hidden. This is what avoids the grid
-    // flickering between "subscribe to unlock" and the real grid: there is
-    // exactly one settling point instead of two independently-resolving
-    // async flags.
+ 
     this.subscriptionLoading = true;
     this.subscriptionHistoryLoading = true;
 
@@ -212,10 +189,6 @@ export class SignalsComponent implements OnInit, OnDestroy {
         this.subscriptionLoading = false;
         this.subscriptionHistoryLoading = false;
         this.accessLoading = false;
-
-        // isSuperAdmin is already known by this line, so
-        // canBypassSubscription is correct on this very first request:
-        // admins always get the full, bypassed list on the first try.
 
         
         this.loadSignals();
@@ -246,11 +219,6 @@ export class SignalsComponent implements OnInit, OnDestroy {
   }
 
   // ─── Subscription ────────────────────────────────────────
-  /**
-   * Re-fetches subscription history on demand (e.g. after subscribing, or
-   * switching to the Plans tab). The initial load is handled by the
-   * forkJoin in ngOnInit — this is for subsequent refreshes only.
-   */
   loadSubscriptions(): void {
     this.subscriptionLoading = true;
     this.subscriptionHistoryLoading = true;

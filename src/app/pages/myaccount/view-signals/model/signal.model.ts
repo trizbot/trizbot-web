@@ -62,6 +62,7 @@ export interface RawSignal {
   analysis?: string;
   postedBy?: string;
   postedByName?: string;
+  riskRewardRatio?: string;
   isActive: boolean;
   postedAt?: string;
   createdAt: string;
@@ -81,6 +82,7 @@ export interface SignalItem {
   stopLoss?: number;
   analysis?: string;
   postedByName?: string;
+  riskRewardRatio?: string;
   isActive: boolean;
   createdAt: string;
   updatedAt?: string;
@@ -111,6 +113,7 @@ export interface CreateSignalPayload {
   targetPrice?: number;
   stopLoss?: number;
   analysis?: string;
+  riskRewardRatio?: string;
   isActive?: boolean;
 }
 
@@ -130,6 +133,7 @@ export function normalizeSignal(raw: RawSignal): SignalItem {
     stopLoss: raw.stopLoss,
     analysis: raw.analysis,
     postedByName: raw.postedByName,
+    riskRewardRatio: raw.riskRewardRatio,
     isActive: raw.isActive,
     createdAt: raw.createdAt,
     updatedAt: raw.updatedAt,
