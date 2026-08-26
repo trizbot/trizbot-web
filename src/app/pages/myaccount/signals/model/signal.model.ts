@@ -128,6 +128,7 @@ export interface SignalItem {
   stopLoss?: number;
   analysis?: string;
   postedByName?: string;
+  riskRewardRatio?: string;
   isActive: boolean;
   createdAt: string;
   updatedAt?: string;

@@ -38,6 +38,7 @@ export class SignalFormDialogComponent implements OnInit {
       validators: [Validators.required],
     }),
     entryPrice: new FormControl<number | null>(null, { validators: [Validators.required] }),
+    riskRewardRatio: new FormControl<string | null>(null, { validators: [Validators.required] }),
     takeProfit1: new FormControl<number | null>(null),
     takeProfit2: new FormControl<number | null>(null),
     takeProfit3: new FormControl<number | null>(null),
@@ -68,6 +69,7 @@ export class SignalFormDialogComponent implements OnInit {
         takeProfit2: item.takeProfit2 ?? null,
         takeProfit3: item.takeProfit3 ?? null,
         stopLoss: item.stopLoss ?? null,
+        riskRewardRatio: item.riskRewardRatio ?? null,
         analysis: item.analysis || '',
       });
     }
@@ -95,6 +97,7 @@ export class SignalFormDialogComponent implements OnInit {
       takeProfit2: raw.takeProfit2 ?? undefined,
       takeProfit3: raw.takeProfit3 ?? undefined,
       stopLoss: raw.stopLoss ?? undefined,
+      riskRewardRatio: raw.riskRewardRatio ?? undefined,
       analysis: raw.analysis?.trim() || undefined,
     };
 

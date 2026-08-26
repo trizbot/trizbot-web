@@ -157,7 +157,8 @@
             <p class="signal-analysis" *ngIf="item.analysis">{{ item.analysis }}</p>
 
             <footer class="signal-card-footer">
-              <span class="rr-chip" *ngIf="riskReward(item)">R:R {{ riskReward(item) }}</span>
+              <!-- <span class="rr-chip" *ngIf="riskReward(item)">R:R {{ riskReward(item) }}</span> -->
+              <span class="rr-chip" *ngIf="item.riskRewardRatio">R:R {{ item.riskRewardRatio }}</span>
               <span class="signal-time">{{ timeAgo(item.createdAt) }}</span>
               <span class="status-dot" [class.inactive]="!item.isActive">
                 {{ item.isActive ? 'Active' : 'Closed' }}
