@@ -75,7 +75,7 @@
         </div>
 
         <div class="tp-row">
-          <span class="price-label">Take Profit</span>
+          <span class="price-label"*ngIf="takeProfitSummary(item)">Take Profit</span>
           <span class="tp-value">{{ takeProfitSummary(item) }}</span>
         </div>
 

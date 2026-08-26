@@ -1,142 +1,180 @@
-<h2 mat-dialog-title class="dialog-title">
-  {{ isEditing ? 'Edit Course' : 'Publish a New Course' }}
-  <button mat-icon-button class="close-btn" type="button" (click)="close()">
-    <mat-icon>close</mat-icon>
-  </button>
-</h2>
-
-<mat-dialog-content [formGroup]="form">
-
-  <mat-label class="f-w-600 m-b-8 d-block">Title <span class="required-marker">*</span></mat-label>
-  <mat-form-field appearance="outline" class="w-100">
-    <input matInput formControlName="title" placeholder="e.g. Mastering RSI Divergence" />
-    <mat-error *ngIf="form.get('title')?.hasError('required')">Title is required.</mat-error>
-  </mat-form-field>
-
-  <mat-label class="f-w-600 m-b-8 d-block">Short description (optional)</mat-label>
-  <mat-form-field appearance="outline" class="w-100">
-    <input matInput formControlName="description" placeholder="One or two lines shown on the course card" />
-  </mat-form-field>
-
-  <div class="field-row">
-    <div>
-      <mat-label class="f-w-600 m-b-8 d-block">Category <span class="required-marker">*</span></mat-label>
-      <mat-form-field appearance="outline" class="w-100">
-        <mat-select formControlName="category" [disabled]="categoriesLoading">
-          <mat-option *ngFor="let c of categories" [value]="c.category">{{ c.category }}</mat-option>
-        </mat-select>
-        <mat-error *ngIf="form.get('category')?.hasError('required')">Category is required.</mat-error>
-      </mat-form-field>
-    </div>
-    <div>
-      <mat-label class="f-w-600 m-b-8 d-block">Level <span class="required-marker">*</span></mat-label>
-      <mat-form-field appearance="outline" class="w-100">
-        <mat-select formControlName="level">
-          <mat-option *ngFor="let l of levelOptions" [value]="l.value">{{ l.label }}</mat-option>
-        </mat-select>
-        <mat-error *ngIf="form.get('level')?.hasError('required')">Level is required.</mat-error>
-      </mat-form-field>
-    </div>
-  </div>
-
-  <mat-label class="f-w-600 m-b-8 d-block">Attachment URL (optional)</mat-label>
-  <mat-form-field appearance="outline" class="w-100">
-    <input matInput type="url" formControlName="attachmentUrl" placeholder="Link to video/resources hosted elsewhere" />
-  </mat-form-field>
-
-  <mat-label class="f-w-600 m-b-8 d-block">Price <span class="required-marker">*</span></mat-label>
-  <mat-form-field appearance="outline" class="w-100">
-    <span matPrefix>&#36;&nbsp;</span>
-    <input matInput type="number" min="0" formControlName="price" placeholder="0 for free" />
-    <mat-error *ngIf="form.get('price')?.hasError('required')">Price is required (enter 0 for a free course).</mat-error>
-    <mat-error *ngIf="form.get('price')?.hasError('min')">Price cannot be negative.</mat-error>
-  </mat-form-field>
-
-  <!-- Cover Photo dropzone -->
-  <mat-label class="f-w-600 m-b-8 d-block">Cover Photo <span class="required-marker">*</span></mat-label>
-  <ngx-dropzone
-    class="course-dropzone cover-dropzone"
-    [class.has-preview]="hasCoverPhoto"
-    [multiple]="false"
-    accept="image/jpeg,image/png,image/webp"
-    (change)="onSelectCoverPhoto($event)"
-  >
-    <ng-container *ngIf="!hasCoverPhoto; else coverPreview">
-      <mat-icon class="dz-icon">cloud_upload</mat-icon>
-      <ngx-dropzone-label>
-        <span class="dz-title">Click or drag to upload</span>
-        <span class="dz-sub">JPG, PNG, or WEBP — max {{ coverPhotoMaxLabel }}</span>
-      </ngx-dropzone-label>
-    </ng-container>
-
-    <ng-template #coverPreview>
-      <div class="course-inline-preview-wrap">
-        <img class="course-inline-preview" [src]="coverPhotoDisplayUrl" alt="Cover photo preview" />
-        <button
-          type="button"
-          class="course-remove-btn"
-          aria-label="Remove cover photo"
-          (click)="onRemoveCoverPhoto(); $event.stopPropagation()"
-        >
-          <mat-icon>close</mat-icon>
-        </button>
+<div class="course-dialog">
+  <header class="dialog-head">
+    <div class="dialog-head-left">
+      <span class="head-badge">
+        <mat-icon>{{ isEditing ? 'edit' : 'auto_stories' }}</mat-icon>
+      </span>
+      <div class="head-text">
+        <h2 mat-dialog-title>{{ isEditing ? 'Edit course' : 'Publish a new course' }}</h2>
+        <p class="head-sub">Share a lesson with the community</p>
       </div>
-    </ng-template>
-  </ngx-dropzone>
-  <span class="field-hint field-hint--error" *ngIf="!hasCoverPhoto">A cover photo is required.</span>
+    </div>
+    <button mat-icon-button type="button" class="head-close" (click)="close()" aria-label="Close">
+      <mat-icon>close</mat-icon>
+    </button>
+  </header>
 
-  <!-- Course material dropzone: pdf, docx, audio, or video -->
-  <mat-label class="f-w-600 m-b-8 d-block m-t-3">Course Material <span class="required-marker">*</span></mat-label>
-  <ngx-dropzone
-    class="course-dropzone material-dropzone"
-    [class.has-preview]="hasMaterial"
-    [multiple]="false"
-    [accept]="materialAcceptString"
-    (change)="onSelectMaterial($event)"
-  >
-    <ng-container *ngIf="!hasMaterial; else materialPreview">
-      <mat-icon class="dz-icon">upload_file</mat-icon>
-      <ngx-dropzone-label>
-        <span class="dz-title">Click or drag to upload a lesson file</span>
-        <span class="dz-sub">{{ materialAcceptHint }}</span>
-        <span class="dz-sub dz-sub-limits">Max {{ materialMaxLabel }} — docs, audio, or video</span>
-      </ngx-dropzone-label>
-    </ng-container>
+  <mat-dialog-content [formGroup]="form" class="dialog-content">
 
-    <ng-template #materialPreview>
-      <div class="course-pdf-chip">
-        <mat-icon>{{ materialIcon }}</mat-icon>
-        <span class="course-pdf-name">{{ materialDisplayName }}</span>
-        <button
-          type="button"
-          class="course-remove-btn"
-          aria-label="Remove course material"
-          (click)="onRemoveMaterial(); $event.stopPropagation()"
-        >
-          <mat-icon>close</mat-icon>
-        </button>
+    <!-- Title -->
+    <div class="field">
+      <label class="field-label">Title <span class="req">*</span></label>
+      <div class="input-shell" [class.has-error]="form.get('title')?.hasError('required') && form.get('title')?.touched">
+        <input formControlName="title" placeholder="e.g. Mastering RSI Divergence" />
       </div>
-    </ng-template>
-  </ngx-dropzone>
-  <span class="field-hint field-hint--error" *ngIf="!hasMaterial">A course material file is required.</span>
+      <p class="field-error" *ngIf="form.get('title')?.hasError('required')">Title is required.</p>
+    </div>
 
-  <mat-label class="f-w-600 m-b-8 d-block m-t-3">Tags (comma-separated, optional)</mat-label>
-  <mat-form-field appearance="outline" class="w-100">
-    <input matInput formControlName="tags" placeholder="e.g. RSI, indicators, momentum" />
-  </mat-form-field>
+    <!-- Description -->
+    <div class="field">
+      <label class="field-label">Description <span class="optional">optional</span></label>
+      <div class="input-shell">
+        <input formControlName="description" placeholder="One or two lines shown on the course card" />
+      </div>
+    </div>
 
-  <div *ngIf="errorMessage" class="alert alert-danger m-t-2">
-    <b>{{ errorMessage }}</b>
+    <!-- Category / Level -->
+    <div class="field-row">
+      <div class="field">
+        <label class="field-label">Category <span class="req">*</span></label>
+        <mat-form-field appearance="outline" class="select-field" floatLabel="always">
+          <mat-select formControlName="category" [disabled]="categoriesLoading">
+            <mat-option *ngFor="let c of categories" [value]="c.category">{{ c.category }}</mat-option>
+          </mat-select>
+          <mat-error *ngIf="form.get('category')?.hasError('required')">Category is required.</mat-error>
+        </mat-form-field>
+      </div>
+      <div class="field">
+        <label class="field-label">Level <span class="req">*</span></label>
+        <mat-form-field appearance="outline" class="select-field" floatLabel="always">
+          <mat-select formControlName="level">
+            <mat-option *ngFor="let l of levelOptions" [value]="l.value">{{ l.label }}</mat-option>
+          </mat-select>
+          <mat-error *ngIf="form.get('level')?.hasError('required')">Level is required.</mat-error>
+        </mat-form-field>
+      </div>
+    </div>
+
+    <!-- Attachment URL -->
+    <div class="field">
+      <label class="field-label">Attachment URL <span class="optional">optional</span></label>
+      <div class="input-shell">
+        <input type="url" formControlName="attachmentUrl" placeholder="Link to video/resources hosted elsewhere" />
+      </div>
+    </div>
+
+    <!-- Price: hero field -->
+    <div class="field">
+      <label class="field-label">Price <span class="req">*</span></label>
+      <div class="hero-shell" [class.has-error]="form.get('price')?.invalid && form.get('price')?.touched">
+        <span class="prefix">$</span>
+        <input type="number" min="0" formControlName="price" placeholder="0" />
+        <span class="hero-free-tag">0 = free</span>
+      </div>
+      <p class="field-error" *ngIf="form.get('price')?.hasError('required')">Price is required (enter 0 for a free course).</p>
+      <p class="field-error" *ngIf="form.get('price')?.hasError('min')">Price cannot be negative.</p>
+    </div>
+
+    <!-- Cover Photo dropzone -->
+    <div class="field">
+      <label class="field-label">Cover photo <span class="req">*</span></label>
+      <ngx-dropzone
+        class="course-dropzone cover-dropzone"
+        [class.has-preview]="hasCoverPhoto"
+        [multiple]="false"
+        accept="image/jpeg,image/png,image/webp"
+        (change)="onSelectCoverPhoto($event)"
+      >
+        <ng-container *ngIf="!hasCoverPhoto; else coverPreview">
+          <mat-icon class="dz-icon">cloud_upload</mat-icon>
+          <ngx-dropzone-label>
+            <span class="dz-title">Click or drag to upload</span>
+            <span class="dz-sub">JPG, PNG, or WEBP — max {{ coverPhotoMaxLabel }}</span>
+          </ngx-dropzone-label>
+        </ng-container>
+
+        <ng-template #coverPreview>
+          <div class="dz-preview-wrap">
+            <img class="dz-preview-img" [src]="coverPhotoDisplayUrl" alt="Cover photo preview" />
+            <span class="dz-preview-name">Cover photo selected</span>
+            <button
+              type="button"
+              class="dz-remove"
+              aria-label="Remove cover photo"
+              (click)="onRemoveCoverPhoto(); $event.stopPropagation()"
+            >
+              <mat-icon>close</mat-icon>
+            </button>
+          </div>
+        </ng-template>
+      </ngx-dropzone>
+      <p class="field-error" *ngIf="!hasCoverPhoto">A cover photo is required.</p>
+    </div>
+
+    <!-- Course material dropzone: pdf, docx, audio, or video -->
+    <div class="field">
+      <label class="field-label">Course material <span class="req">*</span></label>
+      <ngx-dropzone
+        class="course-dropzone material-dropzone"
+        [class.has-preview]="hasMaterial"
+        [multiple]="false"
+        [accept]="materialAcceptString"
+        (change)="onSelectMaterial($event)"
+      >
+        <ng-container *ngIf="!hasMaterial; else materialPreview">
+          <mat-icon class="dz-icon">upload_file</mat-icon>
+          <ngx-dropzone-label>
+            <span class="dz-title">Click or drag to upload a lesson file</span>
+            <span class="dz-sub">{{ materialAcceptHint }}</span>
+            <span class="dz-sub dz-sub-limits">Max {{ materialMaxLabel }} — docs, audio, or video</span>
+          </ngx-dropzone-label>
+        </ng-container>
+
+        <ng-template #materialPreview>
+          <div class="dz-preview-wrap">
+            <span class="dz-file-icon"><mat-icon>{{ materialIcon }}</mat-icon></span>
+            <span class="dz-preview-name">{{ materialDisplayName }}</span>
+            <button
+              type="button"
+              class="dz-remove"
+              aria-label="Remove course material"
+              (click)="onRemoveMaterial(); $event.stopPropagation()"
+            >
+              <mat-icon>close</mat-icon>
+            </button>
+          </div>
+        </ng-template>
+      </ngx-dropzone>
+      <p class="field-error" *ngIf="!hasMaterial">A course material file is required.</p>
+    </div>
+
+    <!-- Tags -->
+    <div class="field">
+      <label class="field-label">Tags <span class="optional">comma-separated, optional</span></label>
+      <div class="input-shell">
+        <input formControlName="tags" placeholder="e.g. RSI, indicators, momentum" />
+      </div>
+    </div>
+
+    <div *ngIf="errorMessage" class="alert">
+      <mat-icon>error_outline</mat-icon>
+      <span>{{ errorMessage }}</span>
+    </div>
+
+  </mat-dialog-content>
+
+  <div class="dialog-actions">
+    <button
+      mat-flat-button
+      class="btn-primary"
+      type="button"
+      [disabled]="loading"
+      (click)="submit()"
+    >
+      <span *ngIf="!loading">{{ isEditing ? 'Save changes' : 'Create course' }}</span>
+      <span *ngIf="loading" class="btn-loading">
+        <span class="btn-spinner"></span> {{ uploadingLabel }}
+      </span>
+    </button>
   </div>
-
-  <button
-    mat-flat-button
-    color="primary"
-    class="fw-bold w-100 submit-btn"
-    type="button"
-    [disabled]="loading"
-    (click)="submit()"
-  >
-    {{ loading ? uploadingLabel : (isEditing ? 'Save Changes' : 'Create') }}
-  </button>
-</mat-dialog-content>
+</div>
