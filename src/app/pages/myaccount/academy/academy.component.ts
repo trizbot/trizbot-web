@@ -438,10 +438,7 @@ export class AcademyComponent implements OnInit, OnDestroy {
   // Social sharing (purchased courses)
   // ---------------------------------------------------------------------
 
-  /**
-   * Public, shareable URL for a purchased course. Adjust the path below if
-   * the app's course-detail route differs from `/academy/courses/:id`.
-   */
+  
   private buildCourseUrl(courseId: string): any {
     return ;
     // return `${window.location.origin}/academy/courses/${courseId}`;

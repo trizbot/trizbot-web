@@ -21,7 +21,13 @@
       <div class="field-block">
         <label class="field-block-label">Category</label>
         <mat-radio-group formControlName="category" class="segmented" aria-label="Category">
-          <mat-radio-button *ngFor="let c of categories" [value]="c" class="segmented-option" [class.is-spot]="(c | lowercase) === 'spot'" [class.is-futures]="(c | lowercase) === 'futures'">
+          <mat-radio-button
+            *ngFor="let c of categories"
+            [value]="c"
+            class="segmented-option"
+            [class.is-spot]="(c | lowercase) === 'spot'"
+            [class.is-futures]="(c | lowercase) === 'futures'"
+          >
             {{ c | titlecase }}
           </mat-radio-button>
         </mat-radio-group>
@@ -32,14 +38,14 @@
 
       <div class="field-row">
         <!-- Pair -->
-        <mat-form-field appearance="outline" class="half-field">
+        <mat-form-field appearance="outline" class="half-field" floatLabel="always">
           <mat-label>Pair</mat-label>
           <input matInput formControlName="pair" maxlength="50" placeholder="BTC/USDT" class="mono-input" />
           <mat-error *ngIf="form.get('pair')?.hasError('required')">Pair is required</mat-error>
         </mat-form-field>
 
         <!-- Type -->
-        <mat-form-field appearance="outline" class="half-field">
+        <mat-form-field appearance="outline" class="half-field" floatLabel="always">
           <mat-label>Type</mat-label>
           <mat-select formControlName="type" panelClass="sig-select-panel">
             <mat-option *ngFor="let t of types" [value]="t">
@@ -52,7 +58,7 @@
 
       <!-- Entry: hero field -->
       <div class="hero-field">
-        <mat-form-field appearance="outline" class="full-field entry-field">
+        <mat-form-field appearance="outline" class="full-field entry-field" floatLabel="always">
           <mat-label>Entry price</mat-label>
           <span matPrefix class="field-prefix">＄</span>
           <input matInput type="number" formControlName="entryPrice" placeholder="0.00" class="mono-input mono-input--lg" />
@@ -72,33 +78,39 @@
             <span class="ladder-dot ladder-dot--3"></span>
           </div>
           <div class="ladder-fields">
-            <mat-form-field appearance="outline" class="ladder-field">
+            <mat-form-field appearance="outline" class="ladder-field" floatLabel="always">
               <mat-label>TP 1</mat-label>
-              <input matInput type="number" formControlName="takeProfit1" class="mono-input" />
+              <input matInput type="number" formControlName="takeProfit1" placeholder="0.00" class="mono-input" />
             </mat-form-field>
-            <mat-form-field appearance="outline" class="ladder-field">
+            <mat-form-field appearance="outline" class="ladder-field" floatLabel="always">
               <mat-label>TP 2</mat-label>
-              <input matInput type="number" formControlName="takeProfit2" class="mono-input" />
+              <input matInput type="number" formControlName="takeProfit2" placeholder="0.00" class="mono-input" />
             </mat-form-field>
-            <mat-form-field appearance="outline" class="ladder-field">
+            <mat-form-field appearance="outline" class="ladder-field" floatLabel="always">
               <mat-label>TP 3</mat-label>
-              <input matInput type="number" formControlName="takeProfit3" class="mono-input" />
+              <input matInput type="number" formControlName="takeProfit3" placeholder="0.00" class="mono-input" />
             </mat-form-field>
           </div>
         </div>
       </div>
 
       <!-- Stop Loss -->
-      <mat-form-field appearance="outline" class="full-field stop-field">
+      <mat-form-field appearance="outline" class="full-field stop-field" floatLabel="always">
         <mat-label>Stop loss</mat-label>
         <mat-icon matPrefix class="stop-icon">trending_down</mat-icon>
         <input matInput type="number" formControlName="stopLoss" placeholder="0.00" class="mono-input" />
       </mat-form-field>
 
       <!-- Analysis -->
-      <mat-form-field appearance="outline" class="full-field analysis-field">
+      <mat-form-field appearance="outline" class="full-field analysis-field" floatLabel="always">
         <mat-label>Analysis</mat-label>
-        <textarea matInput formControlName="analysis" rows="4" maxlength="1000"></textarea>
+        <textarea
+          matInput
+          formControlName="analysis"
+          rows="4"
+          maxlength="1000"
+          placeholder="What's the setup? Key levels, invalidation, timeframe…"
+        ></textarea>
         <mat-hint align="end" class="mono-input">{{ form.get('analysis')?.value?.length || 0 }}/1000</mat-hint>
       </mat-form-field>
 

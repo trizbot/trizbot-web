@@ -125,23 +125,6 @@
     <input matInput formControlName="tags" placeholder="e.g. RSI, indicators, momentum" />
   </mat-form-field>
 
-  <mat-label class="f-w-600 m-b-8 d-block">
-    Course content / syllabus <span class="required-marker">*</span>
-    <span class="char-count">{{ contentLength }} / {{ maxContentLength }}</span>
-  </mat-label>
-  <mat-form-field appearance="outline" class="w-100">
-    <textarea
-      matInput
-      rows="8"
-      formControlName="content"
-      placeholder="Write your course outline or full syllabus here."
-    ></textarea>
-    <mat-error *ngIf="form.get('content')?.hasError('required')">Course content / syllabus is required.</mat-error>
-    <mat-error *ngIf="form.get('content')?.hasError('maxlength')">
-      Course content / syllabus must be {{ maxContentLength }} characters or fewer.
-    </mat-error>
-  </mat-form-field>
-
   <div *ngIf="errorMessage" class="alert alert-danger m-t-2">
     <b>{{ errorMessage }}</b>
   </div>

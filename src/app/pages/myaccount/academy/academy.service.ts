@@ -154,7 +154,6 @@ purchaseCourse(payload: PurchaseCourseReqBody): Observable<CoursePurchase> {
   }
 
   // ---- Categories (superadmin only, gated in the UI) ----
-
   getCourseCategory(): Observable<CourseCategoryItem[]> {
     return this.http
       .get<RawCourseCategoryDoc[] | ApiListResponse<RawCourseCategoryDoc>>(`${this.baseUrl}/category`)
