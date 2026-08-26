@@ -1,226 +1,324 @@
 .sig-dialog {
-  ::ng-deep .mat-mdc-form-field {
-    width: 100%;
+  --bg-page: #ffffff;
+  --bg-field: #f6f7f9;
+  --bg-raised: #f0f2f5;
+  --border: #e4e7eb;
+  --border-strong: #cdd3d9;
+  --text-primary: #14181b;
+  --text-secondary: #667085;
+  --text-muted: #98a2b3;
 
-    // Reserve fixed space for prefixes so the label/placeholder never
-    // shift into (or overlap) the prefix's own box.
-    .mat-mdc-form-field-icon-prefix,
-    .mat-mdc-form-field-text-prefix {
-      display: inline-flex;
-      align-items: center;
-      min-width: 28px;
-      padding-right: 6px;
-      opacity: 0.65;
-    }
+  --teal: #0e9f6e;
+  --teal-bg: #e8f8f1;
+  --teal-border: #a6e8cd;
+  --teal-text: #076c4c;
 
-    // With floatLabel="always" the label is always pinned to the
-    // notch, so the placeholder only ever renders below it — no overlap.
-    .mdc-floating-label {
-      opacity: 0.85;
-    }
+  --amber: #dc6803;
+  --amber-bg: #fef6e7;
+  --amber-border: #f6d89b;
+  --amber-text: #b54708;
 
-    .mat-mdc-input-element::placeholder,
-    .mat-mdc-input-element::-webkit-input-placeholder {
-      opacity: 0.4;
-    }
+  --red: #d92d20;
+  --red-text: #b42318;
+
+  display: block;
+  width: 100%;
+  max-width: 560px;
+  background: var(--bg-page);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04), 0 8px 24px rgba(16, 24, 40, 0.06);
+  font-family: 'Inter', sans-serif;
+  color: var(--text-primary);
+
+  .sr-only {
+    position: absolute;
+    width: 1px; height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
   }
 
-  .field-row {
-    display: flex;
-    gap: 12px;
-
-    .half-field {
-      flex: 1 1 0;
-      min-width: 0;
-    }
-  }
-
-  .full-field {
-    width: 100%;
-  }
-
-  .field-prefix {
-    font-weight: 600;
-    font-size: 0.95rem;
-  }
-
-  .stop-icon {
-    color: #ef4444;
-  }
-
-  .hero-field {
-    margin: 4px 0 8px;
-
-    .entry-field {
-      .mono-input--lg {
-        font-size: 1.35rem;
-        font-weight: 700;
-      }
-    }
-  }
-
-  .field-block {
-    margin-bottom: 16px;
-
-    &-label {
-      display: block;
-      font-size: 0.78rem;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-      opacity: 0.7;
-      margin-bottom: 8px;
-    }
-
-    &-optional {
-      text-transform: none;
-      font-weight: 400;
-      opacity: 0.6;
-      margin-left: 4px;
-      letter-spacing: normal;
-    }
-  }
-
-  .field-error {
-    font-size: 0.75rem;
-    color: #ef4444;
-    margin: 4px 0 0;
-  }
-
-  // Segmented control for Category
-  .segmented {
-    display: flex;
-    gap: 8px;
-
-    .segmented-option {
-      flex: 1;
-      border: 1px solid rgba(0, 0, 0, 0.12);
-      border-radius: 8px;
-      padding: 8px 12px;
-
-      &.is-spot { border-color: #22c55e33; }
-      &.is-futures { border-color: #6366f133; }
-    }
-  }
-
-  .type-option {
-    &--long { color: #22c55e; }
-    &--short { color: #ef4444; }
-  }
-
-  // Take-profit ladder
-  .ladder {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-
-    &-rail {
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
-      padding: 0 2px;
-    }
-
-    &-dot {
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      background: #94a3b8;
-
-      &--1 { opacity: 1; }
-      &--2 { opacity: 0.7; }
-      &--3 { opacity: 0.45; }
-    }
-
-    &-fields {
-      display: flex;
-      flex: 1;
-      gap: 10px;
-    }
-  }
-
-  .ladder-field {
-    flex: 1 1 0;
-    min-width: 0;
-  }
-
+  // ---- header ----
   .dialog-head {
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
-    padding: 16px 20px;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    padding: 24px 28px 20px;
+    border-bottom: 1px solid var(--border);
 
-    &-left {
-      display: flex;
-      gap: 12px;
-      align-items: flex-start;
+    .dialog-head-left { display: flex; gap: 14px; align-items: flex-start; }
+
+    .head-badge {
+      width: 40px; height: 40px; flex: none;
+      border-radius: 10px;
+      background: var(--teal-bg);
+      border: 1px solid var(--teal-border);
+      display: flex; align-items: center; justify-content: center;
+      mat-icon { color: var(--teal-text); font-size: 20px; height: 20px; width: 20px; }
+    }
+
+    h2[mat-dialog-title] {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 18px;
+      font-weight: 500;
+      letter-spacing: -0.01em;
+      margin: 0 0 4px;
+      color: var(--text-primary);
+    }
+
+    .head-sub { font-size: 13px; color: var(--text-secondary); margin: 0; }
+
+    .head-close {
+      color: var(--text-secondary);
+      &:hover { color: var(--text-primary); background: var(--bg-raised); }
     }
   }
 
-  .head-badge {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 36px;
-    height: 36px;
-    border-radius: 10px;
-    background: #6366f11a;
-    color: #6366f1;
-
-    &--edit {
-      background: #f59e0b1a;
-      color: #f59e0b;
-    }
-  }
-
-  .head-text {
-    h2 { margin: 0; font-size: 1.05rem; }
-  }
-
-  .head-sub {
-    margin: 2px 0 0;
-    font-size: 0.8rem;
-    opacity: 0.6;
-  }
-
-  .head-close {
-    margin-top: -4px;
-  }
-
+  // ---- content ----
   .dialog-content {
-    padding: 20px;
-    max-height: 70vh;
+    padding: 24px 28px 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+    max-height: 65vh;
     overflow-y: auto;
   }
 
+  .field-block-label {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 10px;
+  }
+
+  .field-block-optional {
+    text-transform: none;
+    letter-spacing: 0;
+    font-size: 12px;
+    font-weight: 400;
+    font-family: 'Inter', sans-serif;
+    color: var(--text-muted);
+  }
+
+  .field-error {
+    font-size: 12px;
+    color: var(--red);
+    margin: 6px 0 0;
+  }
+
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .field { display: flex; flex-direction: column; }
+
+  // ---- category segmented ----
+  .segmented { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  .seg-option {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border: 1px solid var(--border);
+    background: var(--bg-field);
+    border-radius: 10px;
+    padding: 13px 16px;
+    cursor: pointer;
+    transition: border-color .15s ease, background .15s ease;
+
+    .seg-option-main { display: flex; align-items: center; gap: 10px; }
+    .seg-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border-strong); }
+    .seg-name { font-family: 'Space Grotesk', sans-serif; font-size: 14px; font-weight: 500; color: var(--text-primary); }
+    .seg-flag { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--text-muted); }
+
+    &.selected.seg-option--spot {
+      border-color: var(--teal-border);
+      background: var(--teal-bg);
+      .seg-dot { background: var(--teal); }
+      .seg-name { color: var(--teal-text); }
+      .seg-flag { color: var(--teal-text); }
+    }
+    &.selected.seg-option--futures {
+      border-color: var(--amber-border);
+      background: var(--amber-bg);
+      .seg-dot { background: var(--amber); }
+      .seg-name { color: var(--amber-text); }
+      .seg-flag { color: var(--amber-text); }
+    }
+  }
+
+  // ---- generic bordered input shell ----
+  .input-shell {
+    display: flex;
+    align-items: center;
+    background: var(--bg-field);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    height: 46px;
+    padding: 0 14px;
+    transition: border-color .15s ease, background .15s ease;
+
+    &:focus-within { border-color: var(--text-primary); background: var(--bg-page); }
+    &.has-error { border-color: var(--red); }
+
+    .prefix {
+      flex: none;
+      margin-right: 10px;
+      color: var(--text-muted);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+    }
+
+    mat-icon.stop-icon { color: var(--red); margin-right: 10px; font-size: 18px; height: 18px; width: 18px; }
+    mat-icon.rr-icon { color: var(--teal); margin-right: 10px; font-size: 18px; height: 18px; width: 18px; }
+
+    input {
+      flex: 1;
+      border: 0;
+      outline: none;
+      background: transparent;
+      height: 100%;
+      color: var(--text-primary);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 14px;
+
+      &::placeholder { color: var(--text-muted); }
+    }
+  }
+
+  .input-shell--hero {
+    height: auto;
+    padding: 16px 20px;
+    border-color: var(--border-strong);
+
+    .prefix { font-size: 20px; color: var(--text-secondary); }
+
+    .mono-input--hero {
+      font-size: 30px;
+      font-weight: 500;
+      letter-spacing: -0.01em;
+      &::placeholder { color: var(--border-strong); }
+    }
+  }
+
+  // ---- take profit ladder ----
+  .ladder { display: flex; gap: 16px; }
+
+  .ladder-rail {
+    width: 20px; flex: none;
+    position: relative;
+    display: flex; flex-direction: column; align-items: center;
+    padding: 12px 0;
+
+    &::before {
+      content: '';
+      position: absolute;
+      top: 12px; bottom: 12px;
+      width: 1px;
+      background: linear-gradient(to bottom, var(--teal-border), var(--teal));
+    }
+  }
+
+  .ladder-dot {
+    width: 9px; height: 9px;
+    border-radius: 50%;
+    border: 2px solid var(--bg-page);
+    background: var(--teal);
+    z-index: 1;
+
+    &--1 { opacity: .4; }
+    &--2 { opacity: .7; }
+    &--3 { opacity: 1; }
+  }
+
+  .ladder-rows { flex: 1; display: flex; flex-direction: column; gap: 12px; }
+
+  .ladder-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    .ladder-tag {
+      width: 34px; flex: none;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .input-shell { flex: 1; height: 42px; }
+  }
+
+  // ---- actions ----
   .dialog-actions {
-    padding: 12px 20px 20px;
     display: flex;
     justify-content: flex-end;
     gap: 10px;
+    padding: 22px 28px 26px;
   }
 
-  .btn-loading {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
+  .btn-ghost {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 500;
+    color: var(--text-secondary) !important;
+    border-color: var(--border-strong) !important;
+    &:hover { background: var(--bg-raised) !important; color: var(--text-primary) !important; }
   }
+
+  .btn-primary {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 500;
+    background-color: var(--teal) !important;
+    color: #ffffff !important;
+    &:hover { background-color: #0b8b60 !important; }
+  }
+
+  .btn-loading { display: inline-flex; align-items: center; gap: 8px; }
 
   .btn-spinner {
-    width: 14px;
-    height: 14px;
-    border: 2px solid rgba(255, 255, 255, 0.4);
-    border-top-color: #fff;
+    width: 14px; height: 14px;
     border-radius: 50%;
-    animation: sig-spin 0.7s linear infinite;
+    border: 2px solid rgba(255, 255, 255, 0.4);
+    border-top-color: #ffffff;
+    animation: sig-spin .7s linear infinite;
   }
 
   @keyframes sig-spin {
     to { transform: rotate(360deg); }
   }
 
-  .mono-input {
-    font-variant-numeric: tabular-nums;
+  // ---- mat-form-field overrides (Type select + Analysis textarea) ----
+  // Material adds its own placeholder/label layer, which is what caused
+  // the overlap in the original — force a single label position and let
+  // CSS vars own colour so nothing double-renders.
+  ::ng-deep {
+    .type-select, .analysis-field {
+      width: 100%;
+
+      .mat-mdc-text-field-wrapper {
+        background: var(--bg-field);
+        border-radius: 10px;
+      }
+      .mdc-notched-outline__leading,
+      .mdc-notched-outline__notch,
+      .mdc-notched-outline__trailing {
+        border-color: var(--border) !important;
+      }
+      .mat-mdc-form-field-infix { color: var(--text-primary); }
+      .mdc-floating-label { display: none; } // label lives in .field-block-label instead
+      input, textarea, .mat-mdc-select-value-text {
+        color: var(--text-primary);
+        font-family: 'JetBrains Mono', monospace;
+      }
+      textarea {
+        font-family: 'Inter', sans-serif !important;
+        font-size: 13.5px;
+        line-height: 1.6;
+      }
+      .mat-mdc-form-field-hint { color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
+    }
   }
 }
