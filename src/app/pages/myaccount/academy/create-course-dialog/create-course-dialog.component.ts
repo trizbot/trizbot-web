@@ -91,6 +91,9 @@ export class CreateCourseDialogComponent implements OnInit, OnDestroy {
   existingCoverPhotoUrl: string | null = null;
 
   // ---- Course material (pdf / docx / audio / video) — this is the "major" file ----
+  // NOTE: material is now OPTIONAL. A course is publishable as long as it has
+  // *either* an uploaded material file *or* a non-empty attachmentUrl (for
+  // files too large to upload — see MATERIAL_LIMITS above / needsMaterialOrLink()).
   materialFile: File | null = null;
   materialFileName: string | null = null;
   materialFileKind: CourseFileKind | null = null;
@@ -103,15 +106,16 @@ export class CreateCourseDialogComponent implements OnInit, OnDestroy {
     description: new FormControl<string>(''),
     attachmentUrl: new FormControl<string>(''),
     tags: new FormControl<string>(''),
-    // Everything else is required for a course to be publishable.
+    // Content / syllabus is optional. Only its max length is enforced.
+    content: new FormControl<string>('', {
+      nonNullable: true,
+      validators: [Validators.maxLength(this.maxContentLength)],
+    }),
+    // category/level/price remain required for a course to be publishable.
     category: new FormControl<string>('', { nonNullable: true, validators: [Validators.required] }),
     level: new FormControl<string>('', { nonNullable: true, validators: [Validators.required] }),
     price: new FormControl<number | null>(null, {
       validators: [Validators.required, Validators.min(0)],
-    }),
-    content: new FormControl<string>('', {
-      nonNullable: true,
-      validators: [Validators.required, Validators.maxLength(this.maxContentLength)],
     }),
   });
 
@@ -133,6 +137,19 @@ export class CreateCourseDialogComponent implements OnInit, OnDestroy {
 
   get hasMaterial(): boolean {
     return !!this.materialFile || !!this.existingMaterialUrl;
+  }
+
+  get hasAttachmentUrl(): boolean {
+    return !!this.form.get('attachmentUrl')?.value?.trim();
+  }
+
+  /**
+   * Course material is optional, but the course still needs *some* way to
+   * deliver the lesson: either an uploaded file, or an attachment URL for
+   * files too large to upload. True when neither is present.
+   */
+  get needsMaterialOrLink(): boolean {
+    return !this.hasMaterial && !this.hasAttachmentUrl;
   }
 
   get materialDisplayName(): string | null {
@@ -255,7 +272,10 @@ export class CreateCourseDialogComponent implements OnInit, OnDestroy {
 
     const limit = MATERIAL_LIMITS[match.bucket];
     if (file.size > limit.bytes) {
-      this.errorMessage = `Course material: file is too large (max ${limit.label}).`;
+      // Material is optional precisely so people with an oversized file
+      // aren't stuck — point them at the Attachment URL field instead of
+      // just rejecting the upload.
+      this.errorMessage = `Course material: file is too large (max ${limit.label}). Use the Attachment URL field instead for larger files.`;
       return;
     }
 
@@ -300,7 +320,11 @@ export class CreateCourseDialogComponent implements OnInit, OnDestroy {
    * that always uploads with kind='pdf' regardless of what was actually
    * selected — meaning audio/video/docx files were routed to Cloudinary's
    * `raw/upload` endpoint instead of `video/upload`, producing broken or
-   * unplayable uploads. uploadCourseFile() routes by the real kind.
+   * unplayable uploads. uploadCourseFile() routes by the real kind (and, as
+   * of this fix, PDFs specifically go through the `image` resource type —
+   * see resourceTypeForKind() in academy.service.ts — to avoid Cloudinary's
+   * "raw" delivery restrictions that were causing uploaded PDFs to fail to
+   * open).
    */
   private uploadMaterial(file: File, kind: CourseFileKind) {
     const formData = new FormData();
@@ -333,19 +357,23 @@ export class CreateCourseDialogComponent implements OnInit, OnDestroy {
     } else if (raw.price < 0) {
       errors.push('Price cannot be negative.');
     }
-    if (!raw.content?.trim()) {
-      errors.push('Course content / syllabus is required.');
-    } else if (raw.content.length <= 12) {
-      errors.push(`Course content / syllabus is too short.`);
-    
-    } else if (raw.content.length > this.maxContentLength) {
+
+    // Content / syllabus is optional — only validate it if the user typed something.
+    const trimmedContent = raw.content?.trim() || '';
+    if (trimmedContent.length > 0 && trimmedContent.length <= 12) {
+      errors.push('Course content / syllabus is too short — add more detail or leave it blank.');
+    } else if (raw.content && raw.content.length > this.maxContentLength) {
       errors.push(`Course content / syllabus must be ${this.maxContentLength} characters or fewer.`);
     }
+
     if (!this.hasCoverPhoto) {
       errors.push('A cover photo is required.');
     }
-    if (!this.hasMaterial) {
-      errors.push('A course material file is required.');
+
+    // Material is optional, but the course needs a way to deliver the lesson:
+    // either an uploaded file, or an attachment URL (for files too large to upload).
+    if (this.needsMaterialOrLink) {
+      errors.push('Add a course material file, or an Attachment URL if your file is too large to upload.');
     }
 
     if (this.coverPhotoFile!=null && this.coverPhotoFile.size > COVER_PHOTO_MAX_BYTES) {
@@ -355,7 +383,7 @@ export class CreateCourseDialogComponent implements OnInit, OnDestroy {
       const bucket = MATERIAL_TYPE_MAP[this.materialFile.type]?.bucket;
       const limit = bucket ? MATERIAL_LIMITS[bucket] : null;
       if (limit && this.materialFile.size > limit.bytes) {
-        errors.push(`Course material file is too large (max ${limit.label}).`);
+        errors.push(`Course material file is too large (max ${limit.label}). Use the Attachment URL field instead.`);
       }
     }
 
@@ -384,7 +412,11 @@ export class CreateCourseDialogComponent implements OnInit, OnDestroy {
     forkJoin({ coverPhoto: coverPhoto$, material: material$ })
       .pipe(
         switchMap(({ coverPhoto, material }) => {
-        
+
+          // materialUrl stays undefined when there's no uploaded file (new or
+          // existing) — that's what lets the download logic in academy.component.ts
+          // fall through to attachmentUrl for courses that were created with a
+          // link instead of an upload.
           const materialUrl = material ? material.secure_url : this.existingMaterialUrl || undefined;
 
           const payload: CreateCourseReqBody | UpdateCourseReqBody = {

@@ -61,6 +61,9 @@
       <div class="input-shell">
         <input type="url" formControlName="attachmentUrl" placeholder="Link to video/resources hosted elsewhere" />
       </div>
+      <p class="field-hint">
+        Use this instead of uploading below if your lesson file is bigger than {{ materialMaxLabel }}.
+      </p>
     </div>
 
     <!-- Price: hero field -->
@@ -113,7 +116,7 @@
 
     <!-- Course material dropzone: pdf, docx, audio, or video -->
     <div class="field">
-      <label class="field-label">Course material <span class="req">*</span></label>
+      <label class="field-label">Course material <span class="optional">optional — see below</span></label>
       <ngx-dropzone
         class="course-dropzone material-dropzone"
         [class.has-preview]="hasMaterial"
@@ -126,7 +129,9 @@
           <ngx-dropzone-label>
             <span class="dz-title">Click or drag to upload a lesson file</span>
             <span class="dz-sub">{{ materialAcceptHint }}</span>
-            <span class="dz-sub dz-sub-limits">Max {{ materialMaxLabel }} — docs, audio, or video</span>
+            <span class="dz-sub dz-sub-limits">
+              Max {{ materialMaxLabel }} — docs, audio, or video. Bigger file? Use the Attachment URL field above instead.
+            </span>
           </ngx-dropzone-label>
         </ng-container>
 
@@ -145,7 +150,9 @@
           </div>
         </ng-template>
       </ngx-dropzone>
-      <p class="field-error" *ngIf="!hasMaterial">A course material file is required.</p>
+      <p class="field-error" *ngIf="needsMaterialOrLink">
+        Add a course material file, or an Attachment URL above if your file is too large to upload.
+      </p>
     </div>
 
     <!-- Tags -->
@@ -155,6 +162,22 @@
         <input formControlName="tags" placeholder="e.g. RSI, indicators, momentum" />
       </div>
     </div>
+
+    <!-- Content / syllabus -->
+    <!-- <div class="field">
+      <label class="field-label">Course content / syllabus <span class="optional">optional</span></label>
+      <div class="input-shell">
+        <textarea
+          formControlName="content"
+          rows="4"
+          placeholder="What's covered, prerequisites, outline... (optional)"
+        ></textarea>
+      </div>
+      <p class="field-hint">{{ contentLength }} / {{ maxContentLength }}</p>
+      <p class="field-error" *ngIf="form.get('content')?.hasError('maxlength')">
+        Course content / syllabus must be {{ maxContentLength }} characters or fewer.
+      </p>
+    </div> -->
 
     <div *ngIf="errorMessage" class="alert">
       <mat-icon>error_outline</mat-icon>

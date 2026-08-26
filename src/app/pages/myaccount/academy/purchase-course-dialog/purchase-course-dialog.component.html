@@ -20,7 +20,7 @@
     </span>
   </div>
 
-  <ng-container *ngIf="!isFree">
+  <ng-container >
     <mat-label class="f-w-600 m-b-8 d-block m-t-3">Transaction PIN</mat-label>
     <mat-form-field appearance="outline" class="w-100">
       <input
@@ -28,7 +28,7 @@
         type="password"
         inputmode="numeric"
         autocomplete="off"
-        maxlength="6"
+        maxlength="4"
         formControlName="transactionPin"
       />
       <mat-error *ngIf="form.controls.transactionPin.hasError('required')">

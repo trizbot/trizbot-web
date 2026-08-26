@@ -72,10 +72,11 @@ export interface UpdateCourseCategoryReqBody {
   reference?: string;
 }
 
-/** Cloudinary (and most hosts) file endpoints are keyed by "resource type". */
+
 function resourceTypeForKind(kind: CourseFileKind): 'image' | 'video' | 'raw' {
   if (kind === 'video' || kind === 'audio') return 'video'; // Cloudinary serves audio under "video"
-  if (kind === 'pdf' || kind === 'docx') return 'raw';
+  if (kind === 'pdf') return 'image'; // avoids Cloudinary's raw-delivery restrictions that broke PDF opening
+  if (kind === 'docx') return 'raw';
   return 'raw';
 }
 
@@ -182,10 +183,7 @@ purchaseCourse(payload: PurchaseCourseReqBody): Observable<CoursePurchase> {
     return this.http.delete<void>(`${this.baseUrl}/category/${id}`);
   }
 
-  // ---- Uploads ----
-  // Cover photo stays image-only. Course material (`uploadCourseFile`) now
-  // accepts PDF, DOCX, audio, or video and is routed to the right Cloudinary
-  // resource-type endpoint automatically.
+
 
   uploadImage(formData: FormData, file?: File): Observable<any> {
     if (file && !isFileSizeAllowed(file, 'other')) {
@@ -199,11 +197,6 @@ purchaseCourse(payload: PurchaseCourseReqBody): Observable<CoursePurchase> {
     return this.uploadCourseFile(formData, file, 'pdf');
   }
 
-  /**
-   * Uploads a piece of course material of any supported kind (pdf, docx,
-   * audio, video), enforcing the per-kind size cap and routing to the
-   * correct Cloudinary resource type.
-   */
   uploadCourseFile(formData: FormData, file: File | undefined, kind: CourseFileKind): Observable<any> {
     if (kind === 'other') {
       return throwError(() => new Error('This file type is not supported for course material.'));

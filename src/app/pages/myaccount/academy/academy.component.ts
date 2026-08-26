@@ -313,7 +313,7 @@ export class AcademyComponent implements OnInit, OnDestroy {
 
   /** Resolves the best-known file URL for a purchase, across current + legacy fields. */
   private purchaseFileUrl(purchase: CoursePurchase): string | undefined {
-    return purchase.course?.courseFileUrl || purchase.course?.pdfUrl || purchase.course?.attachmentUrl || undefined;
+    return purchase.course?.attachmentUrl || purchase.course?.courseFileUrl || undefined;
   }
 
   downloadPurchase(purchase: CoursePurchase): void {
