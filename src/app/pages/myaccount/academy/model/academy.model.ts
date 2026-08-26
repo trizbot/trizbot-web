@@ -582,10 +582,16 @@ export interface CourseShareLinks {
   email: string;
 }
 
-/** Friendly, professional caption for sharing a course a learner has enrolled in. */
-export function buildCourseShareText(courseTitle: string, instructorUsername?: string): string {
-  const byLine = instructorUsername ? ` by @${instructorUsername}` : '';
-  return `I just enrolled in "${courseTitle}"${byLine} on trizbot Academy 📈`;
+
+export function buildCourseShareText(
+  courseTitle: string,
+  instructorUsername?: string
+): string {
+  const instructorLine = instructorUsername
+    ? ` taught by @${instructorUsername}`
+    : '';
+
+  return `I just purchased "${courseTitle}"${instructorLine} on Trizbot Academy. Excited to get started! 🎓`;
 }
 
 export function buildCourseShareLinks(url: string, text: string): CourseShareLinks {

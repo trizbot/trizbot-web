@@ -311,39 +311,60 @@ export class AcademyComponent implements OnInit, OnDestroy {
     });
   }
 
-  
-  private resolveCourseFileUrl(
-    course?: Pick<Course, 'attachmentUrl' | 'pdfUrl'> | null,
-  ): string | undefined {
-    return course?.attachmentUrl || course?.pdfUrl || undefined;
+ 
+  private resolveFileUrl(record: any): string | undefined {
+    if (!record) return undefined;
+    return (
+      record.attachmentUrl ||
+      record.pdfUrl ||
+      record.course?.attachmentUrl ||
+      record.course?.pdfUrl ||
+      undefined
+    );
   }
 
-  /** Resolves the best-known file URL for a purchase (external source first, then pdfUrl). */
-  private purchaseFileUrl(purchase: CoursePurchase): string | undefined {
-    return this.resolveCourseFileUrl(purchase.course);
+  /** Best-known title for a purchase/sale record, flat or nested. */
+  private resolveCourseTitle(record: any): string {
+    return record?.course?.title || record?.courseTitle || 'Untitled course';
+  }
+
+  /** Best-known course id for a purchase/sale record, flat or nested. */
+  private resolveCourseId(record: any): string | undefined {
+    return record?.course?.id || record?.course?._id || record?.courseId || undefined;
+  }
+
+  /** Best-known instructor username/name for a purchase/sale record, flat or nested. */
+  private resolveInstructorName(record: any): string {
+    return record?.course?.instructor?.userName || record?.instructorName || 'trader';
+  }
+
+  /** Best-known filename to save the download as, if the API supplied one. */
+  private resolveFileName(record: any): string | undefined {
+    return record?.courseFileName || record?.course?.courseFileName || undefined;
   }
 
   downloadPurchase(purchase: CoursePurchase): void {
     if (this.downloadingPurchaseId) return;
 
-    const directUrl = this.purchaseFileUrl(purchase);
+    const directUrl = this.resolveFileUrl(purchase);
     if (directUrl) {
       this.downloadingPurchaseId = purchase.id;
-      this.fetchAndDownload(directUrl, purchase.course.title, purchase.course.courseFileName).finally(() => {
+      this.fetchAndDownload(directUrl, this.resolveCourseTitle(purchase), this.resolveFileName(purchase)).finally(() => {
         this.downloadingPurchaseId = null;
       });
       return;
     }
 
-    if (!purchase.course?.id) {
+    const courseId = this.resolveCourseId(purchase);
+    if (!courseId) {
       this.sharedService.showToast({ title: 'No downloadable file is attached to this course.' });
       return;
     }
 
     this.downloadingPurchaseId = purchase.id;
-    this.academyService.getCourseById(purchase.course.id).subscribe({
+    this.academyService.getCourseById(courseId).subscribe({
       next: (course) => {
-        const fileUrl = this.resolveCourseFileUrl(course);
+        const fileUrl = this.resolveFileUrl(course);
 
         if (!fileUrl) {
           this.downloadingPurchaseId = null;
@@ -362,7 +383,7 @@ export class AcademyComponent implements OnInit, OnDestroy {
   }
 
   downloadCourseFile(course: Course): void {
-    const url = this.resolveCourseFileUrl(course);
+    const url = this.resolveFileUrl(course);
 
     if (!url) {
       this.sharedService.showToast({ title: 'No downloadable file is attached to this course.' });
@@ -446,8 +467,9 @@ export class AcademyComponent implements OnInit, OnDestroy {
 
   /** Builds the platform share links + caption for a purchased course. */
   getShareLinks(purchase: CoursePurchase): CourseShareLinks {
-    const url = this.buildCourseUrl(purchase.course.id);
-    const text = buildCourseShareText(purchase.course.title, purchase.course.instructor?.userName);
+    const courseId = this.resolveCourseId(purchase) || '';
+    const url = this.buildCourseUrl(courseId);
+    const text = buildCourseShareText(this.resolveCourseTitle(purchase), this.resolveInstructorName(purchase));
     return buildCourseShareLinks(url, text);
   }
 
@@ -463,8 +485,9 @@ export class AcademyComponent implements OnInit, OnDestroy {
 
   /** Copies a ready-to-post caption + link to the clipboard. */
   copyShareLink(purchase: CoursePurchase): void {
-    const url = this.buildCourseUrl(purchase.course.id);
-    const text = buildCourseShareText(purchase.course.title, purchase.course.instructor?.userName);
+    const courseId = this.resolveCourseId(purchase) || '';
+    const url = this.buildCourseUrl(courseId);
+    const text = buildCourseShareText(this.resolveCourseTitle(purchase), this.resolveInstructorName(purchase));
     const payload = `${text} ${url}`;
 
     if (navigator.clipboard?.writeText) {

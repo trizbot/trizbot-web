@@ -74,8 +74,8 @@ export interface UpdateCourseCategoryReqBody {
 
 
 function resourceTypeForKind(kind: CourseFileKind): 'image' | 'video' | 'raw' {
-  if (kind === 'video' || kind === 'audio') return 'video'; // Cloudinary serves audio under "video"
-  if (kind === 'pdf') return 'image'; // avoids Cloudinary's raw-delivery restrictions that broke PDF opening
+  if (kind === 'video' || kind === 'audio') return 'video'; 
+  if (kind === 'pdf') return 'image'; 
   if (kind === 'docx') return 'raw';
   return 'raw';
 }
@@ -118,7 +118,6 @@ export class AcademyService {
   }
 
 createCourse(payload: CreateCourseReqBody): Observable<Course> {
-  // console.log(payload);
   return this.http
     .post<RawCourseDoc | { data: RawCourseDoc }>(`${this.baseUrl}/courses`, payload)
     .pipe(map((res) => normalizeCourse(unwrapItem(res))));
