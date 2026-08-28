@@ -33,7 +33,7 @@
       (click)="selectTab('browse')"
       *ngIf="!isSuperAdmin"
     >
-      Browse
+      Available Courses
     </button>
     <button
       class="academy-tab"
@@ -42,7 +42,7 @@
       [attr.aria-selected]="activeTab === 'my-courses'"
       (click)="selectTab('my-courses')"
     >
-      Courses
+     My Courses
       <span class="academy-tab__count" *ngIf="myCourses?.length">{{ myCourses.length }}</span>
     </button>
     <button
@@ -320,7 +320,7 @@
             <th class="num">Amount</th>
             <th>Status</th>
             <th>Date</th>
-            <th class="actions"></th>
+            <th class="actions">Action</th>
           </tr>
         </thead>
         <tbody>
@@ -344,16 +344,16 @@
                 <mat-icon>{{ downloadingPurchaseId === p.id ? 'hourglass_empty' : 'download' }}</mat-icon>
               </button>
 
-              <button
+              <!-- <button
                 mat-icon-button
                 type="button"
                 matTooltip="Share this course"
                 [matMenuTriggerFor]="shareMenu"
               >
                 <mat-icon>share</mat-icon>
-              </button>
+              </button> -->
 
-              <mat-menu #shareMenu="matMenu" xPosition="before">
+              <!-- <mat-menu #shareMenu="matMenu" xPosition="before">
                 <button mat-menu-item type="button" (click)="shareToPlatform(p, 'linkedin')">
                   <mat-icon>business_center</mat-icon>
                   <span>Share on LinkedIn</span>
@@ -374,8 +374,8 @@
                 <button mat-menu-item type="button" (click)="copyShareLink(p)">
                   <mat-icon>content_copy</mat-icon>
                   <span>Copy link &amp; caption</span>
-                </button>
-              </mat-menu>
+                </button> -->
+              <!-- </mat-menu> -->
             </td>
           </tr>
         </tbody>

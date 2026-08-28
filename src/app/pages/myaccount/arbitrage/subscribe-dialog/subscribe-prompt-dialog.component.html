@@ -1,56 +1,91 @@
-<div class="spd-wrapper">
-  <button type="button" class="spd-close" (click)="dismiss()" aria-label="Close">
+<div class="spd-dialog">
+
+  <button type="button" class="spd-close-btn" mat-icon-button (click)="dismiss()" aria-label="Close">
     <mat-icon>close</mat-icon>
   </button>
 
   <div class="spd-header">
-    <span class="spd-icon"><mat-icon>{{ data.icon || 'lock' }}</mat-icon></span>
+    <span class="spd-icon-badge">
+      <mat-icon>{{ data.icon || 'lock' }}</mat-icon>
+    </span>
     <h2 class="spd-title">{{ data.title }}</h2>
-    <p class="spd-description">{{ data.description }}</p>
+    <p class="spd-description" *ngIf="isPlansView || isNavigateView">{{ data.description }}</p>
   </div>
 
-  <div class="spd-error" *ngIf="errorMessage">
-    <mat-icon>error_outline</mat-icon>
-    <span>{{ errorMessage }}</span>
-  </div>
-
-  <!-- Plan selection -->
-  <div class="spd-plans" *ngIf="isPlansMode">
+  <!-- STEP 1: plan list -->
+  <div class="spd-plans" *ngIf="isPlansView">
     <button
       type="button"
       class="spd-plan-card"
       *ngFor="let plan of data.plans"
-      [class.recommended]="plan.recommended"
-      [disabled]="!!submittingPlan"
-      (click)="selectPlan(plan)"
+      [class.spd-plan-recommended]="plan.recommended"
+      (click)="choosePlan(plan)"
     >
-      <span class="spd-plan-badge" *ngIf="plan.recommended">Best value</span>
-      <div class="spd-plan-main">
-        <span class="spd-plan-label">{{ plan.label }}</span>
-        <span class="spd-plan-duration">{{ plan.durationDays }} day access</span>
-      </div>
-      <div class="spd-plan-price">
-        <ng-container *ngIf="submittingPlan !== plan.key; else spinner">
-          &#36;{{ plan.price }} <span class="spd-plan-currency">USDT</span>
-        </ng-container>
-        <ng-template #spinner>
-          <mat-spinner diameter="20" strokeWidth="3"></mat-spinner>
-        </ng-template>
-      </div>
+      <span class="spd-plan-ribbon" *ngIf="plan.recommended">Best value</span>
+      <span class="spd-plan-label">{{ plan.label }}</span>
+      <span class="spd-plan-price">&#36;{{ plan.price }}</span>
+      <span class="spd-plan-duration">{{ plan.durationDays }} days</span>
     </button>
   </div>
 
-  <!-- Navigate confirmation -->
-  <div class="spd-navigate" *ngIf="!isPlansMode">
-    <button type="button" mat-flat-button color="primary" class="spd-cta" (click)="confirmNavigate()">
-      {{ data.navigateLabel || 'View subscription plans' }}
-    </button>
-    <button type="button" mat-button class="spd-secondary" (click)="dismiss()">
-      Not now
+  <!-- STEP 2: preview / confirm -->
+  <div class="spd-confirm" *ngIf="isConfirmView && selectedPlan as plan">
+    <p class="spd-confirm-copy">
+      You're about to subscribe to <strong>{{ plan.label }}</strong> —
+      &#36;{{ plan.price }} for {{ plan.durationDays }} days (&#36;{{ perDayPrice }}/day).
+      This unlocks live cross-exchange pricing, profit estimates, and one-click trading.
+    </p>
+
+    <div class="spd-confirm-card">
+      <div class="spd-confirm-row">
+        <span>Plan</span>
+        <strong>{{ plan.label }}</strong>
+      </div>
+      <div class="spd-confirm-row">
+        <span>Price</span>
+        <strong>&#36;{{ plan.price }}</strong>
+      </div>
+      <div class="spd-confirm-row">
+        <span>Duration</span>
+        <strong>{{ plan.durationDays }} days</strong>
+      </div>
+    </div>
+
+    <div class="spd-error" *ngIf="errorMessage">
+      <mat-icon>error_outline</mat-icon>
+      <span>{{ errorMessage }}</span>
+    </div>
+
+    <div class="spd-confirm-actions">
+      <button
+        type="button"
+        mat-stroked-button
+        class="spd-btn-secondary"
+        [disabled]="!!submittingPlan"
+        (click)="backToPlans()"
+      >
+        Back
+      </button>
+      <button
+        type="button"
+        mat-flat-button
+        color="primary"
+        class="spd-btn-primary"
+        [disabled]="!!submittingPlan"
+        (click)="confirmSubscribe()"
+      >
+        <mat-spinner *ngIf="submittingPlan" diameter="18" strokeWidth="2" class="spd-btn-spinner"></mat-spinner>
+        <span *ngIf="!submittingPlan">Confirm &amp; subscribe</span>
+        <span *ngIf="submittingPlan">Processing&hellip;</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- NAVIGATE-ONLY MODE -->
+  <div class="spd-navigate" *ngIf="isNavigateView">
+    <button type="button" mat-flat-button color="primary" class="spd-btn-primary" (click)="confirmNavigate()">
+      {{ data.navigateLabel || 'Continue' }}
     </button>
   </div>
 
-  <p class="spd-footnote" *ngIf="isPlansMode">
-    Plans renew manually — no auto-billing. You can subscribe to a new plan any time.
-  </p>
 </div>

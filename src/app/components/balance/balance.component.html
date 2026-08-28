@@ -401,7 +401,7 @@
                         </div>
                         <div class="bb-stake-meta-row">
                           <span>Expires in</span>
-                          <strong>{{ formatExpiryHours(crypto.expiry) }}</strong>
+                          <strong>{{ formatExpiryDays(crypto.expiry) }}</strong>
                         </div>
                       </div>
 
@@ -617,7 +617,7 @@
   </ng-container>
 
   <!-- ================================================================ -->
-  <!-- ADMIN DASHBOARD                                                    -->
+  <!-- ADMIN DASHBOARD -->
   <!-- ================================================================ -->
   <ng-container *ngIf="isAdminDashBoardType">
 
