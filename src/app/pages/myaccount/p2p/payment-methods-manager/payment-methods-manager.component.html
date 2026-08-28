@@ -1,0 +1,80 @@
+<div class="payment-methods-panel">
+  <div class="my-ads-toolbar">
+    <div>
+      <h2 class="panel-title">My Payment Methods</h2>
+      <p class="panel-subtitle">Saved once here — reused automatically on every ad and trade.</p>
+    </div>
+    <button mat-flat-button color="primary" type="button" (click)="openAddForm()">
+      <mat-icon>add</mat-icon> Add Payment Method
+    </button>
+  </div>
+
+  <div class="order-loading" *ngIf="loading">
+    <img src="./assets/images/loading.gif" alt="Loading..." style="width: 26px; height: 26px;" />
+  </div>
+
+  <div class="order-empty" *ngIf="!loading && methods.length === 0 && !showForm">
+    <span class="order-empty-title">No payment methods saved yet</span>
+    <span class="order-empty-sub">Add a bank account or wallet to start posting ads and accepting trades.</span>
+  </div>
+
+  <div class="payment-detail-card" *ngFor="let m of methods">
+    <div class="payment-detail-card-title">
+      {{ m.method }} &middot; {{ m.fiatCurrency }}
+      <span class="method-chip" *ngIf="m.isDefault">Default</span>
+    </div>
+    <div class="payment-details-row"><span>Account name</span><span>{{ m.accountName }}</span></div>
+    <div class="payment-details-row"><span>Account number</span><span>{{ m.accountNumber }}</span></div>
+    <div class="payment-details-row" *ngIf="m.bankName"><span>Bank</span><span>{{ m.bankName }}</span></div>
+    <div class="dialog-actions inline">
+      <button mat-stroked-button type="button" (click)="editMethod(m)">Edit</button>
+      <button mat-stroked-button color="warn" type="button" [disabled]="deletingId === m.id" (click)="remove(m)">
+        {{ deletingId === m.id ? 'Removing...' : 'Remove' }}
+      </button>
+    </div>
+  </div>
+
+  <form class="payment-detail-card" [formGroup]="form" *ngIf="showForm">
+    <div class="field-row">
+      <mat-form-field appearance="outline" class="w-100">
+        <mat-label>Fiat currency</mat-label>
+        <mat-select formControlName="fiatCurrency">
+          <mat-option *ngFor="let f of fiatSuggestions" [value]="f">{{ f }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="w-100">
+        <mat-label>Method</mat-label>
+        <mat-select formControlName="method">
+          <mat-option *ngFor="let m of methodOptions" [value]="m">{{ m }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+    <mat-form-field appearance="outline" class="w-100">
+      <mat-label>Account holder name</mat-label>
+      <input matInput formControlName="accountName" />
+    </mat-form-field>
+    <mat-form-field appearance="outline" class="w-100">
+      <mat-label>Account number</mat-label>
+      <input matInput formControlName="accountNumber" />
+    </mat-form-field>
+    <div class="field-row">
+      <mat-form-field appearance="outline" class="w-100">
+        <mat-label>Bank / provider (optional)</mat-label>
+        <input matInput formControlName="bankName" />
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="w-100">
+        <mat-label>Note (optional)</mat-label>
+        <input matInput formControlName="additionalInfo" />
+      </mat-form-field>
+    </div>
+    <label style="display:flex; align-items:center; gap:8px;">
+      <input type="checkbox" formControlName="isDefault" /> Set as default for this currency
+    </label>
+    <div class="dialog-actions inline">
+      <button mat-stroked-button type="button" (click)="cancel()">Cancel</button>
+      <button mat-flat-button color="primary" type="button" [disabled]="saving" (click)="submit()">
+        {{ saving ? 'Saving...' : (editingId ? 'Update' : 'Save') }}
+      </button>
+    </div>
+  </form>
+</div>

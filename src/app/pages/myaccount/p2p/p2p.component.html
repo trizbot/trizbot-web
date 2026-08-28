@@ -24,9 +24,7 @@
 
   <!-- MARKET -->
   <ng-container *ngIf="activeTab === 'market'">
-
     <div class="market-panel">
-
       <div class="market-top-row">
         <div class="buy-sell-toggle">
           <button
@@ -70,12 +68,27 @@
           </mat-select>
         </mat-form-field>
 
-        <mat-form-field appearance="outline" class="filter-field coin-field">
+        <!-- <mat-form-field appearance="outline" class="filter-field coin-field">
           <mat-label>Coin</mat-label>
           <mat-select formControlName="coin" (selectionChange)="loadOrders()">
             <mat-option *ngFor="let c of coinSuggestions" [value]="c">{{ c }}</mat-option>
           </mat-select>
-        </mat-form-field>
+        </mat-form-field> -->
+
+        <button
+  class="view-tab-btn"
+  *ngIf="isAdminUser"
+  [class.active]="activeTab === 'categories'"
+  (click)="selectTab('categories')"
+  role="tab"
+>
+  Categories
+</button>
+
+<ng-container *ngIf="activeTab === 'categories' && isAdminUser">
+  <app-p2p-category-admin></app-p2p-category-admin>
+</ng-container>
+
 
         <mat-form-field appearance="outline" class="filter-field method-filter">
           <mat-label>Payment method</mat-label>

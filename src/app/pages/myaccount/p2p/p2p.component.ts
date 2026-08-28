@@ -29,8 +29,15 @@ import { Observable } from 'rxjs';
 import { Trader } from '../../../../app/appstate/appstate-model';
 import { GetTraderResBody } from '../../../../app/services/auth.type';
 import { TraderService } from '../../../../app/appstate/trader.service';
+import { P2pCategoryService } from './service/p2p-category.service';
 
-type MainTab = 'market' | 'my-orders' | 'my-trades';
+
+
+type MainTab = 'market' | 'my-orders' | 'my-trades' | 'categories';
+
+
+
+
 type MyAdsSubTab = 'listed' | 'all';
 type SortOption = 'price-asc' | 'price-desc' | 'available-desc';
 
@@ -63,7 +70,8 @@ const COUNTDOWN_URGENT_THRESHOLD_MS = 2 * 60 * 1000;
 })
 export class P2pComponent implements OnInit, OnDestroy {
   private sharedService = inject(SharedService);
-
+// inject:
+private categoryService = inject(P2pCategoryService);
   readonly P2POrderType = P2POrderType;
   readonly OrderStatus = OrderStatus;
   readonly TradeStatus = TradeStatus;
@@ -684,4 +692,29 @@ export class P2pComponent implements OnInit, OnDestroy {
   isActiveTrade(trade: P2PTrade): boolean {
     return trade.status === TradeStatus.Pending || trade.status === TradeStatus.Paid;
   }
+
+
+
+
+
+
+categorySymbols: string[] = [];
+
+get isAdminUser(): boolean {
+  return this.entityName === 'Admin' && !!this.isSuperAdmin;
+}
+
+get coinSuggestions(): string[] {
+  return this.categorySymbols.length ? this.categorySymbols : SUPPORTED_COINS;
+}
+
+// in ngOnInit, alongside the existing calls:
+this.categoryService.getCategorySymbols().subscribe({
+  next: (symbols) => (this.categorySymbols = symbols),
+  error: () => {}, // falls back to SUPPORTED_COINS
+});
+
+
+
+
 }

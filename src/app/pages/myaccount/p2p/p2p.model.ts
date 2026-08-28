@@ -1,3 +1,7 @@
+// import { UserPaymentMethod, normalizePaymentMethod } from './payment-method.model';
+
+import { UserPaymentMethod, normalizePaymentMethod } from "./payment-method/payment-method.model";
+
 export enum P2POrderType {
   Buy = 'Buy',
   Sell = 'Sell',
@@ -9,10 +13,6 @@ export enum OrderStatus {
   Cancelled = 'Cancelled',
 }
 
-// FIX: values must match backend P2PTradeStatus exactly ('Pending', 'Completed'),
-// not 'PendingPayment' / 'Released'. The mismatch meant every status check in
-// the UI (countdown timer, "mark as paid" button, "released" footer) silently
-// failed because trade.status from the API never equalled these enum members.
 export enum TradeStatus {
   Pending = 'Pending',
   Paid = 'Paid',
@@ -39,18 +39,12 @@ export interface UpdateOrderReqBody {
   minLimit?: number;
   maxLimit?: number;
   paymentMethods?: string[];
-  paymentDetails?: PaymentMethodDetail[];
+  /** References into the trader's saved payment methods — no raw account
+   *  details are ever sent per-ad any more. */
+  paymentMethodIds?: string[];
   terms?: string;
   paymentWindowMinutes?: number;
   transactionPin?: string;
-}
-
-export interface PaymentMethodDetail {
-  method: string;
-  accountName: string;
-  accountNumber: string;
-  bankName?: string;
-  additionalInfo?: string;
 }
 
 export interface P2POrder {
@@ -64,7 +58,10 @@ export interface P2POrder {
   minLimit: number;
   maxLimit: number;
   paymentMethods: string[];
-  paymentDetails?: PaymentMethodDetail[];
+  /** IDs the ad points to. */
+  paymentMethodIds?: string[];
+
+  paymentMethodDetails?: UserPaymentMethod[];
   terms?: string;
   paymentWindowMinutes?: number;
   status: OrderStatus;
@@ -83,20 +80,17 @@ export interface P2PTrade {
   coinAmount: number;
   fiatAmount: number;
   paymentMethod: string;
-  sellerPaymentDetails?: PaymentMethodDetail;
+  /** The one saved payment method actually locked in for this trade
+   *  (the seller's receiving account, whichever side supplied it). */
+  sellerPaymentMethod?: UserPaymentMethod;
   status: TradeStatus;
   paymentDeadline?: string;
   createdAt: string;
-
   paymentProofUrl?: string;
   paymentProofNote?: string;
   paidAt?: string;
   releasedAt?: string;
 }
-
-// ---------------------------------------------------------------------
-// Request bodies
-// ---------------------------------------------------------------------
 
 export interface CreateOrderReqBody {
   type: P2POrderType;
@@ -107,7 +101,7 @@ export interface CreateOrderReqBody {
   minLimit: number;
   maxLimit: number;
   paymentMethods: string[];
-  paymentDetails?: PaymentMethodDetail[];
+  paymentMethodIds?: string[];
   terms?: string;
   paymentWindowMinutes?: number;
   transactionPin?: string;
@@ -124,20 +118,16 @@ export interface InitiateTradeReqBody {
   coinAmount: number;
   paymentMethod?: string;
   transactionPin?: string;
-  sellerPaymentDetails?: PaymentMethodDetail;
+  /** When I'm the one selling (i.e. the ad was a Buy ad), this is the ID
+   *  of MY saved payment method the buyer should pay into. */
+  paymentMethodId?: string;
 }
 
 export const PAYMENT_WINDOW_OPTIONS: number[] = [15, 30, 45];
 
-export const SUPPORTED_COINS: string[] = [
-  'USDT', 'BTC',
-];
-// export const SUPPORTED_COINS: string[] = [
-//   'USDT', 'BTC', 'ETH', 'USDC', 'SOL', 'BNB', 'CORE', 'XRP', 'LTC',
-//   'TON', 'TRX', 'DOGE', 'ADA', 'MATIC', 'DOT', 'SHIB', 'AVAX', 'LINK', 'ATOM', 'BCH', 'ETC',
-// ];
-
-// export const QUICK_COINS: string[] = ['USDT', 'BTC', 'ETH', 'USDC', 'SOL', 'BNB', 'XRP', 'LTC'];
+// SUPPORTED_COINS is now a fallback only — the live list comes from
+// P2pCategoryService.getCategorySymbols(), managed by admins.
+export const SUPPORTED_COINS: string[] = ['USDT', 'BTC'];
 export const QUICK_COINS: string[] = ['USDT', 'BTC'];
 
 export const SUPPORTED_FIAT: string[] = [
@@ -162,9 +152,9 @@ export const PAYMENT_METHODS_BY_FIAT: Record<string, string[]> = {
   BRL: ['Pix', 'Bank Transfer'],
   TRY: ['Papara', 'Bank Transfer', 'Wise'],
   PKR: ['Easypaisa', 'JazzCash', 'Bank Transfer'],
-  EGP: ['Solidpyco','Vodafone Cash', 'InstaPay', 'Bank Transfer'],
+  EGP: ['Solidpyco', 'Vodafone Cash', 'InstaPay', 'Bank Transfer'],
   UGX: ['Solidpyco', 'MTN Mobile Money', 'Airtel Money'],
-  TZS: ['Solidpyco','M-Pesa', 'Tigo Pesa', 'Airtel Money'],
+  TZS: ['Solidpyco', 'M-Pesa', 'Tigo Pesa', 'Airtel Money'],
   XOF: ['Solidpyco', 'Orange Money', 'Wave', 'MTN Mobile Money'],
 };
 
@@ -245,7 +235,8 @@ export function normalizeOrder(raw: any): P2POrder {
     minLimit: raw.minLimit,
     maxLimit: raw.maxLimit,
     paymentMethods: raw.paymentMethods || [],
-    paymentDetails: raw.paymentDetails || [],
+    paymentMethodIds: (raw.paymentMethodIds || []).map(extractId),
+    paymentMethodDetails: (raw.paymentMethodDetails || []).map(normalizePaymentMethod),
     terms: raw.terms,
     paymentWindowMinutes: raw.paymentWindowMinutes,
     status: raw.status,
@@ -269,7 +260,7 @@ export function normalizeTrade(raw: any): P2PTrade {
     coinAmount: raw.coinAmount,
     fiatAmount: raw.fiatAmount,
     paymentMethod: raw.paymentMethod,
-    sellerPaymentDetails: raw.sellerPaymentDetails || undefined,
+    sellerPaymentMethod: raw.sellerPaymentMethod ? normalizePaymentMethod(raw.sellerPaymentMethod) : undefined,
     status: raw.status,
     paymentDeadline: raw.paymentDeadline ? extractDate(raw.paymentDeadline) : undefined,
     createdAt: extractDate(raw.createdAt),
@@ -289,23 +280,19 @@ export interface ReleaseTradeReqBody {
   transactionPin?: string;
 }
 
-/** Buyer can mark paid only while still within the payment window. */
 export function canMarkPaid(trade: P2PTrade): boolean {
   return trade.isBuyer && trade.status === TradeStatus.Pending;
 }
 
-/** Seller can release only after the buyer has marked the trade paid. */
 export function canReleaseFunds(trade: P2PTrade): boolean {
   return !trade.isBuyer && trade.status === TradeStatus.Paid;
 }
 
-/** Milliseconds remaining until a trade's payment deadline. Negative once expired. */
 export function msUntilDeadline(paymentDeadline: string | undefined, nowMs: number = Date.now()): number {
   if (!paymentDeadline) return 0;
   return new Date(paymentDeadline).getTime() - nowMs;
 }
 
-/** Formats remaining ms as "mm:ss", or "Expired" once the deadline has passed. */
 export function formatCountdown(msLeft: number): string {
   if (msLeft <= 0) return 'Expired';
   const totalSeconds = Math.floor(msLeft / 1000);

@@ -179,6 +179,35 @@
     </mat-form-field>
   </ng-container>
 
+
+  <ng-container *ngIf="isSellAd">
+  <mat-label class="f-w-600 m-b-8 d-block">Receiving accounts for this ad</mat-label>
+
+  <div class="order-empty" *ngIf="!savedMethodsLoading && eligibleSavedMethods.length === 0">
+    <span class="order-empty-title">No saved {{ form.value.fiatCurrency }} payment methods yet</span>
+    <span class="order-empty-sub">Add one in your Payment Methods settings, then come back here.</span>
+  </div>
+
+  <div class="payment-detail-card" *ngFor="let m of eligibleSavedMethods">
+    <label style="display:flex; align-items:flex-start; gap:10px;">
+      <input
+        type="checkbox"
+        [checked]="form.value.paymentMethodIds?.includes(m.id)"
+        (change)="onSavedMethodToggle(m.id, $any($event.target).checked)"
+      />
+      <span>
+        <div class="payment-detail-card-title">{{ m.method }}</div>
+        <div class="payment-details-row"><span>Account name</span><span>{{ m.accountName }}</span></div>
+        <div class="payment-details-row"><span>Account number</span><span>{{ m.accountNumber }}</span></div>
+      </span>
+    </label>
+  </div>
+
+  <div class="field-error" *ngIf="paymentMethodIdsError">{{ paymentMethodIdsError }}</div>
+</ng-container>
+
+
+
   <div *ngIf="errorMessage" class="alert alert-danger m-t-2">
     <b>{{ errorMessage }}</b>
   </div>

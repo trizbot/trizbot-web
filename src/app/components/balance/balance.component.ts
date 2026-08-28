@@ -409,7 +409,6 @@ export class WalletBalanceComponent implements OnInit, OnDestroy {
   formatExpiryDays(hoursInput: number | string): string {
     const totalHours = Math.max(0, Number(hoursInput) || 0);
     const days = Math.round(totalHours / 24);
-    // return `${days}d`;
     return `${hoursInput}d`;
   }
 

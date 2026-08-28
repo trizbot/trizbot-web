@@ -19,6 +19,7 @@ import {
   getPaymentMethodsForFiat,
   msUntilDeadline,
 } from '../p2p.model';
+import { UserPaymentMethod } from '../payment-method/payment-method.model';
 
 export interface InitiateTradeDialogData {
   order?: P2POrder;
@@ -349,4 +350,125 @@ export class InitiateTradeDialogComponent implements OnInit, OnDestroy {
     const merchant = this.trade.isBuyer ? this.trade.seller : this.trade.buyer;
     return merchant?.username || 'Trader';
   }
+
+
+
+
+
+
+  readonly disputeReasonOptions = [
+  'Payment not received',
+  'Payment amount is incorrect',
+  'Counterparty is unresponsive',
+  'Suspicious or unsafe behaviour',
+  'Other',
+];
+
+showDisputeForm = false;
+disputeReason = this.disputeReasonOptions[0];
+disputeDetails = '';
+disputeSubmitting = false;
+disputeError = '';
+
+/** Both buyer and seller can raise this on any trade that isn't finished. */
+get canOpenDisputeOrReport(): boolean {
+  return !!this.trade && [TradeStatus.Pending, TradeStatus.Paid, TradeStatus.Disputed].includes(this.trade.status);
+}
+
+toggleDisputeForm(): void {
+  this.showDisputeForm = !this.showDisputeForm;
+  this.disputeError = '';
+}
+
+submitDispute(): void {
+  if (!this.trade || this.disputeSubmitting) return;
+  if (!this.disputeReason) {
+    this.disputeError = 'Choose a reason for this report.';
+    return;
+  }
+  this.disputeSubmitting = true;
+  const reason = this.disputeDetails.trim()
+    ? `${this.disputeReason}: ${this.disputeDetails.trim()}`
+    : this.disputeReason;
+
+  this.p2pService.disputeTrade(this.trade.id, reason).subscribe({
+    next: (updated) => {
+      this.disputeSubmitting = false;
+      this.showDisputeForm = false;
+      this.trade = updated;
+      this.sharedService.showToast({ title: 'Dispute opened. Support has been notified.' });
+    },
+    error: (err) => {
+      this.disputeSubmitting = false;
+      const message = err?.error?.message || 'Could not open a dispute right now.';
+      this.disputeError = Array.isArray(message) ? message.join(', ') : message;
+    },
+  });
+}
+
+contactSupport(): void {
+  const subject = encodeURIComponent(`Help with P2P trade ${this.trade?.id ?? ''}`);
+  const body = encodeURIComponent(
+    `Trade ID: ${this.trade?.id}\nCounterparty: ${this.counterpartyName()}\nStatus: ${this.trade?.status}\n\nDescribe your issue:\n`
+  );
+  window.open(`mailto:support@yourapp.com?subject=${subject}&body=${body}`, '_blank');
+}
+
+
+
+
+
+
+
+mySavedMethods: UserPaymentMethod[] = [];
+selectedPaymentMethodId = '';
+
+// in ngOnInit, when mode === 'initiate' and mustSupplySellerDetails:
+if (this.mustSupplySellerDetails) {
+  this.paymentMethodsService.myMethods().subscribe({
+    next: (res) => {
+      this.mySavedMethods = res.filter((m) => m.fiatCurrency === this.order!.fiatCurrency);
+      const dflt = this.mySavedMethods.find((m) => m.isDefault) || this.mySavedMethods[0];
+      this.selectedPaymentMethodId = dflt?.id || '';
+    },
+  });
+}
+
+get initiateFormValid(): boolean {
+  if (!this.amountValid || !this.paymentMethod || !this.pinValid) return false;
+  if (this.mustSupplySellerDetails) return !!this.selectedPaymentMethodId;
+  return true;
+}
+
+submitInitiateTrade(): void {
+  if (!this.order || !this.initiateFormValid || this.submitting) return;
+
+  this.submitting = true;
+  this.errorMessage = '';
+
+  this.p2pService
+    .initiateTrade({
+      orderId: this.order.id,
+      coinAmount: this.coinAmount as number,
+      paymentMethod: this.paymentMethod,
+      paymentMethodId: this.mustSupplySellerDetails ? this.selectedPaymentMethodId : undefined,
+      transactionPin: this.transactionPin,
+    })
+    .subscribe({
+      next: (trade) => {
+        this.submitting = false;
+        this.transactionPin = '';
+        this.sharedService.showToast({ title: 'Trade started. Check the payment window below.' });
+        this.close(trade);
+      },
+      error: (err) => {
+        this.submitting = false;
+        const message = err?.error?.message || 'Could not start this trade.';
+        this.errorMessage = Array.isArray(message) ? message.join(', ') : message;
+      },
+    });
+}
+
+
+
 }

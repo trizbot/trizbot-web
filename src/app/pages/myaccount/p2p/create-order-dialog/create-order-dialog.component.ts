@@ -73,7 +73,51 @@ export class CreateOrderDialogComponent implements OnDestroy {
 
   loading = false;
   errorMessage = '';
+// Replace the SUPPORTED_COINS import usage for coinSuggestions with the
+// category service, and swap the paymentDetails FormArray for a simple
+// multi-select of saved payment method IDs.
 
+import { P2pCategoryService } from '../p2p-category.service';
+import { PaymentMethodsService } from '../payment-methods.service';
+import { UserPaymentMethod } from '../payment-method.model';
+
+// ...inside the component class, replace `paymentDetails: new FormArray<FormGroup>([])`
+// in the form definition with:
+paymentMethodIds: new FormControl<string[]>([], { nonNullable: true, validators: [] }),
+
+// add new state:
+savedMethods: UserPaymentMethod[] = [];
+savedMethodsLoading = false;
+
+// in constructor, inject the two services, then in the body (after existing subs):
+this.loadSavedMethods();
+
+private loadSavedMethods(): void {
+  this.savedMethodsLoading = true;
+  this.paymentMethodsService.myMethods().subscribe({
+    next: (res) => {
+      this.savedMethods = res;
+      this.savedMethodsLoading = false;
+    },
+    error: () => (this.savedMethodsLoading = false),
+  });
+}
+
+/** Only offer methods that match the ad's fiat currency. */
+get eligibleSavedMethods(): UserPaymentMethod[] {
+  const fiat = this.form.getRawValue().fiatCurrency;
+  return this.savedMethods.filter((m) => m.fiatCurrency === fiat);
+}
+
+get paymentMethodIdsError(): string | null {
+  if (!this.isSellAd) return null;
+  const ids = this.form.getRawValue().paymentMethodIds;
+  const methods = this.form.getRawValue().paymentMethods;
+  if (methods.length > 0 && ids.length === 0) {
+    return 'Select which saved payment method(s) buyers should pay into.';
+  }
+  return null;
+}
   /** Once the user manually types into Max order limit, stop auto-overwriting it. */
   private maxLimitTouchedByUser = false;
   private subs = new Subscription();
@@ -352,78 +396,85 @@ export class CreateOrderDialogComponent implements OnDestroy {
       additionalInfo: pd.additionalInfo || undefined,
     }));
   }
+submit(): void {
+  if (this.form.invalid || this.limitError || this.paymentMethodIdsError || this.priceError) {
+    this.form.markAllAsTouched();
+    return;
+  }
 
-  submit(): void {
-    if (this.form.invalid || this.limitError || this.paymentDetailsError || this.priceError) {
-      this.form.markAllAsTouched();
-      return;
-    }
+  this.errorMessage = '';
+  this.loading = true;
+  const value = this.form.getRawValue();
+  const paymentMethodIds = value.type === P2POrderType.Sell ? value.paymentMethodIds : undefined;
 
-    this.errorMessage = '';
-    this.loading = true;
-    const value = this.form.getRawValue();
-    const paymentDetails =
-      value.type === P2POrderType.Sell ? this.toPaymentDetails(value.paymentDetails) : undefined;
-
-    if (this.isEditMode) {
-      const orderId = this.data.order!.id;
-      this.p2pService
-        .updateOrder(orderId, {
-          pricePerUnit: value.pricePerUnit!,
-          totalAmount: value.totalAmount!,
-          minLimit: value.minLimit!,
-          maxLimit: value.maxLimit!,
-          paymentMethods: value.paymentMethods,
-          paymentDetails,
-          terms: value.terms || undefined,
-          paymentWindowMinutes: value.paymentWindowMinutes,
-          transactionPin: value.transactionPin || undefined,
-        })
-        .subscribe({
-          next: () => {
-            this.loading = false;
-            this.sharedService.showToast({ title: 'Your ad has been updated.' });
-            this.dialogRef.close(true);
-          },
-          error: (err) => {
-            this.loading = false;
-            const message = err?.error?.message || 'Could not update this ad. Please try again.';
-            this.errorMessage = Array.isArray(message) ? message.join(', ') : message;
-          },
-        });
-      return;
-    }
-
+  if (this.isEditMode) {
+    const orderId = this.data.order!.id;
     this.p2pService
-      .createOrder({
-        type: value.type,
-        coin: value.coin,
-        fiatCurrency: value.fiatCurrency,
+      .updateOrder(orderId, {
         pricePerUnit: value.pricePerUnit!,
         totalAmount: value.totalAmount!,
         minLimit: value.minLimit!,
         maxLimit: value.maxLimit!,
         paymentMethods: value.paymentMethods,
-        paymentDetails,
+        paymentMethodIds,
         terms: value.terms || undefined,
         paymentWindowMinutes: value.paymentWindowMinutes,
-        transactionPin: value.type === P2POrderType.Sell ? value.transactionPin : undefined,
+        transactionPin: value.transactionPin || undefined,
       })
       .subscribe({
         next: () => {
           this.loading = false;
-          this.sharedService.showToast({ title: 'Your ad has been posted.' });
+          this.sharedService.showToast({ title: 'Your ad has been updated.' });
           this.dialogRef.close(true);
         },
         error: (err) => {
           this.loading = false;
-          const message = err?.error?.message || 'Could not post this ad. Please try again.';
+          const message = err?.error?.message || 'Could not update this ad. Please try again.';
           this.errorMessage = Array.isArray(message) ? message.join(', ') : message;
         },
       });
+    return;
   }
+
+  this.p2pService
+    .createOrder({
+      type: value.type,
+      coin: value.coin,
+      fiatCurrency: value.fiatCurrency,
+      pricePerUnit: value.pricePerUnit!,
+      totalAmount: value.totalAmount!,
+      minLimit: value.minLimit!,
+      maxLimit: value.maxLimit!,
+      paymentMethods: value.paymentMethods,
+      paymentMethodIds,
+      terms: value.terms || undefined,
+      paymentWindowMinutes: value.paymentWindowMinutes,
+      transactionPin: value.type === P2POrderType.Sell ? value.transactionPin : undefined,
+    })
+    .subscribe({
+      next: () => {
+        this.loading = false;
+        this.sharedService.showToast({ title: 'Your ad has been posted.' });
+        this.dialogRef.close(true);
+      },
+      error: (err) => {
+        this.loading = false;
+        const message = err?.error?.message || 'Could not post this ad. Please try again.';
+        this.errorMessage = Array.isArray(message) ? message.join(', ') : message;
+      },
+    });
+}
+
 
   close(): void {
     this.dialogRef.close(false);
   }
+
+
+
+  onSavedMethodToggle(id: string, checked: boolean): void {
+  const current = this.form.getRawValue().paymentMethodIds;
+  const next = checked ? [...current, id] : current.filter((x) => x !== id);
+  this.form.controls.paymentMethodIds.setValue(next);
+}
 }

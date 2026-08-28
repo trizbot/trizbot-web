@@ -1,0 +1,47 @@
+<div class="category-admin-panel">
+  <h2 class="panel-title">P2P Categories</h2>
+  <p class="panel-subtitle">Coins/assets traders can post ads for. Admin only — changes apply everywhere immediately.</p>
+
+  <form class="filters-row" [formGroup]="form">
+    <mat-form-field appearance="outline" class="filter-field">
+      <mat-label>Category (e.g. USDT)</mat-label>
+      <input matInput formControlName="category" />
+    </mat-form-field>
+    <mat-form-field appearance="outline" class="filter-field">
+      <mat-label>Reference (optional)</mat-label>
+      <input matInput formControlName="reference" />
+    </mat-form-field>
+    <button mat-flat-button color="primary" type="button" [disabled]="saving" (click)="submit()">
+      {{ saving ? 'Saving...' : (editingId ? 'Update' : 'Add Category') }}
+    </button>
+    <button mat-stroked-button type="button" *ngIf="editingId" (click)="cancelEdit()">Cancel</button>
+  </form>
+
+  <div class="order-loading" *ngIf="loading">
+    <img src="./assets/images/loading.gif" alt="Loading..." style="width: 26px; height: 26px;" />
+  </div>
+
+  <div class="order-list-header" *ngIf="!loading && categories.length > 0">
+    <span class="col-advertiser">Category</span>
+    <span class="col-price">Reference</span>
+    <span class="col-limit">Created</span>
+    <span class="col-action"></span>
+  </div>
+
+  <div class="order-row" *ngFor="let c of categories">
+    <span class="merchant-name">{{ c.category }}</span>
+    <span>{{ c.reference || '—' }}</span>
+    <span>{{ c.createdAt | date: 'medium' }}</span>
+    <div class="action-col">
+      <button mat-icon-button (click)="startEdit(c)" matTooltip="Edit"><mat-icon>edit</mat-icon></button>
+      <button mat-icon-button color="warn" [disabled]="deletingId === c.id" (click)="remove(c)" matTooltip="Delete">
+        <mat-icon [class.spinning]="deletingId === c.id">{{ deletingId === c.id ? 'autorenew' : 'delete' }}</mat-icon>
+      </button>
+    </div>
+  </div>
+
+  <div class="order-empty" *ngIf="!loading && categories.length === 0">
+    <span class="order-empty-title">No categories yet</span>
+    <span class="order-empty-sub">Add your first tradable coin above.</span>
+  </div>
+</div>
