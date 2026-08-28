@@ -47,7 +47,6 @@ export interface FeedItemStats {
   changePercent?: number;
 }
 
-/** Normalized shape the UI actually works with */
 export interface FeedItem {
   id: string;
   reference?: string;
@@ -89,18 +88,12 @@ export interface CreateFeedPayload {
   source?: string | null;
   sourceUrl?: string | null;
   imageUrl?: string | null;
-  /**
-   * Category is a free-form name matched against the live, API-managed
-   * category list (see FeedCategoryItem below) — not a fixed enum. The
-   * `FeedCategoryEnum` above is kept only as a legacy/reference set and is
-   * no longer used to type or constrain this field.
-   */
+
   category?: string | null;
   coinSymbol?: string | null;
   tags?: string[];
   isPublished?: boolean;
-  // `reference` is intentionally NOT part of this payload — it is always
-  // generated server-side on create and must never be sent by the client.
+  
 }
 
 export type UpdateFeedPayload = Partial<CreateFeedPayload>;
@@ -146,16 +139,7 @@ export function mapRawFeedItem(raw: RawFeedItem): FeedItem {
   };
 }
 
-// ─────────────────────────────────────────────────────────────
-// Feed Category management (super-admin CRUD)
-//
-// This is now the SINGLE source of category data for the whole feed
-// feature: the nav filter, post badges, and the create/edit post dialog
-// all read from `FeedCategoryItem[]` loaded via `/feed/category`. The
-// `FeedCategoryEnum` above is no longer used to drive any UI.
-// ─────────────────────────────────────────────────────────────
 
-/** Shape actually returned by the backend for a single feed category record */
 export interface RawFeedCategoryDoc {
   _id: string;
   category: string;
@@ -186,5 +170,31 @@ export function normalizeFeedCategory(raw: RawFeedCategoryDoc): FeedCategoryItem
     reference: raw.reference,
     createdAt: raw.createdAt,
     updatedAt: raw.updatedAt,
+  };
+}
+
+
+export interface FeedShareLinks {
+  linkedin: string;
+  twitter: string;
+  whatsapp: string;
+  facebook: string;
+  email: string;
+}
+
+export function buildFeedShareText(title: string, category?: string): string {
+  const categoryTag = category ? ` #${category.replace(/\s+/g, '')}` : '';
+  return `${title}${categoryTag} — via Trizbot Feed`;
+}
+
+export function buildFeedShareLinks(url: string, text: string): FeedShareLinks {
+  const encodedUrl = encodeURIComponent(url);
+  const encodedText = encodeURIComponent(text);
+  return {
+    linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}`,
+    twitter: `https://twitter.com/intent/tweet?text=${encodedText}&url=${encodedUrl}`,
+    whatsapp: `https://wa.me/?text=${encodedText}%20${encodedUrl}`,
+    facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`,
+    email: `mailto:?subject=${encodeURIComponent(text)}&body=${encodedText}%20${encodedUrl}`,
   };
 }

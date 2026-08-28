@@ -1,8 +1,6 @@
 <div class="feed-wrapper">
 
-  <!-- ===================================================================== -->
-  <!-- HERO HEADER -->
-  <!-- ===================================================================== -->
+
   <header class="feed-hero">
     <div class="feed-hero-glow" aria-hidden="true"></div>
     <div class="feed-hero-text">
@@ -27,9 +25,9 @@
     </button>
   </header>
 
-  <!-- ===================================================================== -->
+  <!-- ================================================================= -->
   <!-- TABS (Trending removed) -->
-  <!-- ===================================================================== -->
+  <!-- ================================================================= -->
   <nav class="feed-tabs" role="tablist" aria-label="Feed sections">
     <button
       class="feed-tab"
@@ -69,9 +67,9 @@
     </button>
   </nav>
 
-  <!-- ===================================================================== -->
+  <!-- ================================================================= -->
   <!-- ALL FEED (read-only for every user) -->
-  <!-- ===================================================================== -->
+  <!-- ================================================================= -->
   <section *ngIf="activeTab === 'feed'" class="feed-section">
 
     <div class="feed-toolbar">
@@ -210,12 +208,53 @@
             <span class="tag-chip" *ngFor="let tag of item.tags.slice(0, 3)">#{{ tag }}</span>
           </div>
 
-          <!-- View More: opens the full post-detail modal (source/sourceUrl are
-               optional — the modal itself only renders that section when present) -->
-          <button type="button" class="view-more-btn" (click)="openDetail(item, $event)">
-            View More
-            <mat-icon>arrow_forward</mat-icon>
-          </button>
+          <div class="feed-card-cta-row">
+            <!-- View More: opens the full post-detail modal (source/sourceUrl are
+                 optional — the modal itself only renders that section when present) -->
+            <button type="button" class="view-more-btn" (click)="openDetail(item, $event)">
+              View More
+              <mat-icon>arrow_forward</mat-icon>
+            </button>
+
+            <!-- Share: everyone can share any feed post -->
+            <button
+              type="button"
+              class="share-icon-btn"
+              matTooltip="Share post"
+              [matMenuTriggerFor]="cardShareMenu"
+              (click)="$event.stopPropagation()"
+              aria-label="Share post"
+            >
+              <mat-icon>share</mat-icon>
+            </button>
+
+            <mat-menu #cardShareMenu="matMenu">
+              <button mat-menu-item type="button" (click)="shareFeedToPlatform(item, 'linkedin', $event)">
+                <mat-icon>business_center</mat-icon>
+                <span>LinkedIn</span>
+              </button>
+              <button mat-menu-item type="button" (click)="shareFeedToPlatform(item, 'twitter', $event)">
+                <mat-icon>alternate_email</mat-icon>
+                <span>X (Twitter)</span>
+              </button>
+              <button mat-menu-item type="button" (click)="shareFeedToPlatform(item, 'whatsapp', $event)">
+                <mat-icon>chat</mat-icon>
+                <span>WhatsApp</span>
+              </button>
+              <button mat-menu-item type="button" (click)="shareFeedToPlatform(item, 'facebook', $event)">
+                <mat-icon>thumb_up</mat-icon>
+                <span>Facebook</span>
+              </button>
+              <button mat-menu-item type="button" (click)="shareFeedToPlatform(item, 'email', $event)">
+                <mat-icon>email</mat-icon>
+                <span>Email</span>
+              </button>
+              <button mat-menu-item type="button" (click)="copyFeedShareLink(item, $event)">
+                <mat-icon>content_copy</mat-icon>
+                <span>Copy link</span>
+              </button>
+            </mat-menu>
+          </div>
 
           <div class="feed-card-footer">
             <span class="feed-source" *ngIf="item.source">{{ item.source }}</span>
@@ -268,9 +307,9 @@
     </div>
   </section>
 
-  <!-- ===================================================================== -->
+  <!-- ================================================================= -->
   <!-- MANAGE (super-admin only: create / edit / delete posts) -->
-  <!-- ===================================================================== -->
+  <!-- ================================================================= -->
   <section *ngIf="activeTab === 'manage' && isSuperAdmin" class="feed-section">
     <div class="manage-header">
       <p class="manage-caption">{{ manageItems.length }} post(s)</p>
@@ -333,6 +372,40 @@
               <button mat-icon-button type="button" (click)="openDetail(item, $event)" aria-label="View post">
                 <mat-icon>visibility</mat-icon>
               </button>
+              <button
+                mat-icon-button
+                type="button"
+                [matMenuTriggerFor]="manageShareMenu"
+                aria-label="Share post"
+              >
+                <mat-icon>share</mat-icon>
+              </button>
+              <mat-menu #manageShareMenu="matMenu">
+                <button mat-menu-item type="button" (click)="shareFeedToPlatform(item, 'linkedin', $event)">
+                  <mat-icon>business_center</mat-icon>
+                  <span>LinkedIn</span>
+                </button>
+                <button mat-menu-item type="button" (click)="shareFeedToPlatform(item, 'twitter', $event)">
+                  <mat-icon>alternate_email</mat-icon>
+                  <span>X (Twitter)</span>
+                </button>
+                <button mat-menu-item type="button" (click)="shareFeedToPlatform(item, 'whatsapp', $event)">
+                  <mat-icon>chat</mat-icon>
+                  <span>WhatsApp</span>
+                </button>
+                <button mat-menu-item type="button" (click)="shareFeedToPlatform(item, 'facebook', $event)">
+                  <mat-icon>thumb_up</mat-icon>
+                  <span>Facebook</span>
+                </button>
+                <button mat-menu-item type="button" (click)="shareFeedToPlatform(item, 'email', $event)">
+                  <mat-icon>email</mat-icon>
+                  <span>Email</span>
+                </button>
+                <button mat-menu-item type="button" (click)="copyFeedShareLink(item, $event)">
+                  <mat-icon>content_copy</mat-icon>
+                  <span>Copy link</span>
+                </button>
+              </mat-menu>
               <button mat-icon-button type="button" (click)="openEditDialog(item)" aria-label="Edit post">
                 <mat-icon>edit</mat-icon>
               </button>
@@ -353,9 +426,9 @@
     </div>
   </section>
 
-  <!-- ===================================================================== -->
+  <!-- ================================================================= -->
   <!-- CATEGORIES (super-admin only: create / edit / delete categories) -->
-  <!-- ===================================================================== -->
+  <!-- ================================================================= -->
   <section *ngIf="activeTab === 'categories' && isSuperAdmin" class="feed-section">
     <div class="manage-header">
       <p class="manage-caption">
@@ -446,6 +519,7 @@
 <!-- ===================================================================== -->
 <div
   class="lightbox-backdrop"
+  style="z-index: 1300;"
   *ngIf="lightboxItem as li"
   (click)="closeLightbox()"
 >
@@ -495,14 +569,29 @@
 <!-- ===================================================================== -->
 <!-- POST DETAIL MODAL ("View More") — full article view, everyone can open it.
      source / sourceUrl are optional: the byline row and "View source" button
-     only render when those fields are actually present on the post. -->
+     only render when those fields are actually present on the post.
+
+     Fixes applied here:
+     - Explicit, higher z-index than the page content so the modal never sits
+       *behind* or gets visually clipped by cards/tabs beneath it.
+     - The panel scrolls internally (max-height + overflow-y: auto) instead
+       of letting a long post grow the panel past the viewport and overlap
+       the footer buttons.
+     - detail-content uses white-space: pre-wrap so paragraph breaks stored
+       in the raw `content` string render as actual line breaks instead of
+       collapsing into a single run-on paragraph. -->
 <!-- ===================================================================== -->
 <div
   class="detail-backdrop"
+  style="z-index: 1200; position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; overflow-y: auto; padding: 24px;"
   *ngIf="detailItem as di"
   (click)="closeDetail()"
 >
-  <article class="detail-panel" (click)="$event.stopPropagation()">
+  <article
+    class="detail-panel"
+    style="max-height: calc(100vh - 48px); overflow-y: auto; position: relative;"
+    (click)="$event.stopPropagation()"
+  >
     <button type="button" class="detail-close" (click)="closeDetail()" aria-label="Close">
       <mat-icon>close</mat-icon>
     </button>
@@ -565,22 +654,63 @@
         <span class="stat-chip rank-chip" *ngIf="di.stats?.rank">Rank #{{ di.stats?.rank }}</span>
       </div>
 
-      <p class="detail-summary" *ngIf="di.summary">{{ di.summary }}</p>
+      <p class="detail-summary" *ngIf="di.summary" style="white-space: pre-wrap;">{{ di.summary }}</p>
 
       <div class="detail-divider" *ngIf="di.summary && di.content"></div>
 
-      <p class="detail-content">{{ di.content }}</p>
+      <!-- Full post body — pre-wrap preserves paragraph breaks from the source content -->
+      <p class="detail-content" style="white-space: pre-wrap; word-break: break-word;">{{ di.content }}</p>
 
       <div class="feed-card-tags detail-tags" *ngIf="di.tags && di.tags.length">
         <span class="tag-chip" *ngFor="let tag of di.tags">#{{ tag }}</span>
       </div>
     </div>
 
-    <footer class="detail-footer">
+    <footer
+      class="detail-footer"
+      style="position: sticky; bottom: 0; background: inherit; flex-wrap: wrap; gap: 8px;"
+    >
       <span class="detail-footer-ref" *ngIf="di.reference">
         <code>{{ di.reference }}</code>
       </span>
       <span class="detail-footer-spacer"></span>
+
+      <button
+        type="button"
+        class="detail-source-btn"
+        [matMenuTriggerFor]="detailShareMenu"
+      >
+        <mat-icon>share</mat-icon>
+        Share
+      </button>
+
+      <mat-menu #detailShareMenu="matMenu">
+        <button mat-menu-item type="button" (click)="shareFeedToPlatform(di, 'linkedin', $event)">
+          <mat-icon>business_center</mat-icon>
+          <span>LinkedIn</span>
+        </button>
+        <button mat-menu-item type="button" (click)="shareFeedToPlatform(di, 'twitter', $event)">
+          <mat-icon>alternate_email</mat-icon>
+          <span>X (Twitter)</span>
+        </button>
+        <button mat-menu-item type="button" (click)="shareFeedToPlatform(di, 'whatsapp', $event)">
+          <mat-icon>chat</mat-icon>
+          <span>WhatsApp</span>
+        </button>
+        <button mat-menu-item type="button" (click)="shareFeedToPlatform(di, 'facebook', $event)">
+          <mat-icon>thumb_up</mat-icon>
+          <span>Facebook</span>
+        </button>
+        <button mat-menu-item type="button" (click)="shareFeedToPlatform(di, 'email', $event)">
+          <mat-icon>email</mat-icon>
+          <span>Email</span>
+        </button>
+        <button mat-menu-item type="button" (click)="copyFeedShareLink(di, $event)">
+          <mat-icon>content_copy</mat-icon>
+          <span>Copy link</span>
+        </button>
+      </mat-menu>
+
       <button
         *ngIf="di.sourceUrl"
         type="button"

@@ -11,7 +11,13 @@ import { MaterialModule } from '../../../material.module';
 import { SharedService } from '../../../shared/shared.service';
 import { FeedService } from './feed.service';
 import { FeedPostDialogComponent } from './feed-post-dialog/feed-post-dialog.component';
-import { FeedCategoryItem, FeedItem } from './model/feed.model';
+import {
+  buildFeedShareLinks,
+  buildFeedShareText,
+  FeedCategoryItem,
+  FeedItem,
+  FeedShareLinks,
+} from './model/feed.model';
 import { TraderService } from '../../../../app/appstate/trader.service';
 import { GetTraderResBody } from '../../../../app/services/auth.type';
 
@@ -397,7 +403,12 @@ export class FeedComponent implements OnInit, OnDestroy {
   // ─── Post detail modal ("View More") — view-only, available to everyone ─
   openDetail(item: FeedItem, event?: Event): void {
     event?.stopPropagation();
-    this.detailItem = item;
+
+    const fresh =
+      this.items.find((i) => i.id === item.id) ||
+      this.manageItems.find((i) => i.id === item.id) ||
+      item;
+    this.detailItem = fresh;
   }
 
   closeDetail(): void {
@@ -423,6 +434,47 @@ export class FeedComponent implements OnInit, OnDestroy {
 
     if (this.detailItem && event.key === 'Escape') {
       this.closeDetail();
+    }
+  }
+
+  // ─── Social sharing (any feed post, everyone) ─────────────────
+
+  private buildFeedPostUrl(item: FeedItem): string {
+    return `${window.location.origin}/feed/posts/${item.id}`;
+  }
+
+  /** Builds the platform share links + caption for a feed post. */
+  getFeedShareLinks(item: FeedItem): FeedShareLinks {
+    const url = this.buildFeedPostUrl(item);
+    const text = buildFeedShareText(item.title, item.category);
+    return buildFeedShareLinks(url, text);
+  }
+
+  /** Opens the chosen platform's share intent for a feed post. */
+  shareFeedToPlatform(item: FeedItem, platform: keyof FeedShareLinks, event?: Event): void {
+    event?.stopPropagation();
+    const links = this.getFeedShareLinks(item);
+    if (platform === 'email') {
+      window.location.href = links.email;
+      return;
+    }
+    window.open(links[platform], '_blank', 'noopener,width=600,height=600');
+  }
+
+  /** Copies a ready-to-post caption + link for a feed post. */
+  copyFeedShareLink(item: FeedItem, event?: Event): void {
+    event?.stopPropagation();
+    const url = this.buildFeedPostUrl(item);
+    const text = buildFeedShareText(item.title, item.category);
+    const payload = `${text} ${url}`;
+
+    if (navigator.clipboard?.writeText) {
+      navigator.clipboard
+        .writeText(payload)
+        .then(() => this.sharedService.showToast({ title: 'Share link copied to clipboard.' }))
+        .catch(() => this.sharedService.showToast({ title: 'Could not copy the link.' }));
+    } else {
+      this.sharedService.showToast({ title: 'Clipboard is not available on this browser.' });
     }
   }
 
