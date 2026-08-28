@@ -35,7 +35,7 @@
         Transaction PIN is required.
       </mat-error>
       <mat-error *ngIf="form.controls.transactionPin.hasError('pattern')">
-        Enter a 4–6 digit numeric PIN.
+        Enter a 4 digit numeric PIN.
       </mat-error>
     </mat-form-field>
   </ng-container>
@@ -59,6 +59,6 @@
     [disabled]="loading || form.invalid"
     (click)="submit()"
   >
-    {{ loading ? 'Processing...' : (isFree ? 'Confirm Free Enrollment' : 'Confirm') }}
+    {{ loading ? 'Processing...' : (isFree ? 'Confirm' : 'Confirm') }}
   </button>
 </mat-dialog-content>

@@ -18,6 +18,8 @@ import { GetTraderResBody } from '../../../../app/services/auth.type';
 import {
   buildCourseShareLinks,
   buildCourseShareText,
+ buildCourseSellShareText, 
+
   CATEGORY_OPTIONS,
   Course,
   CourseCategoryItem,
@@ -631,4 +633,40 @@ export class AcademyComponent implements OnInit, OnDestroy {
 
     return `${initials}-${suffix}`;
   }
+
+
+
+  getCourseShareLinks(course: Course): CourseShareLinks {
+    const url = this.buildCourseUrl(course.id);
+    const text = buildCourseSellShareText(course.title);
+    return buildCourseShareLinks(url, text);
+  }
+
+  shareCourseToPlatform(course: Course, platform: keyof CourseShareLinks): void {
+    if (!course?.id) return;
+    const links = this.getCourseShareLinks(course);
+    if (platform === 'email') {
+      window.location.href = links.email;
+      return;
+    }
+    window.open(links[platform], '_blank', 'noopener,width=600,height=600');
+  }
+
+  copyCourseShareLink(course: Course): void {
+    if (!course?.id) return;
+    const url = this.buildCourseUrl(course.id);
+    const text = buildCourseSellShareText(course.title);
+    const payload = `${text} ${url}`;
+
+    if (navigator.clipboard?.writeText) {
+      navigator.clipboard
+        .writeText(payload)
+        .then(() => this.sharedService.showToast({ title: 'Share link copied to clipboard.' }))
+        .catch(() => this.sharedService.showToast({ title: 'Could not copy the link.' }));
+    } else {
+      this.sharedService.showToast({ title: 'Clipboard is not available on this browser.' });
+    }
+  }
+
+
 }

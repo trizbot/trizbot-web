@@ -137,6 +137,7 @@ export interface CourseInstructor {
   lastName: string;
   userName: string;
   avatarUrl?: string | null;
+  instructorName?: string | null;
   isVerified?: boolean;
 }
 
@@ -180,6 +181,8 @@ export interface CoursePurchase {
   coursePrice: number;
   status: 'pending' | 'completed' | 'failed' | string;
   createdAt: string;
+  userName?: string;
+  instructorName?: string;
   course: Pick<Course, 'id' | 'title'> & {
     instructor: Pick<CourseInstructor, 'userName'>;
     courseFileUrl?: string | null;
@@ -435,6 +438,8 @@ export interface RawCoursePurchaseDoc {
   updatedAt?: string | { $date: string };
   course?: RawNestedCourseRef | string;
   courseId?: string;
+  userName?: string;
+  instructorName?: string;
   courseTitle?: string;
   // flattened alternates, seen when `course` isn't populated
   courseFileUrl?: string;
@@ -532,6 +537,7 @@ export function normalizeCoursePurchase(raw: RawCoursePurchaseDoc): CoursePurcha
     id: safeId(raw.id ?? raw._id),
     reference: raw.reference || raw.transactionRef || '—',
     coursePrice: raw.coursePrice ?? 0,
+    userName: raw.instructorName ?? "0",
     amountPaid: raw.amountPaid ?? raw.amount ?? raw.price ?? 0,
     status: (raw.status || raw.paymentStatus || 'pending') as CoursePurchase['status'],
     createdAt: safeDate(raw.createdAt),
@@ -593,6 +599,12 @@ export function buildCourseShareText(
 
   return `I just purchased "${courseTitle}"${instructorLine} on Trizbot Academy. Excited to get started! 🎓`;
 }
+
+
+export function buildCourseSellShareText(courseTitle: string): string {
+  return `Check out my course "${courseTitle}" on Trizbot Academy — learn the strategies that work.`;
+}
+
 
 export function buildCourseShareLinks(url: string, text: string): CourseShareLinks {
   const encodedUrl = encodeURIComponent(url);

@@ -41,18 +41,8 @@ export class PurchaseCourseDialogComponent {
     this.course = data.course;
     this.isFree = !this.course?.price || this.course.price <= 0;
 
-    // Free courses don't need a transaction PIN at all — drop the
-    // requirement instead of asking users to enter one for nothing.
-    if (this.isFree) {
-      this.form.controls.transactionPin.clearValidators();
-      this.form.controls.transactionPin.disable();
-      this.form.controls.transactionPin.updateValueAndValidity();
-    }
-
     this.generateReference();
 
-    // Prevent accidental dismissal (Escape / backdrop click) while a
-    // purchase request is actually in flight.
     this.dialogRef.disableClose = false;
   }
 
@@ -80,7 +70,7 @@ export class PurchaseCourseDialogComponent {
       .purchaseCourse({
         courseId: this.course.id,
         reference: reference!,
-        ...(this.isFree ? {} : { transactionPin: transactionPin! }),
+        transactionPin: transactionPin!,
       })
       .subscribe({
         next: () => {
@@ -94,13 +84,8 @@ export class PurchaseCourseDialogComponent {
           const message = err?.error?.message || 'Could not complete this purchase. Please try again.';
           this.errorMessage = Array.isArray(message) ? message.join(', ') : message;
 
-          // Issue a fresh reference so a retry isn't rejected as a
-          // duplicate of the failed attempt.
           this.generateReference();
-
-          if (!this.isFree) {
-            this.form.controls.transactionPin.reset();
-          }
+          this.form.controls.transactionPin.reset();
         },
       });
   }

@@ -167,20 +167,58 @@
         </div>
 
         <div class="course-card__actions">
-          <button mat-stroked-button type="button" (click)="openCourseDetail(course, false)">
-            Preview
-          </button>
+  <button mat-stroked-button type="button" (click)="openCourseDetail(course, false)">
+    Preview
+  </button>
 
-          <button
-            mat-flat-button
-            color="primary"
-            class="fw-bold course-cta"
-            type="button"
-            (click)="openPurchaseDialog(course)"
-          >
-            {{ course.price ? 'Purchase' : 'Enroll for free' }}
-          </button>
-        </div>
+
+
+  <mat-menu #browseShareMenu="matMenu">
+    <button mat-menu-item type="button" (click)="shareCourseToPlatform(course, 'linkedin')">
+      <mat-icon>business_center</mat-icon>
+      <span>LinkedIn</span>
+    </button>
+    <button mat-menu-item type="button" (click)="shareCourseToPlatform(course, 'twitter')">
+      <mat-icon>alternate_email</mat-icon>
+      <span>X (Twitter)</span>
+    </button>
+    <button mat-menu-item type="button" (click)="shareCourseToPlatform(course, 'whatsapp')">
+      <mat-icon>chat</mat-icon>
+      <span>WhatsApp</span>
+    </button>
+    <button mat-menu-item type="button" (click)="shareCourseToPlatform(course, 'facebook')">
+      <mat-icon>thumb_up</mat-icon>
+      <span>Facebook</span>
+    </button>
+    <button mat-menu-item type="button" (click)="shareCourseToPlatform(course, 'email')">
+      <mat-icon>email</mat-icon>
+      <span>Email</span>
+    </button>
+    <button mat-menu-item type="button" (click)="copyCourseShareLink(course)">
+      <mat-icon>content_copy</mat-icon>
+      <span>Copy link</span>
+    </button>
+  </mat-menu>
+
+  <button
+    mat-flat-button
+    color="primary"
+    class="fw-bold course-cta"
+    type="button"
+    (click)="openPurchaseDialog(course)"
+  >
+    {{ course.price ? 'Purchase' : 'Get Course' }}
+  </button>
+
+    <button
+    mat-icon-button
+    type="button"
+    matTooltip="Share course"
+    [matMenuTriggerFor]="browseShareMenu"
+  >
+    <mat-icon>share</mat-icon>
+  </button>
+</div>
       </article>
     </div>
   </ng-container>
@@ -257,20 +295,57 @@
             </td>
             <td class="num mono" [attr.data-label]="'Enrolled'">{{ course.totalPurchases || 0 }}</td>
             <td class="actions">
-              <button mat-icon-button type="button" matTooltip="Edit" (click)="openCreateCourseDialog(course)">
-                <mat-icon>edit</mat-icon>
-              </button>
-              <button
-                mat-icon-button
-                color="warn"
-                type="button"
-                matTooltip="Delete"
-                [disabled]="deletingCourseId === course.id"
-                (click)="deleteCourse(course)"
-              >
-                <mat-icon>{{ deletingCourseId === course.id ? 'hourglass_empty' : 'delete' }}</mat-icon>
-              </button>
-            </td>
+  <button
+    mat-icon-button
+    type="button"
+    matTooltip="{{ course.isPublished ? 'Share course' : 'Publish this course to share it' }}"
+    [matMenuTriggerFor]="shareMenu"
+    [disabled]="!course.isPublished"
+  >
+    <mat-icon>share</mat-icon>
+  </button>
+
+  <mat-menu #shareMenu="matMenu">
+    <button mat-menu-item type="button" (click)="shareCourseToPlatform(course, 'linkedin')">
+      <mat-icon>business_center</mat-icon>
+      <span>LinkedIn</span>
+    </button>
+    <button mat-menu-item type="button" (click)="shareCourseToPlatform(course, 'twitter')">
+      <mat-icon>alternate_email</mat-icon>
+      <span>X (Twitter)</span>
+    </button>
+    <button mat-menu-item type="button" (click)="shareCourseToPlatform(course, 'whatsapp')">
+      <mat-icon>chat</mat-icon>
+      <span>WhatsApp</span>
+    </button>
+    <button mat-menu-item type="button" (click)="shareCourseToPlatform(course, 'facebook')">
+      <mat-icon>thumb_up</mat-icon>
+      <span>Facebook</span>
+    </button>
+    <button mat-menu-item type="button" (click)="shareCourseToPlatform(course, 'email')">
+      <mat-icon>email</mat-icon>
+      <span>Email</span>
+    </button>
+    <button mat-menu-item type="button" (click)="copyCourseShareLink(course)">
+      <mat-icon>content_copy</mat-icon>
+      <span>Copy link</span>
+    </button>
+  </mat-menu>
+
+  <button mat-icon-button type="button" matTooltip="Edit" (click)="openCreateCourseDialog(course)">
+    <mat-icon>edit</mat-icon>
+  </button>
+  <button
+    mat-icon-button
+    color="warn"
+    type="button"
+    matTooltip="Delete"
+    [disabled]="deletingCourseId === course.id"
+    (click)="deleteCourse(course)"
+  >
+    <mat-icon>{{ deletingCourseId === course.id ? 'hourglass_empty' : 'delete' }}</mat-icon>
+  </button>
+</td>
           </tr>
         </tbody>
       </table>
@@ -326,7 +401,7 @@
         <tbody>
           <tr *ngFor="let p of purchases">
             <td class="title-cell" [attr.data-label]="'Course'">{{ p.course.title || 'Untitled course' }}</td>
-            <td [attr.data-label]="'Instructor'">&#64;{{ p.course.instructor.userName || 'trader' }}</td>
+            <td [attr.data-label]="'Instructor'">{{ p.userName || 'trader' }}</td>
             <td class="mono ref-cell" [attr.data-label]="'Reference'">{{ p.reference || '—' }}</td>
             <td class="num mono amount-debit" [attr.data-label]="'Amount'">&#36;{{ (p.coursePrice | number: '1.2-2') }}</td>
             <td [attr.data-label]="'Status'">
@@ -344,38 +419,7 @@
                 <mat-icon>{{ downloadingPurchaseId === p.id ? 'hourglass_empty' : 'download' }}</mat-icon>
               </button>
 
-              <!-- <button
-                mat-icon-button
-                type="button"
-                matTooltip="Share this course"
-                [matMenuTriggerFor]="shareMenu"
-              >
-                <mat-icon>share</mat-icon>
-              </button> -->
-
-              <!-- <mat-menu #shareMenu="matMenu" xPosition="before">
-                <button mat-menu-item type="button" (click)="shareToPlatform(p, 'linkedin')">
-                  <mat-icon>business_center</mat-icon>
-                  <span>Share on LinkedIn</span>
-                </button>
-                <button mat-menu-item type="button" (click)="shareToPlatform(p, 'twitter')">
-                  <mat-icon>tag</mat-icon>
-                  <span>Share on X / Twitter</span>
-                </button>
-                <button mat-menu-item type="button" (click)="shareToPlatform(p, 'whatsapp')">
-                  <mat-icon>chat</mat-icon>
-                  <span>Share on WhatsApp</span>
-                </button>
-                <button mat-menu-item type="button" (click)="shareToPlatform(p, 'facebook')">
-                  <mat-icon>public</mat-icon>
-                  <span>Share on Facebook</span>
-                </button>
-               
-                <button mat-menu-item type="button" (click)="copyShareLink(p)">
-                  <mat-icon>content_copy</mat-icon>
-                  <span>Copy link &amp; caption</span>
-                </button> -->
-              <!-- </mat-menu> -->
+          
             </td>
           </tr>
         </tbody>
@@ -444,9 +488,7 @@
     </div>
   </section>
 
-  <!-- ================================================================= -->
-  <!-- CATEGORIES (superadmin only) -->
-  <!-- ================================================================= -->
+
   <section class="academy-panel categories-panel" *ngIf="activeTab === 'categories' && isSuperAdmin">
     <header class="academy-panel__header">
       <div>
