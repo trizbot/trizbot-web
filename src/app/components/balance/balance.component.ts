@@ -225,27 +225,19 @@ export class WalletBalanceComponent implements OnInit, OnDestroy {
   }
 
   getWeeklyStatistics() {
+    // Only used for totalActiveUsers now. totalWeeklyFunds / totalWeeklyProfits
+    // used to be recomputed here from the raw trader list (all-time
+    // trader.depositBalance / trader.profit, no course data at all), which
+    // silently overwrote the correct backend numbers below in a race. That
+    // client-side recompute has been removed — the backend response is the
+    // single source of truth for both fields, and already folds in course
+    // coursePrice/platformFee.
     this.traderService.getAllTraders({ page: 1, limit: 100001 }).subscribe({
       next: (res: any) => {
-        this.totalWeeklyProfits = 0;
-        this.totalWeeklyFunds = 0;
         this.totalActiveUsers = 0;
 
         res.data.forEach((trader: any) => {
-          const profit = trader.profit || 0;
-          const depositBalance = trader.depositBalance || 0;
           const walletBalance = trader.walletBalance || 0;
-
-          if (profit < 0) {
-            this.totalWeeklyProfits += 0;
-          } else {
-            this.totalWeeklyProfits += profit;
-          }
-          if (depositBalance < 0) {
-            this.totalWeeklyFunds += 0;
-          } else {
-            this.totalWeeklyFunds += depositBalance;
-          }
 
           if (walletBalance >= 1) {
             this.totalActiveUsers += 1;
@@ -258,6 +250,8 @@ export class WalletBalanceComponent implements OnInit, OnDestroy {
     this.traderService.getWeeklyStatistics().subscribe({
       next: (res: GetWeeklyStatisticsResBody) => {
         this.totalUsers = res.data.totalUsers;
+        this.totalWeeklyFunds = res.data.totalWeeklyFunds;
+        this.totalWeeklyProfits = res.data.totalWeeklyProfits;
 
         this.signalStats = res.data.signal;
         this.arbitrageScannerStats = res.data.arbitrageScanner;
