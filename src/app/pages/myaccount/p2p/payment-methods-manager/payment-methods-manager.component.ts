@@ -4,19 +4,20 @@ import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { MaterialModule } from '../../../../material.module';
 import { SharedService } from '../../../../shared/shared.service';
 import { PAYMENT_METHODS_BY_FIAT, SUPPORTED_FIAT } from '../p2p.model';
-import { UserPaymentMethod } from '../payment-method.model';
-import { PaymentMethodsService } from '../payment-methods.service';
+import { UserPaymentMethod } from '../payment-method/payment-method.model';
+import { PaymentMethodsService } from '../payment-method/payment-methods.service';
+// import { UserPaymentMethod } from '../payment-method.model';
+// import { PaymentMethodsService } from '../payment-methods.service';
 
 @Component({
   selector: 'app-payment-methods-manager',
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, MaterialModule],
   templateUrl: './payment-methods-manager.component.html',
-  styleUrls: ['./payment-methods-manager.component.scss'],
+//   styleUrls: ['./payment-methods-manager.component.scss'],
 })
 export class PaymentMethodsManagerComponent implements OnInit {
-  /** Emits whenever the list changes, so a parent (e.g. the create-ad
-   *  dialog opened this in a modal) can refresh its own picker. */
+
   @Output() methodsChanged = new EventEmitter<UserPaymentMethod[]>();
 
   readonly fiatSuggestions = SUPPORTED_FIAT;

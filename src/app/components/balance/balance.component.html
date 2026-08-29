@@ -95,7 +95,7 @@
             <button
               type="button"
               class="bb-btn bb-btn-primary"
-              *ngIf="canViewArbitrage && !arbitrageSubscriptionLoading"
+              *ngIf="canViewArbitrage && !arbitrageSubscriptionLoading && !arbitradeStatus"
               (click)="openArbitrageSubscribeDialog()"
             >
               <i class="bi bi-lightning-charge-fill bb-arb-subscribe-icon"></i>
@@ -199,10 +199,10 @@
                   <tr>
                     <th>Token</th>
                     <th>{{ activeConfig.label }}</th>
-                    <th>Counterparty</th>
+                    <th>Counter Exchange</th>
                     <th>Spread</th>
-                    <th>Est. profit</th>
-                    <th></th>
+                    <!-- <th>Est. profit</th> -->
+                    <!-- <th></th> -->
                   </tr>
                 </thead>
                 <tbody>
@@ -220,6 +220,12 @@
 
                       <td>
                         <div class="bb-counterparty-cell">
+
+                          <span class="bb-leg-badge" [ngClass]="isActiveBuyLeg(o) ? 'sell' : 'buy'">
+                          {{ isActiveBuyLeg(o) ? 'SELL' : 'BUY' }}
+                        </span>
+                        <span class="bb-price-val">&#36;{{ activePriceFor(o) | number: '1.2-6' }}</span>
+
                           <span class="bb-counterparty-dot" [style.background]="counterpartyColor(o)"></span>
                           <span class="bb-counterparty-name">{{ counterpartyLabel(o) }}</span>
                           <span class="bb-price-val muted">&#36;{{ counterpartyPriceFor(o) | number: '1.2-6' }}</span>
@@ -232,11 +238,11 @@
                         </span>
                       </td>
 
-                      <td class="bb-profit-cell">&#36;{{ o.estimatedProfit | number: '1.2-2' }}</td>
+                      <!-- <td class="bb-profit-cell">&#36;{{ o.estimatedProfit | number: '1.2-2' }}</td> -->
 
-                      <td class="bb-action-cell">
+                      <!-- <td class="bb-action-cell">
                         <button type="button" class="bb-trade-btn" (click)="openTradeDialog(o)">Trade</button>
-                      </td>
+                      </td> -->
                     </ng-container>
 
                     <ng-template #lockedRowCells>

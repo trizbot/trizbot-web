@@ -3,18 +3,21 @@ import { Component, OnInit } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MaterialModule } from '../../../../material.module';
 import { SharedService } from '../../../../shared/shared.service';
-import { FeedCategoryItem } from '../p2p-category.model';
-import { P2pCategoryService } from '../p2p-category.service';
+import { FeedCategoryItem } from '../../feed/model/feed.model';
+import { P2pCategoryItem } from '../model/p2p-category.model';
+import { P2pCategoryService } from '../service/p2p-category.service';
+// import { FeedCategoryItem } from '../p2p-category.model';
+// import { P2pCategoryService } from '../p2p-category.service';
 
 @Component({
   selector: 'app-p2p-category-admin',
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, MaterialModule],
   templateUrl: './p2p-category-admin.component.html',
-  styleUrls: ['./p2p-category-admin.component.scss'],
+//   styleUrls: ['./p2p-category-admin.component.scss'],
 })
 export class P2pCategoryAdminComponent implements OnInit {
-  categories: FeedCategoryItem[] = [];
+  categories: P2pCategoryItem[] = [];
   loading = false;
   saving = false;
   deletingId: string | null = null;
