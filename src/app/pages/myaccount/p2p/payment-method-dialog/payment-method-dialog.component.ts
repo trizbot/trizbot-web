@@ -6,7 +6,7 @@ import { MaterialModule } from '../../../../material.module';
 import { SharedService } from '../../../../shared/shared.service';
 // import { PaymentMethodsService } from '../payment-methods.service';
 // import { UserPaymentMethod } from './payment-method.model';
-import { getPaymentMethodsForFiat } from '../p2p.model';
+import { getPaymentMethodsForFiat } from '../model/p2p.model';
 import { UserPaymentMethod } from '../payment-method/payment-method.model';
 import { PaymentMethodsService } from '../payment-method/payment-methods.service';
 

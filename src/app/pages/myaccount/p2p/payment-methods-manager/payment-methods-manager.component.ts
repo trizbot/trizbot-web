@@ -4,7 +4,7 @@ import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { HttpErrorResponse } from '@angular/common/http';
 import { MaterialModule } from '../../../../material.module';
 import { SharedService } from '../../../../shared/shared.service';
-import { PAYMENT_METHODS_BY_FIAT, SUPPORTED_FIAT } from '../p2p.model';
+import { PAYMENT_METHODS_BY_FIAT, SUPPORTED_FIAT } from '../model/p2p.model';
 import { UserPaymentMethod } from '../payment-method/payment-method.model';
 import { PaymentMethodsService } from '../payment-method/payment-methods.service';
 

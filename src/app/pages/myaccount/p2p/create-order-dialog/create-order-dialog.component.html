@@ -1,191 +1,229 @@
-<h2 mat-dialog-title class="dialog-title">
-  {{ isEditMode ? 'Edit Ad' : 'Post a New Ad' }}
-  <button mat-icon-button class="close-btn" type="button" (click)="close()">
-    <mat-icon>close</mat-icon>
-  </button>
-</h2>
+<div class="sheet" [formGroup]="form">
 
-<mat-dialog-content [formGroup]="form">
-
-  <div class="type-toggle" *ngIf="!isEditMode">
-    <button
-      type="button"
-      class="toggle-btn buy"
-      [class.active]="form.value.type === P2POrderType.Buy"
-      (click)="setType(P2POrderType.Buy)"
-    >
-      I want to Buy
+  <!-- Sticky header -->
+  <header class="sheet-header">
+    <button type="button" class="icon-btn" (click)="close()" aria-label="Close">
+      <mat-icon>close</mat-icon>
     </button>
-    <button
-      type="button"
-      class="toggle-btn sell"
-      [class.active]="form.value.type === P2POrderType.Sell"
-      (click)="setType(P2POrderType.Sell)"
-    >
-      I want to Sell
-    </button>
-  </div>
+    <h2 class="sheet-title">{{ isEditMode ? 'Edit ad' : 'Post a new ad' }}</h2>
+    <span class="header-spacer" aria-hidden="true"></span>
+  </header>
 
-  <div class="edit-mode-banner" *ngIf="isEditMode">
-    <mat-icon>edit</mat-icon>
-    Editing your {{ data.order?.type }} ad for {{ data.order?.coin }}/{{ data.order?.fiatCurrency }}.
-    Asset and currency can't be changed once an ad is live.
-  </div>
+  <div class="sheet-body">
 
-  <div class="field-row">
-    <div>
-      <mat-label class="f-w-600 m-b-8 d-block">Asset</mat-label>
-      <mat-form-field appearance="outline" class="w-100">
-        <mat-select formControlName="coin">
-          <mat-option *ngFor="let c of coinSuggestions" [value]="c">{{ c }}</mat-option>
-        </mat-select>
-      </mat-form-field>
+    <!-- Buy / Sell segmented control -->
+    <div class="segmented type-segmented" *ngIf="!isEditMode" role="tablist">
+      <button
+        type="button"
+        role="tab"
+        class="segmented-tab buy"
+        [class.active]="form.value.type === P2POrderType.Buy"
+        [attr.aria-selected]="form.value.type === P2POrderType.Buy"
+        (click)="setType(P2POrderType.Buy)"
+      >I want to buy</button>
+      <button
+        type="button"
+        role="tab"
+        class="segmented-tab sell"
+        [class.active]="form.value.type === P2POrderType.Sell"
+        [attr.aria-selected]="form.value.type === P2POrderType.Sell"
+        (click)="setType(P2POrderType.Sell)"
+      >I want to sell</button>
     </div>
-    <div>
-      <mat-label class="f-w-600 m-b-8 d-block">Fiat currency</mat-label>
-      <mat-form-field appearance="outline" class="w-100">
-        <mat-select formControlName="fiatCurrency">
-          <mat-option *ngFor="let f of fiatSuggestions" [value]="f">{{ f }}</mat-option>
-        </mat-select>
-      </mat-form-field>
+
+    <div class="banner" *ngIf="isEditMode">
+      <mat-icon>lock</mat-icon>
+      <span>Editing your {{ data.order?.type }} ad for <strong>{{ data.order?.coin }}/{{ data.order?.fiatCurrency }}</strong>. Asset and currency are locked once an ad is live.</span>
     </div>
-  </div>
 
-  <mat-label class="f-w-600 m-b-8 d-block">Price per unit</mat-label>
-  <mat-form-field appearance="outline" class="w-100">
-    <span matPrefix class="prefix">{{ fiatSymbol }}&nbsp;</span>
-    <input matInput type="number" formControlName="pricePerUnit" placeholder="0.00" />
-    <span matSuffix>{{ form.value.fiatCurrency }} / {{ form.value.coin }}</span>
-  </mat-form-field>
-
-  <div class="market-rate-hint" *ngIf="marketRateLoading">
-    Fetching current market rate…
-  </div>
-  <div class="market-rate-hint" *ngIf="!marketRateLoading && marketRate">
-    Market rate: {{ fiatSymbol }}{{ marketRate | number: '1.0-2' }} / {{ form.value.coin }}
-    &middot; max allowed: {{ fiatSymbol }}{{ maxAllowedPrice | number: '1.0-2' }}
-    <button type="button" class="reset-max-link" (click)="useMarketRate()">Use market rate</button>
-  </div>
-  <br>
-  <br>
-  <div class="field-error" *ngIf="!marketRateLoading && marketRateError">{{ marketRateError }}</div>
-  <div class="field-error" *ngIf="priceError">{{ priceError }}</div>
-
-  <mat-label class="f-w-600 m-b-8 d-block">Total amount to trade</mat-label>
-  <mat-form-field appearance="outline" class="w-100">
-    <input matInput type="number" formControlName="totalAmount" placeholder="0.00" />
-    <span matSuffix>{{ form.value.coin }}</span>
-  </mat-form-field>
-
-  <div class="field-row">
-    <div>
-      <mat-label class="f-w-600 m-b-8 d-block">Min order limit</mat-label>
-      <mat-form-field appearance="outline" class="w-100">
-        <span matPrefix class="prefix">{{ fiatSymbol }}&nbsp;</span>
-        <input matInput type="number" formControlName="minLimit" placeholder="0" />
-      </mat-form-field>
-    </div>
-    <div>
-      <mat-label class="f-w-600 m-b-8 d-block">Max order limit</mat-label>
-      <mat-form-field appearance="outline" class="w-100">
-        <span matPrefix class="prefix">{{ fiatSymbol }}&nbsp;</span>
-        <input
-          matInput
-          type="number"
-          formControlName="maxLimit"
-          placeholder="0"
-          (input)="onMaxLimitManualEdit()"
-        />
-      </mat-form-field>
-      <div class="max-limit-hint" *ngIf="computedMaxLimit">
-        Auto-calculated from amount × price: {{ fiatSymbol }}{{ computedMaxLimit | number: '1.0-2' }}
-        <button type="button" class="reset-max-link" (click)="resetMaxLimitToAuto()">Use this</button>
+    <!-- Asset & currency -->
+    <section class="field-section">
+      <div class="field-row two-up">
+        <div class="field-group tight">
+          <label class="field-label">Asset</label>
+          <mat-form-field appearance="outline" class="w-100">
+            <mat-select formControlName="coin">
+              <mat-option *ngFor="let c of coinSuggestions" [value]="c">{{ c }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+        <div class="field-group tight">
+          <label class="field-label">Fiat currency</label>
+          <mat-form-field appearance="outline" class="w-100">
+            <mat-select formControlName="fiatCurrency">
+              <mat-option *ngFor="let f of fiatSuggestions" [value]="f">{{ f }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
       </div>
-    </div>
-  </div>
-  <div class="field-error" *ngIf="limitError">{{ limitError }}</div>
+    </section>
 
-  <!-- BUY ads: pick generic accepted payment method names. The eventual
-       seller (whoever accepts the trade) supplies their own receiving
-       account at that point, so no saved-account selection is needed here. -->
-  <ng-container *ngIf="!isSellAd">
-    <mat-label class="f-w-600 m-b-8 d-block">Accepted payment methods</mat-label>
-    <mat-form-field appearance="outline" class="w-100">
-      <mat-select formControlName="paymentMethods" multiple>
-        <mat-option *ngFor="let method of paymentMethodOptions" [value]="method">{{ method }}</mat-option>
-      </mat-select>
-    </mat-form-field>
-    <div class="field-error" *ngIf="paymentMethodsError">{{ paymentMethodsError }}</div>
-  </ng-container>
+    <!-- Price -->
+    <section class="field-section">
+      <label class="field-label">Price per unit</label>
+      <mat-form-field appearance="outline" class="w-100">
+        <span matPrefix class="prefix">{{ fiatSymbol }}&nbsp;</span>
+        <input matInput type="number" inputmode="decimal" formControlName="pricePerUnit" placeholder="0.00" class="mono-input" />
+        <span matSuffix class="suffix">{{ form.value.fiatCurrency }} / {{ form.value.coin }}</span>
+      </mat-form-field>
 
-  <!-- SELL ads: pick which of your saved receiving accounts buyers should
-       pay into. You can add a new saved payment method right here. -->
-  <ng-container *ngIf="isSellAd">
-    <mat-label class="f-w-600 m-b-8 d-block">Receiving accounts for this ad</mat-label>
+      <div class="rate-strip" *ngIf="marketRateLoading">
+        <span class="dot pulsing"></span> Fetching current market rate…
+      </div>
+      <div class="rate-strip" *ngIf="!marketRateLoading && marketRate">
+        <div class="rate-strip-main">
+          <span>Market rate <strong class="num">{{ fiatSymbol }}{{ marketRate | number: '1.0-2' }}</strong></span>
+          <span class="rate-strip-max">max allowed <strong class="num">{{ fiatSymbol }}{{ maxAllowedPrice | number: '1.0-2' }}</strong></span>
+        </div>
+        <button type="button" class="text-link" (click)="useMarketRate()">Use market rate</button>
+      </div>
+      <p class="field-error" *ngIf="!marketRateLoading && marketRateError">{{ marketRateError }}</p>
+      <p class="field-error" *ngIf="priceError">{{ priceError }}</p>
+    </section>
 
-    <app-payment-methods-manager (methodsChanged)="onMethodsChanged($event)"></app-payment-methods-manager>
+    <!-- Total amount -->
+    <section class="field-section">
+      <label class="field-label">Total amount to trade</label>
+      <mat-form-field appearance="outline" class="w-100">
+        <input matInput type="number" inputmode="decimal" formControlName="totalAmount" placeholder="0.00" class="mono-input" />
+        <span matSuffix class="suffix">{{ form.value.coin }}</span>
+      </mat-form-field>
+    </section>
 
-    <div class="order-empty" *ngIf="eligibleSavedMethods.length === 0">
-      <span class="order-empty-title">No saved {{ form.value.fiatCurrency }} payment methods yet</span>
-      <span class="order-empty-sub">Add one above, then come back here to select it.</span>
-    </div>
+    <!-- Limits -->
+    <section class="field-section">
+      <div class="field-row two-up">
+        <div class="field-group tight">
+          <label class="field-label">Min order limit</label>
+          <mat-form-field appearance="outline" class="w-100">
+            <span matPrefix class="prefix">{{ fiatSymbol }}&nbsp;</span>
+            <input matInput type="number" inputmode="decimal" formControlName="minLimit" placeholder="0" class="mono-input" />
+          </mat-form-field>
+        </div>
+        <div class="field-group tight">
+          <label class="field-label">Max order limit</label>
+          <mat-form-field appearance="outline" class="w-100">
+            <span matPrefix class="prefix">{{ fiatSymbol }}&nbsp;</span>
+            <input
+              matInput
+              type="number"
+              inputmode="decimal"
+              formControlName="maxLimit"
+              placeholder="0"
+              class="mono-input"
+              (input)="onMaxLimitManualEdit()"
+            />
+          </mat-form-field>
+        </div>
+      </div>
+      <div class="rate-strip" *ngIf="computedMaxLimit">
+        <span>Auto from amount × price: <strong class="num">{{ fiatSymbol }}{{ computedMaxLimit | number: '1.0-2' }}</strong></span>
+        <button type="button" class="text-link" (click)="resetMaxLimitToAuto()">Use this</button>
+      </div>
+      <p class="field-error" *ngIf="limitError">{{ limitError }}</p>
+    </section>
 
-    <div class="payment-detail-card" *ngFor="let m of eligibleSavedMethods">
-      <label style="display:flex; align-items:flex-start; gap:10px;">
+    <!-- BUY ads: generic accepted method names -->
+    <section class="field-section" *ngIf="!isSellAd">
+      <label class="field-label">Accepted payment methods</label>
+      <p class="hint muted">Whoever accepts this ad will supply their own receiving account when the trade starts.</p>
+      <mat-form-field appearance="outline" class="w-100">
+        <mat-select formControlName="paymentMethods" multiple>
+          <mat-option *ngFor="let method of paymentMethodOptions" [value]="method">{{ method }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+      <p class="field-error" *ngIf="paymentMethodsError">{{ paymentMethodsError }}</p>
+    </section>
+
+    <!-- SELL ads: pick saved receiving accounts -->
+    <section class="field-section" *ngIf="isSellAd">
+      <label class="field-label">Receiving accounts for this ad</label>
+      <p class="hint muted">Buyers will pay directly into whichever accounts you select below.</p>
+
+      <app-payment-methods-manager (methodsChanged)="onMethodsChanged($event)"></app-payment-methods-manager>
+
+      <div class="empty-state centered" *ngIf="eligibleSavedMethods.length === 0">
+        <mat-icon>account_balance_wallet</mat-icon>
+        <span class="empty-title">No saved {{ form.value.fiatCurrency }} payment methods yet</span>
+        <span class="empty-sub">Add one above, then select it here.</span>
+      </div>
+
+      <label
+        class="account-pick"
+        *ngFor="let m of eligibleSavedMethods"
+        [class.selected]="isMethodSelected(m.id)"
+      >
         <input
           type="checkbox"
+          class="account-pick-checkbox"
           [checked]="isMethodSelected(m.id)"
           (change)="onSavedMethodToggle(m.id, $any($event.target).checked)"
         />
-        <span>
-          <div class="payment-detail-card-title">{{ m.method }}</div>
-          <div class="payment-details-row"><span>Account name</span><span>{{ m.accountName }}</span></div>
-          <div class="payment-details-row"><span>Account number</span><span>{{ m.accountNumber }}</span></div>
+        <span class="account-pick-body">
+          <span class="account-pick-top">
+            <span class="account-pick-method">{{ m.method }}</span>
+            <mat-icon class="account-pick-check">check_circle</mat-icon>
+          </span>
+          <span class="account-pick-row"><span>Account name</span><span>{{ m.accountName }}</span></span>
+          <span class="account-pick-row"><span>Account number</span><span class="num">{{ m.accountNumber }}</span></span>
         </span>
       </label>
+
+      <p class="field-error" *ngIf="paymentMethodIdsError">{{ paymentMethodIdsError }}</p>
+    </section>
+
+    <!-- Payment window -->
+    <section class="field-section">
+      <label class="field-label">Payment window</label>
+      <p class="hint muted">How long a buyer has to pay before the trade auto-cancels and coin is unlocked.</p>
+      <mat-form-field appearance="outline" class="w-100">
+        <mat-select formControlName="paymentWindowMinutes">
+          <mat-option *ngFor="let mins of paymentWindowOptions" [value]="mins">{{ mins }} minutes</mat-option>
+        </mat-select>
+      </mat-form-field>
+    </section>
+
+    <!-- Terms -->
+    <section class="field-section">
+      <label class="field-label">Terms <span class="optional">(optional)</span></label>
+      <mat-form-field appearance="outline" class="w-100">
+        <textarea
+          matInput
+          rows="3"
+          formControlName="terms"
+          placeholder="e.g. Payment must be made from an account in your own name"
+        ></textarea>
+      </mat-form-field>
+    </section>
+
+    <!-- PIN for sell ads -->
+    <section class="field-section" *ngIf="isSellAd">
+      <label class="field-label">Transaction PIN</label>
+      <mat-form-field appearance="outline" class="w-100 pin-field">
+        <input matInput type="password" inputmode="numeric" maxlength="6" formControlName="transactionPin" placeholder="&bull; &bull; &bull; &bull;" />
+      </mat-form-field>
+      <p class="hint lock-hint" *ngIf="!isEditMode">
+        <mat-icon>lock</mat-icon> Your coin moves into escrow the moment this ad goes live.
+      </p>
+      <p class="hint muted" *ngIf="isEditMode">Only needed if you're increasing the escrowed amount.</p>
+    </section>
+
+    <div *ngIf="errorMessage" class="banner warn">
+      <mat-icon>error_outline</mat-icon>
+      <span>{{ errorMessage }}</span>
     </div>
-
-    <div class="field-error" *ngIf="paymentMethodIdsError">{{ paymentMethodIdsError }}</div>
-  </ng-container>
-
-  <mat-label class="f-w-600 m-b-8 d-block">Payment window</mat-label>
-  <mat-form-field appearance="outline" class="w-100">
-    <mat-select formControlName="paymentWindowMinutes">
-      <mat-option *ngFor="let mins of paymentWindowOptions" [value]="mins">{{ mins }} minutes</mat-option>
-    </mat-select>
-  </mat-form-field>
-
-  <mat-label class="f-w-600 m-b-8 d-block">Terms (optional)</mat-label>
-  <mat-form-field appearance="outline" class="w-100">
-    <textarea
-      matInput
-      rows="3"
-      formControlName="terms"
-      placeholder="e.g. Payment must be made from an account in your own name"
-    ></textarea>
-  </mat-form-field>
-
-  <ng-container *ngIf="isSellAd">
-    <mat-label class="f-w-600 m-b-8 d-block">Transaction PIN</mat-label>
-    <mat-form-field appearance="outline" class="w-100">
-      <input matInput type="password" inputmode="numeric" maxlength="6" formControlName="transactionPin" />
-      <mat-hint *ngIf="!isEditMode">Your coins are locked in escrow as soon as this ad goes live.</mat-hint>
-      <mat-hint *ngIf="isEditMode">Only needed if you're increasing the escrowed amount.</mat-hint>
-    </mat-form-field>
-  </ng-container>
-
-  <div *ngIf="errorMessage" class="alert alert-danger m-t-2">
-    <b>{{ errorMessage }}</b>
   </div>
 
-  <button
-    mat-flat-button
-    color="primary"
-    class="fw-bold w-100 submit-btn"
-    type="button"
-    [disabled]="loading || marketRateLoading || priceExceedsMarketRate"
-    (click)="submit()"
-  >
-    {{ loading ? (isEditMode ? 'Updating...' : 'Posting...') : (isEditMode ? 'Update Ad' : 'Post Ad') }}
-  </button>
-</mat-dialog-content>
+  <!-- Sticky footer CTA -->
+  <footer class="sheet-footer">
+    <button
+      type="button"
+      class="btn primary full"
+      [class.sell]="isSellAd"
+      [disabled]="loading || marketRateLoading || priceExceedsMarketRate"
+      (click)="submit()"
+    >
+      {{ loading ? (isEditMode ? 'Updating…' : 'Posting…') : (isEditMode ? 'Update ad' : (isSellAd ? 'Post sell ad' : 'Post buy ad')) }}
+    </button>
+  </footer>
+</div>

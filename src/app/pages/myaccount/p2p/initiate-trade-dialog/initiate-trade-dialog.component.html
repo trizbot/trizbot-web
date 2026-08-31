@@ -1,295 +1,458 @@
-<div class="trade-dialog">
+<div class="trade-sheet">
 
   <!-- ============================= INITIATE ============================= -->
   <ng-container *ngIf="mode === 'initiate' && order">
-    <div class="dialog-header">
-      <h2>{{ order.type === P2POrderType.Sell ? 'Buy' : 'Sell' }} {{ order.coin }}</h2>
-      <button type="button" class="icon-btn" (click)="close()"><mat-icon>close</mat-icon></button>
-    </div>
+    <header class="sheet-header">
+      <h2 class="sheet-title">{{ order.type === P2POrderType.Sell ? 'Buy' : 'Sell' }} {{ order.coin }}</h2>
+      <button type="button" class="icon-btn" (click)="close()" aria-label="Close">
+        <mat-icon>close</mat-icon>
+      </button>
+    </header>
 
-    <div class="dialog-body">
-      <div class="order-summary">
-        <div class="summary-row">
-          <span>Price</span>
-          <span class="summary-val">{{ fiatSymbolForOrder }}{{ order.pricePerUnit | number: '1.2-2' }} / {{ order.coin }}</span>
-        </div>
-        <div class="summary-row">
-          <span>Limit</span>
-          <span class="summary-val">{{ fiatSymbolForOrder }}{{ order.minLimit | number }} &ndash; {{ fiatSymbolForOrder }}{{ order.maxLimit | number }}</span>
-        </div>
-        <div class="summary-row">
-          <span>Available</span>
-          <span class="summary-val">{{ order.availableAmount | number: '1.2-4' }} {{ order.coin }}</span>
-        </div>
-      </div>
+    <div class="sheet-body">
 
-      <div class="form-group">
-        <label>Amount ({{ order.coin }})</label>
-        <input type="number" min="0" inputmode="decimal" [(ngModel)]="coinAmount" placeholder="0.00" />
-        <div class="fiat-preview" *ngIf="coinAmount">
+      <dl class="stat-grid">
+        <div class="stat">
+          <dt>Price</dt>
+          <dd class="num">{{ fiatSymbolForOrder }}{{ order.pricePerUnit | number: '1.2-2' }}<span class="unit">/{{ order.coin }}</span></dd>
+        </div>
+        <div class="stat">
+          <dt>Limit</dt>
+          <dd class="num">{{ fiatSymbolForOrder }}{{ order.minLimit | number }}&ndash;{{ fiatSymbolForOrder }}{{ order.maxLimit | number }}</dd>
+        </div>
+        <div class="stat">
+          <dt>Available</dt>
+          <dd class="num">{{ order.availableAmount | number: '1.2-4' }} <span class="unit">{{ order.coin }}</span></dd>
+        </div>
+        <div class="stat" *ngIf="order.paymentWindowMinutes">
+          <dt>Payment window</dt>
+          <dd class="num">{{ order.paymentWindowMinutes }} min</dd>
+        </div>
+      </dl>
+
+      <section class="field-group">
+        <label class="field-label" for="coinAmount">Amount ({{ order.coin }})</label>
+
+        <div class="preset-row" role="group" aria-label="Amount presets">
+          <button
+            type="button"
+            class="preset-chip"
+            *ngFor="let p of amountPresetOptions"
+            [class.active]="amountPreset === p"
+            (click)="applyAmountPreset(p)"
+          >{{ p }}%</button>
+        </div>
+
+        <div class="amount-input-wrap">
+          <input
+            id="coinAmount"
+            type="number"
+            min="0"
+            inputmode="decimal"
+            class="amount-input"
+            [(ngModel)]="coinAmount"
+            (ngModelChange)="onAmountManualEdit()"
+            placeholder="0.00"
+          />
+          <span class="amount-unit">{{ order.coin }}</span>
+        </div>
+
+        <p class="fiat-preview" *ngIf="coinAmount">
           &asymp; {{ fiatSymbolForOrder }}{{ fiatAmount | number: '1.2-2' }}
-        </div>
-        <div class="field-error" *ngIf="coinAmount && !amountValid">
-          Amount must be within {{ fiatSymbolForOrder }}{{ order.minLimit | number }}&ndash;{{ fiatSymbolForOrder }}{{ order.maxLimit | number }} and no more than what's available.
-        </div>
-      </div>
+        </p>
 
-      <div class="form-group">
-        <label>Payment method</label>
-        <select [(ngModel)]="paymentMethod">
-          <option *ngFor="let m of paymentMethodOptions" [value]="m">{{ m }}</option>
-        </select>
-      </div>
+        <p class="field-error" *ngIf="coinAmount && !amountValid">
+          Amount must be within {{ fiatSymbolForOrder }}{{ order.minLimit | number }}&ndash;{{ fiatSymbolForOrder }}{{ order.maxLimit | number }}
+          and no more than what's available.
+        </p>
+      </section>
 
-      <!-- Ad already carries the seller's account -> just show it -->
-      <div class="payment-details-box" *ngIf="orderCarriesSellerDetails && matchedOrderPaymentDetail as detail">
-        <div class="payment-details-title"><mat-icon>account_balance</mat-icon> You'll send payment to</div>
-        <div class="payment-details-row"><span>Method</span><span>{{ detail.method }}</span></div>
-        <div class="payment-details-row"><span>Account name</span><span>{{ detail.accountName }}</span></div>
-        <div class="payment-details-row"><span>Account number</span><span>{{ detail.accountNumber }}</span></div>
-        <div class="payment-details-row" *ngIf="detail.bankName"><span>Bank</span><span>{{ detail.bankName }}</span></div>
-        <div class="payment-details-row" *ngIf="detail.additionalInfo"><span>Note</span><span>{{ detail.additionalInfo }}</span></div>
-      </div>
-
-      <!-- I'm the one selling -> I need to give the buyer one of my saved accounts -->
-      <div class="payment-details-form" *ngIf="mustSupplySellerDetails">
-        <div class="payment-details-title"><mat-icon>account_balance</mat-icon> Your payment details (shown to the buyer)</div>
-
-        <div class="order-loading" *ngIf="mySavedMethodsLoading">
-          <img src="./assets/images/loading.gif" alt="Loading..." style="width: 22px; height: 22px;" />
-        </div>
-
-        <div class="order-empty" *ngIf="!mySavedMethodsLoading && mySavedMethods.length === 0">
-          <span class="order-empty-title">No saved {{ order?.fiatCurrency }} payment method</span>
-          <span class="order-empty-sub">Add one under Payment Methods in your profile before accepting this trade.</span>
-        </div>
-
-        <div class="form-group" *ngIf="mySavedMethods.length > 0">
-          <label>Pay into</label>
-          <select [(ngModel)]="selectedPaymentMethodId">
-            <option *ngFor="let m of mySavedMethods" [value]="m.id">
-              {{ m.method }} — {{ m.accountNumber }}
-            </option>
+      <section class="field-group">
+        <label class="field-label" for="paymentMethod">Payment method</label>
+        <div class="select-wrap">
+          <select id="paymentMethod" class="select-input" [(ngModel)]="paymentMethod">
+            <option *ngFor="let m of paymentMethodOptions" [value]="m">{{ m }}</option>
           </select>
         </div>
-      </div>
+      </section>
+
+      <!-- Ad already carries the seller's account -> show it, masked by default -->
+      <section class="detail-card" *ngIf="orderCarriesSellerDetails && matchedOrderPaymentDetail as detail">
+        <h3 class="detail-card-title"><mat-icon>account_balance</mat-icon> You'll send payment to</h3>
+
+        <dl class="detail-list">
+          <div class="detail-row"><dt>Method</dt><dd>{{ detail.method }}</dd></div>
+          <div class="detail-row"><dt>Account name</dt><dd>{{ detail.accountName }}</dd></div>
+          <div class="detail-row">
+            <dt>Account number</dt>
+            <dd class="masked-value-group">
+              <span class="masked-value num">{{ isRevealed('initiate-acct') ? detail.accountNumber : maskedAccountNumber(detail.accountNumber) }}</span>
+              <button type="button" class="icon-btn tiny" (click)="toggleReveal('initiate-acct')" [matTooltip]="isRevealed('initiate-acct') ? 'Hide' : 'Show'" [attr.aria-label]="isRevealed('initiate-acct') ? 'Hide account number' : 'Show account number'">
+                <mat-icon>{{ isRevealed('initiate-acct') ? 'visibility_off' : 'visibility' }}</mat-icon>
+              </button>
+              <button type="button" class="icon-btn tiny" (click)="copyToClipboard(detail.accountNumber, 'initiate-acct')" matTooltip="Copy" aria-label="Copy account number">
+                <mat-icon>{{ copiedField === 'initiate-acct' ? 'check' : 'content_copy' }}</mat-icon>
+              </button>
+            </dd>
+          </div>
+          <div class="detail-row" *ngIf="detail.bankName"><dt>Bank</dt><dd>{{ detail.bankName }}</dd></div>
+          <div class="detail-row" *ngIf="detail.additionalInfo"><dt>Note</dt><dd>{{ detail.additionalInfo }}</dd></div>
+        </dl>
+
+        <p class="hint muted">Verify these details carefully before sending money — never pay an account shown outside this app.</p>
+      </section>
+
+      <!-- I'm the one selling -> I need to give the buyer one of my saved accounts -->
+      <section class="detail-card" *ngIf="mustSupplySellerDetails">
+        <h3 class="detail-card-title"><mat-icon>account_balance</mat-icon> Your payment details (shown to the buyer)</h3>
+
+        <div class="inline-loader" *ngIf="mySavedMethodsLoading">
+          <img src="./assets/images/loading.gif" alt="Loading" width="20" height="20" />
+          <span>Loading payment methods&hellip;</span>
+        </div>
+
+        <div class="empty-state" *ngIf="!mySavedMethodsLoading && mySavedMethods.length === 0">
+          <span class="empty-title">No saved {{ order.fiatCurrency }} payment method</span>
+          <span class="empty-sub">Add one under Payment Methods in your profile before accepting this trade.</span>
+        </div>
+
+        <div class="field-group tight" *ngIf="mySavedMethods.length > 0">
+          <label class="field-label" for="payoutMethod">Pay into</label>
+          <div class="select-wrap">
+            <select id="payoutMethod" class="select-input" [(ngModel)]="selectedPaymentMethodId">
+              <option *ngFor="let m of mySavedMethods" [value]="m.id">{{ m.method }} — {{ m.accountNumber }}</option>
+            </select>
+          </div>
+        </div>
+      </section>
 
       <!-- Transaction PIN is required to start ANY trade (locks funds into
            escrow), regardless of whether this is a Buy or Sell order -->
-      <div class="form-group">
-        <label>Transaction PIN</label>
+      <section class="field-group">
+        <label class="field-label" for="initiatePin">Transaction PIN</label>
         <input
+          id="initiatePin"
           type="password"
           inputmode="numeric"
           maxlength="6"
           autocomplete="off"
+          class="pin-input"
           [(ngModel)]="transactionPin"
-          placeholder="Enter transaction PIN"
+          [disabled]="initiatePinLocked"
+          placeholder="&bull; &bull; &bull; &bull;"
         />
-        <div class="field-error" *ngIf="transactionPin && !pinValid">
+        <p class="field-error" *ngIf="transactionPin && !pinValid">
           Enter a 4&ndash;6 digit transaction PIN.
-        </div>
-      </div>
+        </p>
+        <p class="field-error" *ngIf="initiatePinLocked">
+          Too many attempts. Try again in {{ initiatePinLockLabel }}.
+        </p>
+      </section>
 
-      <div class="field-error" *ngIf="errorMessage">{{ errorMessage }}</div>
+      <p class="field-error" *ngIf="errorMessage">{{ errorMessage }}</p>
     </div>
 
-    <div class="dialog-actions">
-      <button mat-stroked-button type="button" (click)="close()">Cancel</button>
+    <footer class="sheet-footer">
+      <button mat-stroked-button type="button" class="btn secondary" (click)="close()">Cancel</button>
       <button
         mat-flat-button
         color="primary"
         type="button"
+        class="btn primary"
         [disabled]="submitting || !initiateFormValid"
         (click)="submitInitiateTrade()"
       >
-        {{ submitting ? 'Starting...' : (order.type === P2POrderType.Sell ? 'Buy ' : 'Sell ') + order.coin }}
+        {{ submitting ? 'Starting…' : (order.type === P2POrderType.Sell ? 'Buy ' : 'Sell ') + order.coin }}
       </button>
-    </div>
+    </footer>
   </ng-container>
 
 
   <!-- ============================== DETAIL =============================== -->
   <ng-container *ngIf="mode === 'detail' && trade">
-    <div class="dialog-header">
-      <h2>Trade with &#64;{{ counterpartyName() }}</h2>
-      <button type="button" class="icon-btn" (click)="close()"><mat-icon>close</mat-icon></button>
+
+    <header class="sheet-header">
+      <h2 class="sheet-title truncate">Trade with &#64;{{ counterpartyName() }}</h2>
+      <button type="button" class="icon-btn" (click)="close()" aria-label="Close">
+        <mat-icon>close</mat-icon>
+      </button>
+    </header>
+
+    <div class="segmented" role="tablist">
+      <button
+        type="button"
+        role="tab"
+        class="segmented-tab"
+        [attr.aria-selected]="detailView === 'info'"
+        [class.active]="detailView === 'info'"
+        (click)="setDetailView('info')"
+      >Details</button>
+      <button
+        type="button"
+        role="tab"
+        class="segmented-tab"
+        [attr.aria-selected]="detailView === 'chat'"
+        [class.active]="detailView === 'chat'"
+        (click)="setDetailView('chat')"
+      >Chat</button>
     </div>
 
-    <div class="dialog-body">
-      <div class="trade-status-row">
-        <span class="status-pill" [ngClass]="trade.status.toLowerCase()">{{ trade.status }}</span>
-        <span class="countdown-pill" *ngIf="trade.status === TradeStatus.Pending" [class.urgent]="countdownUrgent">
-          <mat-icon>schedule</mat-icon>
-          {{ countdownExpired ? 'Expired' : countdownLabel }}
-        </span>
+    <ng-container *ngIf="detailView === 'chat'">
+      <div class="sheet-body chat-body">
+        <app-p2p-trade-chat [trade]="trade"></app-p2p-trade-chat>
       </div>
-      <p class="proof-note muted" *ngIf="trade.status === TradeStatus.Pending">
-        This window protects both sides: the buyer must pay before it runs out, and funds stay locked in escrow for the
-        seller until either a release or a dispute — nobody can act unilaterally once it expires.
-      </p>
+    </ng-container>
 
-      <div class="trade-amounts">
-        <div class="summary-row">
-          <span>Amount</span>
-          <span class="summary-val">{{ trade.coinAmount }} {{ trade.order.coin }}</span>
-        </div>
-        <div class="summary-row">
-          <span>To pay</span>
-          <span class="summary-val">{{ tradeFiatSymbol() }}{{ trade.fiatAmount | number: '1.2-2' }}</span>
-        </div>
-        <div class="summary-row">
-          <span>Payment method</span>
-          <span class="summary-val">{{ trade.paymentMethod }}</span>
-        </div>
-      </div>
+    <ng-container *ngIf="detailView === 'info'">
+      <div class="sheet-body">
 
-      <!-- Seller's payment details: visible to both sides so everyone can
-           verify the payment landed in the right account. -->
-      <div class="payment-details-box" *ngIf="trade.sellerPaymentMethod as detail">
-        <div class="payment-details-title"><mat-icon>account_balance</mat-icon> Payment goes to</div>
-        <div class="payment-details-row"><span>Method</span><span>{{ detail.method }}</span></div>
-        <div class="payment-details-row"><span>Account name</span><span>{{ detail.accountName }}</span></div>
-        <div class="payment-details-row"><span>Account number</span><span>{{ detail.accountNumber }}</span></div>
-        <div class="payment-details-row" *ngIf="detail.bankName"><span>Bank</span><span>{{ detail.bankName }}</span></div>
-        <div class="payment-details-row" *ngIf="detail.additionalInfo"><span>Note</span><span>{{ detail.additionalInfo }}</span></div>
-      </div>
-
-      <!-- ---- BUYER (in this trade): mark as paid + attach evidence ---- -->
-      <ng-container *ngIf="canMarkPaid">
-        <div class="safety-banner">
-          <mat-icon>info</mat-icon>
-          Only mark as paid after you've actually sent the money above. False confirmations can get your account suspended.
+        <div class="status-row">
+          <span class="pill" [ngClass]="trade.status.toLowerCase()">{{ trade.status }}</span>
+          <span class="pill countdown" *ngIf="trade.status === TradeStatus.Pending" [class.urgent]="countdownUrgent || isPaymentExpired">
+            <mat-icon>schedule</mat-icon>
+            {{ countdownExpired ? 'Expired' : countdownLabel }}
+          </span>
+          <span class="pill countdown" *ngIf="sellerReviewActive" [class.urgent]="sellerReviewUrgent || sellerReviewOverdue">
+            <mat-icon>hourglass_top</mat-icon>
+            {{ sellerReviewOverdue ? 'Response overdue' : sellerReviewLabel }}
+          </span>
         </div>
 
-        <button
-          mat-flat-button
-          color="primary"
-          type="button"
-          class="full-width-btn"
-          *ngIf="!showPaidForm"
-          (click)="togglePaidForm()"
-        >
-          I have sent the payment
-        </button>
-
-        <div class="paid-form" *ngIf="showPaidForm">
-          <div class="form-group">
-            <label>Upload payment screenshot</label>
-            <input type="file" accept="image/*" (change)="onProofFileSelected($event)" />
-          </div>
-          <div class="form-group">
-            <label>Or paste a link to your evidence</label>
-            <input type="text" inputmode="url" [(ngModel)]="proofUrl" placeholder="https://..." />
-          </div>
-          <img *ngIf="proofUrl && proofLooksLikeImage" class="proof-preview" [src]="proofUrl" alt="Payment evidence preview" />
-          <div class="form-group">
-            <label>Note (optional)</label>
-            <input type="text" [(ngModel)]="proofNote" placeholder="e.g. transfer reference number" />
-          </div>
-          <div class="field-error" *ngIf="proofFileError">{{ proofFileError }}</div>
-          <div class="dialog-actions inline">
-            <button mat-stroked-button type="button" (click)="togglePaidForm()">Cancel</button>
-            <button
-              mat-flat-button
-              color="primary"
-              type="button"
-              [disabled]="markingPaid"
-              (click)="submitMarkPaid()"
-            >
-              {{ markingPaid ? 'Submitting...' : 'I have paid' }}
-            </button>
-          </div>
-        </div>
-      </ng-container>
-
-      <!-- ---- SELLER (in this trade): review evidence + release funds ---- -->
-      <ng-container *ngIf="!trade.isBuyer && trade.status === TradeStatus.Paid">
-        <div class="proof-review">
-          <div class="payment-details-title"><mat-icon>receipt_long</mat-icon> Payment evidence from the buyer</div>
-          <img *ngIf="trade.paymentProofUrl && proofLooksLikeImage" class="proof-preview" [src]="trade.paymentProofUrl" alt="Buyer payment evidence" />
-          <a *ngIf="trade.paymentProofUrl && !proofLooksLikeImage" [href]="trade.paymentProofUrl" target="_blank" rel="noopener">View payment evidence</a>
-          <p class="proof-note" *ngIf="trade.paymentProofNote">{{ trade.paymentProofNote }}</p>
-          <p class="proof-note muted" *ngIf="trade.paidAt">Marked paid {{ trade.paidAt | date: 'medium' }}</p>
-        </div>
-
-        <div class="safety-banner">
-          <mat-icon>warning</mat-icon>
-          Check your bank/wallet directly before confirming — don't rely on the screenshot alone.
-        </div>
-
-        <div class="form-group">
-          <label>Transaction PIN</label>
-          <input
-            type="password"
-            inputmode="numeric"
-            maxlength="6"
-            autocomplete="off"
-            class="pin-input"
-            [(ngModel)]="releasePin"
-            placeholder="&bull;&bull;&bull;&bull;"
-          />
-          <div class="field-error" *ngIf="releasePinError">{{ releasePinError }}</div>
-        </div>
-
-        <button
-          mat-flat-button
-          color="primary"
-          type="button"
-          class="full-width-btn"
-          [disabled]="releasing || !releasePinValid"
-          (click)="confirmReleaseFunds()"
-        >
-          {{ releasing ? 'Releasing...' : 'I have received payment' }}
-        </button>
-      </ng-container>
-
-      <div class="trade-footer-note" *ngIf="trade.status === TradeStatus.Completed">
-        <mat-icon>check_circle</mat-icon>
-        Funds released {{ trade.releasedAt ? (trade.releasedAt | date: 'medium') : '' }}.
-      </div>
-
-      <div class="payment-details-box" *ngIf="canOpenDisputeOrReport">
-        <div class="payment-details-title"><mat-icon>support_agent</mat-icon> Need help with this trade?</div>
-        <p class="proof-note muted">
-          Available to both the buyer and the seller. Use this if payment wasn't received, the counterparty is
-          unresponsive, or something feels wrong — support reviews evidence from both sides before deciding.
+        <p class="hint muted" *ngIf="trade.status === TradeStatus.Pending && !isPaymentExpired">
+          This window protects both sides: the buyer must pay before it runs out, and funds stay locked in escrow for the
+          seller until either a release or a dispute — nobody can act unilaterally once it expires.
         </p>
 
-        <div class="dialog-actions inline" *ngIf="!showDisputeForm">
-          <button mat-stroked-button color="warn" type="button" (click)="toggleDisputeForm()">
-            <mat-icon>report</mat-icon> Open Dispute / Report
-          </button>
-          <button mat-stroked-button type="button" (click)="contactSupport()">
-            <mat-icon>support_agent</mat-icon> Contact Support
+        <!-- Payment window has run out client-side; wait for server state -->
+        <div class="banner warn" *ngIf="trade.status === TradeStatus.Pending && isPaymentExpired">
+          <mat-icon>timer_off</mat-icon>
+          <span>The payment window has ended. This trade should auto-cancel shortly — refresh to see the latest status.</span>
+          <button mat-stroked-button type="button" class="btn tiny-btn" [disabled]="refreshingTrade" (click)="refreshTrade()">
+            {{ refreshingTrade ? 'Refreshing…' : 'Refresh' }}
           </button>
         </div>
 
-        <div class="paid-form" *ngIf="showDisputeForm">
-          <div class="form-group">
-            <label>Reason</label>
-            <select [(ngModel)]="disputeReason">
-              <option *ngFor="let r of disputeReasonOptions" [value]="r">{{ r }}</option>
-            </select>
+        <dl class="stat-grid">
+          <div class="stat">
+            <dt>Amount</dt>
+            <dd class="num">{{ trade.coinAmount }} <span class="unit">{{ trade.order.coin }}</span></dd>
           </div>
-          <div class="form-group">
-            <label>Additional details (optional)</label>
-            <textarea rows="3" [(ngModel)]="disputeDetails" placeholder="Anything support should know"></textarea>
+          <div class="stat">
+            <dt>To pay</dt>
+            <dd class="num">{{ tradeFiatSymbol() }}{{ trade.fiatAmount | number: '1.2-2' }}</dd>
           </div>
-          <div class="field-error" *ngIf="disputeError">{{ disputeError }}</div>
-          <div class="dialog-actions inline">
-            <button mat-stroked-button type="button" (click)="toggleDisputeForm()">Cancel</button>
-            <button mat-flat-button color="warn" type="button" [disabled]="disputeSubmitting" (click)="submitDispute()">
-              {{ disputeSubmitting ? 'Submitting...' : 'Submit' }}
+          <div class="stat">
+            <dt>Payment method</dt>
+            <dd>{{ trade.paymentMethod }}</dd>
+          </div>
+        </dl>
+
+        <section class="detail-card" *ngIf="resolvedPaymentDetail as detail; else noPaymentDetail">
+          <h3 class="detail-card-title"><mat-icon>account_balance</mat-icon> Payment goes to</h3>
+          <dl class="detail-list">
+            <div class="detail-row"><dt>Method</dt><dd>{{ detail.method }}</dd></div>
+            <div class="detail-row"><dt>Account name</dt><dd>{{ detail.accountName }}</dd></div>
+            <div class="detail-row">
+              <dt>Account number</dt>
+              <dd class="masked-value-group">
+                <span class="masked-value num">{{ isRevealed('detail-acct') ? detail.accountNumber : maskedAccountNumber(detail.accountNumber) }}</span>
+                <button type="button" class="icon-btn tiny" (click)="toggleReveal('detail-acct')" [matTooltip]="isRevealed('detail-acct') ? 'Hide' : 'Show'" [attr.aria-label]="isRevealed('detail-acct') ? 'Hide account number' : 'Show account number'">
+                  <mat-icon>{{ isRevealed('detail-acct') ? 'visibility_off' : 'visibility' }}</mat-icon>
+                </button>
+                <button type="button" class="icon-btn tiny" (click)="copyToClipboard(detail.accountNumber, 'detail-acct')" matTooltip="Copy" aria-label="Copy account number">
+                  <mat-icon>{{ copiedField === 'detail-acct' ? 'check' : 'content_copy' }}</mat-icon>
+                </button>
+              </dd>
+            </div>
+            <div class="detail-row" *ngIf="detail.bankName"><dt>Bank</dt><dd>{{ detail.bankName }}</dd></div>
+            <div class="detail-row" *ngFor="let extra of paymentDetailExtraFields">
+              <dt>{{ extra.label }}</dt><dd>{{ extra.value }}</dd>
+            </div>
+            <div class="detail-row" *ngIf="detail.additionalInfo"><dt>Note</dt><dd>{{ detail.additionalInfo }}</dd></div>
+          </dl>
+        </section>
+
+        <ng-template #noPaymentDetail>
+          <div class="banner warn">
+            <mat-icon>error_outline</mat-icon>
+            <span>Payment details aren't showing yet. Refresh, or contact support if this persists before sending any money.</span>
+            <button mat-stroked-button type="button" class="btn tiny-btn" [disabled]="refreshingTrade" (click)="refreshTrade()">
+              {{ refreshingTrade ? 'Refreshing…' : 'Refresh' }}
             </button>
           </div>
+        </ng-template>
+
+        <!-- Shared status context once payment has been marked, visible to both sides -->
+        <section class="detail-card" *ngIf="trade.status === TradeStatus.Paid">
+          <h3 class="detail-card-title">
+            <mat-icon>hourglass_top</mat-icon>
+            {{ trade.isBuyer ? 'Waiting for seller to confirm' : 'Review and release' }}
+          </h3>
+          <p class="hint muted" *ngIf="!sellerReviewOverdue">
+            {{ trade.isBuyer
+              ? 'The seller is expected to verify and release funds shortly after payment is marked.'
+              : 'Review the evidence below and release funds once you have verified payment landed.' }}
+          </p>
+          <p class="hint warn-text" *ngIf="sellerReviewOverdue">
+            {{ trade.isBuyer
+              ? "The seller hasn't responded within the expected window — you can escalate below."
+              : "You're past the expected response window. Please release now or open a dispute." }}
+          </p>
+        </section>
+
+        <!-- ---- BUYER (in this trade): mark as paid + attach evidence ---- -->
+        <ng-container *ngIf="canMarkPaid">
+          <div class="banner">
+            <mat-icon>info</mat-icon>
+            <span>Only mark as paid after you've actually sent the money above. False confirmations can get your account suspended.</span>
+          </div>
+
+          <button
+            mat-flat-button
+            color="primary"
+            type="button"
+            class="btn primary full"
+            *ngIf="!showPaidForm"
+            (click)="togglePaidForm()"
+          >I have sent the payment</button>
+
+          <section class="detail-card" *ngIf="showPaidForm">
+            <div class="field-group tight">
+              <label class="field-label" for="proofFile">Upload payment screenshot</label>
+              <input id="proofFile" type="file" accept="image/*" class="file-input" (change)="onProofFileSelected($event)" />
+            </div>
+            <div class="field-group tight">
+              <label class="field-label" for="proofUrl">Or paste a link to your evidence</label>
+              <input id="proofUrl" type="text" inputmode="url" class="text-input" [(ngModel)]="proofUrl" placeholder="https://..." />
+            </div>
+            <img *ngIf="proofUrl && proofLooksLikeImage" class="proof-preview" [src]="proofUrl" alt="Payment evidence preview" />
+            <div class="field-group tight">
+              <label class="field-label" for="proofNote">Note (optional)</label>
+              <input id="proofNote" type="text" class="text-input" [(ngModel)]="proofNote" placeholder="e.g. transfer reference number" />
+            </div>
+            <p class="field-error" *ngIf="proofFileError">{{ proofFileError }}</p>
+            <div class="row-actions">
+              <button mat-stroked-button type="button" class="btn secondary" (click)="togglePaidForm()">Cancel</button>
+              <button
+                mat-flat-button
+                color="primary"
+                type="button"
+                class="btn primary"
+                [disabled]="markingPaid"
+                (click)="submitMarkPaid()"
+              >{{ markingPaid ? 'Submitting…' : 'I have paid' }}</button>
+            </div>
+          </section>
+        </ng-container>
+
+        <!-- Buyer can back out only before marking paid -->
+        <button
+          mat-stroked-button
+          color="warn"
+          type="button"
+          class="btn danger-outline full"
+          *ngIf="canCancel && !showPaidForm"
+          [disabled]="cancelling"
+          (click)="cancelTrade()"
+        >{{ cancelling ? 'Cancelling…' : 'Cancel trade' }}</button>
+
+        <!-- ---- SELLER (in this trade): review evidence + release funds ---- -->
+        <ng-container *ngIf="!trade.isBuyer && trade.status === TradeStatus.Paid">
+          <section class="detail-card">
+            <h3 class="detail-card-title"><mat-icon>receipt_long</mat-icon> Payment evidence from the buyer</h3>
+            <img *ngIf="trade.paymentProofUrl && proofLooksLikeImage" class="proof-preview" [src]="trade.paymentProofUrl" alt="Buyer payment evidence" />
+            <a *ngIf="trade.paymentProofUrl && !proofLooksLikeImage" class="proof-link" [href]="trade.paymentProofUrl" target="_blank" rel="noopener">View payment evidence</a>
+            <p class="hint" *ngIf="trade.paymentProofNote">{{ trade.paymentProofNote }}</p>
+            <p class="hint muted" *ngIf="trade.paidAt">Marked paid {{ trade.paidAt | date: 'medium' }}</p>
+          </section>
+
+          <div class="banner">
+            <mat-icon>warning</mat-icon>
+            <span>Check your bank/wallet directly before confirming — don't rely on the screenshot alone.</span>
+          </div>
+
+          <section class="field-group">
+            <label class="field-label" for="releasePin">Transaction PIN</label>
+            <input
+              id="releasePin"
+              type="password"
+              inputmode="numeric"
+              maxlength="6"
+              autocomplete="off"
+              class="pin-input"
+              [(ngModel)]="releasePin"
+              [disabled]="releasePinLocked"
+              placeholder="&bull; &bull; &bull; &bull;"
+            />
+            <p class="field-error" *ngIf="releasePinError">{{ releasePinError }}</p>
+          </section>
+
+          <button
+            mat-flat-button
+            color="primary"
+            type="button"
+            class="btn primary full"
+            [disabled]="releasing || !releasePinValid || releasePinLocked"
+            (click)="confirmReleaseFunds()"
+          >{{ releasing ? 'Releasing…' : 'I have received payment' }}</button>
+        </ng-container>
+
+        <div class="footer-note success" *ngIf="trade.status === TradeStatus.Completed">
+          <mat-icon>check_circle</mat-icon>
+          <span>Funds released {{ trade.releasedAt ? (trade.releasedAt | date: 'medium') : '' }}.</span>
+        </div>
+
+        <div class="footer-note" *ngIf="trade.status === TradeStatus.Cancelled">
+          <mat-icon>cancel</mat-icon><span>This trade was cancelled. No funds were exchanged.</span>
+        </div>
+
+        <div class="footer-note" *ngIf="trade.status === TradeStatus.Expired">
+          <mat-icon>timer_off</mat-icon><span>This trade expired because payment wasn't confirmed in time.</span>
+        </div>
+
+        <section class="detail-card" *ngIf="canOpenDisputeOrReport">
+          <h3 class="detail-card-title"><mat-icon>support_agent</mat-icon> Need help with this trade?</h3>
+          <p class="hint muted">
+            Available to both the buyer and the seller. Use this if payment wasn't received, the counterparty is
+            unresponsive, or something feels wrong — support reviews evidence from both sides before deciding.
+          </p>
+
+          <div class="row-actions" *ngIf="!showDisputeForm">
+            <button mat-stroked-button color="warn" type="button" class="btn danger-outline" (click)="toggleDisputeForm()">
+              <mat-icon>report</mat-icon> Open dispute / report
+            </button>
+            <button mat-stroked-button type="button" class="btn secondary" (click)="contactSupport()">
+              <mat-icon>support_agent</mat-icon> Contact support
+            </button>
+          </div>
+
+          <div class="field-group tight" *ngIf="showDisputeForm">
+            <label class="field-label" for="disputeReason">Reason</label>
+            <div class="select-wrap">
+              <select id="disputeReason" class="select-input" [(ngModel)]="disputeReason">
+                <option *ngFor="let r of disputeReasonOptions" [value]="r">{{ r }}</option>
+              </select>
+            </div>
+          </div>
+          <div class="field-group tight" *ngIf="showDisputeForm">
+            <label class="field-label" for="disputeDetails">Additional details (optional)</label>
+            <textarea id="disputeDetails" rows="3" class="text-input textarea" [(ngModel)]="disputeDetails" placeholder="Anything support should know"></textarea>
+          </div>
+          <p class="field-error" *ngIf="disputeError">{{ disputeError }}</p>
+          <div class="row-actions" *ngIf="showDisputeForm">
+            <button mat-stroked-button type="button" class="btn secondary" (click)="toggleDisputeForm()">Cancel</button>
+            <button mat-flat-button color="warn" type="button" class="btn danger" [disabled]="disputeSubmitting" (click)="submitDispute()">
+              {{ disputeSubmitting ? 'Submitting…' : 'Submit' }}
+            </button>
+          </div>
+        </section>
+
+        <div class="footer-note" *ngIf="trade.status === TradeStatus.Disputed">
+          <mat-icon>gavel</mat-icon><span>This trade is under dispute. Support will contact both parties.</span>
         </div>
       </div>
+    </ng-container>
 
-      <div class="trade-footer-note" *ngIf="trade.status === TradeStatus.Disputed">
-        <mat-icon>gavel</mat-icon> This trade is under dispute. Support will contact both parties.
-      </div>
-    </div>
   </ng-container>
 
 </div>

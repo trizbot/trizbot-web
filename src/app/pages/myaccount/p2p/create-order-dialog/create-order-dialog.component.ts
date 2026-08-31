@@ -17,7 +17,7 @@ import {
   SUPPORTED_FIAT,
   fiatSymbol,
   getPaymentMethodsForFiat,
-} from '../p2p.model';
+} from '../model/p2p.model';
 
 export interface CreateOrderDialogData {
   defaultType: P2POrderType;

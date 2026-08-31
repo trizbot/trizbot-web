@@ -4,7 +4,8 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { environment } from '../../../../../environments/environment';
-import { ListOrdersParams, P2POrder, normalizeOrder, CreateOrderReqBody, UpdateOrderReqBody, P2PTrade, normalizeTrade, InitiateTradeReqBody, ExchangeRateRes, MarkTradePaidReqBody, ReleaseTradeReqBody } from '../p2p.model';
+import { ListOrdersParams, P2POrder, normalizeOrder, CreateOrderReqBody, UpdateOrderReqBody, P2PTrade, normalizeTrade, InitiateTradeReqBody, ExchangeRateRes, MarkTradePaidReqBody, ReleaseTradeReqBody } from '../model/p2p.model';
+import { VerifyPaymentRes, PaymentVerificationStatus } from '../model/p2p.model';
 
 
 interface ApiEnvelope<T> {
@@ -19,10 +20,6 @@ export class P2pService {
   private readonly base = `${environment.apiBaseUrl}/p2p`;
 
   constructor(private http: HttpClient) {}
-
-  // ---------------------------------------------------------------------
-  // Market / Orders
-  // ---------------------------------------------------------------------
 
   listOrders(params: ListOrdersParams): Observable<P2POrder[]> {
     let httpParams = new HttpParams();
@@ -169,5 +166,48 @@ releaseTrade(tradeId: string, body: ReleaseTradeReqBody = {}): Observable<P2PTra
     .post<any>(`${this.base}/trades/${tradeId}/release`, body)
     .pipe(map((res) => normalizeTrade(res.data ?? res)));
 }
+
+
+cancelTrade(tradeId: string): Observable<P2PTrade> {
+  return this.http
+    .post<any>(`${this.base}/trades/${tradeId}/cancel`, {})
+    .pipe(map((res) => normalizeTrade(res.data ?? res)));
+}
+
+
+
+
+
+
+
+
+
+
+
+
+// ...
+
+verifyPayment(tradeId: string): Observable<VerifyPaymentRes> {
+  return this.http
+    .get<ApiEnvelope<{ status: PaymentVerificationStatus; trade?: any }> | { status: PaymentVerificationStatus; trade?: any }>(
+      `${this.base}/trades/${tradeId}/verify-payment`
+    )
+    .pipe(
+      map((res) => {
+        const body = this.unwrapOne(res);
+        return {
+          status: body.status,
+          trade: body.trade ? normalizeTrade(body.trade) : undefined,
+        };
+      })
+    );
+}
+
+autoReleaseTrade(tradeId: string): Observable<P2PTrade> {
+  return this.http
+    .post<ApiEnvelope<any> | any>(`${this.base}/trades/${tradeId}/auto-release`, {})
+    .pipe(map((res) => normalizeTrade(this.unwrapOne(res))));
+}
+
 
 }

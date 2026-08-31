@@ -15,11 +15,15 @@ import {
   TradeStatus,
   canMarkPaid,
   canReleaseFunds,
+  canCancelTrade,
+  isPaymentWindowExpired,
+  maskAccountNumber,
   fiatSymbol,
   formatCountdown,
   getPaymentMethodsForFiat,
   msUntilDeadline,
-} from '../p2p.model';
+} from '../model/p2p.model';
+import { P2pTradeChatComponent } from '../trade-chat/p2p-trade-chat.component';
 
 export interface InitiateTradeDialogData {
   order?: P2POrder;
@@ -30,11 +34,43 @@ const COUNTDOWN_TICK_MS = 1000;
 const COUNTDOWN_URGENT_THRESHOLD_MS = 2 * 60 * 1000;
 const MAX_PROOF_FILE_BYTES = 4 * 1024 * 1024; // 4MB cap so the base64 payload stays reasonable
 const PIN_PATTERN = /^\d{4,6}$/; // 4-6 digit transaction PIN
+const MAX_PIN_ATTEMPTS = 3;
+const PIN_LOCKOUT_MS = 60 * 1000;
 
+const SELLER_REVIEW_WINDOW_MS = 15 * 60 * 1000;
+
+// --- Auto-verification / auto-release tuning ---------------------------
+// How often we ask the backend "has this payment actually landed yet?"
+const VERIFICATION_POLL_INTERVAL_MS = 5000;
+// Give up polling after this long and fall back to manual seller release.
+const VERIFICATION_POLL_TIMEOUT_MS = 10 * 60 * 1000;
+
+type TradeStep = 'created' | 'paid' | 'released' | 'disputed';
+
+/**
+ * NOTE ON AUTO-RELEASE:
+ * A frontend can never itself confirm that fiat "genuinely" landed in the
+ * seller's account — that has to be proven server-side (bank webhook,
+ * virtual account ledger, Paystack/Flutterwave/Mono verification, OCR +
+ * manual review, etc). This component assumes P2pService exposes:
+ *
+ *   verifyPayment(tradeId: string): Observable<{
+ *     status: 'pending' | 'verifying' | 'verified' | 'failed';
+ *     trade?: P2PTrade;
+ *   }>
+ *
+ *   autoReleaseTrade(tradeId: string): Observable<P2PTrade>
+ *
+ * `autoReleaseTrade` must NOT require the seller's PIN — it's an
+ * authorization made by your backend on the strength of the verified
+ * payment signal, not a manual human action. Gate it server-side on
+ * something like "this payment method/trade is auto-release eligible"
+ * so you don't blanket-authorize releases you haven't actually verified.
+ */
 @Component({
   selector: 'app-initiate-trade-dialog',
   standalone: true,
-  imports: [CommonModule, FormsModule, MaterialModule],
+  imports: [CommonModule, FormsModule, MaterialModule, P2pTradeChatComponent],
   templateUrl: './initiate-trade-dialog.component.html',
   styleUrls: ['./initiate-trade-dialog.component.scss'],
 })
@@ -52,9 +88,16 @@ export class InitiateTradeDialogComponent implements OnInit, OnDestroy {
   transactionPin = ''; // required to lock funds into escrow when starting a trade
   submitting = false;
   errorMessage = '';
+  amountPreset: 25 | 50 | 75 | 100 | null = null;
 
-  /** My saved accounts — used only when I'm the one supplying receiving details
-   *  (i.e. the ad I'm trading against was posted as a Buy ad). */
+  detailView: 'info' | 'chat' = 'info';
+  setDetailView(view: 'info' | 'chat'): void {
+    this.detailView = view;
+  }
+
+  initiatePinAttempts = 0;
+  initiatePinLockedUntil = 0;
+
   mySavedMethods: UserPaymentMethod[] = [];
   mySavedMethodsLoading = false;
   selectedPaymentMethodId = '';
@@ -66,11 +109,42 @@ export class InitiateTradeDialogComponent implements OnInit, OnDestroy {
   proofFileError = '';
   markingPaid = false;
   releasing = false;
-  releasePin = ''; // required to release escrowed funds to the buyer
+  releasePin = ''; // required to release escrowed funds to the buyer (manual path)
   releasePinError = '';
+  releasePinAttempts = 0;
+  releasePinLockedUntil = 0;
+  copiedField: string | null = null;
+  private copiedResetTimer: ReturnType<typeof setTimeout> | null = null;
+
+  cancelling = false;
+  refreshingTrade = false;
+
+  private revealedFields = new Set<string>();
+
+  showDisputeForm = false;
+  disputeReason = '';
+  disputeDetails = '';
+  disputeSubmitting = false;
+  disputeError = '';
+
+  readonly disputeReasonOptions = [
+    'Payment not received',
+    'Payment amount is incorrect',
+    'Counterparty is unresponsive',
+    'Suspicious or unsafe behaviour',
+    'Other',
+  ];
+
+  readonly amountPresetOptions: ReadonlyArray<25 | 50 | 75 | 100> = [25, 50, 75, 100];
 
   private nowTick = Date.now();
   private countdownTimer: ReturnType<typeof setInterval> | null = null;
+
+  // ---- Auto-verification / auto-release state ----
+  verificationStatus: 'idle' | 'pending' | 'verifying' | 'verified' | 'failed' | 'timed-out' = 'idle';
+  autoReleaseInFlight = false;
+  private verificationPollTimer: ReturnType<typeof setInterval> | null = null;
+  private verificationPollStartedAt = 0;
 
   constructor(
     private dialogRef: MatDialogRef<InitiateTradeDialogComponent>,
@@ -78,12 +152,20 @@ export class InitiateTradeDialogComponent implements OnInit, OnDestroy {
     private paymentMethodsService: PaymentMethodsService,
     private sharedService: SharedService,
     @Inject(MAT_DIALOG_DATA) public data: InitiateTradeDialogData
-  ) {}
+  ) {
+    this.disputeReason = this.disputeReasonOptions[0];
+  }
 
   ngOnInit(): void {
     if (this.data.trade) {
       this.mode = 'detail';
       this.trade = this.data.trade;
+
+      // If we're opening a trade that's already marked paid and is waiting
+      // on verification, resume polling instead of leaving it stuck.
+      if (this.trade.status === TradeStatus.Paid && this.trade.autoReleaseEligible) {
+        this.startVerificationPolling();
+      }
     } else if (this.data.order) {
       this.mode = 'initiate';
       this.order = this.data.order;
@@ -99,6 +181,8 @@ export class InitiateTradeDialogComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.stopCountdown();
+    this.stopVerificationPolling();
+    if (this.copiedResetTimer) clearTimeout(this.copiedResetTimer);
   }
 
   close(result?: P2PTrade): void {
@@ -124,14 +208,10 @@ export class InitiateTradeDialogComponent implements OnInit, OnDestroy {
     return fiatSymbol(this.order?.fiatCurrency);
   }
 
-  /** Ad owner is the seller — the order already carries their saved payment
-   *  method details, so the buyer (me) just needs to see them. */
   get orderCarriesSellerDetails(): boolean {
     return this.order?.type === P2POrderType.Sell;
   }
 
-  /** Ad owner is the buyer — I'm the one selling coin, so I must supply
-   *  one of MY saved payment methods for the buyer to pay into. */
   get mustSupplySellerDetails(): boolean {
     return this.order?.type === P2POrderType.Buy;
   }
@@ -155,6 +235,17 @@ export class InitiateTradeDialogComponent implements OnInit, OnDestroy {
     });
   }
 
+  applyAmountPreset(pct: 25 | 50 | 75 | 100): void {
+    if (!this.order) return;
+    this.amountPreset = pct;
+    const raw = (this.order.availableAmount * pct) / 100;
+    this.coinAmount = Math.floor(raw * 10000) / 10000;
+  }
+
+  onAmountManualEdit(): void {
+    this.amountPreset = null;
+  }
+
   get amountValid(): boolean {
     if (!this.order || !this.coinAmount) return false;
     const amt = this.fiatAmount;
@@ -170,14 +261,27 @@ export class InitiateTradeDialogComponent implements OnInit, OnDestroy {
     return PIN_PATTERN.test(this.transactionPin);
   }
 
+  get initiatePinLocked(): boolean {
+    return this.initiatePinLockedUntil > this.nowTick;
+  }
+
+  get initiatePinLockLabel(): string {
+    return formatCountdown(Math.max(0, this.initiatePinLockedUntil - this.nowTick));
+  }
+
   get initiateFormValid(): boolean {
     if (!this.amountValid || !this.paymentMethod || !this.pinValid) return false;
+    if (this.initiatePinLocked) return false;
     if (this.mustSupplySellerDetails) return !!this.selectedPaymentMethodId;
     return true;
   }
 
   submitInitiateTrade(): void {
     if (!this.order || !this.initiateFormValid || this.submitting) return;
+    if (this.initiatePinLocked) {
+      this.errorMessage = `Too many attempts. Try again in ${this.initiatePinLockLabel}.`;
+      return;
+    }
 
     this.submitting = true;
     this.errorMessage = '';
@@ -194,11 +298,18 @@ export class InitiateTradeDialogComponent implements OnInit, OnDestroy {
         next: (trade) => {
           this.submitting = false;
           this.transactionPin = '';
+          this.initiatePinAttempts = 0;
           this.sharedService.showToast({ title: 'Trade started. Check the payment window below.' });
           this.close(trade);
         },
         error: (err) => {
           this.submitting = false;
+          this.transactionPin = '';
+          this.initiatePinAttempts += 1;
+          if (this.initiatePinAttempts >= MAX_PIN_ATTEMPTS) {
+            this.initiatePinLockedUntil = Date.now() + PIN_LOCKOUT_MS;
+            this.initiatePinAttempts = 0;
+          }
           const message = err?.error?.message || 'Could not start this trade.';
           this.errorMessage = Array.isArray(message) ? message.join(', ') : message;
         },
@@ -206,7 +317,29 @@ export class InitiateTradeDialogComponent implements OnInit, OnDestroy {
   }
 
   // =======================================================================
-  // TRADE DETAIL — countdown, mark-paid, release
+  // TRADE DETAIL — step state
+  // =======================================================================
+
+  get currentStep(): TradeStep {
+    if (!this.trade) return 'created';
+    switch (this.trade.status) {
+      case TradeStatus.Disputed:
+        return 'disputed';
+      case TradeStatus.Completed:
+        return 'released';
+      case TradeStatus.Paid:
+        return 'paid';
+      default:
+        return 'created';
+    }
+  }
+
+  get stepIndex(): number {
+    return { created: 0, paid: 1, released: 2, disputed: 1 }[this.currentStep];
+  }
+
+  // =======================================================================
+  // TRADE DETAIL — countdown #1: buyer's payment window
   // =======================================================================
 
   private startCountdown(): void {
@@ -239,16 +372,142 @@ export class InitiateTradeDialogComponent implements OnInit, OnDestroy {
     return msUntilDeadline(this.trade.paymentDeadline, this.nowTick) <= 0;
   }
 
+  get isPaymentExpired(): boolean {
+    return !!this.trade && isPaymentWindowExpired(this.trade, this.nowTick);
+  }
+
+  get paymentWindowFraction(): number {
+    if (!this.trade?.paymentDeadline || !this.order?.paymentWindowMinutes) return 0;
+    const totalMs = this.order.paymentWindowMinutes * 60 * 1000;
+    const msLeft = Math.max(0, msUntilDeadline(this.trade.paymentDeadline, this.nowTick));
+    return totalMs > 0 ? Math.min(1, msLeft / totalMs) : 0;
+  }
+
+  refreshTrade(): void {
+    if (!this.trade || this.refreshingTrade) return;
+    this.refreshingTrade = true;
+    this.p2pService.getTrade(this.trade.id).subscribe({
+      next: (updated) => {
+        this.refreshingTrade = false;
+        this.trade = updated;
+      },
+      error: () => {
+        this.refreshingTrade = false;
+      },
+    });
+  }
+
+  // =======================================================================
+  // TRADE DETAIL — countdown #2: seller's response window (buyer protection)
+  // =======================================================================
+
+  private get sellerReviewDeadlineMs(): number | null {
+    if (!this.trade?.paidAt) return null;
+    return new Date(this.trade.paidAt).getTime() + SELLER_REVIEW_WINDOW_MS;
+  }
+
+  get sellerReviewActive(): boolean {
+    return !!this.trade && this.trade.status === TradeStatus.Paid && this.sellerReviewDeadlineMs != null;
+  }
+
+  get sellerReviewMsLeft(): number {
+    const deadline = this.sellerReviewDeadlineMs;
+    if (deadline == null) return 0;
+    return deadline - this.nowTick;
+  }
+
+  get sellerReviewLabel(): string {
+    if (!this.sellerReviewActive) return '';
+    return formatCountdown(Math.max(0, this.sellerReviewMsLeft));
+  }
+
+  get sellerReviewUrgent(): boolean {
+    return this.sellerReviewActive && this.sellerReviewMsLeft > 0 && this.sellerReviewMsLeft <= 2 * 60 * 1000;
+  }
+
+  get sellerReviewOverdue(): boolean {
+    return this.sellerReviewActive && this.sellerReviewMsLeft <= 0;
+  }
+
+  get sellerReviewFraction(): number {
+    if (!this.sellerReviewActive) return 0;
+    return Math.min(1, Math.max(0, this.sellerReviewMsLeft) / SELLER_REVIEW_WINDOW_MS);
+  }
+
+  // =======================================================================
+  // TRADE DETAIL — payment details (full display, with fallback + masking)
+  // =======================================================================
+
+  get resolvedPaymentDetail(): UserPaymentMethod | undefined {
+    if (!this.trade) return undefined;
+    if (this.trade.sellerPaymentMethod) return this.trade.sellerPaymentMethod;
+    const details = this.trade.order?.paymentMethodDetails;
+    if (!details?.length) return undefined;
+    return details.find((d) => d.method === this.trade!.paymentMethod) || details[0];
+  }
+
+  get paymentDetailExtraFields(): { label: string; value: string }[] {
+    const detail = this.resolvedPaymentDetail as unknown as Record<string, unknown> | undefined;
+    if (!detail) return [];
+    const known = new Set([
+      'id', '_id', 'method', 'accountName', 'accountNumber', 'bankName',
+      'additionalInfo', 'fiatCurrency', 'isDefault', 'createdAt', 'updatedAt',
+    ]);
+    return Object.keys(detail)
+      .filter((k) => !known.has(k) && detail[k] !== null && detail[k] !== undefined && detail[k] !== '')
+      .map((k) => ({ label: this.humanizeKey(k), value: String(detail[k]) }));
+  }
+
+  private humanizeKey(key: string): string {
+    const spaced = key.replace(/([A-Z])/g, ' $1').trim();
+    return spaced.charAt(0).toUpperCase() + spaced.slice(1);
+  }
+
+  isRevealed(field: string): boolean {
+    return this.revealedFields.has(field);
+  }
+
+  toggleReveal(field: string): void {
+    if (this.revealedFields.has(field)) this.revealedFields.delete(field);
+    else this.revealedFields.add(field);
+  }
+
+  maskedAccountNumber(value: string | undefined | null): string {
+    return maskAccountNumber(value);
+  }
+
+  // =======================================================================
+  // TRADE DETAIL — mark paid / auto-verify / auto-release / manual release
+  // =======================================================================
+
   get canMarkPaid(): boolean {
-    return !!this.trade && canMarkPaid(this.trade);
+    return !!this.trade && canMarkPaid(this.trade) && !this.countdownExpired;
   }
 
   get canReleaseFunds(): boolean {
     return !!this.trade && canReleaseFunds(this.trade);
   }
 
+  /** Manual release stays available as a fallback while we wait on
+   *  auto-verification, or for trades that aren't auto-release eligible. */
+  get canManuallyRelease(): boolean {
+    return this.canReleaseFunds && this.verificationStatus !== 'verified' && !this.autoReleaseInFlight;
+  }
+
+  get canCancel(): boolean {
+    return !!this.trade && canCancelTrade(this.trade) && !this.isPaymentExpired;
+  }
+
   get releasePinValid(): boolean {
     return PIN_PATTERN.test(this.releasePin);
+  }
+
+  get releasePinLocked(): boolean {
+    return this.releasePinLockedUntil > this.nowTick;
+  }
+
+  get releasePinLockLabel(): string {
+    return formatCountdown(Math.max(0, this.releasePinLockedUntil - this.nowTick));
   }
 
   get proofLooksLikeImage(): boolean {
@@ -278,9 +537,6 @@ export class InitiateTradeDialogComponent implements OnInit, OnDestroy {
     this.proofFileError = '';
     const reader = new FileReader();
     reader.onload = () => {
-      // Embeds the screenshot as a data URL for now. Swap this for a real
-      // upload-to-storage call once the backend exposes one, and set
-      // this.proofUrl to the returned hosted URL instead.
       this.proofUrl = reader.result as string;
     };
     reader.onerror = () => {
@@ -291,6 +547,10 @@ export class InitiateTradeDialogComponent implements OnInit, OnDestroy {
 
   submitMarkPaid(): void {
     if (!this.trade || this.markingPaid) return;
+    if (this.countdownExpired) {
+      this.proofFileError = 'The payment window has expired. Refresh this trade before continuing.';
+      return;
+    }
     if (!this.proofUrl.trim()) {
       this.proofFileError = 'Attach a screenshot or paste a link to your payment evidence.';
       return;
@@ -308,6 +568,12 @@ export class InitiateTradeDialogComponent implements OnInit, OnDestroy {
           this.trade = updated;
           this.showPaidForm = false;
           this.sharedService.showToast({ title: 'Marked as paid. Waiting for the seller to confirm.' });
+
+          // Kick off auto-verification so we can auto-release the moment
+          // the backend confirms the payment genuinely landed.
+          if (updated.autoReleaseEligible) {
+            this.startVerificationPolling();
+          }
         },
         error: (err) => {
           this.markingPaid = false;
@@ -317,10 +583,126 @@ export class InitiateTradeDialogComponent implements OnInit, OnDestroy {
       });
   }
 
+  // ---- Auto-verification polling -----------------------------------
+
+  private startVerificationPolling(): void {
+    if (!this.trade) return;
+    this.stopVerificationPolling();
+    this.verificationStatus = 'pending';
+    this.verificationPollStartedAt = Date.now();
+
+    this.verificationPollTimer = setInterval(() => this.pollVerification(), VERIFICATION_POLL_INTERVAL_MS);
+    // Fire the first check immediately instead of waiting a full interval.
+    this.pollVerification();
+  }
+
+  private stopVerificationPolling(): void {
+    if (this.verificationPollTimer) {
+      clearInterval(this.verificationPollTimer);
+      this.verificationPollTimer = null;
+    }
+  }
+
+  private pollVerification(): void {
+    if (!this.trade) {
+      this.stopVerificationPolling();
+      return;
+    }
+
+    // Stop trying to auto-verify a trade that already moved on
+    // (released, cancelled, disputed) via some other path.
+    if (this.trade.status !== TradeStatus.Paid) {
+      this.stopVerificationPolling();
+      return;
+    }
+
+    if (Date.now() - this.verificationPollStartedAt > VERIFICATION_POLL_TIMEOUT_MS) {
+      this.verificationStatus = 'timed-out';
+      this.stopVerificationPolling();
+      this.sharedService.showToast({
+        title: 'Automatic verification is taking longer than usual. You can release manually once you confirm payment.',
+      });
+      return;
+    }
+
+    this.p2pService.verifyPayment(this.trade.id).subscribe({
+      next: (res) => {
+        this.verificationStatus = res.status;
+        if (res.trade) this.trade = res.trade;
+
+        if (res.status === 'verified') {
+          this.stopVerificationPolling();
+          this.autoRelease();
+        } else if (res.status === 'failed') {
+          this.stopVerificationPolling();
+          this.sharedService.showToast({
+            title: 'We could not automatically verify this payment. Please release manually once you confirm the funds arrived.',
+          });
+        }
+      },
+      error: () => {
+        // Transient errors shouldn't kill the whole flow — just try again
+        // on the next tick. If verification is consistently unreachable,
+        // the timeout above eventually kicks in.
+      },
+    });
+  }
+
+  /** Called only once the backend has independently confirmed the payment
+   *  is genuine. No PIN here — the authorization comes from the verified
+   *  signal itself, not a manual human action. */
+  private autoRelease(): void {
+    if (!this.trade || this.autoReleaseInFlight) return;
+    this.autoReleaseInFlight = true;
+
+    this.p2pService.autoReleaseTrade(this.trade.id).subscribe({
+      next: (updated) => {
+        this.autoReleaseInFlight = false;
+        this.trade = updated;
+        this.sharedService.showToast({
+          title: 'Payment verified automatically. Funds have been released to the buyer.',
+        });
+      },
+      error: (err) => {
+        this.autoReleaseInFlight = false;
+        this.verificationStatus = 'failed';
+        const message = err?.error?.message || 'Payment was verified but the automatic release failed. Please release manually.';
+        this.sharedService.showToast({ title: Array.isArray(message) ? message.join(', ') : message });
+      },
+    });
+  }
+
+  get verificationStatusLabel(): string {
+    switch (this.verificationStatus) {
+      case 'pending':
+        return 'Waiting for payment confirmation…';
+      case 'verifying':
+        return 'Verifying payment with the payment provider…';
+      case 'verified':
+        return 'Payment verified — releasing funds…';
+      case 'failed':
+        return 'Automatic verification failed. You can release manually.';
+      case 'timed-out':
+        return 'Still waiting on verification. You can release manually if you have confirmed the funds yourself.';
+      default:
+        return '';
+    }
+  }
+
+  get showAutoVerificationBanner(): boolean {
+    return this.verificationStatus !== 'idle' && this.trade?.status === TradeStatus.Paid;
+  }
+
+  // ---- Manual release (fallback path) --------------------------------
+
   confirmReleaseFunds(): void {
     if (!this.trade || this.releasing) return;
 
     this.releasePinError = '';
+    if (this.releasePinLocked) {
+      this.releasePinError = `Too many attempts. Try again in ${this.releasePinLockLabel}.`;
+      return;
+    }
     if (!this.releasePinValid) {
       this.releasePinError = 'Enter your 4–6 digit transaction PIN.';
       return;
@@ -336,13 +718,44 @@ export class InitiateTradeDialogComponent implements OnInit, OnDestroy {
       next: (updated) => {
         this.releasing = false;
         this.releasePin = '';
+        this.releasePinAttempts = 0;
         this.trade = updated;
+        this.stopVerificationPolling();
         this.sharedService.showToast({ title: 'Payment confirmed. Coins released to the buyer.' });
       },
       error: (err) => {
         this.releasing = false;
+        this.releasePin = '';
+        this.releasePinAttempts += 1;
+        if (this.releasePinAttempts >= MAX_PIN_ATTEMPTS) {
+          this.releasePinLockedUntil = Date.now() + PIN_LOCKOUT_MS;
+          this.releasePinAttempts = 0;
+        }
         const message = err?.error?.message || 'Could not release this trade.';
         this.releasePinError = Array.isArray(message) ? message.join(', ') : message;
+      },
+    });
+  }
+
+  cancelTrade(): void {
+    if (!this.trade || this.cancelling || !this.canCancel) return;
+    const confirmed = window.confirm(
+      'Cancel this trade? Only do this if you have not sent payment — cancelling after paying can delay resolution.'
+    );
+    if (!confirmed) return;
+
+    this.cancelling = true;
+    this.p2pService.cancelTrade(this.trade.id).subscribe({
+      next: (updated) => {
+        this.cancelling = false;
+        this.trade = updated;
+        this.stopVerificationPolling();
+        this.sharedService.showToast({ title: 'Trade cancelled.' });
+      },
+      error: (err) => {
+        this.cancelling = false;
+        const message = err?.error?.message || 'Could not cancel this trade.';
+        this.sharedService.showToast({ title: Array.isArray(message) ? message.join(', ') : message });
       },
     });
   }
@@ -357,21 +770,6 @@ export class InitiateTradeDialogComponent implements OnInit, OnDestroy {
     return merchant?.username || 'Trader';
   }
 
-  readonly disputeReasonOptions = [
-    'Payment not received',
-    'Payment amount is incorrect',
-    'Counterparty is unresponsive',
-    'Suspicious or unsafe behaviour',
-    'Other',
-  ];
-
-  showDisputeForm = false;
-  disputeReason = this.disputeReasonOptions[0];
-  disputeDetails = '';
-  disputeSubmitting = false;
-  disputeError = '';
-
-  /** Both buyer and seller can raise this on any trade that isn't finished. */
   get canOpenDisputeOrReport(): boolean {
     return !!this.trade && [TradeStatus.Pending, TradeStatus.Paid, TradeStatus.Disputed].includes(this.trade.status);
   }
@@ -397,6 +795,7 @@ export class InitiateTradeDialogComponent implements OnInit, OnDestroy {
         this.disputeSubmitting = false;
         this.showDisputeForm = false;
         this.trade = updated;
+        this.stopVerificationPolling();
         this.sharedService.showToast({ title: 'Dispute opened. Support has been notified.' });
       },
       error: (err) => {
@@ -413,5 +812,14 @@ export class InitiateTradeDialogComponent implements OnInit, OnDestroy {
       `Trade ID: ${this.trade?.id}\nCounterparty: ${this.counterpartyName()}\nStatus: ${this.trade?.status}\n\nDescribe your issue:\n`
     );
     window.open(`mailto:support@yourapp.com?subject=${subject}&body=${body}`, '_blank');
+  }
+
+  copyToClipboard(value: string, field: string): void {
+    if (!value) return;
+    navigator.clipboard?.writeText(value).then(() => {
+      this.copiedField = field;
+      if (this.copiedResetTimer) clearTimeout(this.copiedResetTimer);
+      this.copiedResetTimer = setTimeout(() => (this.copiedField = null), 1500);
+    });
   }
 }

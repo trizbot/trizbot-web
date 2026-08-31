@@ -1,0 +1,101 @@
+<div class="trade-chat">
+  <div class="trade-chat-header">
+    <span class="trade-chat-title">Chat</span>
+    <span class="presence-dot" [class.online]="counterpartyOnline"></span>
+    <span class="presence-label">{{ counterpartyOnline ? 'Online' : 'Offline' }}</span>
+  </div>
+
+  <div class="trade-chat-thread" #threadEl (scroll)="onScroll()">
+    <div class="chat-loading" *ngIf="loading">
+      <img src="./assets/images/loading.gif" alt="Loading..." style="width: 22px; height: 22px;" />
+    </div>
+
+    <div class="chat-empty" *ngIf="!loading && messages.length === 0 && !loadError">
+      Say hello — coordinate payment and confirmation here.
+    </div>
+
+    <div class="chat-error" *ngIf="loadError">{{ loadError }}</div>
+
+    <ng-container *ngFor="let group of groupedMessages">
+      <div class="chat-day-divider"><span>{{ group.dateLabel }}</span></div>
+
+      <ng-container *ngFor="let msg of group.messages; trackBy: trackByMessageId">
+        <!-- System / audit-trail message (trade created, marked paid, released, etc.) -->
+        <div class="chat-system-msg" *ngIf="msg.isSystem">{{ msg.text }}</div>
+
+        <!-- Regular chat bubble -->
+        <div class="chat-bubble-row" *ngIf="!msg.isSystem" [class.mine]="msg.isMine">
+          <div class="chat-avatar" *ngIf="!msg.isMine">
+            <img *ngIf="msg.sender.avatarUrl" [src]="msg.sender.avatarUrl" alt="" />
+            <span *ngIf="!msg.sender.avatarUrl">{{ (msg.sender.username || 'T').charAt(0).toUpperCase() }}</span>
+          </div>
+
+          <div class="chat-bubble" [class.pending]="msg.pending" [class.failed]="msg.failed">
+            <ng-container [ngSwitch]="msg.type">
+              <p *ngSwitchCase="ChatMessageType.Text" class="chat-bubble-text">{{ msg.text }}</p>
+              <img
+                *ngSwitchCase="ChatMessageType.Image"
+                class="chat-bubble-image"
+                [src]="msg.imageUrl"
+                alt="Attachment"
+                (click)="openImage(msg.imageUrl)"
+              />
+            </ng-container>
+
+            <div class="chat-bubble-meta">
+              <span class="chat-time">{{ msg.createdAt | date: 'shortTime' }}</span>
+              <mat-icon class="chat-status-icon" *ngIf="msg.isMine && !msg.pending && !msg.failed">
+                {{ msg.readAt ? 'done_all' : 'done' }}
+              </mat-icon>
+              <mat-icon class="chat-status-icon spinning" *ngIf="msg.pending">autorenew</mat-icon>
+            </div>
+
+            <button type="button" class="chat-retry-btn" *ngIf="msg.failed" (click)="retry(msg)">
+              <mat-icon>refresh</mat-icon> Retry
+            </button>
+          </div>
+        </div>
+      </ng-container>
+    </ng-container>
+
+    <div class="typing-indicator" *ngIf="counterpartyTyping">
+      <span></span><span></span><span></span>
+    </div>
+
+    <div #scrollAnchor></div>
+  </div>
+
+  <div class="chat-quick-replies" *ngIf="!chatDisabled">
+    <button type="button" class="quick-reply-chip" *ngFor="let q of quickReplies" (click)="useQuickReply(q)">
+      {{ q }}
+    </button>
+  </div>
+
+  <div class="field-error" *ngIf="imageError">{{ imageError }}</div>
+
+  <div class="trade-chat-composer" *ngIf="!chatDisabled; else chatClosedNote">
+    <label class="icon-btn attach-btn" matTooltip="Attach image">
+      <mat-icon>image</mat-icon>
+      <input type="file" accept="image/*" hidden (change)="onImageSelected($event)" />
+    </label>
+
+    <input
+      type="text"
+      class="chat-input"
+      placeholder="Type a message..."
+      [(ngModel)]="draft"
+      (ngModelChange)="onDraftChange()"
+      (keyup.enter)="sendDraft()"
+    />
+
+    <button type="button" class="icon-btn send-btn" [disabled]="!draft.trim()" (click)="sendDraft()">
+      <mat-icon>send</mat-icon>
+    </button>
+  </div>
+
+  <ng-template #chatClosedNote>
+    <div class="chat-closed-note">
+      <mat-icon>lock</mat-icon> This chat is closed because the trade was {{ trade.status.toLowerCase() }}.
+    </div>
+  </ng-template>
+</div>

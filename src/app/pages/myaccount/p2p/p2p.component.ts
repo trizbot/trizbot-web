@@ -8,20 +8,9 @@ import { MatTabsModule } from '@angular/material/tabs';
 
 import { MaterialModule } from '../../../material.module';
 import { SharedService } from '../../../shared/shared.service';
-import {
-  OrderStatus,
-  P2POrder,
-  P2POrderType,
-  P2PTrade,
-  QUICK_COINS,
-  SUPPORTED_COINS,
-  SUPPORTED_FIAT,
-  TradeStatus,
-  fiatSymbol,
-  formatCountdown,
-  getPaymentMethodsForFiat,
-  msUntilDeadline,
-} from './p2p.model';
+
+
+
 import { CreateOrderDialogComponent } from './create-order-dialog/create-order-dialog.component';
 import { InitiateTradeDialogComponent } from './initiate-trade-dialog/initiate-trade-dialog.component';
 import { Observable } from 'rxjs';
@@ -31,6 +20,7 @@ import { TraderService } from '../../../../app/appstate/trader.service';
 import { P2pCategoryService } from './service/p2p-category.service';
 import { P2pService } from './service/p2p.service';
 import { P2pCategoryAdminComponent } from "./p2p-category-admin/p2p-category-admin.component";
+import { P2POrderType, OrderStatus, TradeStatus, SUPPORTED_FIAT, QUICK_COINS, P2POrder, getPaymentMethodsForFiat, fiatSymbol, P2PTrade, SUPPORTED_COINS, msUntilDeadline, formatCountdown } from './model/p2p.model';
 
 type MainTab = 'market' | 'my-orders' | 'my-trades' | 'categories';
 type MyAdsSubTab = 'listed' | 'all';

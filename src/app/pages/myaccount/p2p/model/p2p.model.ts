@@ -1,6 +1,5 @@
-// import { UserPaymentMethod, normalizePaymentMethod } from './payment-method.model';
 
-import { UserPaymentMethod, normalizePaymentMethod } from "./payment-method/payment-method.model";
+import { UserPaymentMethod, normalizePaymentMethod } from "../payment-method/payment-method.model";
 
 export enum P2POrderType {
   Buy = 'Buy',
@@ -90,6 +89,7 @@ export interface P2PTrade {
   paymentProofNote?: string;
   paidAt?: string;
   releasedAt?: string;
+  autoReleaseEligible?: boolean;
 }
 
 export interface CreateOrderReqBody {
@@ -308,3 +308,30 @@ export interface ExchangeRateRes {
   source?: string;
   timestamp?: string;
 }
+
+
+export function canCancelTrade(trade: P2PTrade): boolean {
+  return trade.isBuyer && trade.status === TradeStatus.Pending;
+}
+
+export function isPaymentWindowExpired(trade: P2PTrade, nowMs: number = Date.now()): boolean {
+  if (trade.status !== TradeStatus.Pending || !trade.paymentDeadline) return false;
+  return msUntilDeadline(trade.paymentDeadline, nowMs) <= 0;
+}
+
+export function maskAccountNumber(value: string | undefined | null): string {
+  if (!value) return '';
+  const compact = value.replace(/\s+/g, '');
+  if (compact.length <= 4) return compact;
+  return `${'•'.repeat(compact.length - 4)}${compact.slice(-4)}`;
+}
+
+
+
+export type PaymentVerificationStatus = 'pending' | 'verifying' | 'verified' | 'failed';
+
+export interface VerifyPaymentRes {
+  status: PaymentVerificationStatus;
+  trade?: P2PTrade;
+}
+

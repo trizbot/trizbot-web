@@ -282,3 +282,191 @@ mat-dialog-content {
 @media (max-width: 560px) and (prefers-reduced-motion: no-preference) {
   html { -webkit-text-size-adjust: 100%; }
 }
+
+
+
+
+
+:host {
+  // Mirrors p2p-tokens.scss so this still renders correctly if the global
+  // tokens file isn't imported yet.
+  --p2p-bg: #FFFFFF; --p2p-bg-sunken: #F5F7F8; --p2p-border: #E4E8EB; --p2p-border-strong: #CBD2D9;
+  --p2p-text: #10151C; --p2p-text-muted: #667085; --p2p-text-faint: #98A2B3;
+  --p2p-buy: #0DBE84; --p2p-buy-bg: #E7F9F2; --p2p-sell: #E5484D; --p2p-sell-bg: #FDEDED;
+  --p2p-amber: #F5A524; --p2p-amber-bg: #FEF6E6; --p2p-link: #146EF5;
+  --p2p-radius-sm: 10px; --p2p-radius-md: 14px; --p2p-radius-lg: 20px;
+  --p2p-font-ui: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --p2p-font-mono: 'IBM Plex Mono', 'Roboto Mono', ui-monospace, monospace;
+
+  display: block;
+  font-family: var(--p2p-font-ui);
+  color: var(--p2p-text);
+  height: 100%;
+}
+
+.mono { font-family: var(--p2p-font-mono); font-variant-numeric: tabular-nums; }
+
+.sheet {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  max-height: 92vh;
+  background: var(--p2p-bg);
+}
+
+// ---- Header -----------------------------------------------------------
+.sheet-header {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 8px 14px 4px;
+  border-bottom: 1px solid var(--p2p-border);
+  background: var(--p2p-bg);
+}
+.sheet-title { flex: 1; text-align: center; font-size: 17px; font-weight: 600; margin: 0; }
+.header-spacer { width: 40px; }
+.grabber-close {
+  width: 36px; height: 36px; border-radius: 50%; border: none; background: var(--p2p-bg-sunken);
+  display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--p2p-text-muted);
+}
+
+// ---- Body ---------------------------------------------------------------
+.sheet-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 16px 24px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.field-section { margin-bottom: 22px; }
+.field-row { display: flex; gap: 12px; }
+.field-row.two-up > .field { flex: 1; min-width: 0; }
+.field-label { display: block; font-size: 13px; font-weight: 600; color: var(--p2p-text); margin-bottom: 6px; }
+.optional { font-weight: 400; color: var(--p2p-text-faint); }
+.field-hint { font-size: 12.5px; color: var(--p2p-text-muted); margin: -2px 0 8px; line-height: 1.4; }
+.lock-hint { display: flex; align-items: center; gap: 4px; color: var(--p2p-amber); mat-icon { font-size: 15px; width: 15px; height: 15px; } }
+.w-100 { width: 100%; }
+.prefix, .suffix { color: var(--p2p-text-muted); font-size: 13px; }
+
+::ng-deep .sheet .mat-mdc-text-field-wrapper { border-radius: var(--p2p-radius-sm); }
+
+// ---- Buy / Sell segmented control ---------------------------------------
+.segmented {
+  display: flex;
+  background: var(--p2p-bg-sunken);
+  border-radius: var(--p2p-radius-md);
+  padding: 4px;
+  margin-bottom: 20px;
+}
+.segment {
+  flex: 1;
+  border: none;
+  background: transparent;
+  padding: 12px 0;
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: calc(var(--p2p-radius-md) - 4px);
+  color: var(--p2p-text-muted);
+  cursor: pointer;
+  transition: background-color .15s ease, color .15s ease;
+}
+.segment.buy.active { background: var(--p2p-buy); color: #fff; }
+.segment.sell.active { background: var(--p2p-sell); color: #fff; }
+
+.edit-banner {
+  display: flex; gap: 10px; align-items: flex-start;
+  background: var(--p2p-bg-sunken); border-radius: var(--p2p-radius-md);
+  padding: 12px 14px; font-size: 13px; color: var(--p2p-text-muted); margin-bottom: 20px;
+  mat-icon { font-size: 18px; width: 18px; height: 18px; flex-shrink: 0; margin-top: 1px; color: var(--p2p-text-faint); }
+}
+
+// ---- Market-rate / auto-limit strips --------------------------------------
+.rate-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  background: var(--p2p-bg-sunken);
+  border-radius: var(--p2p-radius-sm);
+  padding: 10px 12px;
+  font-size: 12.5px;
+  color: var(--p2p-text-muted);
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+.rate-strip-main { display: flex; flex-direction: column; gap: 2px; }
+.rate-strip-max { color: var(--p2p-text-faint); }
+.text-link { border: none; background: none; color: var(--p2p-link); font-weight: 600; font-size: 12.5px; cursor: pointer; padding: 4px 0; white-space: nowrap; }
+.dot { width: 6px; height: 6px; border-radius: 50%; background: var(--p2p-amber); display: inline-block; }
+.dot.pulsing { animation: pulse 1.2s ease-in-out infinite; }
+@keyframes pulse { 0%, 100% { opacity: .3; } 50% { opacity: 1; } }
+
+.field-error { color: var(--p2p-sell); font-size: 12.5px; margin: 6px 0 0; }
+
+// ---- Saved-account picker (sell ads) ------------------------------------
+.empty-state {
+  display: flex; flex-direction: column; align-items: center; text-align: center;
+  gap: 4px; padding: 24px 16px; background: var(--p2p-bg-sunken); border-radius: var(--p2p-radius-md);
+  mat-icon { color: var(--p2p-text-faint); font-size: 26px; width: 26px; height: 26px; margin-bottom: 4px; }
+}
+.empty-title { font-size: 13.5px; font-weight: 600; }
+.empty-sub { font-size: 12.5px; color: var(--p2p-text-muted); }
+
+.account-pick {
+  display: flex; gap: 10px; align-items: flex-start;
+  border: 1.5px solid var(--p2p-border); border-radius: var(--p2p-radius-md);
+  padding: 12px 14px; margin-top: 10px; cursor: pointer;
+  transition: border-color .12s ease, background-color .12s ease;
+}
+.account-pick.selected { border-color: var(--p2p-buy); background: var(--p2p-buy-bg); }
+.account-pick-checkbox { margin-top: 3px; width: 16px; height: 16px; accent-color: var(--p2p-buy); }
+.account-pick-body { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+.account-pick-top { display: flex; align-items: center; justify-content: space-between; }
+.account-pick-method { font-weight: 600; font-size: 14px; }
+.account-pick-check { font-size: 18px; width: 18px; height: 18px; color: var(--p2p-buy); opacity: 0; }
+.account-pick.selected .account-pick-check { opacity: 1; }
+.account-pick-row { display: flex; justify-content: space-between; font-size: 12.5px; color: var(--p2p-text-muted); }
+
+.alert-error {
+  display: flex; align-items: flex-start; gap: 8px;
+  background: var(--p2p-sell-bg); color: var(--p2p-sell); border-radius: var(--p2p-radius-sm);
+  padding: 10px 12px; font-size: 13px; font-weight: 500; margin-top: 4px;
+  mat-icon { font-size: 18px; width: 18px; height: 18px; margin-top: 1px; }
+}
+
+// ---- Footer ---------------------------------------------------------------
+.sheet-footer {
+  position: sticky;
+  bottom: 0;
+  padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+  background: var(--p2p-bg);
+  border-top: 1px solid var(--p2p-border);
+}
+.submit-btn {
+  width: 100%;
+  border: none;
+  border-radius: var(--p2p-radius-md);
+  padding: 15px 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: #fff;
+  background: var(--p2p-buy);
+  cursor: pointer;
+  transition: opacity .12s ease;
+}
+.submit-btn.sell { background: var(--p2p-sell); }
+.submit-btn:disabled { opacity: .45; cursor: not-allowed; }
+
+// ---- Mobile: full-screen sheet ---------------------------------------------
+@media (max-width: 599px) {
+  .sheet { max-height: 100vh; border-radius: 0; }
+  .field-row.two-up { flex-direction: column; }
+  .sheet-title { font-size: 16px; }
+}
+
+// ---- Desktop: constrain the dialog width via host CSS var, actual max-width
+// is set on the CDK overlay pane from the component that opens the dialog
+// (panelClass + width: 'min(480px, 100vw)').
