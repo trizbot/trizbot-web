@@ -8,7 +8,6 @@ import { MatTabsModule } from '@angular/material/tabs';
 
 import { MaterialModule } from '../../../material.module';
 import { SharedService } from '../../../shared/shared.service';
-import { P2pService } from './p2p.service';
 import {
   OrderStatus,
   P2POrder,
@@ -30,14 +29,10 @@ import { Trader } from '../../../../app/appstate/appstate-model';
 import { GetTraderResBody } from '../../../../app/services/auth.type';
 import { TraderService } from '../../../../app/appstate/trader.service';
 import { P2pCategoryService } from './service/p2p-category.service';
-
-
+import { P2pService } from './service/p2p.service';
+import { P2pCategoryAdminComponent } from "./p2p-category-admin/p2p-category-admin.component";
 
 type MainTab = 'market' | 'my-orders' | 'my-trades' | 'categories';
-
-
-
-
 type MyAdsSubTab = 'listed' | 'all';
 type SortOption = 'price-asc' | 'price-desc' | 'available-desc';
 
@@ -49,9 +44,7 @@ const REFRESH_OPTIONS = [
 ];
 
 const TRADES_NOTIFICATION_POLL_INTERVAL_MS = 20000;
-/** Countdown ticks once a second — matches Bybit's mm:ss payment timer. */
 const TRADES_COUNTDOWN_TICK_MS = 1000;
-/** Countdown turns urgent (red) inside the final 2 minutes, like Bybit's. */
 const COUNTDOWN_URGENT_THRESHOLD_MS = 2 * 60 * 1000;
 
 @Component({
@@ -64,14 +57,15 @@ const COUNTDOWN_URGENT_THRESHOLD_MS = 2 * 60 * 1000;
     MatTabsModule,
     FormsModule,
     ReactiveFormsModule,
-  ],
+    P2pCategoryAdminComponent
+],
   templateUrl: './p2p.component.html',
   styleUrls: ['./p2p.component.scss'],
 })
 export class P2pComponent implements OnInit, OnDestroy {
   private sharedService = inject(SharedService);
-// inject:
-private categoryService = inject(P2pCategoryService);
+  private categoryService = inject(P2pCategoryService);
+
   readonly P2POrderType = P2POrderType;
   readonly OrderStatus = OrderStatus;
   readonly TradeStatus = TradeStatus;
@@ -110,11 +104,8 @@ private categoryService = inject(P2pCategoryService);
   isSuperEntityType: boolean;
   isLoading = true;
 
-  /** The signed-in trader's own id — used to filter own ads out of the
-   *  market and to block trading on them defense-in-depth on the client. */
   currentTraderId = '';
 
-  readonly coinSuggestions: string[] = SUPPORTED_COINS;
   readonly fiatSuggestions: string[] = SUPPORTED_FIAT;
   readonly quickCoins: string[] = QUICK_COINS;
 
@@ -169,10 +160,21 @@ private categoryService = inject(P2pCategoryService);
   myTradesUnseenCount = 0;
   private tradesNotificationPollTimer: ReturnType<typeof setInterval> | null = null;
 
-  /** Ticks every second while there's at least one pending trade, so the
-   *  mm:ss countdown labels in the template stay live without re-fetching. */
   private nowTick = Date.now();
   private tradesCountdownTimer: ReturnType<typeof setInterval> | null = null;
+
+  // ---------------------------------------------------------------------
+  // Categories (admin)
+  // ---------------------------------------------------------------------
+  categorySymbols: string[] = [];
+
+  get isAdminUser(): boolean {
+    return this.entityName === 'Admin' && !!this.isSuperAdmin;
+  }
+
+  get coinSuggestions(): string[] {
+    return this.categorySymbols.length ? this.categorySymbols : SUPPORTED_COINS;
+  }
 
   constructor(
     private traderService: TraderService,
@@ -186,6 +188,11 @@ private categoryService = inject(P2pCategoryService);
     this.startAutoRefresh();
     this.startTradesNotificationPolling();
     this.startTradesCountdown();
+
+    this.categoryService.getCategorySymbols().subscribe({
+      next: (symbols) => (this.categorySymbols = symbols),
+      error: () => {}, // falls back to SUPPORTED_COINS
+    });
 
     this.filterForm.controls.fiatCurrency.valueChanges.subscribe(() => {
       const stillValid = this.paymentMethodOptions.includes(this.filterForm.getRawValue().paymentMethod || '');
@@ -205,8 +212,6 @@ private categoryService = inject(P2pCategoryService);
     this.traderService.getTrader().subscribe({
       next: (res: GetTraderResBody) => {
         this.isLoading = false;
-        // NOTE: adjust the field name here if GetTraderResBody exposes the
-        // trader's id under a different key than `id`/`_id` in your types.
         this.currentTraderId = (res.data as any).id || (res.data as any)._id || '';
 
         this.phoneNumber = res.data.phoneNumber;
@@ -308,9 +313,6 @@ private categoryService = inject(P2pCategoryService);
       });
   }
 
-  /** True when this order belongs to the signed-in trader. The backend
-   *  already excludes own ads from listOrders(), this is a client-side
-   *  backstop so a stale cached list can never render a tradeable "own ad". */
   isOwnOrder(order: P2POrder): boolean {
     return !!this.currentTraderId && order.merchant?.id === this.currentTraderId;
   }
@@ -479,43 +481,42 @@ private categoryService = inject(P2pCategoryService);
     });
   }
 
- deleteOrder(order: P2POrder): void {
-  const confirmed = window.confirm('Delete this ad permanently? This cannot be undone.');
-  if (!confirmed) return;
+  deleteOrder(order: P2POrder): void {
+    const confirmed = window.confirm('Delete this ad permanently? This cannot be undone.');
+    if (!confirmed) return;
 
-  this.deletingOrderId = order.id;
+    this.deletingOrderId = order.id;
 
-  this.p2pService.deleteOrder(order.id).subscribe({
-    next: () => {
-      // Optimistic removal so the UI feels instant.
-      this.myOrders = this.myOrders.filter((o) => o.id !== order.id);
-      this.p2pService.myOrders().subscribe({
-        next: (res) => {
-          this.myOrders = res;
-          this.deletingOrderId = null;
+    this.p2pService.deleteOrder(order.id).subscribe({
+      next: () => {
+        this.myOrders = this.myOrders.filter((o) => o.id !== order.id);
+        this.p2pService.myOrders().subscribe({
+          next: (res) => {
+            this.myOrders = res;
+            this.deletingOrderId = null;
 
-          const stillOnServer = res.some((o) => o.id === order.id);
-          if (stillOnServer) {
-            this.sharedService.showToast({
-              title: 'The server did not delete this ad. Please try again or contact support.',
-            });
-          } else {
-            this.sharedService.showToast({ title: 'Ad deleted.' });
-          }
-        },
-        error: () => {
-          this.deletingOrderId = null;
-          this.sharedService.showToast({ title: 'Ad deleted, but the list failed to refresh.' });
-        },
-      });
-    },
-    error: (err) => {
-      this.deletingOrderId = null;
-      const message = err?.error?.message || 'Could not delete this ad.';
-      this.sharedService.showToast({ title: Array.isArray(message) ? message.join(', ') : message });
-    },
-  });
-}
+            const stillOnServer = res.some((o) => o.id === order.id);
+            if (stillOnServer) {
+              this.sharedService.showToast({
+                title: 'The server did not delete this ad. Please try again or contact support.',
+              });
+            } else {
+              this.sharedService.showToast({ title: 'Ad deleted.' });
+            }
+          },
+          error: () => {
+            this.deletingOrderId = null;
+            this.sharedService.showToast({ title: 'Ad deleted, but the list failed to refresh.' });
+          },
+        });
+      },
+      error: (err) => {
+        this.deletingOrderId = null;
+        const message = err?.error?.message || 'Could not delete this ad.';
+        this.sharedService.showToast({ title: Array.isArray(message) ? message.join(', ') : message });
+      },
+    });
+  }
 
   toggleOrderListed(order: P2POrder): void {
     if (order.status !== OrderStatus.Active) return;
@@ -624,7 +625,7 @@ private categoryService = inject(P2pCategoryService);
   }
 
   // ---------------------------------------------------------------------
-  // Payment countdown (Bybit-style mm:ss timer)
+  // Payment countdown
   // ---------------------------------------------------------------------
 
   private startTradesCountdown(): void {
@@ -641,17 +642,14 @@ private categoryService = inject(P2pCategoryService);
     }
   }
 
-
   tradeFiatSymbol(trade: P2PTrade): string {
     return fiatSymbol(trade.order?.fiatCurrency);
   }
 
- 
   counterpartyName(trade: P2PTrade): string {
     const merchant = trade.isBuyer ? trade.seller : trade.buyer;
     return merchant?.username || 'Trader';
   }
-
 
   yourRoleLabel(trade: P2PTrade): string {
     return trade.isBuyer ? 'You are buying' : 'You are selling';
@@ -667,7 +665,6 @@ private categoryService = inject(P2pCategoryService);
     ref.afterClosed().subscribe(() => this.loadMyTrades());
   }
 
-
   trackByOrderId(_index: number, order: P2POrder): string {
     return order.id;
   }
@@ -676,8 +673,7 @@ private categoryService = inject(P2pCategoryService);
     return trade.id;
   }
 
-
-    getTradeCountdownLabel(trade: P2PTrade): string {
+  getTradeCountdownLabel(trade: P2PTrade): string {
     if (trade.status !== TradeStatus.Pending || !trade.paymentDeadline) return '';
     const msLeft = msUntilDeadline(trade.paymentDeadline, this.nowTick);
     return formatCountdown(msLeft);
@@ -692,29 +688,4 @@ private categoryService = inject(P2pCategoryService);
   isActiveTrade(trade: P2PTrade): boolean {
     return trade.status === TradeStatus.Pending || trade.status === TradeStatus.Paid;
   }
-
-
-
-
-
-
-categorySymbols: string[] = [];
-
-get isAdminUser(): boolean {
-  return this.entityName === 'Admin' && !!this.isSuperAdmin;
-}
-
-get coinSuggestions(): string[] {
-  return this.categorySymbols.length ? this.categorySymbols : SUPPORTED_COINS;
-}
-
-// in ngOnInit, alongside the existing calls:
-this.categoryService.getCategorySymbols().subscribe({
-  next: (symbols) => (this.categorySymbols = symbols),
-  error: () => {}, // falls back to SUPPORTED_COINS
-});
-
-
-
-
 }

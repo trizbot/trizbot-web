@@ -5,12 +5,13 @@ import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 
 import { MaterialModule } from '../../../../material.module';
 import { SharedService } from '../../../../shared/shared.service';
-import { P2pService } from '../p2p.service';
+import { P2pService } from '../service/p2p.service';
+import { PaymentMethodsService } from '../payment-method/payment-methods.service';
+import { UserPaymentMethod } from '../payment-method/payment-method.model';
 import {
   P2POrder,
   P2POrderType,
   P2PTrade,
-  PaymentMethodDetail,
   TradeStatus,
   canMarkPaid,
   canReleaseFunds,
@@ -19,7 +20,6 @@ import {
   getPaymentMethodsForFiat,
   msUntilDeadline,
 } from '../p2p.model';
-import { UserPaymentMethod } from '../payment-method/payment-method.model';
 
 export interface InitiateTradeDialogData {
   order?: P2POrder;
@@ -49,13 +49,15 @@ export class InitiateTradeDialogComponent implements OnInit, OnDestroy {
   // ---- Initiate-trade form state ----
   coinAmount: number | null = null;
   paymentMethod = '';
-  sellerAccountName = '';
-  sellerAccountNumber = '';
-  sellerBankName = '';
-  sellerAdditionalInfo = '';
   transactionPin = ''; // required to lock funds into escrow when starting a trade
   submitting = false;
   errorMessage = '';
+
+  /** My saved accounts — used only when I'm the one supplying receiving details
+   *  (i.e. the ad I'm trading against was posted as a Buy ad). */
+  mySavedMethods: UserPaymentMethod[] = [];
+  mySavedMethodsLoading = false;
+  selectedPaymentMethodId = '';
 
   // ---- Trade-detail / payment-proof state ----
   showPaidForm = false;
@@ -73,6 +75,7 @@ export class InitiateTradeDialogComponent implements OnInit, OnDestroy {
   constructor(
     private dialogRef: MatDialogRef<InitiateTradeDialogComponent>,
     private p2pService: P2pService,
+    private paymentMethodsService: PaymentMethodsService,
     private sharedService: SharedService,
     @Inject(MAT_DIALOG_DATA) public data: InitiateTradeDialogData
   ) {}
@@ -86,6 +89,10 @@ export class InitiateTradeDialogComponent implements OnInit, OnDestroy {
       this.order = this.data.order;
       const options = getPaymentMethodsForFiat(this.order.fiatCurrency);
       this.paymentMethod = this.order.paymentMethods.find((m) => options.includes(m)) || options[0] || '';
+
+      if (this.mustSupplySellerDetails) {
+        this.loadMySavedMethods();
+      }
     }
     this.startCountdown();
   }
@@ -117,21 +124,35 @@ export class InitiateTradeDialogComponent implements OnInit, OnDestroy {
     return fiatSymbol(this.order?.fiatCurrency);
   }
 
-  /** Ad owner is the seller — the order already carries their payment
-   *  details, so the buyer (me) just needs to see them. */
+  /** Ad owner is the seller — the order already carries their saved payment
+   *  method details, so the buyer (me) just needs to see them. */
   get orderCarriesSellerDetails(): boolean {
     return this.order?.type === P2POrderType.Sell;
   }
 
   /** Ad owner is the buyer — I'm the one selling coin, so I must supply
-   *  my own payment details for the buyer to pay into. */
+   *  one of MY saved payment methods for the buyer to pay into. */
   get mustSupplySellerDetails(): boolean {
     return this.order?.type === P2POrderType.Buy;
   }
 
-  get matchedOrderPaymentDetail(): PaymentMethodDetail | undefined {
-    if (!this.order?.paymentDetails?.length) return undefined;
-    return this.order.paymentDetails.find((d) => d.method === this.paymentMethod) || this.order.paymentDetails[0];
+  get matchedOrderPaymentDetail(): UserPaymentMethod | undefined {
+    const details = this.order?.paymentMethodDetails;
+    if (!details?.length) return undefined;
+    return details.find((d) => d.method === this.paymentMethod) || details[0];
+  }
+
+  private loadMySavedMethods(): void {
+    this.mySavedMethodsLoading = true;
+    this.paymentMethodsService.myMethods().subscribe({
+      next: (res) => {
+        this.mySavedMethods = res.filter((m) => m.fiatCurrency === this.order!.fiatCurrency);
+        const dflt = this.mySavedMethods.find((m) => m.isDefault) || this.mySavedMethods[0];
+        this.selectedPaymentMethodId = dflt?.id || '';
+        this.mySavedMethodsLoading = false;
+      },
+      error: () => (this.mySavedMethodsLoading = false),
+    });
   }
 
   get amountValid(): boolean {
@@ -151,9 +172,7 @@ export class InitiateTradeDialogComponent implements OnInit, OnDestroy {
 
   get initiateFormValid(): boolean {
     if (!this.amountValid || !this.paymentMethod || !this.pinValid) return false;
-    if (this.mustSupplySellerDetails) {
-      return !!this.sellerAccountName.trim() && !!this.sellerAccountNumber.trim();
-    }
+    if (this.mustSupplySellerDetails) return !!this.selectedPaymentMethodId;
     return true;
   }
 
@@ -163,22 +182,12 @@ export class InitiateTradeDialogComponent implements OnInit, OnDestroy {
     this.submitting = true;
     this.errorMessage = '';
 
-    const sellerPaymentDetails: PaymentMethodDetail | undefined = this.mustSupplySellerDetails
-      ? {
-          method: this.paymentMethod,
-          accountName: this.sellerAccountName.trim(),
-          accountNumber: this.sellerAccountNumber.trim(),
-          bankName: this.sellerBankName.trim() || undefined,
-          additionalInfo: this.sellerAdditionalInfo.trim() || undefined,
-        }
-      : undefined;
-
     this.p2pService
       .initiateTrade({
         orderId: this.order.id,
         coinAmount: this.coinAmount as number,
         paymentMethod: this.paymentMethod,
-        sellerPaymentDetails,
+        paymentMethodId: this.mustSupplySellerDetails ? this.selectedPaymentMethodId : undefined,
         transactionPin: this.transactionPin,
       })
       .subscribe({
@@ -230,9 +239,6 @@ export class InitiateTradeDialogComponent implements OnInit, OnDestroy {
     return msUntilDeadline(this.trade.paymentDeadline, this.nowTick) <= 0;
   }
 
-  /** True when the CURRENT USER is the buyer on THIS trade (regardless of
-   *  whether the underlying ad was a Buy or Sell order) — so this stays
-   *  correct in both directions. */
   get canMarkPaid(): boolean {
     return !!this.trade && canMarkPaid(this.trade);
   }
@@ -351,124 +357,61 @@ export class InitiateTradeDialogComponent implements OnInit, OnDestroy {
     return merchant?.username || 'Trader';
   }
 
-
-
-
-
-
   readonly disputeReasonOptions = [
-  'Payment not received',
-  'Payment amount is incorrect',
-  'Counterparty is unresponsive',
-  'Suspicious or unsafe behaviour',
-  'Other',
-];
+    'Payment not received',
+    'Payment amount is incorrect',
+    'Counterparty is unresponsive',
+    'Suspicious or unsafe behaviour',
+    'Other',
+  ];
 
-showDisputeForm = false;
-disputeReason = this.disputeReasonOptions[0];
-disputeDetails = '';
-disputeSubmitting = false;
-disputeError = '';
+  showDisputeForm = false;
+  disputeReason = this.disputeReasonOptions[0];
+  disputeDetails = '';
+  disputeSubmitting = false;
+  disputeError = '';
 
-/** Both buyer and seller can raise this on any trade that isn't finished. */
-get canOpenDisputeOrReport(): boolean {
-  return !!this.trade && [TradeStatus.Pending, TradeStatus.Paid, TradeStatus.Disputed].includes(this.trade.status);
-}
-
-toggleDisputeForm(): void {
-  this.showDisputeForm = !this.showDisputeForm;
-  this.disputeError = '';
-}
-
-submitDispute(): void {
-  if (!this.trade || this.disputeSubmitting) return;
-  if (!this.disputeReason) {
-    this.disputeError = 'Choose a reason for this report.';
-    return;
+  /** Both buyer and seller can raise this on any trade that isn't finished. */
+  get canOpenDisputeOrReport(): boolean {
+    return !!this.trade && [TradeStatus.Pending, TradeStatus.Paid, TradeStatus.Disputed].includes(this.trade.status);
   }
-  this.disputeSubmitting = true;
-  const reason = this.disputeDetails.trim()
-    ? `${this.disputeReason}: ${this.disputeDetails.trim()}`
-    : this.disputeReason;
 
-  this.p2pService.disputeTrade(this.trade.id, reason).subscribe({
-    next: (updated) => {
-      this.disputeSubmitting = false;
-      this.showDisputeForm = false;
-      this.trade = updated;
-      this.sharedService.showToast({ title: 'Dispute opened. Support has been notified.' });
-    },
-    error: (err) => {
-      this.disputeSubmitting = false;
-      const message = err?.error?.message || 'Could not open a dispute right now.';
-      this.disputeError = Array.isArray(message) ? message.join(', ') : message;
-    },
-  });
-}
+  toggleDisputeForm(): void {
+    this.showDisputeForm = !this.showDisputeForm;
+    this.disputeError = '';
+  }
 
-contactSupport(): void {
-  const subject = encodeURIComponent(`Help with P2P trade ${this.trade?.id ?? ''}`);
-  const body = encodeURIComponent(
-    `Trade ID: ${this.trade?.id}\nCounterparty: ${this.counterpartyName()}\nStatus: ${this.trade?.status}\n\nDescribe your issue:\n`
-  );
-  window.open(`mailto:support@yourapp.com?subject=${subject}&body=${body}`, '_blank');
-}
+  submitDispute(): void {
+    if (!this.trade || this.disputeSubmitting) return;
+    if (!this.disputeReason) {
+      this.disputeError = 'Choose a reason for this report.';
+      return;
+    }
+    this.disputeSubmitting = true;
+    const reason = this.disputeDetails.trim()
+      ? `${this.disputeReason}: ${this.disputeDetails.trim()}`
+      : this.disputeReason;
 
-
-
-
-
-
-
-mySavedMethods: UserPaymentMethod[] = [];
-selectedPaymentMethodId = '';
-
-// in ngOnInit, when mode === 'initiate' and mustSupplySellerDetails:
-if (this.mustSupplySellerDetails) {
-  this.paymentMethodsService.myMethods().subscribe({
-    next: (res) => {
-      this.mySavedMethods = res.filter((m) => m.fiatCurrency === this.order!.fiatCurrency);
-      const dflt = this.mySavedMethods.find((m) => m.isDefault) || this.mySavedMethods[0];
-      this.selectedPaymentMethodId = dflt?.id || '';
-    },
-  });
-}
-
-get initiateFormValid(): boolean {
-  if (!this.amountValid || !this.paymentMethod || !this.pinValid) return false;
-  if (this.mustSupplySellerDetails) return !!this.selectedPaymentMethodId;
-  return true;
-}
-
-submitInitiateTrade(): void {
-  if (!this.order || !this.initiateFormValid || this.submitting) return;
-
-  this.submitting = true;
-  this.errorMessage = '';
-
-  this.p2pService
-    .initiateTrade({
-      orderId: this.order.id,
-      coinAmount: this.coinAmount as number,
-      paymentMethod: this.paymentMethod,
-      paymentMethodId: this.mustSupplySellerDetails ? this.selectedPaymentMethodId : undefined,
-      transactionPin: this.transactionPin,
-    })
-    .subscribe({
-      next: (trade) => {
-        this.submitting = false;
-        this.transactionPin = '';
-        this.sharedService.showToast({ title: 'Trade started. Check the payment window below.' });
-        this.close(trade);
+    this.p2pService.disputeTrade(this.trade.id, reason).subscribe({
+      next: (updated) => {
+        this.disputeSubmitting = false;
+        this.showDisputeForm = false;
+        this.trade = updated;
+        this.sharedService.showToast({ title: 'Dispute opened. Support has been notified.' });
       },
       error: (err) => {
-        this.submitting = false;
-        const message = err?.error?.message || 'Could not start this trade.';
-        this.errorMessage = Array.isArray(message) ? message.join(', ') : message;
+        this.disputeSubmitting = false;
+        const message = err?.error?.message || 'Could not open a dispute right now.';
+        this.disputeError = Array.isArray(message) ? message.join(', ') : message;
       },
     });
-}
+  }
 
-
-
+  contactSupport(): void {
+    const subject = encodeURIComponent(`Help with P2P trade ${this.trade?.id ?? ''}`);
+    const body = encodeURIComponent(
+      `Trade ID: ${this.trade?.id}\nCounterparty: ${this.counterpartyName()}\nStatus: ${this.trade?.status}\n\nDescribe your issue:\n`
+    );
+    window.open(`mailto:support@yourapp.com?subject=${subject}&body=${body}`, '_blank');
+  }
 }

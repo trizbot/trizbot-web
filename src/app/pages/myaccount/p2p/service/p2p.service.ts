@@ -3,20 +3,9 @@ import { Injectable } from '@angular/core';
 
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { environment } from '../../../../environments/environment';
-import {
-  CreateOrderReqBody,
-  ExchangeRateRes,
-  InitiateTradeReqBody,
-  ListOrdersParams,
-  MarkTradePaidReqBody,
-  P2POrder,
-  P2PTrade,
-  ReleaseTradeReqBody,
-  UpdateOrderReqBody,
-  normalizeOrder,
-  normalizeTrade,
-} from './p2p.model';
+import { environment } from '../../../../../environments/environment';
+import { ListOrdersParams, P2POrder, normalizeOrder, CreateOrderReqBody, UpdateOrderReqBody, P2PTrade, normalizeTrade, InitiateTradeReqBody, ExchangeRateRes, MarkTradePaidReqBody, ReleaseTradeReqBody } from '../p2p.model';
+
 
 interface ApiEnvelope<T> {
   message: string;

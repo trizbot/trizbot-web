@@ -1,70 +1,46 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable } from 'rxjs';
-import { map, tap } from 'rxjs/operators';
+import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { environment } from '../../../../../environments/environment';
 import {
-  ApiListResponse,
-  CreateFeedCategoryPayload,
-  FeedCategoryItem,
-  RawFeedCategoryDoc,
-  UpdateFeedCategoryPayload,
-  normalizeFeedCategory,
+  CreateP2pCategoryPayload,
+  P2pCategoryItem,
+  UpdateP2pCategoryPayload,
+  normalizeP2pCategory,
   unwrapCategoryList,
-} from './model/p2p-category.model';
+} from '../model/p2p-category.model';
 
 @Injectable({ providedIn: 'root' })
 export class P2pCategoryService {
-  private readonly baseUrl = `${environment.apiBaseUrl}/p2p`;
-
-  /** Shared cache so the market filters, the create-ad dialog, and the
-   *  admin screen all read the same list instead of each fetching it. */
-  private readonly categories$ = new BehaviorSubject<FeedCategoryItem[]>([]);
-  readonly categoriesChanges: Observable<FeedCategoryItem[]> = this.categories$.asObservable();
+  private readonly base = `${environment.apiBaseUrl}/p2p/categories`;
 
   constructor(private http: HttpClient) {}
 
-  getFeedCategory(): Observable<FeedCategoryItem[]> {
+  getFeedCategory(): Observable<P2pCategoryItem[]> {
     return this.http
-      .get<RawFeedCategoryDoc[] | ApiListResponse<RawFeedCategoryDoc>>(`${this.baseUrl}/category`)
-      .pipe(
-        map((res) => unwrapCategoryList(res).map(normalizeFeedCategory)),
-        tap((list) => this.categories$.next(list))
-      );
+      .get<any>(this.base)
+      .pipe(map((res) => unwrapCategoryList<any>(res).map(normalizeP2pCategory)));
   }
 
-  /** What the market filters and create-ad dialog actually need: plain symbols. */
+  /** Just the coin symbols, for the Market/Post-Ad coin pickers. */
   getCategorySymbols(): Observable<string[]> {
-    return this.getFeedCategory().pipe(map((list) => list.map((c) => c.category)));
+    return this.getFeedCategory().pipe(map((items) => items.map((i) => i.category)));
   }
 
-  createFeedCategory(payload: CreateFeedCategoryPayload): Observable<FeedCategoryItem[]> {
+  createFeedCategory(payload: CreateP2pCategoryPayload): Observable<P2pCategoryItem[]> {
     return this.http
-      .post<RawFeedCategoryDoc | RawFeedCategoryDoc[] | ApiListResponse<RawFeedCategoryDoc>>(
-        `${this.baseUrl}/category`,
-        payload
-      )
-      .pipe(
-        map((res) => unwrapCategoryList(res).map(normalizeFeedCategory)),
-        tap((list) => this.categories$.next(list))
-      );
+      .post<any>(this.base, payload)
+      .pipe(map((res) => unwrapCategoryList<any>(res).map(normalizeP2pCategory)));
   }
 
-  updateFeedCategory(id: string, payload: UpdateFeedCategoryPayload): Observable<FeedCategoryItem[]> {
+  updateFeedCategory(id: string, payload: UpdateP2pCategoryPayload): Observable<P2pCategoryItem[]> {
     return this.http
-      .patch<RawFeedCategoryDoc | RawFeedCategoryDoc[] | ApiListResponse<RawFeedCategoryDoc>>(
-        `${this.baseUrl}/category/${id}`,
-        payload
-      )
-      .pipe(
-        map((res) => unwrapCategoryList(res).map(normalizeFeedCategory)),
-        tap((list) => this.categories$.next(list))
-      );
+      .patch<any>(`${this.base}/${id}`, payload)
+      .pipe(map((res) => unwrapCategoryList<any>(res).map(normalizeP2pCategory)));
   }
 
   deleteFeedCategory(id: string): Observable<void> {
-    return this.http
-      .delete<void>(`${this.baseUrl}/category/${id}`)
-      .pipe(tap(() => this.categories$.next(this.categories$.value.filter((c) => c.id !== id))));
+    return this.http.delete<any>(`${this.base}/${id}`).pipe(map(() => undefined));
   }
 }

@@ -1,14 +1,9 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable } from 'rxjs';
-import { map, tap } from 'rxjs/operators';
+import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { environment } from '../../../../../environments/environment';
-import {
-  RawUserPaymentMethod,
-  SavePaymentMethodPayload,
-  UserPaymentMethod,
-  normalizePaymentMethod,
-} from './payment-method.model';
+import { UserPaymentMethod, normalizePaymentMethod, CreatePaymentMethodReqBody, UpdatePaymentMethodReqBody } from './payment-method.model';
 
 interface ApiEnvelope<T> {
   message: string;
@@ -19,47 +14,33 @@ interface ApiEnvelope<T> {
 export class PaymentMethodsService {
   private readonly base = `${environment.apiBaseUrl}/p2p/payment-methods`;
 
-  private readonly methods$ = new BehaviorSubject<UserPaymentMethod[]>([]);
-  readonly methodsChanges: Observable<UserPaymentMethod[]> = this.methods$.asObservable();
-
   constructor(private http: HttpClient) {}
 
   myMethods(): Observable<UserPaymentMethod[]> {
     return this.http
-      .get<ApiEnvelope<RawUserPaymentMethod[]> | RawUserPaymentMethod[]>(this.base)
-      .pipe(
-        map((res) => this.unwrap(res).map(normalizePaymentMethod)),
-        tap((list) => this.methods$.next(list))
-      );
+      .get<ApiEnvelope<any[]> | any[]>(this.base)
+      .pipe(map((res) => this.unwrap(res).map(normalizePaymentMethod)));
   }
 
-  add(payload: SavePaymentMethodPayload): Observable<UserPaymentMethod> {
+  create(payload: CreatePaymentMethodReqBody): Observable<UserPaymentMethod> {
     return this.http
-      .post<ApiEnvelope<RawUserPaymentMethod> | RawUserPaymentMethod>(this.base, payload)
-      .pipe(
-        map((res) => normalizePaymentMethod(this.unwrapOne(res))),
-        tap((added) => this.methods$.next([...this.methods$.value, added]))
-      );
+      .post<ApiEnvelope<any> | any>(this.base, payload)
+      .pipe(map((res) => normalizePaymentMethod(this.unwrapOne(res))));
   }
 
-  update(id: string, payload: Partial<SavePaymentMethodPayload>): Observable<UserPaymentMethod> {
+  update(id: string, payload: UpdatePaymentMethodReqBody): Observable<UserPaymentMethod> {
     return this.http
-      .patch<ApiEnvelope<RawUserPaymentMethod> | RawUserPaymentMethod>(`${this.base}/${id}`, payload)
-      .pipe(
-        map((res) => normalizePaymentMethod(this.unwrapOne(res))),
-        tap((updated) => this.methods$.next(this.methods$.value.map((m) => (m.id === id ? updated : m))))
-      );
+      .patch<ApiEnvelope<any> | any>(`${this.base}/${id}`, payload)
+      .pipe(map((res) => normalizePaymentMethod(this.unwrapOne(res))));
   }
 
-  remove(id: string): Observable<void> {
-    return this.http
-      .delete<void>(`${this.base}/${id}`)
-      .pipe(tap(() => this.methods$.next(this.methods$.value.filter((m) => m.id !== id))));
+  delete(id: string): Observable<void> {
+    return this.http.delete<any>(`${this.base}/${id}`).pipe(map(() => undefined));
   }
 
   private unwrap<T>(res: ApiEnvelope<T[]> | T[]): T[] {
     if (Array.isArray(res)) return res;
-    return (res as ApiEnvelope<T[]>)?.data ?? [];
+    return (res as any)?.data ?? [];
   }
 
   private unwrapOne<T>(res: ApiEnvelope<T> | T): T {

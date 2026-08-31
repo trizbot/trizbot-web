@@ -1,17 +1,18 @@
 import { CommonModule } from '@angular/common';
 import { Component, Inject, OnDestroy } from '@angular/core';
-import { FormArray, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { Subscription } from 'rxjs';
 
 import { MaterialModule } from '../../../../material.module';
 import { SharedService } from '../../../../shared/shared.service';
-import { P2pService } from '../p2p.service';
+import { P2pService } from '../service/p2p.service';
+import { UserPaymentMethod } from '../payment-method/payment-method.model';
+import { PaymentMethodsManagerComponent } from '../payment-methods-manager/payment-methods-manager.component';
 import {
   P2POrder,
   P2POrderType,
   PAYMENT_WINDOW_OPTIONS,
-  PaymentMethodDetail,
   SUPPORTED_COINS,
   SUPPORTED_FIAT,
   fiatSymbol,
@@ -26,28 +27,6 @@ export interface CreateOrderDialogData {
   order?: P2POrder;
 }
 
-/** One receiving-account row per selected payment method (Sell ads only).
- *  `existing` prefills the row when editing an ad that already has details saved. */
-function buildPaymentDetailGroup(
-  method: string,
-  required: boolean,
-  existing?: Partial<PaymentMethodDetail>
-): FormGroup {
-  return new FormGroup({
-    method: new FormControl<string>(method, { nonNullable: true }),
-    accountName: new FormControl<string>(existing?.accountName || '', {
-      nonNullable: true,
-      validators: required ? [Validators.required] : [],
-    }),
-    accountNumber: new FormControl<string>(existing?.accountNumber || '', {
-      nonNullable: true,
-      validators: required ? [Validators.required] : [],
-    }),
-    bankName: new FormControl<string>(existing?.bankName || '', { nonNullable: true }),
-    additionalInfo: new FormControl<string>(existing?.additionalInfo || '', { nonNullable: true }),
-  });
-}
-
 @Component({
   selector: 'app-create-order-dialog',
   standalone: true,
@@ -56,6 +35,7 @@ function buildPaymentDetailGroup(
     ReactiveFormsModule,
     MaterialModule,
     MatDialogModule,
+    PaymentMethodsManagerComponent,
   ],
   templateUrl: './create-order-dialog.component.html',
   styleUrls: ['./create-order-dialog.component.scss'],
@@ -73,58 +53,14 @@ export class CreateOrderDialogComponent implements OnDestroy {
 
   loading = false;
   errorMessage = '';
-// Replace the SUPPORTED_COINS import usage for coinSuggestions with the
-// category service, and swap the paymentDetails FormArray for a simple
-// multi-select of saved payment method IDs.
 
-import { P2pCategoryService } from '../p2p-category.service';
-import { PaymentMethodsService } from '../payment-methods.service';
-import { UserPaymentMethod } from '../payment-method.model';
+  /** Full set of the trader's saved payment methods (kept in sync by the
+   *  embedded <app-payment-methods-manager>). */
+  savedMethods: UserPaymentMethod[] = [];
 
-// ...inside the component class, replace `paymentDetails: new FormArray<FormGroup>([])`
-// in the form definition with:
-paymentMethodIds: new FormControl<string[]>([], { nonNullable: true, validators: [] }),
-
-// add new state:
-savedMethods: UserPaymentMethod[] = [];
-savedMethodsLoading = false;
-
-// in constructor, inject the two services, then in the body (after existing subs):
-this.loadSavedMethods();
-
-private loadSavedMethods(): void {
-  this.savedMethodsLoading = true;
-  this.paymentMethodsService.myMethods().subscribe({
-    next: (res) => {
-      this.savedMethods = res;
-      this.savedMethodsLoading = false;
-    },
-    error: () => (this.savedMethodsLoading = false),
-  });
-}
-
-/** Only offer methods that match the ad's fiat currency. */
-get eligibleSavedMethods(): UserPaymentMethod[] {
-  const fiat = this.form.getRawValue().fiatCurrency;
-  return this.savedMethods.filter((m) => m.fiatCurrency === fiat);
-}
-
-get paymentMethodIdsError(): string | null {
-  if (!this.isSellAd) return null;
-  const ids = this.form.getRawValue().paymentMethodIds;
-  const methods = this.form.getRawValue().paymentMethods;
-  if (methods.length > 0 && ids.length === 0) {
-    return 'Select which saved payment method(s) buyers should pay into.';
-  }
-  return null;
-}
-  /** Once the user manually types into Max order limit, stop auto-overwriting it. */
   private maxLimitTouchedByUser = false;
   private subs = new Subscription();
 
-  // -----------------------------------------------------------------------
-  // Market rate
-  // -----------------------------------------------------------------------
   marketRate: number | null = null;
   marketRateLoading = false;
   marketRateError = '';
@@ -138,11 +74,13 @@ get paymentMethodIdsError(): string | null {
     totalAmount: new FormControl<number | null>(null, [Validators.required, Validators.min(0.00000001)]),
     minLimit: new FormControl<number | null>(null, [Validators.required, Validators.min(1)]),
     maxLimit: new FormControl<number | null>(null, [Validators.required, Validators.min(1)]),
-    paymentMethods: new FormControl<string[]>([], { nonNullable: true, validators: [Validators.required] }),
+    /** Buy ads: generic accepted method names. */
+    paymentMethods: new FormControl<string[]>([], { nonNullable: true }),
+    /** Sell ads: references into the trader's saved payment methods. */
+    paymentMethodIds: new FormControl<string[]>([], { nonNullable: true }),
     paymentWindowMinutes: new FormControl<number>(30, { nonNullable: true }),
     terms: new FormControl('', { nonNullable: true }),
     transactionPin: new FormControl('', { nonNullable: true }),
-    paymentDetails: new FormArray<FormGroup>([]),
   });
 
   constructor(
@@ -168,34 +106,28 @@ get paymentMethodIdsError(): string | null {
 
     this.syncPinValidator(this.form.getRawValue().type);
 
+    // Currency change invalidates whatever payment selection was made.
     this.subs.add(
       this.form.controls.fiatCurrency.valueChanges.subscribe((fiat) => {
-        const validForFiat = getPaymentMethodsForFiat(fiat);
-        const current = this.form.controls.paymentMethods.value;
-        const stillValid = current.filter((m) => validForFiat.includes(m));
-        if (stillValid.length !== current.length) {
-          this.form.controls.paymentMethods.setValue(stillValid);
+        if (!this.isSellAd) {
+          const validForFiat = getPaymentMethodsForFiat(fiat);
+          const current = this.form.controls.paymentMethods.value;
+          const stillValid = current.filter((m) => validForFiat.includes(m));
+          if (stillValid.length !== current.length) {
+            this.form.controls.paymentMethods.setValue(stillValid);
+          }
+        } else {
+          this.form.controls.paymentMethods.setValue([]);
         }
+        this.form.controls.paymentMethodIds.setValue([]);
       })
-    );
-
-    this.subs.add(
-      this.form.controls.paymentMethods.valueChanges.subscribe((methods) =>
-        this.syncPaymentDetailRows(methods)
-      )
     );
 
     // Auto-calculate Max order limit = Total amount to trade × Price per unit.
     this.subs.add(this.form.controls.totalAmount.valueChanges.subscribe(() => this.recomputeMaxLimit()));
     this.subs.add(this.form.controls.pricePerUnit.valueChanges.subscribe(() => this.recomputeMaxLimit()));
 
-    // Load the market rate once up front (covers both create and edit mode,
-    // including when coin/fiat controls are disabled and won't re-emit).
     this.loadMarketRate();
-
-    // In create mode the asset/currency pickers are live — refresh the rate
-    // whenever either changes. (No-op wiring in edit mode since those
-    // controls are disabled and never change.)
     this.subs.add(this.form.controls.coin.valueChanges.subscribe(() => this.loadMarketRate()));
     this.subs.add(this.form.controls.fiatCurrency.valueChanges.subscribe(() => this.loadMarketRate()));
   }
@@ -204,20 +136,74 @@ get paymentMethodIdsError(): string | null {
     this.subs.unsubscribe();
   }
 
-  get paymentMethodOptions(): string[] {
-    return getPaymentMethodsForFiat(this.form.getRawValue().fiatCurrency);
-  }
-
   get fiatSymbol(): string {
     return fiatSymbol(this.form.getRawValue().fiatCurrency);
   }
 
-  get paymentDetailsArray(): FormArray<FormGroup> {
-    return this.form.controls.paymentDetails;
+  get isSellAd(): boolean {
+    return this.form.getRawValue().type === P2POrderType.Sell;
   }
 
-  get isSellAd(): boolean {
-    return this.form.value.type === P2POrderType.Sell;
+  // -----------------------------------------------------------------------
+  // Payment methods
+  // -----------------------------------------------------------------------
+
+  get paymentMethodOptions(): string[] {
+    return getPaymentMethodsForFiat(this.form.getRawValue().fiatCurrency);
+  }
+
+  /** Called whenever the embedded manager's saved-method list changes. */
+  onMethodsChanged(methods: UserPaymentMethod[]): void {
+    this.savedMethods = methods;
+    const eligibleIds = this.eligibleSavedMethods.map((m) => m.id);
+    const current = this.form.controls.paymentMethodIds.value;
+    const stillValid = current.filter((id) => eligibleIds.includes(id));
+    if (stillValid.length !== current.length) {
+      this.form.controls.paymentMethodIds.setValue(stillValid);
+    }
+    this.syncPaymentMethodNamesFromSelection();
+  }
+
+  /** Only offer saved methods that match the ad's fiat currency. */
+  get eligibleSavedMethods(): UserPaymentMethod[] {
+    const fiat = this.form.getRawValue().fiatCurrency;
+    return this.savedMethods.filter((m) => m.fiatCurrency === fiat);
+  }
+
+  isMethodSelected(id: string): boolean {
+    return this.form.getRawValue().paymentMethodIds.includes(id);
+  }
+
+  onSavedMethodToggle(id: string, checked: boolean): void {
+    const current = this.form.getRawValue().paymentMethodIds;
+    const next = checked ? [...current, id] : current.filter((x) => x !== id);
+    this.form.controls.paymentMethodIds.setValue(next);
+    this.syncPaymentMethodNamesFromSelection();
+  }
+
+  /** For Sell ads, `paymentMethods` (the display names) is always derived
+   *  from whichever saved accounts are ticked — never edited directly. */
+  private syncPaymentMethodNamesFromSelection(): void {
+    if (!this.isSellAd) return;
+    const ids = this.form.getRawValue().paymentMethodIds;
+    const selected = this.savedMethods.filter((m) => ids.includes(m.id));
+    this.form.controls.paymentMethods.setValue(Array.from(new Set(selected.map((m) => m.method))));
+  }
+
+  get paymentMethodsError(): string | null {
+    if (this.isSellAd) return null;
+    if (this.form.getRawValue().paymentMethods.length === 0) {
+      return 'Select at least one accepted payment method.';
+    }
+    return null;
+  }
+
+  get paymentMethodIdsError(): string | null {
+    if (!this.isSellAd) return null;
+    if (this.form.getRawValue().paymentMethodIds.length === 0) {
+      return 'Select at least one saved payment method for this ad.';
+    }
+    return null;
   }
 
   // -----------------------------------------------------------------------
@@ -246,7 +232,6 @@ get paymentMethodIdsError(): string | null {
       },
     });
   }
-
 
   get maxAllowedPrice(): number | null {
     if (this.marketRate == null) return null;
@@ -284,13 +269,10 @@ get paymentMethodIdsError(): string | null {
     return totalAmount * pricePerUnit;
   }
 
-  /** Bound to (input) on the Max order limit field so we can tell a manual
-   *  edit apart from our own programmatic patch. */
   onMaxLimitManualEdit(): void {
     this.maxLimitTouchedByUser = true;
   }
 
-  /** Lets the user snap back to the auto-calculated value after overriding it. */
   resetMaxLimitToAuto(): void {
     this.maxLimitTouchedByUser = false;
     this.recomputeMaxLimit();
@@ -300,7 +282,6 @@ get paymentMethodIdsError(): string | null {
     if (this.maxLimitTouchedByUser) return;
     const computed = this.computedMaxLimit;
     if (computed != null) {
-      // emitEvent:false so this patch doesn't loop back through valueChanges.
       this.form.controls.maxLimit.setValue(Math.floor(computed), { emitEvent: false });
     }
   }
@@ -318,11 +299,11 @@ get paymentMethodIdsError(): string | null {
       totalAmount: order.availableAmount ?? order.totalAmount,
       minLimit: order.minLimit,
       maxLimit: order.maxLimit,
-      paymentMethods: order.paymentMethods,
+      paymentMethods: order.paymentMethods || [],
+      paymentMethodIds: order.paymentMethodIds || [],
       paymentWindowMinutes: order.paymentWindowMinutes ?? 30,
       terms: order.terms || '',
     });
-    this.syncPaymentDetailRows(order.paymentMethods, order.paymentDetails);
   }
 
   private syncPinValidator(type: P2POrderType): void {
@@ -335,34 +316,12 @@ get paymentMethodIdsError(): string | null {
     pinControl.updateValueAndValidity();
   }
 
-  private syncPaymentDetailRows(methods: string[], existingDetails?: PaymentMethodDetail[]): void {
-    const array = this.paymentDetailsArray;
-    const required = this.isSellAd;
-    const existingMethods = array.controls.map((g) => g.get('method')?.value);
-
-    for (let i = array.length - 1; i >= 0; i--) {
-      if (!methods.includes(array.at(i).get('method')?.value)) array.removeAt(i);
-    }
-    methods.forEach((method) => {
-      if (!existingMethods.includes(method)) {
-        const prefill = existingDetails?.find((d) => d.method === method);
-        array.push(buildPaymentDetailGroup(method, required, prefill));
-      }
-    });
-    array.controls.forEach((g) => {
-      const validators = required ? [Validators.required] : [];
-      g.get('accountName')?.setValidators(validators);
-      g.get('accountNumber')?.setValidators(validators);
-      g.get('accountName')?.updateValueAndValidity();
-      g.get('accountNumber')?.updateValueAndValidity();
-    });
-  }
-
   setType(type: P2POrderType): void {
     if (this.isEditMode) return; // type is locked once an ad exists
     this.form.patchValue({ type });
     this.syncPinValidator(type);
-    this.syncPaymentDetailRows(this.form.controls.paymentMethods.value);
+    this.form.controls.paymentMethods.setValue([]);
+    this.form.controls.paymentMethodIds.setValue([]);
   }
 
   get limitError(): string | null {
@@ -379,102 +338,81 @@ get paymentMethodIdsError(): string | null {
     return null;
   }
 
-  get paymentDetailsError(): string | null {
-    if (!this.isSellAd) return null;
-    if (this.form.controls.paymentMethods.value.length > 0 && this.paymentDetailsArray.invalid) {
-      return 'Add your receiving account details for each selected payment method.';
+  submit(): void {
+    if (
+      this.form.invalid ||
+      this.limitError ||
+      this.paymentMethodsError ||
+      this.paymentMethodIdsError ||
+      this.priceError
+    ) {
+      this.form.markAllAsTouched();
+      return;
     }
-    return null;
-  }
 
-  private toPaymentDetails(raw: any[]): PaymentMethodDetail[] {
-    return raw.map((pd) => ({
-      method: pd.method,
-      accountName: pd.accountName,
-      accountNumber: pd.accountNumber,
-      bankName: pd.bankName || undefined,
-      additionalInfo: pd.additionalInfo || undefined,
-    }));
-  }
-submit(): void {
-  if (this.form.invalid || this.limitError || this.paymentMethodIdsError || this.priceError) {
-    this.form.markAllAsTouched();
-    return;
-  }
+    this.errorMessage = '';
+    this.loading = true;
+    const value = this.form.getRawValue();
 
-  this.errorMessage = '';
-  this.loading = true;
-  const value = this.form.getRawValue();
-  const paymentMethodIds = value.type === P2POrderType.Sell ? value.paymentMethodIds : undefined;
+    if (this.isEditMode) {
+      const orderId = this.data.order!.id;
+      this.p2pService
+        .updateOrder(orderId, {
+          pricePerUnit: value.pricePerUnit!,
+          totalAmount: value.totalAmount!,
+          minLimit: value.minLimit!,
+          maxLimit: value.maxLimit!,
+          paymentMethods: value.paymentMethods,
+          paymentMethodIds: value.paymentMethodIds,
+          terms: value.terms || undefined,
+          paymentWindowMinutes: value.paymentWindowMinutes,
+          transactionPin: value.transactionPin || undefined,
+        })
+        .subscribe({
+          next: () => {
+            this.loading = false;
+            this.sharedService.showToast({ title: 'Your ad has been updated.' });
+            this.dialogRef.close(true);
+          },
+          error: (err) => {
+            this.loading = false;
+            const message = err?.error?.message || 'Could not update this ad. Please try again.';
+            this.errorMessage = Array.isArray(message) ? message.join(', ') : message;
+          },
+        });
+      return;
+    }
 
-  if (this.isEditMode) {
-    const orderId = this.data.order!.id;
     this.p2pService
-      .updateOrder(orderId, {
+      .createOrder({
+        type: value.type,
+        coin: value.coin,
+        fiatCurrency: value.fiatCurrency,
         pricePerUnit: value.pricePerUnit!,
         totalAmount: value.totalAmount!,
         minLimit: value.minLimit!,
         maxLimit: value.maxLimit!,
         paymentMethods: value.paymentMethods,
-        paymentMethodIds,
+        paymentMethodIds: value.paymentMethodIds,
         terms: value.terms || undefined,
         paymentWindowMinutes: value.paymentWindowMinutes,
-        transactionPin: value.transactionPin || undefined,
+        transactionPin: value.type === P2POrderType.Sell ? value.transactionPin : undefined,
       })
       .subscribe({
         next: () => {
           this.loading = false;
-          this.sharedService.showToast({ title: 'Your ad has been updated.' });
+          this.sharedService.showToast({ title: 'Your ad has been posted.' });
           this.dialogRef.close(true);
         },
         error: (err) => {
           this.loading = false;
-          const message = err?.error?.message || 'Could not update this ad. Please try again.';
+          const message = err?.error?.message || 'Could not post this ad. Please try again.';
           this.errorMessage = Array.isArray(message) ? message.join(', ') : message;
         },
       });
-    return;
   }
-
-  this.p2pService
-    .createOrder({
-      type: value.type,
-      coin: value.coin,
-      fiatCurrency: value.fiatCurrency,
-      pricePerUnit: value.pricePerUnit!,
-      totalAmount: value.totalAmount!,
-      minLimit: value.minLimit!,
-      maxLimit: value.maxLimit!,
-      paymentMethods: value.paymentMethods,
-      paymentMethodIds,
-      terms: value.terms || undefined,
-      paymentWindowMinutes: value.paymentWindowMinutes,
-      transactionPin: value.type === P2POrderType.Sell ? value.transactionPin : undefined,
-    })
-    .subscribe({
-      next: () => {
-        this.loading = false;
-        this.sharedService.showToast({ title: 'Your ad has been posted.' });
-        this.dialogRef.close(true);
-      },
-      error: (err) => {
-        this.loading = false;
-        const message = err?.error?.message || 'Could not post this ad. Please try again.';
-        this.errorMessage = Array.isArray(message) ? message.join(', ') : message;
-      },
-    });
-}
-
 
   close(): void {
     this.dialogRef.close(false);
   }
-
-
-
-  onSavedMethodToggle(id: string, checked: boolean): void {
-  const current = this.form.getRawValue().paymentMethodIds;
-  const next = checked ? [...current, id] : current.filter((x) => x !== id);
-  this.form.controls.paymentMethodIds.setValue(next);
-}
 }

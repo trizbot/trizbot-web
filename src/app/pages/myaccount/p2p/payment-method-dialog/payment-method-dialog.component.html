@@ -1,0 +1,48 @@
+<div class="dialog-header">
+  <h2>{{ isEditMode ? 'Edit Payment Method' : 'Add Now' }}</h2>
+  <button type="button" class="icon-btn" (click)="cancel()"><mat-icon>close</mat-icon></button>
+</div>
+
+<div class="dialog-body" [formGroup]="form">
+  <div class="form-group">
+    <label>Payment Method</label>
+    <select formControlName="method">
+      <option value="" disabled>Select a payment method</option>
+      <option *ngFor="let m of methodOptions" [value]="m">{{ m }}</option>
+    </select>
+  </div>
+
+  <div class="form-group">
+    <label>*Name</label>
+    <input type="text" formControlName="accountName" placeholder="Full name on the account" />
+  </div>
+
+  <div class="form-group">
+    <label>*Bank Account Number</label>
+    <input type="text" inputmode="numeric" formControlName="accountNumber" placeholder="Please enter account number" />
+  </div>
+
+  <div class="form-group">
+    <label>Bank name (optional)</label>
+    <input type="text" formControlName="bankName" placeholder="e.g. GTBank" />
+  </div>
+
+  <div class="form-group">
+    <label>Account Type (optional)</label>
+    <input type="text" formControlName="accountType" placeholder="e.g. Savings" />
+  </div>
+
+  <label class="checkbox-row">
+    <input type="checkbox" formControlName="isDefault" />
+    Set as default for this currency
+  </label>
+
+  <div class="field-error" *ngIf="errorMessage">{{ errorMessage }}</div>
+</div>
+
+<div class="dialog-actions">
+  <button mat-flat-button color="primary" type="button" [disabled]="saving" (click)="submit()">
+    {{ saving ? 'Saving...' : 'Confirm' }}
+  </button>
+  <button mat-stroked-button type="button" (click)="cancel()">Cancel</button>
+</div>

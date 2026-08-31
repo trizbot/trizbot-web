@@ -51,39 +51,26 @@
         <div class="payment-details-row" *ngIf="detail.additionalInfo"><span>Note</span><span>{{ detail.additionalInfo }}</span></div>
       </div>
 
-      <!-- I'm the one selling -> I need to give the buyer my own account -->
+      <!-- I'm the one selling -> I need to give the buyer one of my saved accounts -->
       <div class="payment-details-form" *ngIf="mustSupplySellerDetails">
-<div class="payment-details-form" *ngIf="mustSupplySellerDetails">
-  <div class="payment-details-title"><mat-icon>account_balance</mat-icon> Your payment details (shown to the buyer)</div>
+        <div class="payment-details-title"><mat-icon>account_balance</mat-icon> Your payment details (shown to the buyer)</div>
 
-  <div class="order-empty" *ngIf="mySavedMethods.length === 0">
-    <span class="order-empty-title">No saved {{ order?.fiatCurrency }} payment method</span>
-    <span class="order-empty-sub">Add one under Payment Methods in your profile before accepting this trade.</span>
-  </div>
+        <div class="order-loading" *ngIf="mySavedMethodsLoading">
+          <img src="./assets/images/loading.gif" alt="Loading..." style="width: 22px; height: 22px;" />
+        </div>
 
-  <div class="form-group" *ngIf="mySavedMethods.length > 0">
-    <label>Pay into</label>
-    <select [(ngModel)]="selectedPaymentMethodId">
-      <option *ngFor="let m of mySavedMethods" [value]="m.id">
-        {{ m.method }} — {{ m.accountNumber }}
-      </option>
-    </select>
-  </div>
-</div>        <div class="form-group">
-          <label>Account name</label>
-          <input type="text" [(ngModel)]="sellerAccountName" placeholder="Full name on the account" />
+        <div class="order-empty" *ngIf="!mySavedMethodsLoading && mySavedMethods.length === 0">
+          <span class="order-empty-title">No saved {{ order?.fiatCurrency }} payment method</span>
+          <span class="order-empty-sub">Add one under Payment Methods in your profile before accepting this trade.</span>
         </div>
-        <div class="form-group">
-          <label>Account number</label>
-          <input type="text" inputmode="numeric" [(ngModel)]="sellerAccountNumber" placeholder="Account / IBAN number" />
-        </div>
-        <div class="form-group">
-          <label>Bank name (optional)</label>
-          <input type="text" [(ngModel)]="sellerBankName" placeholder="e.g. GTBank" />
-        </div>
-        <div class="form-group">
-          <label>Additional info (optional)</label>
-          <input type="text" [(ngModel)]="sellerAdditionalInfo" placeholder="Reference, notes for the buyer, etc." />
+
+        <div class="form-group" *ngIf="mySavedMethods.length > 0">
+          <label>Pay into</label>
+          <select [(ngModel)]="selectedPaymentMethodId">
+            <option *ngFor="let m of mySavedMethods" [value]="m.id">
+              {{ m.method }} — {{ m.accountNumber }}
+            </option>
+          </select>
         </div>
       </div>
 
@@ -113,6 +100,7 @@
         mat-flat-button
         color="primary"
         type="button"
+        [disabled]="submitting || !initiateFormValid"
         (click)="submitInitiateTrade()"
       >
         {{ submitting ? 'Starting...' : (order.type === P2POrderType.Sell ? 'Buy ' : 'Sell ') + order.coin }}
@@ -121,6 +109,7 @@
   </ng-container>
 
 
+  <!-- ============================== DETAIL =============================== -->
   <ng-container *ngIf="mode === 'detail' && trade">
     <div class="dialog-header">
       <h2>Trade with &#64;{{ counterpartyName() }}</h2>
@@ -128,17 +117,17 @@
     </div>
 
     <div class="dialog-body">
-     <div class="trade-status-row">
-  <span class="status-pill" [ngClass]="trade.status.toLowerCase()">{{ trade.status }}</span>
-  <span class="countdown-pill" *ngIf="trade.status === TradeStatus.Pending" [class.urgent]="countdownUrgent">
-    <mat-icon>schedule</mat-icon>
-    {{ countdownExpired ? 'Expired' : countdownLabel }}
-  </span>
-</div>
-<p class="proof-note muted" *ngIf="trade.status === TradeStatus.Pending">
-  This window protects both sides: the buyer must pay before it runs out, and funds stay locked in escrow for the
-  seller until either a release or a dispute — nobody can act unilaterally once it expires.
-</p>
+      <div class="trade-status-row">
+        <span class="status-pill" [ngClass]="trade.status.toLowerCase()">{{ trade.status }}</span>
+        <span class="countdown-pill" *ngIf="trade.status === TradeStatus.Pending" [class.urgent]="countdownUrgent">
+          <mat-icon>schedule</mat-icon>
+          {{ countdownExpired ? 'Expired' : countdownLabel }}
+        </span>
+      </div>
+      <p class="proof-note muted" *ngIf="trade.status === TradeStatus.Pending">
+        This window protects both sides: the buyer must pay before it runs out, and funds stay locked in escrow for the
+        seller until either a release or a dispute — nobody can act unilaterally once it expires.
+      </p>
 
       <div class="trade-amounts">
         <div class="summary-row">
@@ -157,18 +146,13 @@
 
       <!-- Seller's payment details: visible to both sides so everyone can
            verify the payment landed in the right account. -->
-      <div class="payment-details-box" *ngIf="trade.sellerPaymentDetails as detail">
+      <div class="payment-details-box" *ngIf="trade.sellerPaymentMethod as detail">
         <div class="payment-details-title"><mat-icon>account_balance</mat-icon> Payment goes to</div>
-
-
-        <div class="payment-details-box" *ngIf="trade.sellerPaymentMethod as detail">
-  <div class="payment-details-title"><mat-icon>account_balance</mat-icon> Payment goes to</div>
-  <div class="payment-details-row"><span>Account name</span><span>{{ detail.accountName }}</span></div>
-  <div class="payment-details-row"><span>Account number</span><span>{{ detail.accountNumber }}</span></div>
-  <div class="payment-details-row" *ngIf="detail.bankName"><span>Bank</span><span>{{ detail.bankName }}</span></div>
-  <div class="payment-details-row" *ngIf="detail.additionalInfo"><span>Note</span><span>{{ detail.additionalInfo }}</span></div>
-</div>
-
+        <div class="payment-details-row"><span>Method</span><span>{{ detail.method }}</span></div>
+        <div class="payment-details-row"><span>Account name</span><span>{{ detail.accountName }}</span></div>
+        <div class="payment-details-row"><span>Account number</span><span>{{ detail.accountNumber }}</span></div>
+        <div class="payment-details-row" *ngIf="detail.bankName"><span>Bank</span><span>{{ detail.bankName }}</span></div>
+        <div class="payment-details-row" *ngIf="detail.additionalInfo"><span>Note</span><span>{{ detail.additionalInfo }}</span></div>
       </div>
 
       <!-- ---- BUYER (in this trade): mark as paid + attach evidence ---- -->
@@ -264,48 +248,48 @@
         <mat-icon>check_circle</mat-icon>
         Funds released {{ trade.releasedAt ? (trade.releasedAt | date: 'medium') : '' }}.
       </div>
+
+      <div class="payment-details-box" *ngIf="canOpenDisputeOrReport">
+        <div class="payment-details-title"><mat-icon>support_agent</mat-icon> Need help with this trade?</div>
+        <p class="proof-note muted">
+          Available to both the buyer and the seller. Use this if payment wasn't received, the counterparty is
+          unresponsive, or something feels wrong — support reviews evidence from both sides before deciding.
+        </p>
+
+        <div class="dialog-actions inline" *ngIf="!showDisputeForm">
+          <button mat-stroked-button color="warn" type="button" (click)="toggleDisputeForm()">
+            <mat-icon>report</mat-icon> Open Dispute / Report
+          </button>
+          <button mat-stroked-button type="button" (click)="contactSupport()">
+            <mat-icon>support_agent</mat-icon> Contact Support
+          </button>
+        </div>
+
+        <div class="paid-form" *ngIf="showDisputeForm">
+          <div class="form-group">
+            <label>Reason</label>
+            <select [(ngModel)]="disputeReason">
+              <option *ngFor="let r of disputeReasonOptions" [value]="r">{{ r }}</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Additional details (optional)</label>
+            <textarea rows="3" [(ngModel)]="disputeDetails" placeholder="Anything support should know"></textarea>
+          </div>
+          <div class="field-error" *ngIf="disputeError">{{ disputeError }}</div>
+          <div class="dialog-actions inline">
+            <button mat-stroked-button type="button" (click)="toggleDisputeForm()">Cancel</button>
+            <button mat-flat-button color="warn" type="button" [disabled]="disputeSubmitting" (click)="submitDispute()">
+              {{ disputeSubmitting ? 'Submitting...' : 'Submit' }}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="trade-footer-note" *ngIf="trade.status === TradeStatus.Disputed">
+        <mat-icon>gavel</mat-icon> This trade is under dispute. Support will contact both parties.
+      </div>
     </div>
   </ng-container>
-<div class="payment-details-box" *ngIf="canOpenDisputeOrReport">
-  <div class="payment-details-title"><mat-icon>support_agent</mat-icon> Need help with this trade?</div>
-  <p class="proof-note muted">
-    Available to both the buyer and the seller. Use this if payment wasn't received, the counterparty is
-    unresponsive, or something feels wrong — support reviews evidence from both sides before deciding.
-  </p>
-
-  <div class="dialog-actions inline" *ngIf="!showDisputeForm">
-    <button mat-stroked-button color="warn" type="button" (click)="toggleDisputeForm()">
-      <mat-icon>report</mat-icon> Open Dispute / Report
-    </button>
-    <button mat-stroked-button type="button" (click)="contactSupport()">
-      <mat-icon>support_agent</mat-icon> Contact Support
-    </button>
-  </div>
-
-  <div class="paid-form" *ngIf="showDisputeForm">
-    <div class="form-group">
-      <label>Reason</label>
-      <select [(ngModel)]="disputeReason">
-        <option *ngFor="let r of disputeReasonOptions" [value]="r">{{ r }}</option>
-      </select>
-    </div>
-    <div class="form-group">
-      <label>Additional details (optional)</label>
-      <textarea rows="3" [(ngModel)]="disputeDetails" placeholder="Anything support should know"></textarea>
-    </div>
-    <div class="field-error" *ngIf="disputeError">{{ disputeError }}</div>
-    <div class="dialog-actions inline">
-      <button mat-stroked-button type="button" (click)="toggleDisputeForm()">Cancel</button>
-      <button mat-flat-button color="warn" type="button" [disabled]="disputeSubmitting" (click)="submitDispute()">
-        {{ disputeSubmitting ? 'Submitting...' : 'Submit' }}
-      </button>
-    </div>
-  </div>
-</div>
-
-<div class="trade-footer-note" *ngIf="trade.status === TradeStatus.Disputed">
-  <mat-icon>gavel</mat-icon> This trade is under dispute. Support will contact both parties.
-</div>
-
 
 </div>

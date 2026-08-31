@@ -3,18 +3,14 @@ import { Component, OnInit } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MaterialModule } from '../../../../material.module';
 import { SharedService } from '../../../../shared/shared.service';
-import { FeedCategoryItem } from '../../feed/model/feed.model';
 import { P2pCategoryItem } from '../model/p2p-category.model';
 import { P2pCategoryService } from '../service/p2p-category.service';
-// import { FeedCategoryItem } from '../p2p-category.model';
-// import { P2pCategoryService } from '../p2p-category.service';
 
 @Component({
   selector: 'app-p2p-category-admin',
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, MaterialModule],
   templateUrl: './p2p-category-admin.component.html',
-//   styleUrls: ['./p2p-category-admin.component.scss'],
 })
 export class P2pCategoryAdminComponent implements OnInit {
   categories: P2pCategoryItem[] = [];
@@ -51,7 +47,7 @@ export class P2pCategoryAdminComponent implements OnInit {
     });
   }
 
-  startEdit(item: FeedCategoryItem): void {
+  startEdit(item: P2pCategoryItem): void {
     this.editingId = item.id;
     this.form.setValue({ category: item.category, reference: item.reference || '' });
   }
@@ -87,7 +83,7 @@ export class P2pCategoryAdminComponent implements OnInit {
     });
   }
 
-  remove(item: FeedCategoryItem): void {
+  remove(item: P2pCategoryItem): void {
     if (!window.confirm(`Delete the "${item.category}" category permanently?`)) return;
     this.deletingId = item.id;
     this.categoryService.deleteFeedCategory(item.id).subscribe({

@@ -105,52 +105,47 @@
   </div>
   <div class="field-error" *ngIf="limitError">{{ limitError }}</div>
 
-  <mat-label class="f-w-600 m-b-8 d-block">Accepted payment methods</mat-label>
-  <mat-form-field appearance="outline" class="w-100">
-    <mat-select formControlName="paymentMethods" multiple>
-      <mat-option *ngFor="let method of paymentMethodOptions" [value]="method">{{ method }}</mat-option>
-    </mat-select>
-  </mat-form-field>
+  <!-- BUY ads: pick generic accepted payment method names. The eventual
+       seller (whoever accepts the trade) supplies their own receiving
+       account at that point, so no saved-account selection is needed here. -->
+  <ng-container *ngIf="!isSellAd">
+    <mat-label class="f-w-600 m-b-8 d-block">Accepted payment methods</mat-label>
+    <mat-form-field appearance="outline" class="w-100">
+      <mat-select formControlName="paymentMethods" multiple>
+        <mat-option *ngFor="let method of paymentMethodOptions" [value]="method">{{ method }}</mat-option>
+      </mat-select>
+    </mat-form-field>
+    <div class="field-error" *ngIf="paymentMethodsError">{{ paymentMethodsError }}</div>
+  </ng-container>
 
-  <ng-container *ngIf="isSellAd && paymentDetailsArray.length > 0" formArrayName="paymentDetails">
-    <div class="payment-details-hint">
-      <mat-icon>account_balance</mat-icon>
-      Add the account details buyers should pay into for each method above.
+  <!-- SELL ads: pick which of your saved receiving accounts buyers should
+       pay into. You can add a new saved payment method right here. -->
+  <ng-container *ngIf="isSellAd">
+    <mat-label class="f-w-600 m-b-8 d-block">Receiving accounts for this ad</mat-label>
+
+    <app-payment-methods-manager (methodsChanged)="onMethodsChanged($event)"></app-payment-methods-manager>
+
+    <div class="order-empty" *ngIf="eligibleSavedMethods.length === 0">
+      <span class="order-empty-title">No saved {{ form.value.fiatCurrency }} payment methods yet</span>
+      <span class="order-empty-sub">Add one above, then come back here to select it.</span>
     </div>
 
-    <div
-      class="payment-detail-card"
-      *ngFor="let group of paymentDetailsArray.controls; let i = index"
-      [formGroupName]="i"
-    >
-      <div class="payment-detail-card-title">{{ group.get('method')?.value }}</div>
-
-      <mat-label class="f-w-600 m-b-8 d-block">Account holder name</mat-label>
-      <mat-form-field appearance="outline" class="w-100">
-        <input matInput formControlName="accountName" placeholder="Name on the account" />
-      </mat-form-field>
-
-      <mat-label class="f-w-600 m-b-8 d-block">Account number</mat-label>
-      <mat-form-field appearance="outline" class="w-100">
-        <input matInput formControlName="accountNumber" placeholder="e.g. 0123456789" />
-      </mat-form-field>
-
-      <div class="field-row">
-        <div>
-          <mat-label class="f-w-600 m-b-8 d-block">Bank / provider (optional)</mat-label>
-          <mat-form-field appearance="outline" class="w-100">
-            <input matInput formControlName="bankName" />
-          </mat-form-field>
-        </div>
-        <div>
-          <mat-label class="f-w-600 m-b-8 d-block">Note (optional)</mat-label>
-          <mat-form-field appearance="outline" class="w-100">
-            <input matInput formControlName="additionalInfo" />
-          </mat-form-field>
-        </div>
-      </div>
+    <div class="payment-detail-card" *ngFor="let m of eligibleSavedMethods">
+      <label style="display:flex; align-items:flex-start; gap:10px;">
+        <input
+          type="checkbox"
+          [checked]="isMethodSelected(m.id)"
+          (change)="onSavedMethodToggle(m.id, $any($event.target).checked)"
+        />
+        <span>
+          <div class="payment-detail-card-title">{{ m.method }}</div>
+          <div class="payment-details-row"><span>Account name</span><span>{{ m.accountName }}</span></div>
+          <div class="payment-details-row"><span>Account number</span><span>{{ m.accountNumber }}</span></div>
+        </span>
+      </label>
     </div>
-    <div class="field-error" *ngIf="paymentDetailsError">{{ paymentDetailsError }}</div>
+
+    <div class="field-error" *ngIf="paymentMethodIdsError">{{ paymentMethodIdsError }}</div>
   </ng-container>
 
   <mat-label class="f-w-600 m-b-8 d-block">Payment window</mat-label>
@@ -179,35 +174,6 @@
     </mat-form-field>
   </ng-container>
 
-
-  <ng-container *ngIf="isSellAd">
-  <mat-label class="f-w-600 m-b-8 d-block">Receiving accounts for this ad</mat-label>
-
-  <div class="order-empty" *ngIf="!savedMethodsLoading && eligibleSavedMethods.length === 0">
-    <span class="order-empty-title">No saved {{ form.value.fiatCurrency }} payment methods yet</span>
-    <span class="order-empty-sub">Add one in your Payment Methods settings, then come back here.</span>
-  </div>
-
-  <div class="payment-detail-card" *ngFor="let m of eligibleSavedMethods">
-    <label style="display:flex; align-items:flex-start; gap:10px;">
-      <input
-        type="checkbox"
-        [checked]="form.value.paymentMethodIds?.includes(m.id)"
-        (change)="onSavedMethodToggle(m.id, $any($event.target).checked)"
-      />
-      <span>
-        <div class="payment-detail-card-title">{{ m.method }}</div>
-        <div class="payment-details-row"><span>Account name</span><span>{{ m.accountName }}</span></div>
-        <div class="payment-details-row"><span>Account number</span><span>{{ m.accountNumber }}</span></div>
-      </span>
-    </label>
-  </div>
-
-  <div class="field-error" *ngIf="paymentMethodIdsError">{{ paymentMethodIdsError }}</div>
-</ng-container>
-
-
-
   <div *ngIf="errorMessage" class="alert alert-danger m-t-2">
     <b>{{ errorMessage }}</b>
   </div>
@@ -217,7 +183,7 @@
     color="primary"
     class="fw-bold w-100 submit-btn"
     type="button"
-  [disabled]="loading || marketRateLoading || priceExceedsMarketRate"
+    [disabled]="loading || marketRateLoading || priceExceedsMarketRate"
     (click)="submit()"
   >
     {{ loading ? (isEditMode ? 'Updating...' : 'Posting...') : (isEditMode ? 'Update Ad' : 'Post Ad') }}
