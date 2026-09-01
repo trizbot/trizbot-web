@@ -75,18 +75,19 @@ export class ArbitrageComponent implements OnInit, OnDestroy {
   pageSize: number = PAGE_SIZE_OPTIONS[1]; // default 25
 
   // ---------------------------------------------------------------------
-  // Entitlement state
+  // Entitlement state — resolved from the same trader fetch, same as
+  // WalletBalanceComponent. No separate "locked panel" wall: once the
+  // trader record resolves, the full arbitrage experience renders and
+  // individual high-profit rows are gated via isSpreadLocked().
   // ---------------------------------------------------------------------
   isSuperAdmin = false;
   arbitrageSubscriptionLoading = true;
   activeArbitrageSubscription: MyArbitrageSubscription | null = null;
   hasActiveArbitrageSubscription = false;
 
-  // Raw/display-only fields from the trader record — informational only,
-  // NOT used to decide access anymore.
-  arbitradeStatus = false;
-  arbitradeState = '';
-  arbitradeExpiry = '';
+  arbitradeStatus: boolean;
+  arbitradeState: string;
+  arbitradeExpiry: string;
 
   countdownToArbExpiry = '';
   private arbCountdownSub: Subscription | null = null;
@@ -94,14 +95,11 @@ export class ArbitrageComponent implements OnInit, OnDestroy {
   private traderResolved = false;
   private arbBootstrapped = false;
 
-  /**
-   * SINGLE source of truth for access. True only when the trader has an
-   * active arbitrage subscription (or is a super admin). Everything else
-   * in the template hinges off this — no more "free preview" of the
-   * real table for unsubscribed users.
-   */
   get canViewArbitrage(): boolean {
-    return this.isSuperAdmin || this.hasActiveArbitrageSubscription;
+    if (!this.arbitradeStatus) {
+      return true;
+    }
+    return this.arbitradeStatus;
   }
 
   get arbSubscriptionPlanList(): { key: ArbitrageSubscriptionPlan; label: string; price: number; durationDays: number }[] {
@@ -148,7 +146,10 @@ export class ArbitrageComponent implements OnInit, OnDestroy {
   }
 
   // -----------------------------------------------------------------------
-  // Trader / entitlement fetch
+  // Trader / entitlement fetch — mirrors WalletBalanceComponent.getCurrentTrader():
+  // subscription status comes back on the trader response itself, so there is
+  // exactly one loading state (arbitrageSubscriptionLoading) instead of a
+  // second gate on top of it.
   // -----------------------------------------------------------------------
   getCurrentTrader(): void {
     this.arbitrageSubscriptionLoading = true;
@@ -157,7 +158,7 @@ export class ArbitrageComponent implements OnInit, OnDestroy {
       next: (res: GetTraderResBody) => {
         this.isSuperAdmin = res.data.isSuperAdmin;
         this.arbitradeStatus = res.data.arbitradeStatus ?? false;
-        this.arbitradeState = res.data.arbitradeState ?? '';
+        this.arbitradeState = res.data.arbitradeState ?? 'Active';
         this.arbitradeExpiry = res.data.arbitradeExpiry ?? '';
 
         const rawSub = (res.data as any).arbitrageSubscription as MyArbitrageSubscription | null;
@@ -197,6 +198,18 @@ export class ArbitrageComponent implements OnInit, OnDestroy {
 
     this.arbBootstrapped = true;
     this.loadOpportunities();
+  }
+
+  isSpreadLocked(o: { estimatedProfit: any }): boolean {
+    if (o.estimatedProfit >= 2) {
+      if (this.arbitradeStatus) {
+        return !this.canViewArbitrage;
+      } else {
+        return this.canViewArbitrage;
+      }
+    } else {
+      return o.estimatedProfit <= 1 && !this.canViewArbitrage;
+    }
   }
 
   private restartArbCountdown(): void {
@@ -247,6 +260,8 @@ export class ArbitrageComponent implements OnInit, OnDestroy {
     this.arbCountdownSub = null;
 
     this.sharedService.showToast({ title: 'Your arbitrage subscription has expired.' });
+    // Re-pull the trader record so we pick up the latest subscription
+    // status from the backend (rather than hitting a separate endpoint).
     this.getCurrentTrader();
   }
 
@@ -255,14 +270,11 @@ export class ArbitrageComponent implements OnInit, OnDestroy {
   }
 
   openArbitrageSubscribePrompt(): void {
-    this.openArbitrageSubscribeDialog();
-  }
-
-  openArbitrageSubscribeDialog(): void {
     const plansList = this.arbSubscriptionPlanList;
     if (plansList.length === 0) return;
 
-    // Flag whichever plan has the lowest price-per-day as "best value".
+    // Flag whichever plan has the lowest price-per-day as "best value"
+    // instead of hard-coding a specific plan key.
     const bestValue = plansList.reduce((best, p) =>
       p.price / p.durationDays < best.price / best.durationDays ? p : best,
     plansList[0]);
@@ -295,16 +307,15 @@ export class ArbitrageComponent implements OnInit, OnDestroy {
     ref.afterClosed().subscribe((result) => {
       if (result?.subscribed) {
         this.sharedService.showToast({ title: `Arbitrage ${result.plan} subscription activated.` });
-        // Re-pull the trader record so the newly active subscription
-        // (and therefore canViewArbitrage) picks up immediately.
+        // Re-pull the trader record so the newly active subscription shows
+        // up (comes back on the trader response, not a separate call).
         this.getCurrentTrader();
       }
     });
   }
 
   // =========================================================================
-  // ARBITRAGE — opportunities table (only ever populated/rendered when
-  // canViewArbitrage is true)
+  // ARBITRAGE — opportunities table
   // =========================================================================
 
   get activeConfig(): ExchangeConfig {
@@ -474,7 +485,7 @@ export class ArbitrageComponent implements OnInit, OnDestroy {
   }
 
   openTradeDialog(o: ArbitrageOpportunity): void {
-    if (!this.canViewArbitrage) {
+    if (!this.canViewArbitrage || this.isSpreadLocked(o)) {
       this.openArbitrageSubscribePrompt();
       return;
     }
@@ -498,4 +509,47 @@ export class ArbitrageComponent implements OnInit, OnDestroy {
       }
     });
   }
+
+    openArbitrageSubscribeDialog(): void {
+      const plansList = this.arbSubscriptionPlanList;
+      if (plansList.length === 0) return;
+  
+      const bestValue = plansList.reduce((best, p) =>
+        p.price / p.durationDays < best.price / best.durationDays ? p : best,
+      plansList[0]);
+  
+      const plans: SubscribePromptPlan[] = plansList.map((plan) => ({
+        key: plan.key,
+        label: plan.label,
+        price: plan.price,
+        durationDays: plan.durationDays,
+        recommended: plan.key === bestValue.key,
+      }));
+  
+      const data: SubscribePromptDialogData = {
+        title: 'Unlock the arbitrage scanner',
+        description: `Cross-exchange arbitrage opportunities are only visible to subscribers. Choose a plan below to unlock live pricing, profit estimates, and one-click trading.`,
+        icon: 'lock_open',
+        mode: 'plans',
+        plans,
+        onSubscribe: (planKey: string) => this.arbitrageService.subscribe(planKey as ArbitrageSubscriptionPlan),
+      };
+  
+      const ref = this.dialog.open(SubscribePromptDialogComponent, {
+        width: '440px',
+        maxWidth: '95vw',
+        panelClass: 'spd-dialog-panel',
+        data,
+      });
+  
+      ref.afterClosed().subscribe((result) => {
+        if (result?.subscribed) {
+          this.sharedService.showToast({ title: `Arbitrage ${result.plan} subscription activated.` });
+       
+          this.getCurrentTrader();
+        }
+      });
+    }
+  
+
 }
