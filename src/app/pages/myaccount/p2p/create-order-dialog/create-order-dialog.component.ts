@@ -47,15 +47,11 @@ export class CreateOrderDialogComponent implements OnDestroy {
   readonly fiatSuggestions: string[];
   readonly isEditMode: boolean;
 
-  /** Max % an ad's price may sit above the live market rate — mirrors the
-   *  backend's PRICE_PREMIUM_TOLERANCE_PERCENT. Keep these two in sync. */
   readonly priceTolerancePercent = 10;
 
   loading = false;
   errorMessage = '';
 
-  /** Full set of the trader's saved payment methods (kept in sync by the
-   *  embedded <app-payment-methods-manager>). */
   savedMethods: UserPaymentMethod[] = [];
 
   private maxLimitTouchedByUser = false;
@@ -78,6 +74,14 @@ export class CreateOrderDialogComponent implements OnDestroy {
     paymentMethods: new FormControl<string[]>([], { nonNullable: true }),
     /** Sell ads: references into the trader's saved payment methods. */
     paymentMethodIds: new FormControl<string[]>([], { nonNullable: true }),
+    /**
+     * Sell ads: a point-in-time snapshot of the actual account details for
+     * each selected saved method (e.g. "Bank Transfer: Jane Doe - 0123456789").
+     * This is what buyers see and pay into on the trade — it must be filled
+     * in from the selected saved methods, not left empty, so it has to be
+     * kept in sync any time the selection or the ad's fiat currency changes.
+     */
+    paymentDetails: new FormControl<string[]>([], { nonNullable: true }),
     paymentWindowMinutes: new FormControl<number>(30, { nonNullable: true }),
     terms: new FormControl('', { nonNullable: true }),
     transactionPin: new FormControl('', { nonNullable: true }),
@@ -120,6 +124,9 @@ export class CreateOrderDialogComponent implements OnDestroy {
           this.form.controls.paymentMethods.setValue([]);
         }
         this.form.controls.paymentMethodIds.setValue([]);
+        // paymentMethodIds just got cleared — the details snapshot must be
+        // cleared with it, or a stale account from the old currency lingers.
+        this.form.controls.paymentDetails.setValue([]);
       })
     );
 
@@ -181,13 +188,21 @@ export class CreateOrderDialogComponent implements OnDestroy {
     this.syncPaymentMethodNamesFromSelection();
   }
 
-  /** For Sell ads, `paymentMethods` (the display names) is always derived
-   *  from whichever saved accounts are ticked — never edited directly. */
+  /**
+   * Keeps `paymentMethods` (display names) AND `paymentDetails` (the actual
+   * account snapshot the buyer will pay into) in sync with whichever saved
+   * methods are currently checked. This is the fix: previously only
+   * `paymentMethods` was rebuilt here, so `paymentDetails` was submitted as
+   * an empty array on every sell ad, no matter what the trader selected.
+   */
   private syncPaymentMethodNamesFromSelection(): void {
     if (!this.isSellAd) return;
     const ids = this.form.getRawValue().paymentMethodIds;
     const selected = this.savedMethods.filter((m) => ids.includes(m.id));
     this.form.controls.paymentMethods.setValue(Array.from(new Set(selected.map((m) => m.method))));
+    this.form.controls.paymentDetails.setValue(
+      selected.map((m) => `${m.method}: ${m.accountName} - ${m.accountNumber}`)
+    );
   }
 
   get paymentMethodsError(): string | null {
@@ -301,6 +316,7 @@ export class CreateOrderDialogComponent implements OnDestroy {
       maxLimit: order.maxLimit,
       paymentMethods: order.paymentMethods || [],
       paymentMethodIds: order.paymentMethodIds || [],
+      paymentDetails: order.paymentDetails || [],
       paymentWindowMinutes: order.paymentWindowMinutes ?? 30,
       terms: order.terms || '',
     });
@@ -322,6 +338,7 @@ export class CreateOrderDialogComponent implements OnDestroy {
     this.syncPinValidator(type);
     this.form.controls.paymentMethods.setValue([]);
     this.form.controls.paymentMethodIds.setValue([]);
+    this.form.controls.paymentDetails.setValue([]);
   }
 
   get limitError(): string | null {
@@ -364,6 +381,7 @@ export class CreateOrderDialogComponent implements OnDestroy {
           maxLimit: value.maxLimit!,
           paymentMethods: value.paymentMethods,
           paymentMethodIds: value.paymentMethodIds,
+          paymentDetails: value.paymentDetails,
           terms: value.terms || undefined,
           paymentWindowMinutes: value.paymentWindowMinutes,
           transactionPin: value.transactionPin || undefined,
@@ -394,6 +412,7 @@ export class CreateOrderDialogComponent implements OnDestroy {
         maxLimit: value.maxLimit!,
         paymentMethods: value.paymentMethods,
         paymentMethodIds: value.paymentMethodIds,
+        paymentDetails: value.paymentDetails,
         terms: value.terms || undefined,
         paymentWindowMinutes: value.paymentWindowMinutes,
         transactionPin: value.type === P2POrderType.Sell ? value.transactionPin : undefined,

@@ -150,7 +150,7 @@
                      <span class="leg-badge" [ngClass]="isActiveBuyLeg(o) ? 'sell' : 'buy'">
                     {{ isActiveBuyLeg(o) ? 'SELL' : 'BUY' }}
                   </span>
-                  <span class="price-val">&#36;{{ activePriceFor(o) | number: '1.2-6' }}</span>
+                  <!-- <span class="price-val">&#36;{{ activePriceFor(o) | number: '1.2-6' }}</span> -->
 
                     <span class="counterparty-dot" [style.background]="counterpartyColor(o)"></span>
                     <span class="counterparty-name">{{ counterpartyLabel(o) }}</span>

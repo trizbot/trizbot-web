@@ -1,486 +1,54 @@
-.trade-dialog {
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  max-width: 480px;
-  max-height: 90vh;
-  max-height: 90dvh; // dynamic viewport height, avoids mobile browser chrome jumping the layout
-  font-size: 14px;
-  overflow: hidden; // scrolling happens in .dialog-body, not the whole dialog
-
-  // ---------------------------------------------------------------------
-  // Header — sticky so it stays visible while the body scrolls
-  // ---------------------------------------------------------------------
-  .dialog-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-shrink: 0;
-    position: sticky;
-    top: 0;
-    z-index: 2;
-    background: #fff;
-    padding: 4px 4px 12px;
-    border-bottom: 1px solid #f3f4f6;
-
-    h2 {
-      margin: 0;
-      font-size: 18px;
-      font-weight: 700;
-      line-height: 1.3;
-      word-break: break-word;
-    }
-
-    .icon-btn {
-      background: transparent;
-      border: none;
-      cursor: pointer;
-      color: #6b7280;
-      display: flex;
-      align-items: center;
-      flex-shrink: 0;
-      padding: 8px;
-      margin: -8px -8px -8px 8px;
-      border-radius: 50%;
-      &:hover { color: #111827; background: #f3f4f6; }
-    }
-  }
-
-  // ---------------------------------------------------------------------
-  // Scrollable content region
-  // ---------------------------------------------------------------------
-  .dialog-body {
-    flex: 1 1 auto;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch; // momentum scroll on iOS
-    padding: 14px 4px 4px;
-    // keep the last element's margin from getting clipped by the scroll edge
-    padding-bottom: 4px;
-  }
-
-  // ---------------------------------------------------------------------
-  // Sticky footer actions (initiate flow's Cancel/Submit row)
-  // ---------------------------------------------------------------------
-  .dialog-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 10px;
-    flex-shrink: 0;
-    position: sticky;
-    bottom: 0;
-    z-index: 2;
-    background: #fff;
-    padding: 12px 4px 4px;
-    border-top: 1px solid #f3f4f6;
-    margin-top: 6px;
-
-    // the mark-paid confirm/cancel row lives inside .dialog-body and
-    // shouldn't be pinned to the screen edge — opt it out of sticky styling
-    &.inline {
-      position: static;
-      border-top: none;
-      padding: 0;
-      margin-top: 0;
-      background: transparent;
-    }
-
-    button { min-height: 40px; }
-  }
-
-  .order-summary, .trade-amounts {
-    background: #f9fafb;
-    border-radius: 10px;
-    padding: 12px 14px;
-    margin-bottom: 14px;
-  }
-
-  .summary-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    gap: 10px;
-    padding: 4px 0;
-    color: #4b5563;
-
-    .summary-val {
-      color: #111827;
-      font-weight: 600;
-      text-align: right;
-      word-break: break-word;
-    }
-  }
-
-  .form-group {
-    margin-bottom: 14px;
-
-    label {
-      display: block;
-      font-size: 12px;
-      font-weight: 600;
-      color: #4b5563;
-      margin-bottom: 4px;
-    }
-
-    input[type='text'],
-    input[type='number'],
-    input[type='password'],
-    select {
-      width: 100%;
-      padding: 9px 10px;
-      border-radius: 8px;
-      border: 1px solid #d1d5db;
-      font-size: 14px;
-      min-height: 40px;
-      box-sizing: border-box;
-      -webkit-appearance: none; // avoid iOS's native select/input chrome fighting the layout
-      appearance: none;
-
-      &:focus { outline: none; border-color: #6366f1; }
-    }
-
-    select {
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%236b7280'/%3E%3C/svg%3E");
-      background-repeat: no-repeat;
-      background-position: right 12px center;
-      padding-right: 30px;
-    }
-
-    input[type='file'] { width: 100%; font-size: 13px; }
-  }
-
-  .fiat-preview { margin-top: 4px; color: #6b7280; font-size: 13px; }
-
-  .pin-group {
-    .pin-input {
-      max-width: 160px;
-      text-align: center;
-      letter-spacing: 8px;
-      font-family: 'Courier New', monospace;
-      font-weight: 700;
-      font-size: 16px; // also keeps iOS from auto-zooming on focus
-    }
-  }
-
-  .field-error {
-    color: #dc2626;
-    font-size: 12.5px;
-    margin: -6px 0 12px;
-    word-break: break-word;
-  }
-
-  .payment-details-box, .payment-details-form, .proof-review {
-    border: 1px dashed #c7d2fe;
-    background: #eef2ff;
-    border-radius: 10px;
-    padding: 12px 14px;
-    margin-bottom: 14px;
-  }
-
-  .payment-details-title {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-weight: 700;
-    color: #3730a3;
-    margin-bottom: 8px;
-    font-size: 13px;
-
-    mat-icon { font-size: 18px; width: 18px; height: 18px; flex-shrink: 0; }
-  }
-
-  .payment-details-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    gap: 10px;
-    padding: 3px 0;
-    font-size: 13px;
-    color: #374151;
-
-    span:first-child { flex-shrink: 0; }
-    span:last-child { font-weight: 600; color: #111827; text-align: right; word-break: break-word; }
-  }
-
-  .safety-banner {
-    display: flex;
-    align-items: flex-start;
-    gap: 8px;
-    background: #fffbeb;
-    border: 1px solid #fde68a;
-    color: #92400e;
-    border-radius: 8px;
-    padding: 10px 12px;
-    font-size: 12.5px;
-    margin-bottom: 14px;
-
-    mat-icon { font-size: 18px; width: 18px; height: 18px; flex-shrink: 0; }
-  }
-
-  .full-width-btn {
-    width: 100%;
-    min-height: 44px; // comfortable mobile tap target
-  }
-
-  .paid-form {
-    border-top: 1px solid #e5e7eb;
-    padding-top: 12px;
-    margin-top: 4px;
-  }
-
-  .proof-preview {
-    width: 100%;
-    max-height: 220px;
-    object-fit: contain;
-    border-radius: 8px;
-    border: 1px solid #e5e7eb;
-    margin-bottom: 10px;
-    background: #fff;
-  }
-
-  .proof-note {
-    font-size: 13px;
-    color: #374151;
-    margin: 4px 0;
-    word-break: break-word;
-
-    &.muted { color: #9ca3af; font-size: 12px; }
-  }
-
-  .trade-status-row {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 10px;
-    margin-bottom: 14px;
-  }
-
-  .status-pill {
-    display: inline-block;
-    padding: 3px 10px;
-    border-radius: 999px;
-    font-size: 12px;
-    font-weight: 700;
-    text-transform: capitalize;
-    background: #e5e7eb;
-    color: #374151;
-
-    &.pendingpayment { background: #fef3c7; color: #92400e; }
-    &.paid { background: #dbeafe; color: #1e40af; }
-    &.released { background: #d1fae5; color: #065f46; }
-    &.disputed { background: #fee2e2; color: #991b1b; }
-    &.cancelled, &.expired { background: #e5e7eb; color: #6b7280; }
-  }
-
-  .countdown-pill {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    padding: 3px 10px;
-    border-radius: 999px;
-    font-size: 12px;
-    font-weight: 700;
-    background: #f3f4f6;
-    color: #374151;
-    white-space: nowrap;
-
-    mat-icon { font-size: 15px; width: 15px; height: 15px; }
-
-    &.urgent { background: #fee2e2; color: #b91c1c; }
-  }
-
-  .trade-footer-note {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    color: #065f46;
-    background: #d1fae5;
-    border-radius: 8px;
-    padding: 10px 12px;
-    font-size: 13px;
-    margin-top: 4px;
-
-    mat-icon { font-size: 18px; width: 18px; height: 18px; flex-shrink: 0; }
-  }
-
-  // -----------------------------------------------------------------------
-  // Mobile breakpoint (Angular Material's standard xs cutoff)
-  // -----------------------------------------------------------------------
-  @media (max-width: 599px) {
-    max-width: 100%;
-    max-height: 100vh;
-    max-height: 100dvh;
-    font-size: 13.5px;
-
-    .dialog-header {
-      padding: 2px 2px 10px;
-
-      h2 { font-size: 16.5px; }
-    }
-
-    .dialog-body {
-      padding: 12px 2px 2px;
-    }
-
-    .dialog-actions {
-      padding: 10px 2px 2px;
-      // stack Cancel/Submit full-width on very narrow screens instead of
-      // squeezing them side by side
-      flex-wrap: wrap;
-
-      button {
-        flex: 1 1 auto;
-        min-height: 44px;
-      }
-
-      &.inline button { min-height: 40px; }
-    }
-
-    .order-summary, .trade-amounts,
-    .payment-details-box, .payment-details-form, .proof-review {
-      padding: 10px 12px;
-    }
-
-    .summary-row, .payment-details-row {
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 2px;
-
-      span:last-child { text-align: left; }
-    }
-
-    .safety-banner {
-      font-size: 12px;
-    }
-
-    .form-group {
-      input[type='text'],
-      input[type='password'],
-      input[type='number'],
-      select {
-        min-height: 44px;
-        font-size: 16px; // >=16px prevents iOS Safari auto-zoom on focus
-      }
-    }
-
-    .pin-group .pin-input {
-      max-width: 100%;
-      min-height: 44px;
-    }
-  }
-
-  @media (max-width: 380px) {
-    .dialog-actions:not(.inline) {
-      flex-direction: column-reverse;
-      align-items: stretch;
-    }
-  }
-}
-
-
-
-.masked-value-group {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-}
-.masked-value {
-  font-variant-numeric: tabular-nums;
-  letter-spacing: 0.5px;
-}
-.icon-btn.tiny { width: 24px; height: 24px; mat-icon { font-size: 16px; } }
-
-.amount-presets {
-  display: flex;
-  gap: 6px;
-  margin-bottom: 6px;
-  button {
-    flex: 1;
-    padding: 4px 0;
-    border: 1px solid #d0d5dd;
-    border-radius: 6px;
-    background: #fff;
-    cursor: pointer;
-    &.active { background: #eef2ff; border-color: #6366f1; color: #4338ca; font-weight: 600; }
-  }
-}
-
-.safety-banner.warn {
-  background: #fff7ed;
-  border: 1px solid #fdba74;
-  color: #9a3412;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-  button { margin-left: auto; }
-}
-
-.proof-note.warn-text { color: #b45309; }
-
-.countdown-pill.urgent { background: #fee2e2; color: #b91c1c; }
-
-
-
-.trade-view-tabs {
-  display: flex;
-  gap: 4px;
-  margin: 8px 0 14px;
-  border-bottom: 1px solid #eee;
-
-  .trade-view-tab {
-    padding: 8px 14px;
-    font-size: 13px;
-    font-weight: 600;
-    color: #6b7280;
-    background: none;
-    border: none;
-    border-bottom: 2px solid transparent;
-    cursor: pointer;
-
-    &.active {
-      color: #2563eb;
-      border-bottom-color: #2563eb;
-    }
-  }
-}@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap');
-
 // ---------------------------------------------------------------------------
-// Tokens
+// Design tokens
+// P2P trading context, redesigned: one flat background color runs through
+// header/body/footer (no contrast band, no paper texture) — hierarchy comes
+// from hairline borders and a single indigo accent instead. Numerals
+// (prices, amounts, account numbers) stay on a monospace face so digits
+// align and are easy to scan at a glance.
 // ---------------------------------------------------------------------------
 :host {
-  --ink-950: #0b0e11;
-  --ink-900: #12161b;
-  --ink-850: #161b21;
-  --ink-800: #1b2129;
-  --ink-700: #262e37;
-  --ink-600: #333d48;
+  --bg: #f4f5f7;
+  --surface: #ffffff;
+  --border: #e1e4e9;
+  --border-strong: #c9cdd6;
+  --text: #14161c;
+  --text-muted: #6b7280;
 
-  --text-hi: #ecead4;
-  --text-mid: #c2c8ce;
-  --text-lo: #8b96a1;
+  --buy: #178754;
+  --buy-soft: #e3f5ec;
+  --sell: #c13b33;
+  --sell-soft: #fbeae8;
 
-  --gold: #e3a83b;
-  --gold-hi: #f0bd5c;
-  --positive: #33c793;
-  --positive-bg: rgba(51, 199, 147, 0.12);
-  --negative: #e5555f;
-  --negative-bg: rgba(229, 85, 95, 0.12);
-  --focus: #5fb4ff;
+  --accent: #2f5fdb;
+  --accent-soft: #e8eefc;
+  --accent-strong: #24439e;
 
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 18px;
+  --danger: #c13b33;
+  --danger-soft: #fbeae8;
+  --info: #2569ac;
+  --info-soft: #e7f1fb;
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
 
   --font-ui: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --font-num: 'JetBrains Mono', ui-monospace, 'SF Mono', monospace;
+  --font-mono: 'IBM Plex Mono', 'SFMono-Regular', Consolas, monospace;
 
   display: block;
   font-family: var(--font-ui);
-  color: var(--text-hi);
+  color: var(--text);
+}
+
+* {
+  box-sizing: border-box;
 }
 
 // ---------------------------------------------------------------------------
-// Sheet shell — full-height bottom sheet on mobile, centered card on desktop
+// Sheet shell
+// Mobile: true full-height bottom sheet.
+// Desktop (≥640px): centered modal card, capped width, internal scroll.
+// One flat background color (--bg) spans header, body and footer.
 // ---------------------------------------------------------------------------
 .trade-sheet {
   display: flex;
@@ -488,16 +56,16 @@
   width: 100%;
   height: 100%;
   max-height: 100dvh;
-  background: var(--ink-900);
-  color: var(--text-hi);
+  background: var(--bg);
   overflow: hidden;
 
   @media (min-width: 640px) {
-    max-width: 440px;
-    max-height: min(92vh, 780px);
+    max-width: 480px;
+    max-height: min(92vh, 860px);
+    margin: 0 auto;
     border-radius: var(--radius-lg);
-    border: 1px solid var(--ink-700);
-    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+    box-shadow: 0 24px 60px -20px rgba(20, 22, 26, 0.22);
+    border: 1px solid var(--border);
   }
 }
 
@@ -505,16 +73,27 @@
   flex: 0 0 auto;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 16px 16px 14px;
-  border-bottom: 1px solid var(--ink-700);
-  background: var(--ink-900);
+  gap: 8px;
+  padding: 14px 12px;
+  padding-top: max(14px, env(safe-area-inset-top));
+  background: var(--bg);
+  color: var(--text);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 5;
+
+  @media (min-width: 640px) {
+    padding-top: 14px;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  }
 }
 
 .sheet-title {
+  flex: 1;
   margin: 0;
-  font-size: 1.05rem;
+  text-align: center;
+  font-size: 16px;
   font-weight: 600;
   letter-spacing: -0.01em;
 
@@ -522,201 +101,212 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    max-width: calc(100vw - 96px);
+  }
+}
+
+.icon-btn {
+  width: 40px;
+  height: 40px;
+  flex: 0 0 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+
+  &:hover,
+  &:focus-visible {
+    background: var(--border);
+    color: var(--text);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+  }
+
+  &.tiny {
+    width: 28px;
+    height: 28px;
+    flex: 0 0 28px;
+
+    mat-icon {
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
+    }
   }
 }
 
 .sheet-body {
   flex: 1 1 auto;
   overflow-y: auto;
+  padding: 20px 20px calc(20px + env(safe-area-inset-bottom));
   -webkit-overflow-scrolling: touch;
-  padding: 16px;
-  padding-bottom: max(16px, env(safe-area-inset-bottom));
   display: flex;
   flex-direction: column;
-  gap: 18px;
-}
+  gap: 20px;
 
-.chat-body {
-  padding: 0;
-  overflow: hidden;
-}
-
-.sheet-footer {
-  flex: 0 0 auto;
-  display: flex;
-  gap: 10px;
-  padding: 12px 16px;
-  padding-bottom: max(12px, env(safe-area-inset-bottom));
-  background: var(--ink-900);
-  border-top: 1px solid var(--ink-700);
-
-  .btn {
-    flex: 1;
+  &.chat-body {
+    padding: 0;
+    gap: 0;
   }
 }
 
 // ---------------------------------------------------------------------------
-// Icon buttons
-// ---------------------------------------------------------------------------
-.icon-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
-  border: none;
-  background: transparent;
-  color: var(--text-mid);
-  cursor: pointer;
-  transition: background-color 0.15s ease, color 0.15s ease;
-
-  &:hover { background: var(--ink-800); color: var(--text-hi); }
-  &:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
-
-  &.tiny {
-    width: 32px;
-    height: 32px;
-    flex-shrink: 0;
-  }
-
-  mat-icon {
-    font-size: 20px;
-    width: 20px;
-    height: 20px;
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Segmented tabs (Details / Chat)
+// Details / Chat segmented tabs
 // ---------------------------------------------------------------------------
 .segmented {
-  flex: 0 0 auto;
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 4px;
-  margin: 12px 16px 0;
-  padding: 3px;
-  background: var(--ink-800);
-  border-radius: var(--radius-sm);
+  gap: 8px;
+  padding: 12px 20px 0;
+  flex: 0 0 auto;
 }
 
 .segmented-tab {
   appearance: none;
-  border: none;
-  background: transparent;
-  color: var(--text-lo);
-  font-family: var(--font-ui);
-  font-size: 0.875rem;
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  color: var(--text-muted);
+  font-family: inherit;
+  font-size: 14px;
   font-weight: 600;
-  padding: 9px 0;
-  border-radius: 6px;
+  padding: 10px 8px;
+  border-radius: var(--radius-md);
   cursor: pointer;
-  transition: background-color 0.15s ease, color 0.15s ease;
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
 
-  &.active {
-    background: var(--ink-700);
-    color: var(--text-hi);
+  &:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
   }
 
-  &:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+  &.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #ffffff;
+  }
 }
 
 // ---------------------------------------------------------------------------
-// Stat grid (price / limit / amount / to-pay etc.)
+// Stat grid (price / limit / available / payment window, amount / to pay …)
 // ---------------------------------------------------------------------------
 .stat-grid {
-  margin: 0;
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 1px;
-  background: var(--ink-700);
-  border: 1px solid var(--ink-700);
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin: 0;
+  padding: 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: var(--radius-md);
-  overflow: hidden;
 }
 
 .stat {
-  background: var(--ink-850);
-  padding: 10px 12px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
   min-width: 0;
 
   dt {
-    font-size: 0.72rem;
-    color: var(--text-lo);
-    font-weight: 500;
+    font-size: 11.5px;
+    color: var(--text-muted);
   }
 
   dd {
     margin: 0;
-    font-size: 0.95rem;
+    font-size: 14px;
     font-weight: 600;
-    color: var(--text-hi);
     overflow-wrap: break-word;
   }
 }
 
 .num {
-  font-family: var(--font-num);
+  font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
-  letter-spacing: -0.01em;
 }
 
 .unit {
   font-family: var(--font-ui);
   font-weight: 500;
-  color: var(--text-lo);
-  font-size: 0.8em;
+  color: var(--text-muted);
+  font-size: 12px;
 }
 
 // ---------------------------------------------------------------------------
-// Form fields
+// Fields
 // ---------------------------------------------------------------------------
 .field-group {
   display: flex;
   flex-direction: column;
   gap: 8px;
 
-  &.tight { gap: 6px; }
+  &.tight {
+    gap: 6px;
+  }
 }
 
 .field-label {
-  font-size: 0.8rem;
+  font-size: 13px;
   font-weight: 600;
-  color: var(--text-mid);
+  color: var(--text);
+}
+
+.hint {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--text);
+
+  &.muted {
+    color: var(--text-muted);
+  }
+
+  &.warn-text {
+    color: var(--danger);
+  }
+}
+
+.field-error {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--danger);
 }
 
 .preset-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
 }
 
 .preset-chip {
   appearance: none;
-  border: 1px solid var(--ink-600);
-  background: var(--ink-800);
-  color: var(--text-mid);
-  font-family: var(--font-num);
-  font-size: 0.8rem;
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  color: var(--text-muted);
+  font-family: inherit;
+  font-size: 12.5px;
   font-weight: 600;
-  padding: 6px 12px;
-  border-radius: 999px;
+  padding: 8px 4px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
-  transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease;
-  min-height: 32px;
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
 
-  &.active {
-    border-color: var(--gold);
-    color: var(--gold-hi);
-    background: rgba(227, 168, 59, 0.12);
+  &:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
   }
 
-  &:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+  &.active {
+    background: var(--accent-soft);
+    border-color: var(--accent);
+    color: var(--accent-strong);
+  }
 }
 
 .amount-input-wrap {
@@ -725,60 +315,43 @@
   align-items: center;
 }
 
-.amount-input,
-.text-input,
-.select-input,
-.pin-input {
+.amount-input {
   width: 100%;
-  min-height: 48px;
-  background: var(--ink-800);
-  border: 1px solid var(--ink-600);
-  border-radius: var(--radius-sm);
-  color: var(--text-hi);
-  font-family: var(--font-ui);
-  font-size: 0.95rem;
-  padding: 0 14px;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
-
-  &::placeholder { color: var(--text-lo); }
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  padding: 13px 56px 13px 14px;
+  font-family: var(--font-mono);
+  font-size: 16px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+  background: var(--surface);
+  transition: border-color 0.15s ease;
 
   &:focus-visible,
   &:focus {
     outline: none;
-    border-color: var(--focus);
-    box-shadow: 0 0 0 3px rgba(95, 180, 255, 0.18);
+    border-color: var(--accent);
   }
 
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
+  &::placeholder {
+    color: var(--text-muted);
+    font-family: var(--font-ui);
   }
-}
-
-.amount-input {
-  font-family: var(--font-num);
-  padding-right: 56px;
 }
 
 .amount-unit {
   position: absolute;
   right: 14px;
-  font-size: 0.8rem;
+  font-size: 13px;
   font-weight: 600;
-  color: var(--text-lo);
-  pointer-events: none;
+  color: var(--text-muted);
 }
 
-.pin-input {
-  font-family: var(--font-num);
-  letter-spacing: 0.3em;
-  max-width: 200px;
-}
-
-.textarea {
-  min-height: 84px;
-  padding: 12px 14px;
-  resize: vertical;
+.fiat-preview {
+  margin: -2px 0 0;
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  color: var(--text-muted);
 }
 
 .select-wrap {
@@ -787,83 +360,154 @@
   &::after {
     content: '';
     position: absolute;
-    right: 16px;
+    right: 14px;
     top: 50%;
     width: 8px;
     height: 8px;
-    border-right: 2px solid var(--text-lo);
-    border-bottom: 2px solid var(--text-lo);
-    transform: translateY(-70%) rotate(45deg);
+    border-right: 1.5px solid var(--text-muted);
+    border-bottom: 1.5px solid var(--text-muted);
+    transform: translateY(-65%) rotate(45deg);
     pointer-events: none;
   }
 }
 
 .select-input {
   appearance: none;
+  width: 100%;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  padding: 13px 40px 13px 14px;
+  font-family: inherit;
+  font-size: 14px;
+  color: var(--text);
+  background: var(--surface);
   cursor: pointer;
-  padding-right: 40px;
+  transition: border-color 0.15s ease;
+
+  &:focus-visible,
+  &:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+}
+
+.text-input {
+  width: 100%;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  font-family: inherit;
+  font-size: 14px;
+  color: var(--text);
+  background: var(--surface);
+  transition: border-color 0.15s ease;
+
+  &:focus-visible,
+  &:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+
+  &.textarea {
+    resize: vertical;
+    min-height: 72px;
+    line-height: 1.5;
+  }
 }
 
 .file-input {
   width: 100%;
-  font-size: 0.85rem;
-  color: var(--text-mid);
+  font-size: 13px;
+  color: var(--text-muted);
+  padding: 8px 0;
 
   &::file-selector-button {
-    font-family: var(--font-ui);
+    appearance: none;
+    border: 1px solid var(--border-strong);
+    background: var(--surface);
+    color: var(--text);
+    font-family: inherit;
+    font-size: 12.5px;
     font-weight: 600;
-    font-size: 0.8rem;
-    color: var(--ink-950);
-    background: var(--gold);
-    border: none;
-    border-radius: 7px;
     padding: 8px 12px;
-    margin-right: 10px;
+    border-radius: var(--radius-sm);
     cursor: pointer;
+    margin-right: 10px;
+    transition: border-color 0.15s ease, background 0.15s ease;
+
+    &:hover {
+      border-color: var(--accent);
+    }
   }
 }
 
-.fiat-preview {
-  margin: 0;
-  font-family: var(--font-num);
-  font-size: 0.85rem;
-  color: var(--text-lo);
-}
+.pin-input {
+  width: 100%;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  padding: 13px 14px;
+  font-family: var(--font-mono);
+  font-size: 20px;
+  letter-spacing: 6px;
+  color: var(--text);
+  background: var(--surface);
+  transition: border-color 0.15s ease, opacity 0.15s ease;
 
-.field-error {
-  margin: 0;
-  font-size: 0.8rem;
-  color: var(--negative);
-  line-height: 1.4;
+  &:focus-visible,
+  &:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    background: var(--border);
+  }
+
+  &::placeholder {
+    letter-spacing: 6px;
+    color: var(--border-strong);
+  }
 }
 
 // ---------------------------------------------------------------------------
-// Payment detail / info cards
+// Payment detail card — the surface that shows the seller's receiving
+// account to the buyer. This is the single most important card in the
+// sheet: it is always rendered plainly (never masked, never collapsed
+// behind a reveal toggle) whenever a buyer needs it to send money, and it
+// gets a stronger visual treatment than every other card so it can't be
+// missed.
 // ---------------------------------------------------------------------------
 .detail-card {
-  background: var(--ink-850);
-  border: 1px solid var(--ink-700);
-  border-radius: var(--radius-md);
-  padding: 14px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
+  padding: 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+
+  &.payment-target {
+    border: 1.5px solid var(--accent);
+    background: var(--accent-soft);
+    box-shadow: 0 1px 0 rgba(47, 95, 219, 0.06);
+  }
 }
 
 .detail-card-title {
-  margin: 0;
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 0.9rem;
+  margin: 0;
+  font-size: 13.5px;
   font-weight: 600;
-  color: var(--text-hi);
+  color: var(--text);
 
   mat-icon {
     font-size: 18px;
     width: 18px;
     height: 18px;
-    color: var(--gold);
+    color: var(--accent);
   }
 }
 
@@ -871,7 +515,7 @@
   margin: 0;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 
 .detail-row {
@@ -879,71 +523,80 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
-  font-size: 0.87rem;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+  font-size: 13.5px;
+
+  &:first-child {
+    padding-top: 0;
+    border-top: none;
+  }
 
   dt {
-    color: var(--text-lo);
+    color: var(--text-muted);
     flex: 0 0 auto;
   }
 
   dd {
     margin: 0;
-    color: var(--text-hi);
-    font-weight: 500;
+    font-weight: 600;
     text-align: right;
-    overflow-wrap: anywhere;
+    min-width: 0;
+    overflow-wrap: break-word;
+  }
+
+  &.account-row dd {
+    font-size: 15px;
   }
 }
 
-.masked-value-group {
+.account-value-group {
   display: flex;
   align-items: center;
-  gap: 4px;
-  justify-content: flex-end;
+  gap: 6px;
 }
 
-.masked-value {
-  font-size: 0.85rem;
+.account-value {
+  font-weight: 700;
+  letter-spacing: 0.01em;
 }
 
-.hint {
-  margin: 0;
-  font-size: 0.82rem;
-  line-height: 1.5;
-  color: var(--text-mid);
-
-  &.muted { color: var(--text-lo); }
-  &.warn-text { color: var(--negative); }
-}
-
+// ---------------------------------------------------------------------------
+// Loading / empty states
+// ---------------------------------------------------------------------------
 .inline-loader {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 0.85rem;
-  color: var(--text-lo);
+  font-size: 13px;
+  color: var(--text-muted);
+  padding: 10px 0;
 }
 
 .empty-state {
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: 4px;
-  padding: 10px 0;
+  text-align: center;
+  padding: 22px 14px;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-md);
+  color: var(--text-muted);
 }
 
 .empty-title {
-  font-size: 0.88rem;
+  font-size: 13.5px;
   font-weight: 600;
-  color: var(--text-hi);
+  color: var(--text);
 }
 
 .empty-sub {
-  font-size: 0.8rem;
-  color: var(--text-lo);
+  font-size: 12.5px;
 }
 
 // ---------------------------------------------------------------------------
-// Status pills / countdown
+// Status row / pills / countdowns
 // ---------------------------------------------------------------------------
 .status-row {
   display: flex;
@@ -954,28 +607,59 @@
 .pill {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 5px 11px;
+  gap: 5px;
+  padding: 6px 10px;
   border-radius: 999px;
-  font-size: 0.78rem;
+  font-size: 12px;
   font-weight: 600;
-  background: var(--ink-800);
-  color: var(--text-mid);
-  border: 1px solid var(--ink-600);
+  background: var(--border);
+  color: var(--text);
+  text-transform: capitalize;
 
-  mat-icon { font-size: 15px; width: 15px; height: 15px; }
+  mat-icon {
+    font-size: 15px;
+    width: 15px;
+    height: 15px;
+  }
 
-  &.pending { color: var(--gold-hi); border-color: rgba(227, 168, 59, 0.4); }
-  &.paid { color: var(--positive); border-color: rgba(51, 199, 147, 0.4); }
-  &.completed { color: var(--positive); background: var(--positive-bg); border-color: transparent; }
-  &.cancelled,
-  &.expired { color: var(--text-lo); }
-  &.disputed { color: var(--negative); background: var(--negative-bg); border-color: transparent; }
+  &.pending {
+    background: var(--accent-soft);
+    color: var(--accent-strong);
+  }
 
-  &.countdown.urgent {
-    color: var(--negative);
-    border-color: rgba(229, 85, 95, 0.4);
-    background: var(--negative-bg);
+  &.paid {
+    background: var(--info-soft);
+    color: var(--info);
+  }
+
+  &.completed {
+    background: var(--buy-soft);
+    color: var(--buy);
+  }
+
+  &.disputed,
+  &.expired {
+    background: var(--danger-soft);
+    color: var(--danger);
+  }
+
+  &.cancelled {
+    background: var(--border);
+    color: var(--text-muted);
+  }
+
+  &.countdown {
+    background: var(--surface);
+    border: 1px solid var(--border-strong);
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+
+    &.urgent {
+      background: var(--danger-soft);
+      border-color: var(--danger);
+      color: var(--danger);
+    }
   }
 }
 
@@ -986,144 +670,207 @@
   display: flex;
   align-items: flex-start;
   gap: 10px;
-  padding: 12px;
-  border-radius: var(--radius-sm);
-  background: var(--ink-800);
-  border: 1px solid var(--ink-600);
-  font-size: 0.83rem;
-  color: var(--text-mid);
+  padding: 12px 14px;
+  background: var(--accent-soft);
+  border-radius: var(--radius-md);
+  font-size: 13px;
   line-height: 1.5;
 
   mat-icon {
-    flex: 0 0 auto;
     font-size: 18px;
     width: 18px;
     height: 18px;
-    color: var(--gold);
+    color: var(--accent);
+    flex: 0 0 auto;
     margin-top: 1px;
   }
 
+  span {
+    flex: 1;
+    min-width: 0;
+  }
+
   &.warn {
-    background: var(--negative-bg);
-    border-color: rgba(229, 85, 95, 0.35);
-    color: var(--text-hi);
+    background: var(--danger-soft);
 
-    mat-icon { color: var(--negative); }
+    mat-icon {
+      color: var(--danger);
+    }
   }
 
-  .btn.tiny-btn {
-    flex: 0 0 auto;
-    margin-left: auto;
-    align-self: center;
-  }
-}
+  &.info {
+    background: var(--info-soft);
 
-// ---------------------------------------------------------------------------
-// Footer status notes
-// ---------------------------------------------------------------------------
-.footer-note {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 12px;
-  border-radius: var(--radius-sm);
-  background: var(--ink-800);
-  font-size: 0.85rem;
-  color: var(--text-mid);
-
-  mat-icon { font-size: 18px; width: 18px; height: 18px; color: var(--text-lo); }
-
-  &.success {
-    background: var(--positive-bg);
-    color: var(--positive);
-    mat-icon { color: var(--positive); }
+    mat-icon {
+      color: var(--info);
+    }
   }
 }
 
+.tiny-btn {
+  flex: 0 0 auto;
+  border-radius: var(--radius-sm) !important;
+  padding: 4px 10px !important;
+  font-size: 12px !important;
+  line-height: 1.6 !important;
+  min-width: 0 !important;
+}
+
 // ---------------------------------------------------------------------------
-// Proof preview
+// Payment proof
 // ---------------------------------------------------------------------------
 .proof-preview {
   width: 100%;
-  max-height: 220px;
-  object-fit: cover;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--ink-600);
-  display: block;
+  max-height: 260px;
+  object-fit: contain;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg);
 }
 
 .proof-link {
-  color: var(--focus);
-  font-size: 0.85rem;
-  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+
+  &:hover {
+    color: var(--accent-strong);
+  }
 }
 
 // ---------------------------------------------------------------------------
-// Action rows / buttons
+// Buttons
 // ---------------------------------------------------------------------------
-.row-actions {
-  display: flex;
-  gap: 10px;
-
-  .btn { flex: 1; }
-}
-
 .btn {
-  min-height: 46px;
-  border-radius: var(--radius-sm) !important;
-  font-family: var(--font-ui) !important;
+  border-radius: var(--radius-md) !important;
+  font-family: inherit !important;
   font-weight: 600 !important;
-  font-size: 0.9rem !important;
-  letter-spacing: 0 !important;
   text-transform: none !important;
-
-  &.full { width: 100%; }
+  letter-spacing: normal !important;
 
   &.primary {
-    background: var(--gold) !important;
-    color: var(--ink-950) !important;
+    background: var(--accent) !important;
+    color: #ffffff !important;
   }
 
   &.secondary {
-    color: var(--text-mid) !important;
-    border-color: var(--ink-600) !important;
+    color: var(--text) !important;
+    border-color: var(--border-strong) !important;
   }
 
   &.danger {
-    background: var(--negative) !important;
+    background: var(--danger) !important;
     color: #fff !important;
   }
 
   &.danger-outline {
-    color: var(--negative) !important;
-    border-color: rgba(229, 85, 95, 0.5) !important;
+    color: var(--danger) !important;
+    border-color: var(--danger) !important;
   }
 
-  &:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
-  &:disabled { opacity: 0.5; }
+  &.full {
+    width: 100%;
+    padding: 8px 16px !important;
+  }
+}
+
+.row-actions {
+  display: flex;
+  gap: 10px;
+
+  .btn {
+    flex: 1;
+  }
 }
 
 // ---------------------------------------------------------------------------
-// Motion & accessibility
+// Footer notes (completed / cancelled / expired / disputed states)
+// ---------------------------------------------------------------------------
+.footer-note {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  background: var(--border);
+  color: var(--text);
+  font-size: 13px;
+
+  mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    flex: 0 0 auto;
+  }
+
+  &.success {
+    background: var(--buy-soft);
+    color: var(--buy);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Sheet footer CTA
+// ---------------------------------------------------------------------------
+.sheet-footer {
+  flex: 0 0 auto;
+  display: flex;
+  gap: 10px;
+  padding: 14px 20px;
+  padding-bottom: max(14px, env(safe-area-inset-bottom));
+  background: var(--bg);
+  border-top: 1px solid var(--border);
+
+  @media (min-width: 640px) {
+    border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+  }
+
+  .btn.secondary {
+    flex: 0 0 auto;
+  }
+
+  .btn.primary {
+    flex: 1;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Angular Material chrome reset — keep Material controls flush with the
+// hand-rolled form styles above rather than floating as their own card.
+// ---------------------------------------------------------------------------
+::ng-deep .trade-sheet {
+  .mat-mdc-form-field {
+    font-family: var(--font-ui);
+  }
+
+  .mdc-notched-outline__leading,
+  .mdc-notched-outline__notch,
+  .mdc-notched-outline__trailing {
+    border-color: var(--border-strong);
+  }
+
+  .mat-mdc-button.btn,
+  .mat-mdc-outlined-button.btn,
+  .mat-mdc-unelevated-button.btn {
+    border-radius: var(--radius-md);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Reduced motion
 // ---------------------------------------------------------------------------
 @media (prefers-reduced-motion: reduce) {
-  * { transition: none !important; }
-}
-
-// Small-phone tightening (≤360px)
-@media (max-width: 360px) {
-  .sheet-header,
-  .sheet-body,
-  .sheet-footer { padding-left: 12px; padding-right: 12px; }
-
-  .stat-grid { grid-template-columns: 1fr 1fr; }
-
-  .detail-row {
-    flex-direction: column;
-    gap: 2px;
-
-    dd { text-align: left; }
+  .preset-chip,
+  .segmented-tab,
+  .btn,
+  .amount-input,
+  .select-input,
+  .text-input,
+  .pin-input {
+    transition: none;
   }
-
-  .masked-value-group { justify-content: flex-start; }
 }

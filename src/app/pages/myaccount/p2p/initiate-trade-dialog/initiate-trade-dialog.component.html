@@ -76,20 +76,19 @@
         </div>
       </section>
 
-      <!-- Ad already carries the seller's account -> show it, masked by default -->
-      <section class="detail-card" *ngIf="orderCarriesSellerDetails && matchedOrderPaymentDetail as detail">
+      <!-- Ad already carries the seller's account -> always show it in full,
+           never masked, since the buyer needs the real account number to
+           send money before they even lock funds into escrow. -->
+      <section class="detail-card payment-target" *ngIf="orderCarriesSellerDetails && matchedOrderPaymentDetail as detail">
         <h3 class="detail-card-title"><mat-icon>account_balance</mat-icon> You'll send payment to</h3>
 
         <dl class="detail-list">
           <div class="detail-row"><dt>Method</dt><dd>{{ detail.method }}</dd></div>
           <div class="detail-row"><dt>Account name</dt><dd>{{ detail.accountName }}</dd></div>
-          <div class="detail-row">
+          <div class="detail-row account-row">
             <dt>Account number</dt>
-            <dd class="masked-value-group">
-              <span class="masked-value num">{{ isRevealed('initiate-acct') ? detail.accountNumber : maskedAccountNumber(detail.accountNumber) }}</span>
-              <button type="button" class="icon-btn tiny" (click)="toggleReveal('initiate-acct')" [matTooltip]="isRevealed('initiate-acct') ? 'Hide' : 'Show'" [attr.aria-label]="isRevealed('initiate-acct') ? 'Hide account number' : 'Show account number'">
-                <mat-icon>{{ isRevealed('initiate-acct') ? 'visibility_off' : 'visibility' }}</mat-icon>
-              </button>
+            <dd class="account-value-group">
+              <span class="account-value num">{{ detail.accountNumber }}</span>
               <button type="button" class="icon-btn tiny" (click)="copyToClipboard(detail.accountNumber, 'initiate-acct')" matTooltip="Copy" aria-label="Copy account number">
                 <mat-icon>{{ copiedField === 'initiate-acct' ? 'check' : 'content_copy' }}</mat-icon>
               </button>
@@ -100,6 +99,48 @@
         </dl>
 
         <p class="hint muted">Verify these details carefully before sending money — never pay an account shown outside this app.</p>
+      </section>
+
+      <!-- The market listing didn't include the seller's payment details ->
+           we're re-fetching the single order, which should return them
+           fully populated. Shown briefly instead of a false "not attached"
+           warning. -->
+      <div class="inline-loader" *ngIf="orderCarriesSellerDetails && sellerDetailsLoading">
+        <img src="./assets/images/loading.gif" alt="Loading" width="20" height="20" />
+        <span>Loading the seller's payment details&hellip;</span>
+      </div>
+
+      <!-- FIXED: two distinct outcomes instead of one ambiguous banner.
+
+           'none-attached' — the refetch succeeded, but this ad genuinely
+           has no linked payment method. Retrying can't fix this, so no
+           retry button is shown; the buyer is told plainly and pointed
+           to support/a different ad. The Buy button stays disabled
+           (see initiateFormValid in the component).
+
+           'failed' — the refetch itself errored (network/API). This is
+           worth retrying, so the retry button is shown. -->
+      <section
+        class="banner warn"
+        *ngIf="orderCarriesSellerDetails && !matchedOrderPaymentDetail && !sellerDetailsLoading"
+      >
+        <mat-icon>error_outline</mat-icon>
+
+        <span *ngIf="sellerDetailsError === 'none-attached'">
+          This seller hasn't linked a receiving account to this ad, so it can't be traded safely right now.
+          Please contact support or choose a different ad.
+        </span>
+        <span *ngIf="sellerDetailsError === 'failed'">
+          We couldn't load the seller's payment details. Check your connection and try again.
+        </span>
+
+        <button
+          mat-stroked-button
+          type="button"
+          class="btn tiny-btn"
+          *ngIf="canRetrySellerDetails"
+          (click)="retrySellerDetails()"
+        >Retry</button>
       </section>
 
       <!-- I'm the one selling -> I need to give the buyer one of my saved accounts -->
@@ -160,6 +201,7 @@
         type="button"
         class="btn primary"
         [disabled]="submitting || !initiateFormValid"
+        [matTooltip]="orderCarriesSellerDetails && !sellerPaymentResolved ? 'Waiting on the seller\'s payment details before you can trade' : ''"
         (click)="submitInitiateTrade()"
       >
         {{ submitting ? 'Starting…' : (order.type === P2POrderType.Sell ? 'Buy ' : 'Sell ') + order.coin }}
@@ -247,18 +289,21 @@
           </div>
         </dl>
 
-        <section class="detail-card" *ngIf="resolvedPaymentDetail as detail; else noPaymentDetail">
+        <!-- The account the buyer must pay into for THIS trade. Prefers the
+             account locked to the trade record itself (resolvedPaymentDetail
+             checks trade.sellerPaymentMethod first), falling back to the
+             ad's payment details so this never renders empty once a trade
+             exists. Always shown in full, unmasked, to both buyer and
+             seller — the buyer needs the real number to actually pay. -->
+        <section class="detail-card payment-target" *ngIf="resolvedPaymentDetail as detail; else noPaymentDetail">
           <h3 class="detail-card-title"><mat-icon>account_balance</mat-icon> Payment goes to</h3>
           <dl class="detail-list">
             <div class="detail-row"><dt>Method</dt><dd>{{ detail.method }}</dd></div>
             <div class="detail-row"><dt>Account name</dt><dd>{{ detail.accountName }}</dd></div>
-            <div class="detail-row">
+            <div class="detail-row account-row">
               <dt>Account number</dt>
-              <dd class="masked-value-group">
-                <span class="masked-value num">{{ isRevealed('detail-acct') ? detail.accountNumber : maskedAccountNumber(detail.accountNumber) }}</span>
-                <button type="button" class="icon-btn tiny" (click)="toggleReveal('detail-acct')" [matTooltip]="isRevealed('detail-acct') ? 'Hide' : 'Show'" [attr.aria-label]="isRevealed('detail-acct') ? 'Hide account number' : 'Show account number'">
-                  <mat-icon>{{ isRevealed('detail-acct') ? 'visibility_off' : 'visibility' }}</mat-icon>
-                </button>
+              <dd class="account-value-group">
+                <span class="account-value num">{{ detail.accountNumber }}</span>
                 <button type="button" class="icon-btn tiny" (click)="copyToClipboard(detail.accountNumber, 'detail-acct')" matTooltip="Copy" aria-label="Copy account number">
                   <mat-icon>{{ copiedField === 'detail-acct' ? 'check' : 'content_copy' }}</mat-icon>
                 </button>
@@ -270,6 +315,7 @@
             </div>
             <div class="detail-row" *ngIf="detail.additionalInfo"><dt>Note</dt><dd>{{ detail.additionalInfo }}</dd></div>
           </dl>
+          <p class="hint muted" *ngIf="trade.isBuyer">Verify these details carefully before sending money — never pay an account shown outside this app.</p>
         </section>
 
         <ng-template #noPaymentDetail>
@@ -299,6 +345,13 @@
               : "You're past the expected response window. Please release now or open a dispute." }}
           </p>
         </section>
+
+        <!-- Automatic payment verification / auto-release progress, shown to
+             both sides while it's running. -->
+        <div class="banner info" *ngIf="showAutoVerificationBanner">
+          <mat-icon>{{ verificationStatus === 'failed' || verificationStatus === 'timed-out' ? 'info' : 'autorenew' }}</mat-icon>
+          <span>{{ verificationStatusLabel }}</span>
+        </div>
 
         <!-- ---- BUYER (in this trade): mark as paid + attach evidence ---- -->
         <ng-container *ngIf="canMarkPaid">
@@ -366,35 +419,40 @@
             <p class="hint muted" *ngIf="trade.paidAt">Marked paid {{ trade.paidAt | date: 'medium' }}</p>
           </section>
 
-          <div class="banner">
-            <mat-icon>warning</mat-icon>
-            <span>Check your bank/wallet directly before confirming — don't rely on the screenshot alone.</span>
-          </div>
+          <!-- Manual release stays available as a fallback while auto-release
+               is pending/unavailable, and hides once verification has taken
+               over so the seller can't double-release. -->
+          <ng-container *ngIf="canManuallyRelease">
+            <div class="banner">
+              <mat-icon>warning</mat-icon>
+              <span>Check your bank/wallet directly before confirming — don't rely on the screenshot alone.</span>
+            </div>
 
-          <section class="field-group">
-            <label class="field-label" for="releasePin">Transaction PIN</label>
-            <input
-              id="releasePin"
-              type="password"
-              inputmode="numeric"
-              maxlength="6"
-              autocomplete="off"
-              class="pin-input"
-              [(ngModel)]="releasePin"
-              [disabled]="releasePinLocked"
-              placeholder="&bull; &bull; &bull; &bull;"
-            />
-            <p class="field-error" *ngIf="releasePinError">{{ releasePinError }}</p>
-          </section>
+            <section class="field-group">
+              <label class="field-label" for="releasePin">Transaction PIN</label>
+              <input
+                id="releasePin"
+                type="password"
+                inputmode="numeric"
+                maxlength="6"
+                autocomplete="off"
+                class="pin-input"
+                [(ngModel)]="releasePin"
+                [disabled]="releasePinLocked"
+                placeholder="&bull; &bull; &bull; &bull;"
+              />
+              <p class="field-error" *ngIf="releasePinError">{{ releasePinError }}</p>
+            </section>
 
-          <button
-            mat-flat-button
-            color="primary"
-            type="button"
-            class="btn primary full"
-            [disabled]="releasing || !releasePinValid || releasePinLocked"
-            (click)="confirmReleaseFunds()"
-          >{{ releasing ? 'Releasing…' : 'I have received payment' }}</button>
+            <button
+              mat-flat-button
+              color="primary"
+              type="button"
+              class="btn primary full"
+              [disabled]="releasing || !releasePinValid || releasePinLocked"
+              (click)="confirmReleaseFunds()"
+            >{{ releasing ? 'Releasing…' : 'I have received payment' }}</button>
+          </ng-container>
         </ng-container>
 
         <div class="footer-note success" *ngIf="trade.status === TradeStatus.Completed">

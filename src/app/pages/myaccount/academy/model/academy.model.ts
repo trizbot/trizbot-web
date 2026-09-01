@@ -139,6 +139,15 @@ export interface CourseInstructor {
   avatarUrl?: string | null;
   instructorName?: string | null;
   isVerified?: boolean;
+
+  /**
+   * Seller payout details, shown to a buyer before they pay for a paid
+   * course so they know who / where the funds settle to. All optional —
+   * older records or unverified sellers may not have payout details on file.
+   */
+  bankName?: string | null;
+  accountNumber?: string | null;
+  accountName?: string | null;
 }
 
 export interface Course {
@@ -280,6 +289,9 @@ export interface RawCourseDoc {
   instructorUsername?: string;
   instructorAvatarUrl?: string;
   instructorVerified?: boolean;
+  instructorBankName?: string;
+  instructorAccountNumber?: string;
+  instructorAccountName?: string;
   createdAt?: string | { $date: string };
   updatedAt?: string | { $date: string };
 }
@@ -325,6 +337,9 @@ export function normalizeCourse(raw: RawCourseDoc): Course {
       (raw.instructorName || 'trader').toLowerCase().replace(/\s+/g, ''),
     avatarUrl: raw.instructor?.avatarUrl ?? raw.instructorAvatarUrl ?? null,
     isVerified: raw.instructor?.isVerified ?? raw.instructorVerified ?? false,
+    bankName: raw.instructor?.bankName ?? raw.instructorBankName ?? null,
+    accountNumber: raw.instructor?.accountNumber ?? raw.instructorAccountNumber ?? null,
+    accountName: raw.instructor?.accountName ?? raw.instructorAccountName ?? null,
   };
 
   // Resolve the generic course file, falling back through legacy fields.

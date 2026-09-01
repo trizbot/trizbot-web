@@ -41,6 +41,7 @@ export interface UpdateOrderReqBody {
   /** References into the trader's saved payment methods — no raw account
    *  details are ever sent per-ad any more. */
   paymentMethodIds?: string[];
+  paymentDetails?: string[];
   terms?: string;
   paymentWindowMinutes?: number;
   transactionPin?: string;
@@ -59,6 +60,7 @@ export interface P2POrder {
   paymentMethods: string[];
   /** IDs the ad points to. */
   paymentMethodIds?: string[];
+  paymentDetails?: string[];
 
   paymentMethodDetails?: UserPaymentMethod[];
   terms?: string;
@@ -101,6 +103,7 @@ export interface CreateOrderReqBody {
   minLimit: number;
   maxLimit: number;
   paymentMethods: string[];
+  paymentDetails?: string[];
   paymentMethodIds?: string[];
   terms?: string;
   paymentWindowMinutes?: number;

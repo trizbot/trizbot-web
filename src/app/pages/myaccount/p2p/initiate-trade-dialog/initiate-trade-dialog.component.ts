@@ -40,33 +40,15 @@ const PIN_LOCKOUT_MS = 60 * 1000;
 const SELLER_REVIEW_WINDOW_MS = 15 * 60 * 1000;
 
 // --- Auto-verification / auto-release tuning ---------------------------
-// How often we ask the backend "has this payment actually landed yet?"
 const VERIFICATION_POLL_INTERVAL_MS = 5000;
-// Give up polling after this long and fall back to manual seller release.
 const VERIFICATION_POLL_TIMEOUT_MS = 10 * 60 * 1000;
 
 type TradeStep = 'created' | 'paid' | 'released' | 'disputed';
 
-/**
- * NOTE ON AUTO-RELEASE:
- * A frontend can never itself confirm that fiat "genuinely" landed in the
- * seller's account — that has to be proven server-side (bank webhook,
- * virtual account ledger, Paystack/Flutterwave/Mono verification, OCR +
- * manual review, etc). This component assumes P2pService exposes:
- *
- *   verifyPayment(tradeId: string): Observable<{
- *     status: 'pending' | 'verifying' | 'verified' | 'failed';
- *     trade?: P2PTrade;
- *   }>
- *
- *   autoReleaseTrade(tradeId: string): Observable<P2PTrade>
- *
- * `autoReleaseTrade` must NOT require the seller's PIN — it's an
- * authorization made by your backend on the strength of the verified
- * payment signal, not a manual human action. Gate it server-side on
- * something like "this payment method/trade is auto-release eligible"
- * so you don't blanket-authorize releases you haven't actually verified.
- */
+/** Why matchedOrderPaymentDetail came back empty after we tried to resolve it. */
+type SellerDetailsError = 'none-attached' | 'failed' | null;
+
+
 @Component({
   selector: 'app-initiate-trade-dialog',
   standalone: true,
@@ -101,6 +83,13 @@ export class InitiateTradeDialogComponent implements OnInit, OnDestroy {
   mySavedMethods: UserPaymentMethod[] = [];
   mySavedMethodsLoading = false;
   selectedPaymentMethodId = '';
+
+  // True while we're re-fetching the single order to pick up payment
+  // details that weren't included on the (lighter) list/market payload.
+  sellerDetailsLoading = false;
+  /** Why the seller's payment detail is still unresolved, if it is. */
+  sellerDetailsError: SellerDetailsError = null;
+  private sellerDetailsRefetchAttempted = false;
 
   // ---- Trade-detail / payment-proof state ----
   showPaidForm = false;
@@ -166,6 +155,11 @@ export class InitiateTradeDialogComponent implements OnInit, OnDestroy {
       if (this.trade.status === TradeStatus.Paid && this.trade.autoReleaseEligible) {
         this.startVerificationPolling();
       }
+
+   
+      if (!this.resolvedPaymentDetail) {
+        this.refreshTrade();
+      }
     } else if (this.data.order) {
       this.mode = 'initiate';
       this.order = this.data.order;
@@ -174,6 +168,17 @@ export class InitiateTradeDialogComponent implements OnInit, OnDestroy {
 
       if (this.mustSupplySellerDetails) {
         this.loadMySavedMethods();
+      } else if (this.orderCarriesSellerDetails) {
+        if (this.matchedOrderPaymentDetail) {
+          // Market payload already carried the seller's account — nothing to fetch.
+          this.sellerDetailsError = null;
+        } else {
+          // The order came back without paymentMethodDetails populated even
+          // though this is a Sell ad (i.e. the seller MAY have an account
+          // attached — the list payload just didn't include it). Re-fetch
+          // the single order, which should return the fully populated form.
+          this.refreshOrderPaymentDetails();
+        }
       }
     }
     this.startCountdown();
@@ -220,6 +225,48 @@ export class InitiateTradeDialogComponent implements OnInit, OnDestroy {
     const details = this.order?.paymentMethodDetails;
     if (!details?.length) return undefined;
     return details.find((d) => d.method === this.paymentMethod) || details[0];
+  }
+
+  /**
+   * True once we can say with confidence whether a payment target exists
+   * for this Sell ad — i.e. we're not still loading, and we've either
+   * found a detail or determined definitively that there isn't one /
+   * the fetch failed. Used to gate the submit button.
+   */
+  get sellerPaymentResolved(): boolean {
+    if (!this.orderCarriesSellerDetails) return true;
+    return !!this.matchedOrderPaymentDetail;
+  }
+
+  
+  private refreshOrderPaymentDetails(): void {
+    if (!this.order || this.sellerDetailsLoading) return;
+    this.sellerDetailsRefetchAttempted = true;
+    this.sellerDetailsLoading = true;
+    this.sellerDetailsError = null;
+
+    this.p2pService.getOrder(this.order.id).subscribe({
+      next: (fullOrder) => {
+
+        console.log(fullOrder);
+        this.sellerDetailsLoading = false;
+        this.order = fullOrder;
+        this.sellerDetailsError = this.matchedOrderPaymentDetail ? null : 'none-attached';
+      },
+      error: () => {
+        this.sellerDetailsLoading = false;
+        this.sellerDetailsError = 'failed';
+      },
+    });
+  }
+
+  retrySellerDetails(): void {
+    if (this.sellerDetailsError !== 'failed') return;
+    this.refreshOrderPaymentDetails();
+  }
+
+  get canRetrySellerDetails(): boolean {
+    return this.orderCarriesSellerDetails && !this.sellerDetailsLoading && this.sellerDetailsError === 'failed';
   }
 
   private loadMySavedMethods(): void {
@@ -269,10 +316,22 @@ export class InitiateTradeDialogComponent implements OnInit, OnDestroy {
     return formatCountdown(Math.max(0, this.initiatePinLockedUntil - this.nowTick));
   }
 
+  /**
+   * FIXED: previously this never checked whether the seller's payment
+   * details had actually resolved for Sell ads, so a buyer could hit
+   * "Buy USDT" while the "seller's account isn't showing" banner was
+   * visible, with nowhere valid to send money. Now the button stays
+   * disabled until we have a confirmed payment target (or have confirmed
+   * there genuinely isn't one, in which case it should never enable).
+   */
   get initiateFormValid(): boolean {
     if (!this.amountValid || !this.paymentMethod || !this.pinValid) return false;
     if (this.initiatePinLocked) return false;
     if (this.mustSupplySellerDetails) return !!this.selectedPaymentMethodId;
+    if (this.orderCarriesSellerDetails) {
+      if (this.sellerDetailsLoading) return false;
+      if (!this.sellerPaymentResolved) return false;
+    }
     return true;
   }
 

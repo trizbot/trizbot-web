@@ -1,64 +1,130 @@
-<h2 mat-dialog-title class="dialog-title">
-  Confirm Purchase
-  <button mat-icon-button class="close-btn" type="button" [disabled]="loading" (click)="close()">
-    <mat-icon>close</mat-icon>
-  </button>
-</h2>
+<div class="purchase-dialog" [formGroup]="form">
 
-<mat-dialog-content [formGroup]="form">
-
-  <div class="course-summary">
-    <div class="summary-title">{{ course.title }}</div>
-    <div class="summary-instructor">by &#64;{{ course.instructor.userName }}</div>
+  <!-- ---- header ---- -->
+  <div class="dialog-head">
+    <div class="dialog-head-left">
+      <div class="head-badge">
+        <mat-icon>shopping_bag</mat-icon>
+      </div>
+      <div>
+        <h2 mat-dialog-title>Confirm purchase</h2>
+        <p class="head-sub">{{ course.title }} &middot; by &#64;{{ course.instructor.userName }}</p>
+      </div>
+    </div>
+    <button
+      mat-icon-button
+      class="head-close"
+      type="button"
+      [disabled]="loading"
+      (click)="close()"
+    >
+      <mat-icon>close</mat-icon>
+    </button>
   </div>
 
-  <div class="summary-row highlight">
-    <span class="label">Total to pay</span>
-    <span class="value">
-      <ng-container *ngIf="!isFree">&#36;{{ course.price | number: '1.2-2' }}</ng-container>
-      <ng-container *ngIf="isFree">Free</ng-container>
-    </span>
-  </div>
+  <!-- ---- content ---- -->
+  <mat-dialog-content class="dialog-content">
 
-  <ng-container >
-    <mat-label class="f-w-600 m-b-8 d-block m-t-3">Transaction PIN</mat-label>
-    <mat-form-field appearance="outline" class="w-100">
-      <input
-        matInput
-        type="password"
-        inputmode="numeric"
-        autocomplete="off"
-        maxlength="4"
-        formControlName="transactionPin"
-      />
-      <mat-error *ngIf="form.controls.transactionPin.hasError('required')">
+    <div *ngIf="errorMessage" class="alert">
+      <mat-icon>error_outline</mat-icon>
+      <span>{{ errorMessage }}</span>
+    </div>
+
+    <!-- total due -->
+    <div>
+      <div class="field-label">
+        Total to pay
+      </div>
+      <div class="hero-shell">
+        <span class="prefix" *ngIf="!isFree">&#36;</span>
+        <input
+          type="text"
+          [value]="isFree ? 'Free' : (course.price | number: '1.2-2')"
+          readonly
+          tabindex="-1"
+        />
+        <span class="hero-free-tag" *ngIf="isFree">NO CHARGE</span>
+      </div>
+    </div>
+
+    <!-- seller payment details: who the buyer's payment settles to -->
+    <div *ngIf="!isFree && sellerHasPaymentDetails">
+      <div class="field-label">
+        Seller payment details
+      </div>
+      <div class="payee-card">
+        <div class="payee-row" *ngIf="course.instructor.accountName">
+          <span class="payee-key">Account name</span>
+          <span class="payee-val">{{ course.instructor.accountName }}</span>
+        </div>
+        <div class="payee-row" *ngIf="course.instructor.bankName">
+          <span class="payee-key">Bank</span>
+          <span class="payee-val">{{ course.instructor.bankName }}</span>
+        </div>
+        <div class="payee-row" *ngIf="course.instructor.accountNumber">
+          <span class="payee-key">Account number</span>
+          <span class="payee-val payee-val-mono">
+            {{ course.instructor.accountNumber }}
+            <button
+              type="button"
+              class="payee-copy"
+              (click)="copyAccountNumber(course.instructor.accountNumber)"
+              [attr.aria-label]="'Copy account number'"
+            >
+              <mat-icon>{{ copiedField === 'accountNumber' ? 'check' : 'content_copy' }}</mat-icon>
+            </button>
+          </span>
+        </div>
+      </div>
+      <p class="payee-note">Funds for this purchase settle directly to the seller above.</p>
+    </div>
+
+    <!-- transaction pin -->
+    <div class="field">
+      <div class="field-label">
+        Transaction PIN
+        <span class="req">*</span>
+      </div>
+      <div
+        class="input-shell"
+        [class.has-error]="form.controls.transactionPin.invalid && form.controls.transactionPin.touched"
+      >
+        <input
+          type="password"
+          inputmode="numeric"
+          autocomplete="off"
+          maxlength="4"
+          placeholder="&#8226;&#8226;&#8226;&#8226;"
+          formControlName="transactionPin"
+        />
+      </div>
+      <p class="field-error" *ngIf="form.controls.transactionPin.hasError('required') && form.controls.transactionPin.touched">
         Transaction PIN is required.
-      </mat-error>
-      <mat-error *ngIf="form.controls.transactionPin.hasError('pattern')">
+      </p>
+      <p class="field-error" *ngIf="form.controls.transactionPin.hasError('pattern')">
         Enter a 4 digit numeric PIN.
-      </mat-error>
-    </mat-form-field>
-  </ng-container>
+      </p>
+    </div>
 
-  <div hidden="">
-    <mat-label class="f-w-600 m-b-8 d-block">Reference</mat-label>
-    <mat-form-field appearance="outline" class="w-100">
-      <input matInput formControlName="reference" readonly />
-    </mat-form-field>
+    <input type="hidden" formControlName="reference" />
+
+  </mat-dialog-content>
+
+  <!-- ---- actions ---- -->
+  <div class="dialog-actions">
+    <button
+      mat-flat-button
+      class="btn-primary"
+      type="button"
+      [disabled]="loading || form.invalid"
+      (click)="submit()"
+    >
+      <span class="btn-loading" *ngIf="loading; else idleLabel">
+        <span class="btn-spinner"></span>
+        Processing&hellip;
+      </span>
+      <ng-template #idleLabel>Confirm</ng-template>
+    </button>
   </div>
 
-  <div *ngIf="errorMessage" class="alert alert-danger m-t-2">
-    <b>{{ errorMessage }}</b>
-  </div>
-
-  <button
-    mat-flat-button
-    color="primary"
-    class="fw-bold w-100 submit-btn"
-    type="button"
-    [disabled]="loading || form.invalid"
-    (click)="submit()"
-  >
-    {{ loading ? 'Processing...' : (isFree ? 'Confirm' : 'Confirm') }}
-  </button>
-</mat-dialog-content>
+</div>

@@ -38,6 +38,13 @@ export class P2pService {
       .pipe(map((res) => this.unwrap(res).map(normalizeOrder)));
   }
 
+  
+  getOrder(id: string): Observable<P2POrder> {
+    return this.http
+      .get<ApiEnvelope<any> | any>(`${this.base}/orders/${id}`)
+      .pipe(map((res) => normalizeOrder(this.unwrapOne(res))));
+  }
+
   createOrder(payload: CreateOrderReqBody): Observable<P2POrder> {
     return this.http
       .post<ApiEnvelope<any> | any>(`${this.base}/orders`, payload)

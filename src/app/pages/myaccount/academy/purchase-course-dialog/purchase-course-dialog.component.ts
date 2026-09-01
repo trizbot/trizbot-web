@@ -26,6 +26,7 @@ export class PurchaseCourseDialogComponent {
   isFree: boolean;
   loading = false;
   errorMessage = '';
+  copiedField: 'accountNumber' | null = null;
 
   form = new FormGroup({
     transactionPin: new FormControl('', [Validators.required, Validators.pattern(PIN_PATTERN)]),
@@ -46,12 +47,33 @@ export class PurchaseCourseDialogComponent {
     this.dialogRef.disableClose = false;
   }
 
+  // Seller-side payout details, shown to the buyer for paid courses only.
+  // Buyer sees this so they know who / where the funds settle to; sellers
+  // never see the buyer's PIN or reference, and vice versa.
+  get sellerHasPaymentDetails(): boolean {
+    const i = this.course?.instructor;
+    return !!(i && (i.accountName || i.accountNumber || i.bankName));
+  }
+
   generateReference(): void {
     const ref = `CRS-${Date.now().toString(36).toUpperCase()}-${Math.random()
       .toString(36)
       .slice(2, 7)
       .toUpperCase()}`;
     this.form.controls.reference.setValue(ref);
+  }
+
+  copyAccountNumber(accountNumber: string | null | undefined): void {
+    if (!accountNumber) return;
+
+    navigator.clipboard?.writeText(accountNumber).then(() => {
+      this.copiedField = 'accountNumber';
+      setTimeout(() => {
+        if (this.copiedField === 'accountNumber') {
+          this.copiedField = null;
+        }
+      }, 1500);
+    });
   }
 
   submit(): void {
