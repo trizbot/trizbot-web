@@ -63,6 +63,9 @@
     </section>
 
 
+    <!-- ================================================================ -->
+    <!-- ARBITRAGE — hidden entirely until the trader is subscribed        -->
+    <!-- ================================================================ -->
     <section class="bb-section">
       <div class="bb-panel bb-arb-panel">
 
@@ -73,36 +76,41 @@
               <h4>
                 Arbitrage opportunities
                 <span class="bb-pro-badge" *ngIf="!canViewArbitrage && !arbitrageSubscriptionLoading">
-                  <i class="bi bi-star-fill"></i> 
+                  <i class="bi bi-star-fill"></i>
                 </span>
-            
               </h4>
 
-              <p *ngIf="canViewArbitrage">
-                Subscribe to a higher Live cross-exchange spreads profit arbitrage opportunities 
+              <p *ngIf="!canViewArbitrage && !arbitrageSubscriptionLoading">
+                Subscribe to unlock live cross-exchange spreads and profit arbitrage opportunities.
               </p>
             </div>
           </div>
 
           <div class="bb-panel-header-actions">
-          <span class="bb-updated-tag" *ngIf="arbLastUpdated">
-  <span class="bb-live-dot"></span>
-  Status: {{ arbitradeState }} &nbsp;&nbsp;&nbsp;&nbsp;
-  Expiry: {{ arbitradeExpiry | date:'medium' }}
-</span>
+            <span class="bb-updated-tag" *ngIf="canViewArbitrage && arbLastUpdated">
+              <span class="bb-live-dot"></span>
+              Status: {{ arbitradeState }} &nbsp;&nbsp;&nbsp;&nbsp;
+              Expiry: {{ arbitradeExpiry | date:'medium' }}
+            </span>
 
-            <!-- Eye-catching header CTA — shown whenever the trader is unsubscribed -->
+            <!-- Subscribe CTA — shown whenever the trader is unsubscribed -->
             <button
               type="button"
               class="bb-btn bb-btn-primary"
-              *ngIf="canViewArbitrage && !arbitrageSubscriptionLoading && !arbitradeStatus"
+              *ngIf="!canViewArbitrage && !arbitrageSubscriptionLoading"
               (click)="openArbitrageSubscribeDialog()"
             >
               <i class="bi bi-lightning-charge-fill bb-arb-subscribe-icon"></i>
-              <span>SubScribe</span>
+              <span>Subscribe</span>
             </button>
 
-            <button type="button" class="bb-btn bb-btn-arb-subscribe " (click)="refreshArbNow()">
+            <!-- Refresh — only useful once there's data to refresh -->
+            <button
+              type="button"
+              class="bb-btn bb-btn-arb-subscribe"
+              *ngIf="canViewArbitrage"
+              (click)="refreshArbNow()"
+            >
               <i class="bi bi-arrow-clockwise" [class.bb-spin]="arbLoading"></i>
               <span>Refresh &middot; {{ secondsToRefresh }}s</span>
             </button>
@@ -117,99 +125,88 @@
 
         <ng-container *ngIf="!arbitrageSubscriptionLoading">
 
-          <div class="bb-arb-subscribed-banner" *ngIf="activeArbitrageSubscription">
-            <i class="bi bi-patch-check-fill"></i>
-            <span>
-              Premium arbitrage active ({{ activeArbitrageSubscription.plan }} plan) &middot;
-              expires {{ activeArbitrageSubscription.endDate | date: 'medium' }}
-            </span>
-            <span class="bb-arb-countdown" *ngIf="countdownToArbExpiry">
-              <i class="bi bi-hourglass-split"></i> {{ countdownToArbExpiry }} left
-            </span>
-          </div>
+          <!-- SUBSCRIBED: full live table -->
+          <ng-container *ngIf="canViewArbitrage; else arbLockedState">
 
-          <!-- FREE TIER NOTICE — eye-catching CTA shown only while unsubscribed -->
-          <div class="bb-arb-free-banner" *ngIf="!canViewArbitrage">
-            <div class="bb-arb-free-banner-text">
-              <i class="bi bi-lock-fill"></i>
-              <span>You're viewing free opportunities &middot; subscribe to unlock the higher-profit rows.</span>
-            </div>
-            <button type="button" class="bb-btn bb-btn-arb-subscribe bb-btn-arb-subscribe-lg" (click)="openArbitrageSubscribeDialog()">
-              <i class="bi bi-unlock-fill bb-arb-subscribe-icon"></i>
-              <span>View plans</span>
-            </button>
-          </div>
-
-          <div class="bb-exchange-tabs">
-            <button
-              *ngFor="let id of exchangeIds"
-              type="button"
-              class="bb-exchange-tab"
-              [class.active]="activeExchange === id"
-              [style.--tab-color]="exchangeConfig[id].colorPrimary"
-              (click)="selectExchange(id)"
-            >
-              <span class="bb-tab-dot"></span>
-              {{ exchangeConfig[id].label }}
-            </button>
-          </div>
-
-          <form class="bb-filters-bar" [formGroup]="arbFilterForm">
-            <mat-form-field appearance="outline" class="bb-filter-field">
-              <mat-select formControlName="token">
-                <mat-option value="">All tokens</mat-option>
-                <mat-option *ngFor="let t of arbTokenOptions" [value]="t">{{ t }}</mat-option>
-              </mat-select>
-            </mat-form-field>
-
-            <mat-form-field appearance="outline" class="bb-filter-field">
-              <input
-                matInput
-                type="number"
-                min="0"
-                placeholder="Min spread %"
-                formControlName="minSpreadPercent"
-              />
-            </mat-form-field>
-          </form>
-
-          <div class="bb-exchange-panel">
-            <div class="bb-exchange-panel-header">
-              <span class="bb-panel-exchange-name">{{ activeConfig.label }}</span>
-              <span class="bb-panel-count">{{ visibleOpportunities.length }} opportunities</span>
+            <div class="bb-arb-subscribed-banner" *ngIf="activeArbitrageSubscription">
+              <i class="bi bi-patch-check-fill"></i>
+              <span>
+                Premium arbitrage active ({{ activeArbitrageSubscription.plan }} plan) &middot;
+                expires {{ activeArbitrageSubscription.endDate | date: 'medium' }}
+              </span>
+              <span class="bb-arb-countdown" *ngIf="countdownToArbExpiry">
+                <i class="bi bi-hourglass-split"></i> {{ countdownToArbExpiry }} left
+              </span>
             </div>
 
-            <div class="bb-table-loading" *ngIf="arbLoading">
-              <mat-spinner diameter="26" strokeWidth="3"></mat-spinner>
+            <div class="bb-exchange-tabs">
+              <button
+                *ngFor="let id of exchangeIds"
+                type="button"
+                class="bb-exchange-tab"
+                [class.active]="activeExchange === id"
+                [style.--tab-color]="exchangeConfig[id].colorPrimary"
+                (click)="selectExchange(id)"
+              >
+                <span class="bb-tab-dot"></span>
+                {{ exchangeConfig[id].label }}
+              </button>
             </div>
 
-            <div class="bb-table-error" *ngIf="!arbLoading && arbError">
-              <i class="bi bi-exclamation-triangle"></i> {{ arbError }}
-            </div>
+            <form class="bb-filters-bar" [formGroup]="arbFilterForm">
+              <mat-form-field appearance="outline" class="bb-filter-field">
+                <mat-select formControlName="token">
+                  <mat-option value="">All tokens</mat-option>
+                  <mat-option *ngFor="let t of arbTokenOptions" [value]="t">{{ t }}</mat-option>
+                </mat-select>
+              </mat-form-field>
 
-            <div class="bb-table-empty" *ngIf="!arbLoading && !arbError && visibleOpportunities.length === 0">
-              <i class="bi bi-inboxes"></i>
-              No arbitrage opportunities found for {{ activeConfig.label }} right now.
-            </div>
+              <mat-form-field appearance="outline" class="bb-filter-field">
+                <input
+                  matInput
+                  type="number"
+                  min="0"
+                  placeholder="Min spread %"
+                  formControlName="minSpreadPercent"
+                />
+              </mat-form-field>
+            </form>
 
-            <!-- Table — tablet and up -->
-            <div class="bb-table-scroll" *ngIf="!arbLoading && !arbError && visibleOpportunities.length > 0">
-              <table class="bb-opp-table">
-                <thead>
-                  <tr>
-                    <th>Token</th>
-                    <th>{{ activeConfig.label }}</th>
-                    <th>Counter Exchange</th>
-                    <th>Spread</th>
-               
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr *ngFor="let o of pagedOpportunities; trackBy: trackByOpportunity" [class.bb-row-locked]="isSpreadLocked(o)">
+            <div class="bb-exchange-panel">
+              <div class="bb-exchange-panel-header">
+                <span class="bb-panel-exchange-name">{{ activeConfig.label }}</span>
+                <span class="bb-panel-count">{{ visibleOpportunities.length }} opportunities</span>
+              </div>
 
-                    <td class="bb-token-cell">{{ o.token }}</td>
+              <div class="bb-table-loading" *ngIf="arbLoading">
+                <mat-spinner diameter="26" strokeWidth="3"></mat-spinner>
+              </div>
 
-                    <ng-container *ngIf="!isSpreadLocked(o); else lockedRowCells">
+              <div class="bb-table-error" *ngIf="!arbLoading && arbError">
+                <i class="bi bi-exclamation-triangle"></i> {{ arbError }}
+              </div>
+
+              <div class="bb-table-empty" *ngIf="!arbLoading && !arbError && visibleOpportunities.length === 0">
+                <i class="bi bi-inboxes"></i>
+                No arbitrage opportunities found for {{ activeConfig.label }} right now.
+              </div>
+
+              <!-- Table — tablet and up -->
+              <div class="bb-table-scroll" *ngIf="!arbLoading && !arbError && visibleOpportunities.length > 0">
+                <table class="bb-opp-table">
+                  <thead>
+                    <tr>
+                      <th>Token</th>
+                      <th>{{ activeConfig.label }}</th>
+                      <th>Counter Exchange</th>
+                      <th>Spread</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let o of pagedOpportunities; trackBy: trackByOpportunity">
+
+                      <td class="bb-token-cell">{{ o.token }}</td>
+
                       <td>
                         <span class="bb-leg-badge" [ngClass]="isActiveBuyLeg(o) ? 'buy' : 'sell'">
                           {{ isActiveBuyLeg(o) ? 'BUY' : 'SELL' }}
@@ -219,11 +216,9 @@
 
                       <td>
                         <div class="bb-counterparty-cell">
-
                           <span class="bb-leg-badge" [ngClass]="isActiveBuyLeg(o) ? 'sell' : 'buy'">
-                          {{ isActiveBuyLeg(o) ? 'SELL' : 'BUY' }}
-                        </span>
-
+                            {{ isActiveBuyLeg(o) ? 'SELL' : 'BUY' }}
+                          </span>
                           <span class="bb-counterparty-dot" [style.background]="counterpartyColor(o)"></span>
                           <span class="bb-counterparty-name">{{ counterpartyLabel(o) }}</span>
                           <span class="bb-price-val muted">&#36;{{ counterpartyPriceFor(o) | number: '1.2-6' }}</span>
@@ -236,36 +231,21 @@
                         </span>
                       </td>
 
-                    </ng-container>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
 
-                    <ng-template #lockedRowCells>
-                      <td colspan="5" class="bb-locked-cell">
-                        <div class="bb-row-lock-content">
-                          <i class="bi bi-lock-fill"></i>
-                          <span>Subscribe to unlock this opportunity</span>
-                          <button type="button" class="bb-btn bb-btn-primary bb-btn-sm" (click)="openArbitrageSubscribeDialog()">
-                            <i class="bi bi-unlock-fill"></i> Unlock
-                          </button>
-                        </div>
-                      </td>
-                    </ng-template>
+              <!-- Cards — mobile -->
+              <div class="bb-opp-cards" *ngIf="!arbLoading && !arbError && visibleOpportunities.length > 0">
+                <div class="bb-opp-card" *ngFor="let o of pagedOpportunities; trackBy: trackByOpportunity">
+                  <div class="bb-opp-card-top">
+                    <span class="bb-token-cell">{{ o.token }}</span>
+                    <span class="bb-spread-pill" [ngClass]="spreadTier(o.spreadPercent)">
+                      {{ o.spreadPercent | number: '1.2-2' }}%
+                    </span>
+                  </div>
 
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-
-            <!-- Cards — mobile -->
-            <div class="bb-opp-cards" *ngIf="!arbLoading && !arbError && visibleOpportunities.length > 0">
-              <div class="bb-opp-card" *ngFor="let o of pagedOpportunities; trackBy: trackByOpportunity" [class.bb-row-locked]="isSpreadLocked(o)">
-                <div class="bb-opp-card-top">
-                  <span class="bb-token-cell">{{ o.token }}</span>
-                  <span class="bb-spread-pill" [ngClass]="spreadTier(o.spreadPercent)">
-                    {{ o.spreadPercent | number: '1.2-2' }}%
-                  </span>
-                </div>
-
-                <ng-container *ngIf="!isSpreadLocked(o); else lockedCardContent">
                   <div class="bb-opp-card-row">
                     <div class="bb-opp-leg">
                       <span class="bb-leg-badge" [ngClass]="isActiveBuyLeg(o) ? 'buy' : 'sell'">
@@ -284,72 +264,81 @@
                     <span class="bb-profit-cell">Est. profit &#36;{{ o.estimatedProfit | number: '1.2-2' }}</span>
                     <button type="button" class="bb-trade-btn" (click)="openTradeDialog(o)">Trade</button>
                   </div>
-                </ng-container>
-
-                <ng-template #lockedCardContent>
-                  <div class="bb-row-lock-content">
-                    <i class="bi bi-lock-fill"></i>
-                    <span>Subscribe to unlock this opportunity</span>
-                    <button type="button" class="bb-btn bb-btn-primary bb-btn-sm" (click)="openArbitrageSubscribeDialog()">
-                      <i class="bi bi-unlock-fill"></i> Unlock
-                    </button>
-                  </div>
-                </ng-template>
-              </div>
-            </div>
-
-            <!-- Pagination -->
-            <div class="bb-pagination-bar" *ngIf="!arbLoading && !arbError && visibleOpportunities.length > 0">
-              <div class="bb-pagination-info">
-                Showing {{ arbPageRangeStart }}&ndash;{{ arbPageRangeEnd }} of {{ visibleOpportunities.length }}
+                </div>
               </div>
 
-              <div class="bb-pagination-controls">
-                <button
-                  type="button"
-                  class="bb-page-nav-btn"
-                  [disabled]="arbCurrentPage === 1"
-                  (click)="prevArbPage()"
-                  aria-label="Previous page"
-                >
-                  <i class="bi bi-chevron-left"></i>
-                </button>
+              <!-- Pagination -->
+              <div class="bb-pagination-bar" *ngIf="!arbLoading && !arbError && visibleOpportunities.length > 0">
+                <div class="bb-pagination-info">
+                  Showing {{ arbPageRangeStart }}&ndash;{{ arbPageRangeEnd }} of {{ visibleOpportunities.length }}
+                </div>
 
-                <ng-container *ngFor="let p of arbPageNumbers">
+                <div class="bb-pagination-controls">
                   <button
-                    *ngIf="p !== '…'; else arbEllipsis"
                     type="button"
-                    class="bb-page-num-btn"
-                    [class.active]="p === arbCurrentPage"
-                    (click)="goToArbPage(p)"
+                    class="bb-page-nav-btn"
+                    [disabled]="arbCurrentPage === 1"
+                    (click)="prevArbPage()"
+                    aria-label="Previous page"
                   >
-                    {{ p }}
+                    <i class="bi bi-chevron-left"></i>
                   </button>
-                  <ng-template #arbEllipsis>
-                    <span class="bb-page-ellipsis">&hellip;</span>
-                  </ng-template>
-                </ng-container>
 
-                <button
-                  type="button"
-                  class="bb-page-nav-btn"
-                  [disabled]="arbCurrentPage === arbTotalPages"
-                  (click)="nextArbPage()"
-                  aria-label="Next page"
-                >
-                  <i class="bi bi-chevron-right"></i>
-                </button>
+                  <ng-container *ngFor="let p of arbPageNumbers">
+                    <button
+                      *ngIf="p !== '…'; else arbEllipsis"
+                      type="button"
+                      class="bb-page-num-btn"
+                      [class.active]="p === arbCurrentPage"
+                      (click)="goToArbPage(p)"
+                    >
+                      {{ p }}
+                    </button>
+                    <ng-template #arbEllipsis>
+                      <span class="bb-page-ellipsis">&hellip;</span>
+                    </ng-template>
+                  </ng-container>
+
+                  <button
+                    type="button"
+                    class="bb-page-nav-btn"
+                    [disabled]="arbCurrentPage === arbTotalPages"
+                    (click)="nextArbPage()"
+                    aria-label="Next page"
+                  >
+                    <i class="bi bi-chevron-right"></i>
+                  </button>
+                </div>
+
+                <mat-form-field appearance="outline" class="bb-page-size-field">
+                  <mat-select [value]="arbPageSize" (selectionChange)="changeArbPageSize($event.value)">
+                    <mat-option *ngFor="let size of pageSizeOptions" [value]="size">
+                      {{ size }} / page
+                    </mat-option>
+                  </mat-select>
+                </mat-form-field>
               </div>
-
-              <mat-form-field appearance="outline" class="bb-page-size-field">
-                <mat-select [value]="arbPageSize" (selectionChange)="changeArbPageSize($event.value)">
-                  <mat-option *ngFor="let size of pageSizeOptions" [value]="size">
-                    {{ size }} / page
-                  </mat-option>
-                </mat-select>
-              </mat-form-field>
             </div>
-          </div>
+          </ng-container>
+
+          <!-- NOT SUBSCRIBED: no data shown at all, just an upgrade prompt -->
+          <ng-template #arbLockedState>
+            <div class="bb-arb-free-banner">
+              <div class="bb-arb-free-banner-text">
+                <i class="bi bi-lock-fill"></i>
+                <span>Subscribe to view live arbitrage opportunities and start trading.</span>
+              </div>
+              <button
+                type="button"
+                class="bb-btn bb-btn-arb-subscribe bb-btn-arb-subscribe-lg"
+                (click)="openArbitrageSubscribeDialog()"
+              >
+                <i class="bi bi-unlock-fill bb-arb-subscribe-icon"></i>
+                <span>View plans</span>
+              </button>
+            </div>
+          </ng-template>
+
         </ng-container>
       </div>
     </section>
@@ -759,7 +748,7 @@
             </ng-template>
           </div>
 
-          <!-- Arbitrage column (new — mirrors Signal column above) -->
+          <!-- Arbitrage column (mirrors Signal column above) -->
           <div class="bb-plan-breakdown-col">
             <h5 class="bb-plan-breakdown-heading"><i class="bi bi-lightning-charge-fill"></i> Arbitrage</h5>
 

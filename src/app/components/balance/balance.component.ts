@@ -158,11 +158,21 @@ export class WalletBalanceComponent implements OnInit, OnDestroy {
 
   private arbBootstrapped = false;
 
+  /**
+   * Single source of truth for arbitrage access.
+   *
+   * A trader can view arbitrage data if EITHER:
+   *  - the backend's legacy per-trader flag (`arbitradeStatus`) is true, or
+   *  - they hold an active arbitrage subscription
+   *    (`hasActiveArbitrageSubscription`).
+   *
+   * Previously this was inverted (`!this.arbitradeStatus` returned `true`),
+   * which meant unsubscribed traders could see everything and subscribed
+   * traders could not. That bug is fixed here: unsubscribed traders now
+   * get NO access until a subscription (or the legacy flag) is active.
+   */
   get canViewArbitrage(): boolean {
-    if (!this.arbitradeStatus) {
-      return true;
-    }
-    return this.arbitradeStatus;
+    return !!this.arbitradeStatus || this.hasActiveArbitrageSubscription;
   }
 
   get arbSubscriptionPlanList(): { key: ArbitrageSubscriptionPlan; label: string; price: number; durationDays: number }[] {
@@ -581,7 +591,8 @@ export class WalletBalanceComponent implements OnInit, OnDestroy {
 
   /**
    * Bootstraps the opportunities fetch exactly once, and only once the
-   * trader response has resolved.
+   * trader response has resolved AND the trader is actually entitled to
+   * view arbitrage data.
    */
   private maybeLoadOpportunities(): void {
     if (this.arbBootstrapped) return;
@@ -797,18 +808,6 @@ export class WalletBalanceComponent implements OnInit, OnDestroy {
 
   counterpartyPriceFor(o: ArbitrageOpportunity): number | null {
     return this.isActiveBuyLeg(o) ? o.sellPrice : o.buyPrice;
-  }
-
-  isSpreadLocked(o: { estimatedProfit: any }): boolean {
-    if (o.estimatedProfit >= 2) {
-      if (this.arbitradeStatus) {
-        return !this.canViewArbitrage;
-      } else {
-        return this.canViewArbitrage;
-      }
-    } else {
-      return o.estimatedProfit <= 1 && !this.canViewArbitrage;
-    }
   }
 
   spreadTier(spreadPercent: number): 'high' | 'medium' | 'low' {
