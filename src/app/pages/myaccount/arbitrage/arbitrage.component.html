@@ -3,48 +3,49 @@
   <div class="arb-header">
     <div>
       <h2 class="arb-title">Arbitrage Opportunities</h2>
-      <h4 *ngIf="canViewArbitrage">Status {{ arbitradeState }}</h4>
 
-      <p class="arb-subtitle" *ngIf="canViewArbitrage">
-        Live cross-exchange spreads &middot; refreshes every {{ refreshIntervalSeconds }}s
-      </p>
-      <p class="arb-subtitle" *ngIf="!canViewArbitrage && !arbitrageSubscriptionLoading">
-        Free preview &middot; higher-profit opportunities are subscriber-only
-      </p>
+      <ng-container *ngIf="!arbitrageSubscriptionLoading">
+        <h4 *ngIf="canViewArbitrage">Status: Active</h4>
+        <p class="arb-subtitle" *ngIf="canViewArbitrage">
+          Live cross-exchange spreads &middot; refreshes every {{ refreshIntervalSeconds }}s
+        </p>
+        <p class="arb-subtitle" *ngIf="!canViewArbitrage">
+          Subscriber-only &middot; subscribe to unlock live cross-exchange arbitrage opportunities
+        </p>
+      </ng-container>
     </div>
+
     <div class="arb-header-actions">
-      <span class="last-updated" *ngIf="lastUpdated">
+      <span class="last-updated" *ngIf="canViewArbitrage && activeArbitrageSubscription">
         <span class="live-dot"></span>
-  Status: {{ arbitradeState }} &nbsp;&nbsp;&nbsp;&nbsp;
-  Expiry: {{ arbitradeExpiry | date:'medium' }}
+        Plan: {{ activeArbitrageSubscription.plan }} &nbsp;&nbsp;&nbsp;&nbsp;
+        Expires: {{ activeArbitrageSubscription.endDate | date:'medium' }}
       </span>
 
-         <!-- Eye-catching header CTA — shown whenever the trader is unsubscribed -->
-             <p *ngIf="canViewArbitrage">
-                Live cross-exchange spreads every {{ refreshIntervalSeconds }}
-                Subscribe to a higher profit arbitrage opportunities
-              </p>
+      <!-- Subscribe CTA — shown whenever the trader is NOT entitled -->
+      <button
+        mat-flat-button
+        type="button"
+        class="fw-bold trade-btn"
+        *ngIf="!canViewArbitrage && !arbitrageSubscriptionLoading"
+        (click)="openArbitrageSubscribeDialog()"
+      >
+        <i class="bi bi-lightning-charge-fill bb-arb-subscribe-icon"></i>
+        <span>Subscribe</span>
+      </button>
 
-            <button
-               mat-flat-button
-                    type="button"
-                    class="fw-bold trade-btn"
-                    [style.background]="activeConfig.colorPrimary"
-                    [style.color]="activeConfig.textOnPrimary"
-              *ngIf="canViewArbitrage && !arbitrageSubscriptionLoading && !arbitradeStatus"
-              (click)="openArbitrageSubscribeDialog()"
-            >
-              <i class="bi bi-lightning-charge-fill bb-arb-subscribe-icon"></i>
-              <span>Subscribe</span>
-            </button>
-
-      <button mat-stroked-button type="button" class="refresh-btn" (click)="refreshNow()">
+      <button
+        mat-stroked-button
+        type="button"
+        class="refresh-btn"
+        *ngIf="canViewArbitrage"
+        (click)="refreshNow()"
+      >
         <mat-icon [class.spin]="loading">refresh</mat-icon>
         Refresh &middot; {{ secondsToRefresh }}s
       </button>
     </div>
   </div>
-
 
   <div class="gate-loading" *ngIf="arbitrageSubscriptionLoading">
     <mat-spinner diameter="24" strokeWidth="3"></mat-spinner>
@@ -53,90 +54,113 @@
 
   <ng-container *ngIf="!arbitrageSubscriptionLoading">
 
-    <div class="active-plan-banner" *ngIf="activeArbitrageSubscription">
-      <mat-icon>verified</mat-icon>
-      <span class="active-plan-text">
-        Premium arbitrage active ({{ activeArbitrageSubscription.plan }} plan) &middot;
-        expires {{ activeArbitrageSubscription.endDate | date: 'medium' }}
-      </span>
-      <span class="active-plan-countdown" *ngIf="countdownToArbExpiry">
-        <mat-icon>hourglass_bottom</mat-icon> {{ countdownToArbExpiry }} left
-      </span>
-    </div>
-
-    <div class="exchange-tabs">
+    <!-- ============================================================= -->
+    <!-- LOCKED STATE — no subscription: table is not rendered at all  -->
+    <!-- ============================================================= -->
+    <div class="arb-locked-gate" *ngIf="!canViewArbitrage">
+      <mat-icon class="arb-locked-icon">lock</mat-icon>
+      <h3>Subscribe to unlock the arbitrage scanner</h3>
+      <p>
+        Live cross-exchange spreads, profit estimates, and one-click trading are
+        available to subscribers only. Choose a plan to get started.
+      </p>
       <button
-        *ngFor="let id of exchangeIds"
+        mat-flat-button
+        color="primary"
         type="button"
-        class="exchange-tab"
-        [class.active]="activeExchange === id"
-        [style.--tab-color]="exchangeConfig[id].colorPrimary"
-        [style.--tab-color-dark]="exchangeConfig[id].colorSecondary"
-        (click)="selectExchange(id)"
+        class="fw-bold"
+        (click)="openArbitrageSubscribeDialog()"
       >
-        <span class="tab-dot"></span>
-        {{ exchangeConfig[id].label }}
+        <mat-icon>lock_open</mat-icon>
+        View subscription plans
       </button>
     </div>
 
-    <form class="filters-bar" [formGroup]="filterForm">
-      <mat-form-field appearance="outline" class="filter-field">
-        <mat-select formControlName="token">
-          <mat-option value="">All tokens</mat-option>
-          <mat-option *ngFor="let t of tokenOptions" [value]="t">{{ t }}</mat-option>
-        </mat-select>
-      </mat-form-field>
+    <!-- ============================================================= -->
+    <!-- FULL EXPERIENCE — only rendered once subscribed               -->
+    <!-- ============================================================= -->
+    <ng-container *ngIf="canViewArbitrage">
 
-      <mat-form-field appearance="outline" class="filter-field">
-        <input
-          matInput
-          type="number"
-          min="0"
-          placeholder="Min spread %"
-          formControlName="minSpreadPercent"
-        />
-      </mat-form-field>
-    </form>
-
-    <div class="exchange-panel" [style.--panel-color]="activeConfig.colorPrimary" [style.--panel-color-dark]="activeConfig.colorSecondary">
-
-      <div class="panel-header">
-        <span class="panel-exchange-name">{{ activeConfig.label }}</span>
-        <span class="panel-count">{{ visibleOpportunities.length }} opportunities</span>
+      <div class="active-plan-banner" *ngIf="activeArbitrageSubscription">
+        <mat-icon>verified</mat-icon>
+        <span class="active-plan-text">
+          Premium arbitrage active ({{ activeArbitrageSubscription.plan }} plan) &middot;
+          expires {{ activeArbitrageSubscription.endDate | date: 'medium' }}
+        </span>
+        <span class="active-plan-countdown" *ngIf="countdownToArbExpiry">
+          <mat-icon>hourglass_bottom</mat-icon> {{ countdownToArbExpiry }} left
+        </span>
       </div>
 
-      <div class="table-loading" *ngIf="loading">
-        <mat-spinner diameter="26" strokeWidth="3"></mat-spinner>
+      <div class="exchange-tabs">
+        <button
+          *ngFor="let id of exchangeIds"
+          type="button"
+          class="exchange-tab"
+          [class.active]="activeExchange === id"
+          [style.--tab-color]="exchangeConfig[id].colorPrimary"
+          [style.--tab-color-dark]="exchangeConfig[id].colorSecondary"
+          (click)="selectExchange(id)"
+        >
+          <span class="tab-dot"></span>
+          {{ exchangeConfig[id].label }}
+        </button>
       </div>
 
-      <div class="table-error" *ngIf="!loading && error">
-        <mat-icon>error_outline</mat-icon>{{ error }}
-      </div>
+      <form class="filters-bar" [formGroup]="filterForm">
+        <mat-form-field appearance="outline" class="filter-field">
+          <mat-select formControlName="token">
+            <mat-option value="">All tokens</mat-option>
+            <mat-option *ngFor="let t of tokenOptions" [value]="t">{{ t }}</mat-option>
+          </mat-select>
+        </mat-form-field>
 
-      <div class="table-empty" *ngIf="!loading && !error && visibleOpportunities.length === 0">
-        No arbitrage opportunities found for {{ activeConfig.label }} right now.
-      </div>
+        <mat-form-field appearance="outline" class="filter-field">
+          <input
+            matInput
+            type="number"
+            min="0"
+            placeholder="Min spread %"
+            formControlName="minSpreadPercent"
+          />
+        </mat-form-field>
+      </form>
 
-      <!-- Table — tablet and up -->
-      <div class="table-scroll" *ngIf="!loading && !error && visibleOpportunities.length > 0">
-        <table class="opp-table">
-          <thead>
-            <tr>
-              <th>Token</th>
-              <th>{{ activeConfig.label }}</th>
-              <th>Counter Exchange</th>
-              <th>Spread</th>
-            
-            </tr>
-          </thead>
-          <tbody>
-            <tr
-              *ngFor="let o of pagedOpportunities; trackBy: trackByOpportunity"
-              [class.row-locked]="isSpreadLocked(o)"
-            >
-              <td class="token-cell" data-label="Token">{{ o.token }}</td>
+      <div class="exchange-panel" [style.--panel-color]="activeConfig.colorPrimary" [style.--panel-color-dark]="activeConfig.colorSecondary">
 
-              <ng-container *ngIf="!isSpreadLocked(o); else lockedRowCells">
+        <div class="panel-header">
+          <span class="panel-exchange-name">{{ activeConfig.label }}</span>
+          <span class="panel-count">{{ visibleOpportunities.length }} opportunities</span>
+        </div>
+
+        <div class="table-loading" *ngIf="loading">
+          <mat-spinner diameter="26" strokeWidth="3"></mat-spinner>
+        </div>
+
+        <div class="table-error" *ngIf="!loading && error">
+          <mat-icon>error_outline</mat-icon>{{ error }}
+        </div>
+
+        <div class="table-empty" *ngIf="!loading && !error && visibleOpportunities.length === 0">
+          No arbitrage opportunities found for {{ activeConfig.label }} right now.
+        </div>
+
+        <!-- Table — tablet and up -->
+        <div class="table-scroll" *ngIf="!loading && !error && visibleOpportunities.length > 0">
+          <table class="opp-table">
+            <thead>
+              <tr>
+                <th>Token</th>
+                <th>{{ activeConfig.label }}</th>
+                <th>Counter Exchange</th>
+                <th>Spread</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let o of pagedOpportunities; trackBy: trackByOpportunity">
+                <td class="token-cell" data-label="Token">{{ o.token }}</td>
+
                 <td [attr.data-label]="activeConfig.label">
                   <span class="leg-badge" [ngClass]="isActiveBuyLeg(o) ? 'buy' : 'sell'">
                     {{ isActiveBuyLeg(o) ? 'BUY' : 'SELL' }}
@@ -146,10 +170,9 @@
 
                 <td data-label="Counterparty">
                   <div class="counterparty-cell">
-                     <span class="leg-badge" [ngClass]="isActiveBuyLeg(o) ? 'sell' : 'buy'">
-                    {{ isActiveBuyLeg(o) ? 'SELL' : 'BUY' }}
-                  </span>
-
+                    <span class="leg-badge" [ngClass]="isActiveBuyLeg(o) ? 'sell' : 'buy'">
+                      {{ isActiveBuyLeg(o) ? 'SELL' : 'BUY' }}
+                    </span>
                     <span class="counterparty-dot" [style.background]="counterpartyColor(o)"></span>
                     <span class="counterparty-name">{{ counterpartyLabel(o) }}</span>
                     <span class="price-val muted">&#36;{{ counterpartyPriceFor(o) | number: '1.2-6' }}</span>
@@ -162,40 +185,33 @@
                   </span>
                 </td>
 
-               
-              </ng-container>
-
-              <ng-template #lockedRowCells>
-                <td colspan="5" class="locked-cell">
-                  <div class="row-lock-content">
-                    <mat-icon>lock</mat-icon>
-                    <span>Subscribe to unlock this opportunity</span>
-                    <button mat-flat-button color="primary" type="button" class="fw-bold" (click)="openArbitrageSubscribePrompt()">
-                      Unlock
-                    </button>
-                  </div>
+                <td data-label="Action">
+                  <button
+                    mat-flat-button
+                    type="button"
+                    class="fw-bold trade-btn"
+                    [style.background]="activeConfig.colorPrimary"
+                    [style.color]="activeConfig.textOnPrimary"
+                    (click)="openTradeDialog(o)"
+                  >
+                    Trade
+                  </button>
                 </td>
-              </ng-template>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+              </tr>
+            </tbody>
+          </table>
+        </div>
 
-      <!-- Cards — mobile -->
-      <div class="opp-cards" *ngIf="!loading && !error && visibleOpportunities.length > 0">
-        <div
-          class="opp-card"
-          *ngFor="let o of pagedOpportunities; trackBy: trackByOpportunity"
-          [class.row-locked]="isSpreadLocked(o)"
-        >
-          <div class="opp-card-top">
-            <span class="token-cell">{{ o.token }}</span>
-            <span class="spread-pill" [ngClass]="spreadTier(o.spreadPercent)">
-              {{ o.spreadPercent | number: '1.2-2' }}%
-            </span>
-          </div>
+        <!-- Cards — mobile -->
+        <div class="opp-cards" *ngIf="!loading && !error && visibleOpportunities.length > 0">
+          <div class="opp-card" *ngFor="let o of pagedOpportunities; trackBy: trackByOpportunity">
+            <div class="opp-card-top">
+              <span class="token-cell">{{ o.token }}</span>
+              <span class="spread-pill" [ngClass]="spreadTier(o.spreadPercent)">
+                {{ o.spreadPercent | number: '1.2-2' }}%
+              </span>
+            </div>
 
-          <ng-container *ngIf="!isSpreadLocked(o); else lockedCardContent">
             <div class="opp-card-row">
               <div class="opp-leg">
                 <span class="leg-badge" [ngClass]="isActiveBuyLeg(o) ? 'buy' : 'sell'">
@@ -223,61 +239,51 @@
                 Trade
               </button>
             </div>
-          </ng-container>
-
-          <ng-template #lockedCardContent>
-            <div class="row-lock-content">
-              <mat-icon>lock</mat-icon>
-              <span>Subscribe to unlock this opportunity</span>
-              <button mat-flat-button color="primary" type="button" class="fw-bold" (click)="openArbitrageSubscribePrompt()">
-                Unlock
-              </button>
-            </div>
-          </ng-template>
-        </div>
-      </div>
-
-      <!-- Pagination -->
-      <div class="pagination-bar" *ngIf="!loading && !error && visibleOpportunities.length > 0">
-        <div class="pagination-info">
-          Showing {{ pageRangeStart }}&ndash;{{ pageRangeEnd }} of {{ visibleOpportunities.length }}
+          </div>
         </div>
 
-        <div class="pagination-controls">
-          <button mat-icon-button type="button" class="page-nav-btn" [disabled]="currentPage === 1" (click)="prevPage()" aria-label="Previous page">
-            <mat-icon>chevron_left</mat-icon>
-          </button>
+        <!-- Pagination -->
+        <div class="pagination-bar" *ngIf="!loading && !error && visibleOpportunities.length > 0">
+          <div class="pagination-info">
+            Showing {{ pageRangeStart }}&ndash;{{ pageRangeEnd }} of {{ visibleOpportunities.length }}
+          </div>
 
-          <ng-container *ngFor="let p of pageNumbers">
-            <button
-              *ngIf="p !== '…'; else ellipsis"
-              mat-button
-              type="button"
-              class="page-num-btn"
-              [class.active]="p === currentPage"
-              (click)="goToPage(p)"
-            >
-              {{ p }}
+          <div class="pagination-controls">
+            <button mat-icon-button type="button" class="page-nav-btn" [disabled]="currentPage === 1" (click)="prevPage()" aria-label="Previous page">
+              <mat-icon>chevron_left</mat-icon>
             </button>
-            <ng-template #ellipsis>
-              <span class="page-ellipsis">&hellip;</span>
-            </ng-template>
-          </ng-container>
 
-          <button mat-icon-button type="button" class="page-nav-btn" [disabled]="currentPage === totalPages" (click)="nextPage()" aria-label="Next page">
-            <mat-icon>chevron_right</mat-icon>
-          </button>
+            <ng-container *ngFor="let p of pageNumbers">
+              <button
+                *ngIf="p !== '…'; else ellipsis"
+                mat-button
+                type="button"
+                class="page-num-btn"
+                [class.active]="p === currentPage"
+                (click)="goToPage(p)"
+              >
+                {{ p }}
+              </button>
+              <ng-template #ellipsis>
+                <span class="page-ellipsis">&hellip;</span>
+              </ng-template>
+            </ng-container>
+
+            <button mat-icon-button type="button" class="page-nav-btn" [disabled]="currentPage === totalPages" (click)="nextPage()" aria-label="Next page">
+              <mat-icon>chevron_right</mat-icon>
+            </button>
+          </div>
+
+          <mat-form-field appearance="outline" class="page-size-field">
+            <mat-select [value]="pageSize" (selectionChange)="changePageSize($event.value)">
+              <mat-option *ngFor="let size of pageSizeOptions" [value]="size">
+                {{ size }} / page
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
         </div>
-
-        <mat-form-field appearance="outline" class="page-size-field">
-          <mat-select [value]="pageSize" (selectionChange)="changePageSize($event.value)">
-            <mat-option *ngFor="let size of pageSizeOptions" [value]="size">
-              {{ size }} / page
-            </mat-option>
-          </mat-select>
-        </mat-form-field>
       </div>
-    </div>
+    </ng-container>
   </ng-container>
 
 </div>
