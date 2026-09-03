@@ -1,11 +1,36 @@
-<div class="trade-chat">
+<div
+  class="trade-chat"
+  [class.dragging]="isDragging"
+  (dragover)="onDragOver($event)"
+  (dragenter)="onDragEnter($event)"
+  (dragleave)="onDragLeave($event)"
+  (drop)="onDrop($event)"
+>
   <div class="trade-chat-header">
-    <span class="trade-chat-title">Chat</span>
-    <span class="presence-dot" [class.online]="counterpartyOnline"></span>
-    <span class="presence-label">{{ counterpartyOnline ? 'Online' : 'Offline' }}</span>
+    <div class="header-identity">
+      <div class="header-avatar">{{counterpartyUsername.charAt(0).toUpperCase() }}</div>
+      <div class="header-text">
+        <span class="trade-chat-title">{{ counterpartyUsername}}</span>
+        <span class="header-status">
+          <span class="presence-dot" [class.online]="counterpartyOnline"></span>
+          <ng-container *ngIf="counterpartyTyping; else presenceLabel">typing…</ng-container>
+          <ng-template #presenceLabel>{{ counterpartyOnline ? 'Online' : 'Offline' }}</ng-template>
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <div class="connection-banner" *ngIf="connectionState !== 'connected'">
+    <mat-icon class="spinning" *ngIf="connectionState === 'connecting'">autorenew</mat-icon>
+    <mat-icon *ngIf="connectionState === 'disconnected'">wifi_off</mat-icon>
+    {{ connectionState === 'connecting' ? 'Reconnecting…' : 'Connection lost — retrying' }}
   </div>
 
   <div class="trade-chat-thread" #threadEl (scroll)="onScroll()">
+    <div class="loading-older" *ngIf="loadingOlder">
+      <mat-icon class="spinning">autorenew</mat-icon> Loading earlier messages…
+    </div>
+
     <div class="chat-loading" *ngIf="loading">
       <img src="./assets/images/loading.gif" alt="Loading..." style="width: 22px; height: 22px;" />
     </div>
@@ -30,23 +55,29 @@
             <span *ngIf="!msg.sender.avatarUrl">{{ (msg.sender.username || 'T').charAt(0).toUpperCase() }}</span>
           </div>
 
-          <div class="chat-bubble" [class.pending]="msg.pending" [class.failed]="msg.failed">
+          <div class="chat-bubble" [class.pending]="msg.pending" [class.failed]="msg.failed" [class.image-bubble]="msg.type === ChatMessageType.Image">
             <ng-container [ngSwitch]="msg.type">
               <p *ngSwitchCase="ChatMessageType.Text" class="chat-bubble-text">{{ msg.text }}</p>
-              <img
-                *ngSwitchCase="ChatMessageType.Image"
-                class="chat-bubble-image"
-                [src]="msg.imageUrl"
-                alt="Attachment"
-                (click)="openImage(msg.imageUrl)"
-              />
+
+              <div *ngSwitchCase="ChatMessageType.Image" class="chat-evidence">
+                <img
+                  class="chat-bubble-image"
+                  [src]="msg.imageUrl"
+                  alt="Transaction evidence"
+                  (click)="!msg.pending && openLightbox(msg.imageUrl)"
+                />
+                <span class="evidence-tag" *ngIf="!msg.pending">Evidence</span>
+                <div class="upload-progress" *ngIf="msg.pending && msg.progress !== undefined">
+                  <div class="upload-progress-bar" [style.width.%]="msg.progress"></div>
+                  <span class="upload-progress-label">{{ msg.progress }}%</span>
+                </div>
+              </div>
             </ng-container>
 
             <div class="chat-bubble-meta">
               <span class="chat-time">{{ msg.createdAt | date: 'shortTime' }}</span>
-              <mat-icon class="chat-status-icon" *ngIf="msg.isMine && !msg.pending && !msg.failed">
-                {{ msg.readAt ? 'done_all' : 'done' }}
-              </mat-icon>
+              <mat-icon class="chat-status-icon read" *ngIf="msg.isMine && !msg.pending && !msg.failed && msg.readAt">done_all</mat-icon>
+              <mat-icon class="chat-status-icon" *ngIf="msg.isMine && !msg.pending && !msg.failed && !msg.readAt">done</mat-icon>
               <mat-icon class="chat-status-icon spinning" *ngIf="msg.pending">autorenew</mat-icon>
             </div>
 
@@ -65,6 +96,16 @@
     <div #scrollAnchor></div>
   </div>
 
+  <button type="button" class="jump-to-bottom" *ngIf="showJumpToBottom" (click)="jumpToBottom()">
+    <mat-icon>arrow_downward</mat-icon>
+    <span *ngIf="unseenWhileScrolledUp > 0">{{ unseenWhileScrolledUp }} new</span>
+  </button>
+
+  <div class="drag-overlay" *ngIf="isDragging">
+    <mat-icon>image</mat-icon>
+    <span>Drop image to share as evidence</span>
+  </div>
+
   <div class="chat-quick-replies" *ngIf="!chatDisabled">
     <button type="button" class="quick-reply-chip" *ngFor="let q of quickReplies" (click)="useQuickReply(q)">
       {{ q }}
@@ -74,15 +115,24 @@
   <div class="field-error" *ngIf="imageError">{{ imageError }}</div>
 
   <div class="trade-chat-composer" *ngIf="!chatDisabled; else chatClosedNote">
-    <label class="icon-btn attach-btn" matTooltip="Attach image">
+    <div class="emoji-picker" *ngIf="showEmojiPicker">
+      <button type="button" *ngFor="let e of quickEmojis" (click)="insertEmoji(e)">{{ e }}</button>
+    </div>
+
+    <button type="button" class="icon-btn attach-btn" matTooltip="Attach evidence (up to {{ maxEvidenceLabel }})" (click)="openFilePicker()">
       <mat-icon>image</mat-icon>
-      <input type="file" accept="image/*" hidden (change)="onImageSelected($event)" />
-    </label>
+    </button>
+    <input #fileInput type="file" accept="image/*" hidden (change)="onFileSelected($event)" />
+
+    <button type="button" class="icon-btn emoji-btn" matTooltip="Emoji" (click)="toggleEmojiPicker()">
+      <mat-icon>mood</mat-icon>
+    </button>
 
     <input
       type="text"
       class="chat-input"
       placeholder="Type a message..."
+      [maxlength]="maxMessageLength"
       [(ngModel)]="draft"
       (ngModelChange)="onDraftChange()"
       (keyup.enter)="sendDraft()"
@@ -98,4 +148,11 @@
       <mat-icon>lock</mat-icon> This chat is closed because the trade was {{ trade.status.toLowerCase() }}.
     </div>
   </ng-template>
+
+  <div class="lightbox" *ngIf="lightboxUrl" (click)="closeLightbox()">
+    <button type="button" class="lightbox-close" (click)="closeLightbox()">
+      <mat-icon>close</mat-icon>
+    </button>
+    <img [src]="lightboxUrl" alt="Transaction evidence" (click)="$event.stopPropagation()" />
+  </div>
 </div>

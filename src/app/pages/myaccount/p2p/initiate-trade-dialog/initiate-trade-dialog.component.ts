@@ -17,11 +17,13 @@ import {
   canReleaseFunds,
   canCancelTrade,
   isPaymentWindowExpired,
+  isCompletePaymentMethod,
   maskAccountNumber,
   fiatSymbol,
   formatCountdown,
   getPaymentMethodsForFiat,
   msUntilDeadline,
+  buildPaymentMethodDetails,
 } from '../model/p2p.model';
 import { P2pTradeChatComponent } from '../trade-chat/p2p-trade-chat.component';
 
@@ -43,11 +45,22 @@ const SELLER_REVIEW_WINDOW_MS = 15 * 60 * 1000;
 const VERIFICATION_POLL_INTERVAL_MS = 5000;
 const VERIFICATION_POLL_TIMEOUT_MS = 10 * 60 * 1000;
 
+// --- Payment-detail resolution retry tuning -----------------------------
+// The seller's payment method is sometimes snapshotted onto the trade
+// asynchronously (e.g. right after creation, or only fully populated once
+// the order's nested payment details are attached server-side). A single
+// getTrade() call made the instant the dialog opens can land just before
+// that write finishes and come back with nothing usable, even though the
+// data exists moments later. Retrying a few times with a short delay before
+// giving up avoids flashing the "not showing yet" banner for a transient
+// race instead of a genuine missing-data case.
+const PAYMENT_DETAIL_RETRY_MAX = 4;
+const PAYMENT_DETAIL_RETRY_DELAY_MS = 1500;
+
 type TradeStep = 'created' | 'paid' | 'released' | 'disputed';
 
 /** Why matchedOrderPaymentDetail came back empty after we tried to resolve it. */
 type SellerDetailsError = 'none-attached' | 'failed' | null;
-
 
 @Component({
   selector: 'app-initiate-trade-dialog',
@@ -108,6 +121,14 @@ export class InitiateTradeDialogComponent implements OnInit, OnDestroy {
   cancelling = false;
   refreshingTrade = false;
 
+  // True while we're auto-retrying getTrade() to resolve the payment
+  // detail after opening the dialog (see PAYMENT_DETAIL_RETRY_* above).
+  // The template shows a loader instead of the "not showing yet" banner
+  // while this is true.
+  paymentDetailRetrying = false;
+  private paymentDetailRetryAttempt = 0;
+  private paymentDetailRetryTimer: ReturnType<typeof setTimeout> | null = null;
+
   private revealedFields = new Set<string>();
 
   showDisputeForm = false;
@@ -156,9 +177,14 @@ export class InitiateTradeDialogComponent implements OnInit, OnDestroy {
         this.startVerificationPolling();
       }
 
-   
+      // FIX: previously called refreshTrade() once and, if that single
+      // response still didn't carry a usable payment detail, left the user
+      // staring at the "not showing yet" banner even when the backend was
+      // just about to finish snapshotting it. Now retries a few times with
+      // a short delay (see PAYMENT_DETAIL_RETRY_* constants) before
+      // conceding and showing the banner with a manual retry option.
       if (!this.resolvedPaymentDetail) {
-        this.refreshTrade();
+        this.beginPaymentDetailRetry();
       }
     } else if (this.data.order) {
       this.mode = 'initiate';
@@ -170,13 +196,14 @@ export class InitiateTradeDialogComponent implements OnInit, OnDestroy {
         this.loadMySavedMethods();
       } else if (this.orderCarriesSellerDetails) {
         if (this.matchedOrderPaymentDetail) {
-          // Market payload already carried the seller's account — nothing to fetch.
+          // Market payload already carried a usable seller account — nothing to fetch.
           this.sellerDetailsError = null;
         } else {
-          // The order came back without paymentMethodDetails populated even
-          // though this is a Sell ad (i.e. the seller MAY have an account
-          // attached — the list payload just didn't include it). Re-fetch
-          // the single order, which should return the fully populated form.
+          // The order came back without a usable payment detail — either the
+          // list payload just didn't include it, or it genuinely doesn't
+          // exist. Re-fetch the single order, which should return the fully
+          // populated form; refreshOrderPaymentDetails() below decides which
+          // of those two cases we're actually in.
           this.refreshOrderPaymentDetails();
         }
       }
@@ -188,6 +215,7 @@ export class InitiateTradeDialogComponent implements OnInit, OnDestroy {
     this.stopCountdown();
     this.stopVerificationPolling();
     if (this.copiedResetTimer) clearTimeout(this.copiedResetTimer);
+    if (this.paymentDetailRetryTimer) clearTimeout(this.paymentDetailRetryTimer);
   }
 
   close(result?: P2PTrade): void {
@@ -221,24 +249,40 @@ export class InitiateTradeDialogComponent implements OnInit, OnDestroy {
     return this.order?.type === P2POrderType.Buy;
   }
 
-  get matchedOrderPaymentDetail(): UserPaymentMethod | undefined {
-    const details = this.order?.paymentMethodDetails;
-    if (!details?.length) return undefined;
-    return details.find((d) => d.method === this.paymentMethod) || details[0];
+  private get resolvedOrderPaymentDetails(): UserPaymentMethod[] {
+    if (!this.order) return [];
+    // buildPaymentMethodDetails() already filters out incomplete entries,
+    // so anything that comes back here is guaranteed to have a method and
+    // an account number.
+    return buildPaymentMethodDetails(
+      this.order.paymentMethodDetails,
+      this.order.paymentDetails,
+      this.order.paymentMethodIds,
+      this.order.fiatCurrency
+    );
   }
 
   /**
-   * True once we can say with confidence whether a payment target exists
-   * for this Sell ad — i.e. we're not still loading, and we've either
-   * found a detail or determined definitively that there isn't one /
-   * the fetch failed. Used to gate the submit button.
+   * FIX: previously this returned `details[0]` (or a match) as soon as the
+   * array was non-empty, even if that entry's fields were blank — which is
+   * exactly what produced the empty "You'll send payment to" card. Now the
+   * source array is already filtered to complete entries only, so anything
+   * returned here is guaranteed renderable. If nothing complete exists,
+   * this correctly returns undefined and the "none-attached" banner shows
+   * instead of a blank card.
    */
+  get matchedOrderPaymentDetail(): UserPaymentMethod | undefined {
+    const details = this.resolvedOrderPaymentDetails;
+    if (!details.length) return undefined;
+    const match = details.find((d) => d.method === this.paymentMethod) || details[0];
+    return isCompletePaymentMethod(match) ? match : undefined;
+  }
+
   get sellerPaymentResolved(): boolean {
     if (!this.orderCarriesSellerDetails) return true;
     return !!this.matchedOrderPaymentDetail;
   }
 
-  
   private refreshOrderPaymentDetails(): void {
     if (!this.order || this.sellerDetailsLoading) return;
     this.sellerDetailsRefetchAttempted = true;
@@ -247,8 +291,6 @@ export class InitiateTradeDialogComponent implements OnInit, OnDestroy {
 
     this.p2pService.getOrder(this.order.id).subscribe({
       next: (fullOrder) => {
-
-        console.log(fullOrder);
         this.sellerDetailsLoading = false;
         this.order = fullOrder;
         this.sellerDetailsError = this.matchedOrderPaymentDetail ? null : 'none-attached';
@@ -317,12 +359,9 @@ export class InitiateTradeDialogComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * FIXED: previously this never checked whether the seller's payment
-   * details had actually resolved for Sell ads, so a buyer could hit
-   * "Buy USDT" while the "seller's account isn't showing" banner was
-   * visible, with nowhere valid to send money. Now the button stays
-   * disabled until we have a confirmed payment target (or have confirmed
-   * there genuinely isn't one, in which case it should never enable).
+   * The Buy/Sell button stays disabled until we have a confirmed payment
+   * target (or have confirmed there genuinely isn't one, in which case it
+   * should never enable).
    */
   get initiateFormValid(): boolean {
     if (!this.amountValid || !this.paymentMethod || !this.pinValid) return false;
@@ -335,6 +374,50 @@ export class InitiateTradeDialogComponent implements OnInit, OnDestroy {
     return true;
   }
 
+  /**
+   * The specific saved payment method that should be locked onto the trade
+   * being created, regardless of which side supplies it.
+   *
+   *  - Buying against a Sell ad: it's the seller's account we resolved
+   *    above (`matchedOrderPaymentDetail`).
+   *  - Selling into a Buy ad: it's the account I picked from my own saved
+   *    methods (`selectedPaymentMethodId`).
+   *
+   * This is what actually gets sent to the backend so the payment target
+   * is snapshotted onto the trade record at creation time, instead of
+   * being re-derived later from the (possibly since-changed) order.
+   */
+  private get resolvedTradePaymentMethodId(): string | undefined {
+    if (this.mustSupplySellerDetails) {
+      return this.selectedPaymentMethodId || undefined;
+    }
+    if (this.orderCarriesSellerDetails) {
+      return this.matchedOrderPaymentDetail?.id || undefined;
+    }
+    return undefined;
+  }
+
+  /**
+   * The full payment-method object matching resolvedTradePaymentMethodId,
+   * used only to optimistically render the "Payment goes to" card the
+   * instant a trade is created — before any refetch. This is a client-side
+   * convenience, not a substitute for the backend persisting it: if the
+   * dialog is reopened later (e.g. after reload), only what the server
+   * actually stored on the trade will be shown (which is why the retry
+   * logic below exists — the server-side write can lag behind this
+   * optimistic value).
+   */
+  private get resolvedTradePaymentMethodDetail(): UserPaymentMethod | undefined {
+    if (this.mustSupplySellerDetails) {
+      const detail = this.mySavedMethods.find((m) => m.id === this.selectedPaymentMethodId);
+      return isCompletePaymentMethod(detail) ? detail : undefined;
+    }
+    if (this.orderCarriesSellerDetails) {
+      return this.matchedOrderPaymentDetail;
+    }
+    return undefined;
+  }
+
   submitInitiateTrade(): void {
     if (!this.order || !this.initiateFormValid || this.submitting) return;
     if (this.initiatePinLocked) {
@@ -345,12 +428,22 @@ export class InitiateTradeDialogComponent implements OnInit, OnDestroy {
     this.submitting = true;
     this.errorMessage = '';
 
+    // Keep a reference before the async call — `this.matchedOrderPaymentDetail`
+    // etc. are derived getters and stay valid, but capturing the object now
+    // makes the optimistic-merge intent explicit and immune to any state
+    // change while the request is in flight.
+    const optimisticDetail = this.resolvedTradePaymentMethodDetail;
+
     this.p2pService
       .initiateTrade({
         orderId: this.order.id,
         coinAmount: this.coinAmount as number,
         paymentMethod: this.paymentMethod,
-        paymentMethodId: this.mustSupplySellerDetails ? this.selectedPaymentMethodId : undefined,
+        // Sent for both directions so the backend can resolve and persist
+        // the correct payment target on the trade record — this is what
+        // makes "Payment goes to" show up reliably in the trade-detail view
+        // instead of falling back to the "not showing yet" banner.
+        paymentMethodId: this.resolvedTradePaymentMethodId,
         transactionPin: this.transactionPin,
       })
       .subscribe({
@@ -359,7 +452,23 @@ export class InitiateTradeDialogComponent implements OnInit, OnDestroy {
           this.transactionPin = '';
           this.initiatePinAttempts = 0;
           this.sharedService.showToast({ title: 'Trade started. Check the payment window below.' });
-          this.close(trade);
+
+          // If the server response doesn't (yet) carry a complete
+          // `sellerPaymentMethod` — e.g. the snapshot write is still in
+          // flight — patch in what we already resolved locally so the
+          // buyer/seller isn't shown a blank "not showing yet" banner
+          // immediately after starting the trade. This is optimistic
+          // display only; it does not persist anything, and a later
+          // refresh will reflect whatever the server actually has stored
+          // (the retry loop in ngOnInit covers that case if this dialog
+          // instance gets reopened before the write lands).
+          const finalTrade: P2PTrade = isCompletePaymentMethod(trade.sellerPaymentMethod)
+            ? trade
+            : optimisticDetail
+            ? { ...trade, sellerPaymentMethod: optimisticDetail }
+            : trade;
+
+          this.close(finalTrade);
         },
         error: (err) => {
           this.submitting = false;
@@ -494,15 +603,43 @@ export class InitiateTradeDialogComponent implements OnInit, OnDestroy {
   }
 
   // =======================================================================
-  // TRADE DETAIL — payment details (full display, with fallback + masking)
+  // TRADE DETAIL — payment details (full display, gated on completeness)
   // =======================================================================
 
+  /**
+   * Same defensive resolution as `resolvedOrderPaymentDetails` above, but
+   * for a trade already in progress: prefer the account actually locked to
+   * the trade record (`trade.sellerPaymentMethod`), then fall back to the
+   * order's resolved details. Both paths are already filtered to complete
+   * entries, so this never renders a blank-fielded card — if nothing usable
+   * exists, this returns undefined and the template's "Payment details
+   * aren't showing yet" fallback banner is shown instead (after the retry
+   * loop in ngOnInit / beginPaymentDetailRetry has had a chance to catch a
+   * delayed snapshot write).
+   *
+   * NOTE: the order-based fallback re-derives the seller's account from the
+   * *current* state of the ad, which the seller could have edited or
+   * deleted since the trade started, and is structurally unavailable for
+   * trades where I supplied my own saved method (Buy-type orders) — for
+   * those, `trade.sellerPaymentMethod` is the only source of truth.
+   */
   get resolvedPaymentDetail(): UserPaymentMethod | undefined {
     if (!this.trade) return undefined;
-    if (this.trade.sellerPaymentMethod) return this.trade.sellerPaymentMethod;
-    const details = this.trade.order?.paymentMethodDetails;
-    if (!details?.length) return undefined;
-    return details.find((d) => d.method === this.trade!.paymentMethod) || details[0];
+    if (isCompletePaymentMethod(this.trade.sellerPaymentMethod)) return this.trade.sellerPaymentMethod;
+
+    const order = this.trade.order;
+    if (!order) return undefined;
+
+    const details = buildPaymentMethodDetails(
+      order.paymentMethodDetails,
+      order.paymentDetails,
+      order.paymentMethodIds,
+      order.fiatCurrency
+    );
+    if (!details.length) return undefined;
+
+    const match = details.find((d) => d.method === this.trade!.paymentMethod) || details[0];
+    return isCompletePaymentMethod(match) ? match : undefined;
   }
 
   get paymentDetailExtraFields(): { label: string; value: string }[] {
@@ -533,6 +670,67 @@ export class InitiateTradeDialogComponent implements OnInit, OnDestroy {
 
   maskedAccountNumber(value: string | undefined | null): string {
     return maskAccountNumber(value);
+  }
+
+  // ---- Payment-detail retry (fixes the "not showing yet" flash) --------
+
+  private beginPaymentDetailRetry(): void {
+    if (this.paymentDetailRetryTimer) {
+      clearTimeout(this.paymentDetailRetryTimer);
+      this.paymentDetailRetryTimer = null;
+    }
+    this.paymentDetailRetryAttempt = 0;
+    this.paymentDetailRetrying = true;
+    this.attemptPaymentDetailFetch();
+  }
+
+  private attemptPaymentDetailFetch(): void {
+    if (!this.trade) {
+      this.paymentDetailRetrying = false;
+      return;
+    }
+
+    this.refreshingTrade = true;
+    this.p2pService.getTrade(this.trade.id).subscribe({
+      next: (updated) => {
+        this.refreshingTrade = false;
+        this.trade = updated;
+
+        if (this.resolvedPaymentDetail) {
+          this.paymentDetailRetrying = false;
+          return;
+        }
+
+        this.paymentDetailRetryAttempt += 1;
+        if (this.paymentDetailRetryAttempt >= PAYMENT_DETAIL_RETRY_MAX) {
+          this.paymentDetailRetrying = false;
+          return;
+        }
+
+        this.paymentDetailRetryTimer = setTimeout(
+          () => this.attemptPaymentDetailFetch(),
+          PAYMENT_DETAIL_RETRY_DELAY_MS
+        );
+      },
+      error: () => {
+        this.refreshingTrade = false;
+        this.paymentDetailRetryAttempt += 1;
+        if (this.paymentDetailRetryAttempt >= PAYMENT_DETAIL_RETRY_MAX) {
+          this.paymentDetailRetrying = false;
+          return;
+        }
+        this.paymentDetailRetryTimer = setTimeout(
+          () => this.attemptPaymentDetailFetch(),
+          PAYMENT_DETAIL_RETRY_DELAY_MS
+        );
+      },
+    });
+  }
+
+  /** Manual retry, wired to the "Refresh" button in the warning banner. */
+  retryPaymentDetail(): void {
+    if (this.refreshingTrade || this.paymentDetailRetrying) return;
+    this.beginPaymentDetailRetry();
   }
 
   // =======================================================================
@@ -700,16 +898,12 @@ export class InitiateTradeDialogComponent implements OnInit, OnDestroy {
         }
       },
       error: () => {
-        // Transient errors shouldn't kill the whole flow — just try again
-        // on the next tick. If verification is consistently unreachable,
-        // the timeout above eventually kicks in.
+        // Transient poll errors are ignored; the next tick will retry.
       },
     });
   }
 
-  /** Called only once the backend has independently confirmed the payment
-   *  is genuine. No PIN here — the authorization comes from the verified
-   *  signal itself, not a manual human action. */
+
   private autoRelease(): void {
     if (!this.trade || this.autoReleaseInFlight) return;
     this.autoReleaseInFlight = true;

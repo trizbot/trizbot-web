@@ -16,6 +16,7 @@ export interface ChatMessage {
   type: ChatMessageType;
   text?: string;
   imageUrl?: string;
+  imageBytes?: number;
   sender: ChatParticipant;
   isMine: boolean;
   isSystem: boolean;
@@ -25,6 +26,10 @@ export interface ChatMessage {
   clientId?: string;
   pending?: boolean;
   failed?: boolean;
+  /** 0-100 upload progress, only set while an image evidence upload is in flight. */
+  progress?: number;
+  /** Kept client-side only so a failed image send can be retried without re-picking the file. */
+  file?: File;
 }
 
 export interface SendChatMessageReqBody {
@@ -39,6 +44,20 @@ export interface ChatSocketEvent {
   event: 'message' | 'typing' | 'read' | 'presence';
   tradeId: string;
   payload: any;
+}
+
+/**
+ * Evidence photos (payment screenshots, receipts, etc.) are frequently
+ * multi-MB, high-resolution phone screenshots. 10MB comfortably covers
+ * that while still guarding the backend against abuse.
+ */
+export const MAX_EVIDENCE_BYTES = 10 * 1024 * 1024; // 10MB
+export const MIN_GUARANTEED_EVIDENCE_BYTES = 2 * 1024 * 1024; // 2MB floor, always supported
+
+export function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 function extractId(raw: any): string {
@@ -74,6 +93,7 @@ export function normalizeChatMessage(raw: any): ChatMessage {
     type,
     text: raw.text || undefined,
     imageUrl: raw.imageUrl || undefined,
+    imageBytes: raw.imageBytes || undefined,
     sender,
     isMine: typeof raw.isMine === 'boolean' ? raw.isMine : false,
     isSystem: type === ChatMessageType.System,
@@ -121,4 +141,8 @@ export const CHAT_QUICK_REPLIES_SELLER: string[] = [
   'Please send a screenshot of the payment.',
   "I haven't received it yet, please double-check.",
   'Give me a few minutes to verify.',
+];
+
+export const CHAT_QUICK_EMOJIS: string[] = [
+  '👍', '🙏', '✅', '⏳', '💰', '📷', '❤️', '😊', '👌', '🤝',
 ];

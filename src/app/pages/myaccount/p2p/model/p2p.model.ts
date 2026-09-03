@@ -1,4 +1,3 @@
-
 import { UserPaymentMethod, normalizePaymentMethod } from "../payment-method/payment-method.model";
 
 export enum P2POrderType {
@@ -197,6 +196,191 @@ function placeholderName(id?: string): string {
   return id ? `Trader ${id.slice(-6).toUpperCase()}` : 'Merchant';
 }
 
+/**
+ * A payment detail is only useful to show/trade against if it actually
+ * carries a method name AND an account number. Previously the code treated
+ * "an object exists" as "resolved", which let a blank-fielded object render
+ * an empty card (and, worse, leave the Buy button enabled). Everything
+ * downstream (component getters, template) should gate on this instead of
+ * on truthiness of the object alone.
+ */
+export function isCompletePaymentMethod(detail: UserPaymentMethod | null | undefined): detail is UserPaymentMethod {
+  return !!detail && !!String(detail.method || '').trim() && !!String(detail.accountNumber || '').trim();
+}
+
+/**
+ * FIX: the backend stores/returns the seller's payment info as a flattened
+ * string in `paymentDetails` (it never reliably sends back a structured
+ * `paymentMethodDetails` array). The template renders `detail.method` /
+ * `detail.accountName` / `detail.accountNumber`, so those fields were
+ * rendering blank whenever the raw string didn't match one exact separator
+ * pattern.
+ *
+ * This now tries several real-world formats people actually save data in,
+ * in order of specificity:
+ *
+ *   1. JSON object string                → {"method":"...","accountName":"...","accountNumber":"..."}
+ *   2. "Method: Name - Number"           → colon then dash (original format)
+ *   3. "Method - Name - Number"          → all dash-separated
+ *   4. "Method: Number"                  → colon only, no separate name
+ *   5. anything else                     → whole string treated as the method,
+ *                                           name/number left blank (caller
+ *                                           should treat this as incomplete)
+ *
+ * Exported so components can call it defensively on an order/trade object
+ * even when that object didn't come through normalizeOrder().
+ */
+export function parsePaymentDetailString(
+  raw: string | UserPaymentMethod,
+  fiatCurrency: string,
+  id?: string
+): UserPaymentMethod {
+  const fallback: UserPaymentMethod = {
+    id: id || '',
+    method: '',
+    accountName: '',
+    accountNumber: '',
+    fiatCurrency,
+    isDefault: false,
+  };
+
+  // Already a structured object (some payloads mix shapes) — normalize and pass through.
+  if (raw && typeof raw === 'object') {
+    return {
+      ...fallback,
+      ...raw,
+      id: (raw as any).id || id || '',
+      fiatCurrency: (raw as any).fiatCurrency || fiatCurrency,
+    };
+  }
+
+  if (!raw || typeof raw !== 'string') return fallback;
+  const trimmed = raw.trim();
+  if (!trimmed) return fallback;
+
+  // 1. JSON string
+  if (trimmed.startsWith('{')) {
+    try {
+      const parsed = JSON.parse(trimmed);
+      return {
+        id: id || parsed.id || '',
+        method: parsed.method || parsed.paymentMethod || '',
+        accountName: parsed.accountName || parsed.name || '',
+        accountNumber: parsed.accountNumber || parsed.account || '',
+        bankName: parsed.bankName || undefined,
+        additionalInfo: parsed.additionalInfo || undefined,
+        fiatCurrency: parsed.fiatCurrency || fiatCurrency,
+        isDefault: false,
+      };
+    } catch {
+      // fall through to string parsing below
+    }
+  }
+
+  // 2. "Method: Name - Number"  (also tolerates "Method : Name-Number")
+  const colonDashMatch = trimmed.match(/^(.+?)\s*:\s*(.+?)\s*-\s*(.+)$/);
+  if (colonDashMatch) {
+    return {
+      id: id || '',
+      method: colonDashMatch[1].trim(),
+      accountName: colonDashMatch[2].trim(),
+      accountNumber: colonDashMatch[3].trim(),
+      fiatCurrency,
+      isDefault: false,
+    };
+  }
+
+  // 3. "Method - Name - Number"
+  const dashParts = trimmed.split(/\s+-\s+/);
+  if (dashParts.length >= 3) {
+    return {
+      id: id || '',
+      method: dashParts[0].trim(),
+      accountName: dashParts[1].trim(),
+      accountNumber: dashParts.slice(2).join(' - ').trim(),
+      fiatCurrency,
+      isDefault: false,
+    };
+  }
+  if (dashParts.length === 2) {
+    // Ambiguous: could be "Method - Number" (no name) — treat the second
+    // part as the account number since that's the field that actually
+    // matters for sending money.
+    return {
+      id: id || '',
+      method: dashParts[0].trim(),
+      accountName: '',
+      accountNumber: dashParts[1].trim(),
+      fiatCurrency,
+      isDefault: false,
+    };
+  }
+
+  // 4. "Method: Number" (colon only, no dash at all)
+  const colonOnlyMatch = trimmed.match(/^(.+?)\s*:\s*(.+)$/);
+  if (colonOnlyMatch) {
+    return {
+      id: id || '',
+      method: colonOnlyMatch[1].trim(),
+      accountName: '',
+      accountNumber: colonOnlyMatch[2].trim(),
+      fiatCurrency,
+      isDefault: false,
+    };
+  }
+
+  // 5. Nothing recognizable — surface the raw text as the method so support
+  // can see what was actually stored, but leave accountNumber blank so
+  // isCompletePaymentMethod() correctly flags this as unusable rather than
+  // silently rendering a blank-looking card.
+  return { ...fallback, method: trimmed };
+}
+
+/**
+ * Builds the structured `paymentMethodDetails` array a Sell ad needs for
+ * display, preferring a real structured array from the backend if one is
+ * ever added, and otherwise falling back to parsing the flattened
+ * `paymentDetails` strings that are already being saved today.
+ *
+ * Incomplete entries (missing method or account number after parsing) are
+ * filtered out here so callers never have to special-case them — a filtered
+ * list simply "has no attached account" from their point of view.
+ */
+export function buildPaymentMethodDetails(
+  existing: UserPaymentMethod[] | undefined,
+  flatDetails: string[] | undefined,
+  paymentMethodIds: string[] | undefined,
+  fiatCurrency: string | undefined
+): UserPaymentMethod[] {
+  const fiat = fiatCurrency || 'NGN';
+
+  if (existing?.length) {
+    return existing.filter(isCompletePaymentMethod);
+  }
+
+  const details = Array.isArray(flatDetails) ? flatDetails : [];
+  if (!details.length) return [];
+
+  const ids = Array.isArray(paymentMethodIds) ? paymentMethodIds : [];
+
+  return details
+    .map((s, i) => parsePaymentDetailString(s, fiat, ids[i]))
+    .filter(isCompletePaymentMethod);
+}
+
+function resolvePaymentMethodDetails(raw: any): UserPaymentMethod[] {
+  const structured = Array.isArray(raw.paymentMethodDetails) && raw.paymentMethodDetails.length
+    ? raw.paymentMethodDetails.map(normalizePaymentMethod)
+    : undefined;
+
+  return buildPaymentMethodDetails(
+    structured,
+    raw.paymentDetails,
+    (raw.paymentMethodIds || []).map(extractId),
+    raw.fiatCurrency
+  );
+}
+
 export function normalizeMerchant(raw: any, fallbackId?: string): P2PMerchant {
   const nested = raw && typeof raw === 'object' ? raw.merchant : null;
   const source = nested && typeof nested === 'object' ? nested : raw;
@@ -239,7 +423,13 @@ export function normalizeOrder(raw: any): P2POrder {
     maxLimit: raw.maxLimit,
     paymentMethods: raw.paymentMethods || [],
     paymentMethodIds: (raw.paymentMethodIds || []).map(extractId),
-    paymentMethodDetails: (raw.paymentMethodDetails || []).map(normalizePaymentMethod),
+    paymentDetails: raw.paymentDetails || [],
+    // FIX: was `(raw.paymentMethodDetails || []).map(normalizePaymentMethod)`,
+    // which is always empty because the backend never reliably populates
+    // that field. Now falls back to robustly parsing the flattened
+    // `paymentDetails` strings, and drops any entry that still comes out
+    // incomplete instead of letting it render blank.
+    paymentMethodDetails: resolvePaymentMethodDetails(raw),
     terms: raw.terms,
     paymentWindowMinutes: raw.paymentWindowMinutes,
     status: raw.status,
@@ -254,6 +444,10 @@ export function normalizeTrade(raw: any): P2PTrade {
   const buyerFallbackId = extractId(raw.buyerId);
   const sellerFallbackId = extractId(raw.sellerId);
 
+  const parsedSellerPaymentMethod = raw.sellerPaymentMethod
+    ? normalizePaymentMethod(raw.sellerPaymentMethod)
+    : undefined;
+
   return {
     id: extractId(raw.id || raw._id),
     order: normalizeOrder(raw.order || { coin: raw.coin, fiatCurrency: raw.fiatCurrency, pricePerUnit: raw.pricePerUnit }),
@@ -263,7 +457,10 @@ export function normalizeTrade(raw: any): P2PTrade {
     coinAmount: raw.coinAmount,
     fiatAmount: raw.fiatAmount,
     paymentMethod: raw.paymentMethod,
-    sellerPaymentMethod: raw.sellerPaymentMethod ? normalizePaymentMethod(raw.sellerPaymentMethod) : undefined,
+    // FIX: same completeness gate applies to a trade's locked-in seller
+    // payment method — only keep it if it's actually usable, otherwise let
+    // the component fall back to the order's resolved details.
+    sellerPaymentMethod: isCompletePaymentMethod(parsedSellerPaymentMethod) ? parsedSellerPaymentMethod : undefined,
     status: raw.status,
     paymentDeadline: raw.paymentDeadline ? extractDate(raw.paymentDeadline) : undefined,
     createdAt: extractDate(raw.createdAt),
@@ -271,6 +468,7 @@ export function normalizeTrade(raw: any): P2PTrade {
     paymentProofNote: raw.paymentProofNote || undefined,
     paidAt: raw.paidAt ? extractDate(raw.paidAt) : undefined,
     releasedAt: raw.releasedAt ? extractDate(raw.releasedAt) : undefined,
+    autoReleaseEligible: raw.autoReleaseEligible ?? undefined,
   };
 }
 
@@ -312,7 +510,6 @@ export interface ExchangeRateRes {
   timestamp?: string;
 }
 
-
 export function canCancelTrade(trade: P2PTrade): boolean {
   return trade.isBuyer && trade.status === TradeStatus.Pending;
 }
@@ -329,12 +526,9 @@ export function maskAccountNumber(value: string | undefined | null): string {
   return `${'•'.repeat(compact.length - 4)}${compact.slice(-4)}`;
 }
 
-
-
 export type PaymentVerificationStatus = 'pending' | 'verifying' | 'verified' | 'failed';
 
 export interface VerifyPaymentRes {
   status: PaymentVerificationStatus;
   trade?: P2PTrade;
 }
-

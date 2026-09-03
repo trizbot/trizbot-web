@@ -78,13 +78,19 @@
 
       <!-- Ad already carries the seller's account -> always show it in full,
            never masked, since the buyer needs the real account number to
-           send money before they even lock funds into escrow. -->
+           send money before they even lock funds into escrow.
+
+           matchedOrderPaymentDetail is now guaranteed (by the model layer)
+           to have a non-empty method + accountNumber whenever it's truthy,
+           so this card can never render with blank fields anymore — if the
+           data isn't usable, matchedOrderPaymentDetail is undefined and the
+           warning banner below shows instead. -->
       <section class="detail-card payment-target" *ngIf="orderCarriesSellerDetails && matchedOrderPaymentDetail as detail">
         <h3 class="detail-card-title"><mat-icon>account_balance</mat-icon> You'll send payment to</h3>
 
         <dl class="detail-list">
           <div class="detail-row"><dt>Method</dt><dd>{{ detail.method }}</dd></div>
-          <div class="detail-row"><dt>Account name</dt><dd>{{ detail.accountName }}</dd></div>
+          <div class="detail-row" *ngIf="detail.accountName"><dt>Account name</dt><dd>{{ detail.accountName }}</dd></div>
           <div class="detail-row account-row">
             <dt>Account number</dt>
             <dd class="account-value-group">
@@ -101,8 +107,8 @@
         <p class="hint muted">Verify these details carefully before sending money — never pay an account shown outside this app.</p>
       </section>
 
-      <!-- The market listing didn't include the seller's payment details ->
-           we're re-fetching the single order, which should return them
+      <!-- The market listing didn't include a usable payment detail ->
+           we're re-fetching the single order, which should return it
            fully populated. Shown briefly instead of a false "not attached"
            warning. -->
       <div class="inline-loader" *ngIf="orderCarriesSellerDetails && sellerDetailsLoading">
@@ -110,11 +116,11 @@
         <span>Loading the seller's payment details&hellip;</span>
       </div>
 
-      <!-- FIXED: two distinct outcomes instead of one ambiguous banner.
+      <!-- Two distinct outcomes instead of one ambiguous banner.
 
            'none-attached' — the refetch succeeded, but this ad genuinely
-           has no linked payment method. Retrying can't fix this, so no
-           retry button is shown; the buyer is told plainly and pointed
+           has no usable linked payment method. Retrying can't fix this, so
+           no retry button is shown; the buyer is told plainly and pointed
            to support/a different ad. The Buy button stays disabled
            (see initiateFormValid in the component).
 
@@ -289,17 +295,12 @@
           </div>
         </dl>
 
-        <!-- The account the buyer must pay into for THIS trade. Prefers the
-             account locked to the trade record itself (resolvedPaymentDetail
-             checks trade.sellerPaymentMethod first), falling back to the
-             ad's payment details so this never renders empty once a trade
-             exists. Always shown in full, unmasked, to both buyer and
-             seller — the buyer needs the real number to actually pay. -->
+ 
         <section class="detail-card payment-target" *ngIf="resolvedPaymentDetail as detail; else noPaymentDetail">
           <h3 class="detail-card-title"><mat-icon>account_balance</mat-icon> Payment goes to</h3>
           <dl class="detail-list">
             <div class="detail-row"><dt>Method</dt><dd>{{ detail.method }}</dd></div>
-            <div class="detail-row"><dt>Account name</dt><dd>{{ detail.accountName }}</dd></div>
+            <div class="detail-row" *ngIf="detail.accountName"><dt>Account name</dt><dd>{{ detail.accountName }}</dd></div>
             <div class="detail-row account-row">
               <dt>Account number</dt>
               <dd class="account-value-group">
@@ -318,14 +319,14 @@
           <p class="hint muted" *ngIf="trade.isBuyer">Verify these details carefully before sending money — never pay an account shown outside this app.</p>
         </section>
 
-        <ng-template #noPaymentDetail>
-          <div class="banner warn">
+       <ng-template #noPaymentDetail>
+          <!-- <div class="banner warn">
             <mat-icon>error_outline</mat-icon>
             <span>Payment details aren't showing yet. Refresh, or contact support if this persists before sending any money.</span>
             <button mat-stroked-button type="button" class="btn tiny-btn" [disabled]="refreshingTrade" (click)="refreshTrade()">
               {{ refreshingTrade ? 'Refreshing…' : 'Refresh' }}
             </button>
-          </div>
+          </div> -->
         </ng-template>
 
         <!-- Shared status context once payment has been marked, visible to both sides -->
@@ -477,11 +478,11 @@
 
           <div class="row-actions" *ngIf="!showDisputeForm">
             <button mat-stroked-button color="warn" type="button" class="btn danger-outline" (click)="toggleDisputeForm()">
-              <mat-icon>report</mat-icon> Open dispute / report
+              <mat-icon>report</mat-icon> dispute
             </button>
-            <button mat-stroked-button type="button" class="btn secondary" (click)="contactSupport()">
+            <!-- <button mat-stroked-button type="button" class="btn secondary" (click)="contactSupport()">
               <mat-icon>support_agent</mat-icon> Contact support
-            </button>
+            </button> -->
           </div>
 
           <div class="field-group tight" *ngIf="showDisputeForm">
