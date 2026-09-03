@@ -234,9 +234,7 @@ export class P2pTradeChatComponent implements OnInit, OnChanges, OnDestroy, Afte
 
 ngOnDestroy(): void {
   this.subs.unsubscribe();
-
   this.chatService.disconnect();
-
   this.revokeAllObjectUrls();
 }
 
