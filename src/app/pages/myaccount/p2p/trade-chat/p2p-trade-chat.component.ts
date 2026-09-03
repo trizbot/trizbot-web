@@ -95,28 +95,150 @@ export class P2pTradeChatComponent implements OnInit, OnChanges, OnDestroy, Afte
     this.subs.add(
       this.typingStop$.pipe(debounceTime(TYPING_STOP_DELAY_MS)).subscribe(() => this.chatService.notifyTyping(false))
     );
+    this.initialize();
   }
 
-  ngOnChanges(changes: SimpleChanges): void {
-    // If the parent swaps to a different trade while this component stays
-    // mounted, reset state and reconnect against the new trade room.
-    if (changes['trade'] && !changes['trade'].firstChange) {
-      const prevId = changes['trade'].previousValue?.id;
-      const currId = changes['trade'].currentValue?.id;
-      if (prevId && currId && prevId !== currId) {
-        this.messages = [];
-        this.hasMoreHistory = true;
-        this.loadHistory();
-        this.chatService.connect(currId);
+
+
+  async initialize(): Promise<void> {
+  try {
+    this.loading = true;
+
+    await this.chatService.initialize(
+      this.trade
+    );
+
+    this.loadHistory();
+
+    await this.chatService.connect(
+      this.trade.id,
+      this.trade
+    );
+
+    this.subs.add(
+      this.chatService.messages$
+        .subscribe((msg) =>
+          this.onIncoming(msg)
+        )
+    );
+
+    this.subs.add(
+      this.chatService.counterpartyTyping$
+        .subscribe(
+          (typing) =>
+            (this.counterpartyTyping =
+              typing)
+        )
+    );
+
+    this.subs.add(
+      this.chatService.counterpartyOnline$
+        .subscribe(
+          (online) =>
+            (this.counterpartyOnline =
+              online)
+        )
+    );
+
+    this.subs.add(
+      this.chatService.connectionState
+        .subscribe(
+          (state) =>
+            (this.connectionState =
+              state)
+        )
+    );
+
+    this.subs.add(
+      this.chatService
+        .counterpartyReadUpTo$
+        .subscribe((readAt) =>
+          this.applyReadReceipt(
+            readAt
+          )
+        )
+    );
+
+    this.subs.add(
+      this.typingStop$
+        .pipe(
+          debounceTime(
+            TYPING_STOP_DELAY_MS
+          )
+        )
+        .subscribe(() =>
+          this.chatService.notifyTyping(
+            false
+          )
+        )
+    );
+  } catch (error) {
+    console.error(
+      'Unable to initialize Firebase chat:',
+      error
+    );
+
+    this.loading = false;
+
+    this.loadError =
+      'Unable to connect to chat. Please try again.';
+  }
+}
+
+
+  async ngOnChanges(
+  changes: SimpleChanges
+): Promise<void> {
+  if (
+    changes['trade'] &&
+    !changes['trade'].firstChange
+  ) {
+    const prevId =
+      changes['trade']
+        .previousValue?.id;
+
+    const currId =
+      changes['trade']
+        .currentValue?.id;
+
+    if (
+      prevId &&
+      currId &&
+      prevId !== currId
+    ) {
+      this.messages = [];
+
+      this.hasMoreHistory = true;
+
+      this.loading = true;
+
+      try {
+        await this.chatService.connect(
+          currId,
+          this.trade
+        );
+
+        await this.loadHistory();
+      } catch (error) {
+        console.error(
+          'Unable to switch Firebase chat room:',
+          error
+        );
+
+        this.loadError =
+          'Unable to connect to this chat.';
       }
     }
   }
+}
 
-  ngOnDestroy(): void {
-    this.subs.unsubscribe();
-    this.chatService.disconnect();
-    this.revokeAllObjectUrls();
-  }
+ngOnDestroy(): void {
+  this.subs.unsubscribe();
+
+  this.chatService.disconnect();
+
+  this.revokeAllObjectUrls();
+}
 
   ngAfterViewChecked(): void {
     if (this.shouldAutoScroll && this.messages.length !== this.lastRenderedCount) {
@@ -129,49 +251,94 @@ export class P2pTradeChatComponent implements OnInit, OnChanges, OnDestroy, Afte
   // Loading + grouping
   // -----------------------------------------------------------------
 
-  private loadHistory(): void {
-    this.loading = true;
-    this.loadError = '';
-    this.chatService.getMessages(this.trade.id).subscribe({
-      next: (msgs) => {
-        this.messages = msgs;
-        this.loading = false;
-        this.hasMoreHistory = msgs.length > 0;
-        this.markReadIfNeeded();
-      },
-      error: () => {
-        this.loading = false;
-        this.loadError = 'Could not load chat history.';
-      },
-    });
+ private async loadHistory(): Promise<void> {
+  this.loading = true;
+  this.loadError = '';
+
+  try {
+    const messages =
+      await this.chatService.getMessages(
+        this.trade.id
+      );
+
+    this.messages = messages;
+
+    this.loading = false;
+
+    this.hasMoreHistory =
+      messages.length >= 100;
+
+    this.markReadIfNeeded();
+  } catch (error) {
+    console.error(
+      'Chat history error:',
+      error
+    );
+
+    this.loading = false;
+
+    this.loadError =
+      'Could not load chat history.';
+  }
+}
+
+  async loadOlder(): Promise<void> {
+  if (
+    this.loadingOlder ||
+    !this.hasMoreHistory ||
+    this.messages.length === 0
+  ) {
+    return;
   }
 
-  /** Pages in older messages when the user scrolls to the top of the thread. */
-  loadOlder(): void {
-    if (this.loadingOlder || !this.hasMoreHistory || this.messages.length === 0) return;
-    const el = this.threadEl?.nativeElement;
-    const prevScrollHeight = el?.scrollHeight ?? 0;
-    this.loadingOlder = true;
-    const oldest = this.messages[0]?.createdAt;
+  const el =
+    this.threadEl?.nativeElement;
 
-    this.chatService.getMessages(this.trade.id, oldest).subscribe({
-      next: (older) => {
-        this.loadingOlder = false;
-        if (older.length === 0) {
-          this.hasMoreHistory = false;
-          return;
-        }
-        this.messages = [...older, ...this.messages];
-        // Preserve scroll position instead of jumping to the top after prepend.
-        queueMicrotask(() => {
-          if (el) el.scrollTop = el.scrollHeight - prevScrollHeight;
-        });
-      },
-      error: () => {
-        this.loadingOlder = false;
-      },
+  const prevScrollHeight =
+    el?.scrollHeight ?? 0;
+
+  this.loadingOlder = true;
+
+  const oldest =
+    this.messages[0]?.createdAt;
+
+  try {
+    const older =
+      await this.chatService.getMessages(
+        this.trade.id,
+        oldest
+      );
+
+    if (older.length === 0) {
+      this.hasMoreHistory = false;
+      return;
+    }
+
+    this.messages = [
+      ...older,
+      ...this.messages,
+    ];
+
+    queueMicrotask(() => {
+      if (el) {
+        el.scrollTop =
+          el.scrollHeight -
+          prevScrollHeight;
+      }
     });
+
+    this.hasMoreHistory =
+      older.length >= 50;
+  } catch (error) {
+    console.error(
+      'Unable to load older messages:',
+      error
+    );
+  } finally {
+    this.loadingOlder = false;
   }
+}
+
 
   get groupedMessages() {
     return groupMessagesByDay(this.messages);
@@ -229,13 +396,29 @@ export class P2pTradeChatComponent implements OnInit, OnChanges, OnDestroy, Afte
     this.scrollAnchor?.nativeElement?.scrollIntoView({ block: 'end' });
   }
 
-  private markReadIfNeeded(): void {
-    const hasUnread = this.messages.some((m) => !m.isMine && !m.readAt);
-    if (hasUnread) {
-      this.chatService.markRead(this.trade.id).subscribe({ error: () => {} });
-      this.chatService.notifyRead();
-    }
+ private markReadIfNeeded(): void {
+  const hasUnread =
+    this.messages.some(
+      (message) =>
+        !message.isMine &&
+        !message.readAt
+    );
+
+  if (!hasUnread) {
+    return;
   }
+
+  this.chatService
+    .markRead(this.trade.id)
+    .catch((error) => {
+      console.error(
+        'Unable to mark chat as read:',
+        error
+      );
+    });
+
+  this.chatService.notifyRead();
+}
 
   // -----------------------------------------------------------------
   // Composing
@@ -288,16 +471,51 @@ export class P2pTradeChatComponent implements OnInit, OnChanges, OnDestroy, Afte
     }
   }
 
-  private pushOptimisticTextAndSend(text: string): void {
-    const clientId = this.nextClientId();
-    const optimistic = this.buildOptimisticMessage(clientId, { type: ChatMessageType.Text, text });
-    this.appendOptimistic(optimistic);
 
-    this.chatService.sendText(this.trade.id, text, clientId).subscribe({
-      next: (saved) => this.reconcileOptimistic(clientId, { ...saved, clientId }),
-      error: () => this.failOptimistic(clientId),
+ private pushOptimisticTextAndSend(
+  text: string
+): void {
+  const clientId =
+    this.nextClientId();
+
+  const optimistic =
+    this.buildOptimisticMessage(
+      clientId,
+      {
+        type:
+          ChatMessageType.Text,
+        text,
+      }
+    );
+
+  this.appendOptimistic(
+    optimistic
+  );
+
+  this.chatService
+    .sendText(
+      this.trade.id,
+      text,
+      clientId
+    )
+    .subscribe({
+      next: (saved) => {
+        this.reconcileOptimistic(
+          clientId,
+          {
+            ...saved,
+            clientId,
+          }
+        );
+      },
+
+      error: () => {
+        this.failOptimistic(
+          clientId
+        );
+      },
     });
-  }
+}
 
   // -----------------------------------------------------------------
   // Evidence / image attachment — drag & drop, paste, and file picker,
@@ -371,34 +589,91 @@ export class P2pTradeChatComponent implements OnInit, OnChanges, OnDestroy, Afte
     this.pushOptimisticImageAndSend(file);
   }
 
-  private pushOptimisticImageAndSend(file: File): void {
-    const clientId = this.nextClientId();
-    const previewUrl = URL.createObjectURL(file);
-    const optimistic = this.buildOptimisticMessage(clientId, {
-      type: ChatMessageType.Image,
-      imageUrl: previewUrl,
-      imageBytes: file.size,
-      file,
-      progress: 0,
-    });
-    this.appendOptimistic(optimistic);
+ private pushOptimisticImageAndSend(
+  file: File
+): void {
+  const clientId =
+    this.nextClientId();
 
-    this.chatService.sendImageFile(this.trade.id, file, clientId).subscribe({
+  const previewUrl =
+    URL.createObjectURL(file);
+
+  const optimistic =
+    this.buildOptimisticMessage(
+      clientId,
+      {
+        type:
+          ChatMessageType.Image,
+
+        imageUrl:
+          previewUrl,
+
+        imageBytes:
+          file.size,
+
+        file,
+
+        progress: 0,
+      }
+    );
+
+  this.appendOptimistic(
+    optimistic
+  );
+
+  this.chatService
+    .sendImageFile(
+      this.trade.id,
+      file,
+      clientId
+    )
+    .subscribe({
       next: (update) => {
-        const idx = this.messages.findIndex((m) => m.clientId === clientId);
-        if (idx < 0) return;
+        const idx =
+          this.messages.findIndex(
+            (m) =>
+              m.clientId ===
+              clientId
+          );
+
+        if (idx < 0) {
+          return;
+        }
+
         if (update.message) {
-          URL.revokeObjectURL(previewUrl);
-          this.messages[idx] = { ...update.message, clientId, file: undefined };
-          this.messages = [...this.messages];
+          URL.revokeObjectURL(
+            previewUrl
+          );
+
+          this.messages[idx] = {
+            ...update.message,
+            clientId,
+            file: undefined,
+          };
+
+          this.messages = [
+            ...this.messages,
+          ];
         } else {
-          this.messages[idx] = { ...this.messages[idx], progress: update.progress };
-          this.messages = [...this.messages];
+          this.messages[idx] = {
+            ...this.messages[idx],
+            progress:
+              update.progress,
+          };
+
+          this.messages = [
+            ...this.messages,
+          ];
         }
       },
-      error: () => this.failOptimistic(clientId),
+
+      error: () => {
+        this.failOptimistic(
+          clientId
+        );
+      },
     });
-  }
+}
 
   openLightbox(url?: string): void {
     if (url) this.lightboxUrl = url;
@@ -408,9 +683,7 @@ export class P2pTradeChatComponent implements OnInit, OnChanges, OnDestroy, Afte
     this.lightboxUrl = null;
   }
 
-  // -----------------------------------------------------------------
-  // Shared optimistic-message helpers
-  // -----------------------------------------------------------------
+
 
   private nextClientId(): string {
     return `local-${Date.now()}-${this.clientIdSeq++}`;
