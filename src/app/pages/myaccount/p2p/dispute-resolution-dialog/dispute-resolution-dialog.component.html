@@ -42,7 +42,17 @@
 
     <section class="detail-card" *ngIf="trade.paymentProofUrl">
       <h3 class="detail-card-title"><mat-icon>receipt_long</mat-icon> Buyer's original payment proof</h3>
-      <img *ngIf="looksLikeImage(trade.paymentProofUrl)" class="proof-preview" [src]="trade.paymentProofUrl" alt="Payment proof" />
+      <div class="proof-preview-wrap" *ngIf="looksLikeImage(trade.paymentProofUrl)">
+        <img
+          class="proof-preview zoomable"
+          [src]="trade.paymentProofUrl"
+          alt="Payment proof"
+          (click)="openZoom(trade.paymentProofUrl, 'Buyer\'s original payment proof')"
+        />
+        <button type="button" class="zoom-hint-btn" (click)="openZoom(trade.paymentProofUrl, 'Buyer\'s original payment proof')" aria-label="Zoom image">
+          <mat-icon>zoom_in</mat-icon>
+        </button>
+      </div>
       <a *ngIf="!looksLikeImage(trade.paymentProofUrl)" class="proof-link" [href]="trade.paymentProofUrl" target="_blank" rel="noopener">View payment proof</a>
       <p class="hint muted" *ngIf="trade.paymentProofNote">{{ trade.paymentProofNote }}</p>
     </section>
@@ -51,7 +61,17 @@
       <section class="detail-card">
         <h3 class="detail-card-title"><mat-icon>person</mat-icon> Buyer's evidence</h3>
         <ng-container *ngIf="trade.disputeEvidenceBuyerUrl; else noBuyerEvidence">
-          <img *ngIf="looksLikeImage(trade.disputeEvidenceBuyerUrl)" class="proof-preview" [src]="trade.disputeEvidenceBuyerUrl" alt="Buyer evidence" />
+          <div class="proof-preview-wrap" *ngIf="looksLikeImage(trade.disputeEvidenceBuyerUrl)">
+            <img
+              class="proof-preview zoomable"
+              [src]="trade.disputeEvidenceBuyerUrl"
+              alt="Buyer evidence"
+              (click)="openZoom(trade.disputeEvidenceBuyerUrl, 'Buyer\'s evidence')"
+            />
+            <button type="button" class="zoom-hint-btn" (click)="openZoom(trade.disputeEvidenceBuyerUrl, 'Buyer\'s evidence')" aria-label="Zoom image">
+              <mat-icon>zoom_in</mat-icon>
+            </button>
+          </div>
           <a *ngIf="!looksLikeImage(trade.disputeEvidenceBuyerUrl)" class="proof-link" [href]="trade.disputeEvidenceBuyerUrl" target="_blank" rel="noopener">View evidence</a>
           <p class="hint muted" *ngIf="trade.disputeEvidenceBuyerNote">{{ trade.disputeEvidenceBuyerNote }}</p>
         </ng-container>
@@ -63,7 +83,17 @@
       <section class="detail-card">
         <h3 class="detail-card-title"><mat-icon>storefront</mat-icon> Seller's evidence</h3>
         <ng-container *ngIf="trade.disputeEvidenceSellerUrl; else noSellerEvidence">
-          <img *ngIf="looksLikeImage(trade.disputeEvidenceSellerUrl)" class="proof-preview" [src]="trade.disputeEvidenceSellerUrl" alt="Seller evidence" />
+          <div class="proof-preview-wrap" *ngIf="looksLikeImage(trade.disputeEvidenceSellerUrl)">
+            <img
+              class="proof-preview zoomable"
+              [src]="trade.disputeEvidenceSellerUrl"
+              alt="Seller evidence"
+              (click)="openZoom(trade.disputeEvidenceSellerUrl, 'Seller\'s evidence')"
+            />
+            <button type="button" class="zoom-hint-btn" (click)="openZoom(trade.disputeEvidenceSellerUrl, 'Seller\'s evidence')" aria-label="Zoom image">
+              <mat-icon>zoom_in</mat-icon>
+            </button>
+          </div>
           <a *ngIf="!looksLikeImage(trade.disputeEvidenceSellerUrl)" class="proof-link" [href]="trade.disputeEvidenceSellerUrl" target="_blank" rel="noopener">View evidence</a>
           <p class="hint muted" *ngIf="trade.disputeEvidenceSellerNote">{{ trade.disputeEvidenceSellerNote }}</p>
         </ng-container>
@@ -115,4 +145,61 @@
       {{ resolving === DisputeResolution.ReleaseToBuyer ? 'Releasing…' : 'Release to buyer' }}
     </button>
   </footer>
+</div>
+
+<!-- Zoom / lightbox overlay -->
+<div
+  class="zoom-overlay"
+  *ngIf="zoomImageUrl"
+  (click)="onOverlayClick($event)"
+>
+  <div class="zoom-toolbar" (click)="$event.stopPropagation()">
+    <span class="zoom-title">{{ zoomTitle }}</span>
+    <span class="zoom-level">{{ (zoomScale * 100) | number: '1.0-0' }}%</span>
+    <div class="zoom-actions">
+      <button type="button" class="icon-btn light" (click)="zoomOut()" aria-label="Zoom out" [disabled]="zoomScale <= minZoom">
+        <mat-icon>remove</mat-icon>
+      </button>
+      <button type="button" class="icon-btn light" (click)="zoomIn()" aria-label="Zoom in" [disabled]="zoomScale >= maxZoom">
+        <mat-icon>add</mat-icon>
+      </button>
+      <button type="button" class="icon-btn light" (click)="resetZoom()" aria-label="Reset zoom">
+        <mat-icon>filter_center_focus</mat-icon>
+      </button>
+      <button type="button" class="icon-btn light" (click)="closeZoom()" aria-label="Close zoom">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+  </div>
+
+  <div
+    class="zoom-viewport"
+    [class.grabbing]="isDragging"
+    (wheel)="onWheelZoom($event)"
+    (mousedown)="onDragStart($event)"
+    (mousemove)="onDragMove($event)"
+    (mouseup)="onDragEnd()"
+    (mouseleave)="onDragEnd()"
+    (touchstart)="onTouchStart($event)"
+    (touchmove)="onTouchMove($event)"
+    (touchend)="onTouchEnd($event)"
+    (touchcancel)="onTouchEnd($event)"
+  >
+    <img
+      #zoomImg
+      class="zoom-image"
+      [src]="zoomImageUrl"
+      [style.transform]="'translate(' + panX + 'px,' + panY + 'px) scale(' + zoomScale + ')'"
+      [class.no-transition]="isDragging"
+      (click)="$event.stopPropagation()"
+      (dblclick)="onDoubleClick()"
+      alt="Zoomed evidence"
+      draggable="false"
+    />
+  </div>
+
+  <p class="zoom-help">
+    <span class="desktop-help">Scroll to zoom &middot; drag to pan &middot; double-click to reset &middot; Esc to close</span>
+    <span class="mobile-help">Pinch to zoom &middot; drag to pan &middot; double-tap to reset &middot; tap outside to close</span>
+  </p>
 </div>

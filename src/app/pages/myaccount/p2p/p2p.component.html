@@ -456,21 +456,21 @@
   <!-- DISPUTES (admin) -->
   <ng-container *ngIf="activeTab === 'disputes' && isAdminUser">
 
-    <!-- <div class="my-ads-toolbar">
+ <div class="my-ads-toolbar">
       <div>
         <h2 class="panel-title">Disputes</h2>
         <p class="panel-subtitle">
           Disputed trades — review the buyer's and seller's uploaded evidence carefully before releasing funds. This action is final.
         </p>
       </div>
-    </div> -->
+    </div> 
 
     <div class="order-loading" *ngIf="disputesLoading">
       <img src="./assets/images/loading.gif" alt="Loading..." style="width: 26px; height: 26px;" />
     </div>
 
     <div class="order-empty" *ngIf="!disputesLoading && disputeTrades.length === 0">
-      <span class="order-empty-title">{{disputeTrades.length }} No disputes waiting on review</span>
+      <span class="order-empty-title"> No disputes waiting on review</span>
       <span class="order-empty-sub">Disputed trades will show up here once both parties submit evidence.</span>
     </div>
 

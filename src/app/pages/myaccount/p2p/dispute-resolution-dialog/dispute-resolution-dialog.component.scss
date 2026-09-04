@@ -31,6 +31,19 @@
   &:hover {
     background: rgba(0, 0, 0, 0.05);
   }
+
+  &:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+  }
+
+  &.light {
+    color: #fff;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.15);
+    }
+  }
 }
 
 .sheet-body {
@@ -146,13 +159,70 @@
   }
 }
 
+.proof-preview-wrap {
+  position: relative;
+  display: inline-block;
+  width: 100%;
+  margin-bottom: 8px;
+}
+
 .proof-preview {
   width: 100%;
   max-height: 220px;
   object-fit: contain;
   border-radius: 8px;
   border: 1px solid rgba(0, 0, 0, 0.08);
-  margin-bottom: 8px;
+  display: block;
+
+  &.zoomable {
+    cursor: zoom-in;
+    transition: filter 0.15s ease;
+
+    &:hover {
+      filter: brightness(0.95);
+    }
+  }
+
+  @media (max-width: 560px) {
+    max-height: 180px;
+  }
+}
+
+.zoom-hint-btn {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+
+  &:hover {
+    background: rgba(0, 0, 0, 0.75);
+  }
+
+  mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+  }
+
+  @media (max-width: 560px) {
+    width: 36px;
+    height: 36px;
+
+    mat-icon {
+      font-size: 20px;
+      width: 20px;
+      height: 20px;
+    }
+  }
 }
 
 .proof-link {
@@ -213,5 +283,198 @@
     align-items: center;
     justify-content: center;
     gap: 6px;
+  }
+}
+
+/* ---------- Mobile responsiveness for the dialog itself ---------- */
+
+@media (max-width: 560px) {
+  .dispute-dialog {
+    max-height: 100vh;
+    height: 100%;
+  }
+
+  .sheet-header {
+    padding: 12px 14px;
+
+    .sheet-title {
+      font-size: 16px;
+    }
+  }
+
+  .sheet-body {
+    padding: 12px 14px;
+    gap: 12px;
+  }
+
+  .stat-grid {
+    grid-template-columns: repeat(2, 1fr);
+
+    .stat:nth-child(3) {
+      grid-column: span 2;
+    }
+  }
+
+  .party-row {
+    gap: 10px;
+
+    .party-card {
+      padding: 8px 10px;
+    }
+  }
+
+  .sheet-footer {
+    flex-direction: column;
+    padding: 12px 14px;
+    padding-bottom: max(12px, env(safe-area-inset-bottom));
+
+    .btn {
+      width: 100%;
+    }
+  }
+}
+
+/* ---------- Zoom / lightbox overlay ---------- */
+
+.zoom-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.88);
+  z-index: 2000;
+  display: flex;
+  flex-direction: column;
+  animation: zoom-fade-in 0.12s ease-out;
+  /* prevent the page behind from scrolling while lightbox is open */
+  overscroll-behavior: contain;
+}
+
+@keyframes zoom-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.zoom-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  padding-top: max(12px, env(safe-area-inset-top));
+  color: #fff;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+
+  .zoom-title {
+    font-size: 14px;
+    font-weight: 600;
+    flex: 1 1 auto;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .zoom-level {
+    font-size: 13px;
+    font-variant-numeric: tabular-nums;
+    color: rgba(255, 255, 255, 0.7);
+    min-width: 44px;
+    text-align: right;
+  }
+
+  .zoom-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+  }
+
+  @media (max-width: 560px) {
+    padding: 10px 12px;
+    padding-top: max(10px, env(safe-area-inset-top));
+    gap: 8px;
+
+    .zoom-title {
+      font-size: 13px;
+      flex-basis: 100%;
+      order: -1;
+    }
+
+    .zoom-level {
+      min-width: auto;
+    }
+
+    .icon-btn {
+      width: 40px;
+      height: 40px;
+
+      mat-icon {
+        font-size: 22px;
+        width: 22px;
+        height: 22px;
+      }
+    }
+  }
+}
+
+.zoom-viewport {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: grab;
+  position: relative;
+  touch-action: none;
+
+  &.grabbing {
+    cursor: grabbing;
+  }
+}
+
+.zoom-image {
+  max-width: 90%;
+  max-height: 80vh;
+  object-fit: contain;
+  user-select: none;
+  transition: transform 0.06s linear;
+  will-change: transform;
+
+  &.no-transition {
+    transition: none;
+  }
+
+  @media (max-width: 560px) {
+    max-width: 95%;
+    max-height: 70vh;
+  }
+}
+
+.zoom-help {
+  text-align: center;
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 12px;
+  margin: 0 0 14px;
+  flex-shrink: 0;
+  padding: 0 16px;
+  padding-bottom: env(safe-area-inset-bottom);
+
+  .mobile-help {
+    display: none;
+  }
+
+  @media (max-width: 560px) {
+    font-size: 11px;
+
+    .desktop-help {
+      display: none;
+    }
+
+    .mobile-help {
+      display: inline;
+    }
   }
 }
