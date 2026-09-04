@@ -73,12 +73,12 @@
           <div class="bb-panel-heading">
             <span class="bb-panel-icon"><i class="bi bi-lightning-charge-fill"></i></span>
             <div>
-              <h4>
+              <h2>
                 Arbitrage opportunities
                 <span class="bb-pro-badge" *ngIf="!canViewArbitrage && !arbitrageSubscriptionLoading">
                   <i class="bi bi-star-fill"></i>
                 </span>
-              </h4>
+              </h2>
 
               <p *ngIf="!canViewArbitrage && !arbitrageSubscriptionLoading">
                 Subscribe to unlock live cross-exchange spreads and profit arbitrage opportunities.
@@ -88,9 +88,13 @@
 
           <div class="bb-panel-header-actions">
             <span class="bb-updated-tag" *ngIf="canViewArbitrage && arbLastUpdated">
-              <span class="bb-live-dot"></span>
-              Status: {{ arbitradeState }} &nbsp;&nbsp;&nbsp;&nbsp;
-              Expiry: {{ arbitradeExpiry | date:'medium' }}
+              <span class="bb-updated-tag-item">
+                <span class="bb-live-dot"></span>
+                Status: {{ arbitradeState }}
+              </span>
+              <span class="bb-updated-tag-item">
+                Expiry: {{ arbitradeExpiry | date:'medium' }}
+              </span>
             </span>
 
             <!-- Subscribe CTA — shown whenever the trader is unsubscribed -->
@@ -721,7 +725,7 @@
           <div class="bb-plan-breakdown-col">
             <h5 class="bb-plan-breakdown-heading"><i class="bi bi-broadcast"></i> Signal</h5>
 
-            <div class="bb-table-scroll" *ngIf="signalStats.byPlan?.length; else noSignalPlans">
+            <div class="bb-plan-table-scroll" *ngIf="signalStats.byPlan?.length; else noSignalPlans">
               <table class="bb-plan-table">
                 <thead>
                   <tr>
@@ -752,7 +756,7 @@
           <div class="bb-plan-breakdown-col">
             <h5 class="bb-plan-breakdown-heading"><i class="bi bi-lightning-charge-fill"></i> Arbitrage</h5>
 
-            <div class="bb-table-scroll" *ngIf="arbitrageScannerStats.byPlan?.length; else noArbitragePlans">
+            <div class="bb-plan-table-scroll" *ngIf="arbitrageScannerStats.byPlan?.length; else noArbitragePlans">
               <table class="bb-plan-table">
                 <thead>
                   <tr>
