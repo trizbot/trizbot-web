@@ -1,0 +1,114 @@
+<div class="payment-methods-panel">
+  <div class="my-ads-toolbar">
+    <div>
+      <h2 class="panel-title">Payment Methods</h2>
+      <p class="panel-subtitle">
+        Manage the payment methods traders can pick per currency. Changes apply instantly to the
+        market filter and ad creation forms.
+      </p>
+    </div>
+    <button mat-flat-button color="primary" type="button" (click)="openAddForm()">
+      <mat-icon>add</mat-icon>
+      Add Payment Method
+    </button>
+  </div>
+
+  <div class="fiat-filter-row">
+    <label>Currency</label>
+    <select class="refresh-select" [(ngModel)]="filterFiat" [ngModelOptions]="{ standalone: true }">
+      <option value="ALL">All currencies</option>
+      <option *ngFor="let f of fiatSuggestions" [value]="f">{{ f }}</option>
+    </select>
+  </div>
+
+  <div class="order-loading" *ngIf="loading">
+    <img src="./assets/images/loading.gif" alt="Loading..." style="width: 26px; height: 26px;" />
+  </div>
+
+  <div class="order-empty" *ngIf="!loading && visibleMethods.length === 0 && !showForm">
+    <span class="order-empty-title">No payment methods yet</span>
+    <span class="order-empty-sub">Add one so traders can select it on the market filter and their ads.</span>
+    <button mat-stroked-button color="primary" class="fw-bold" type="button" (click)="openAddForm()">
+      <mat-icon>add</mat-icon>
+      Add your first payment method
+    </button>
+  </div>
+
+  <form class="payment-detail-card" [formGroup]="form" *ngIf="showForm">
+    <div class="payment-detail-card-title">{{ editingId ? 'Edit Payment Method' : 'New Payment Method' }}</div>
+
+    <div class="field-row">
+      <mat-form-field appearance="outline" class="w-100">
+        <mat-label>Currency</mat-label>
+        <mat-select formControlName="fiatCurrency">
+          <mat-option *ngFor="let f of fiatSuggestions" [value]="f">{{ f }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="w-100">
+        <mat-label>Method name</mat-label>
+        <input matInput formControlName="name" placeholder="e.g. Opay, Bank Transfer" />
+      </mat-form-field>
+    </div>
+
+    <label class="checkbox-row">
+      <input type="checkbox" formControlName="isActive" />
+      Active (visible to traders)
+    </label>
+
+    <div class="dialog-actions inline">
+      <button mat-flat-button color="primary" type="button" [disabled]="saving" (click)="submit()">
+        {{ saving ? 'Saving...' : (editingId ? 'Update' : 'Save') }}
+      </button>
+      <button mat-stroked-button type="button" (click)="cancel()">Cancel</button>
+    </div>
+  </form>
+
+  <div class="my-ads-table" *ngIf="!loading && visibleMethods.length > 0">
+    <div class="my-ads-table-header">
+      <span class="col-type">Currency</span>
+      <span class="col-id">Method</span>
+      <span class="col-status">Status</span>
+      <span class="col-action">Action</span>
+    </div>
+
+    <div class="order-row my-ad-row" *ngFor="let m of visibleMethods">
+      <span class="ad-type-badge buy" [attr.data-label]="'Currency'">{{ m.fiatCurrency }}</span>
+
+      <div class="ad-id-col" [attr.data-label]="'Method'">
+        <span class="ad-id-val">{{ m.name }}</span>
+      </div>
+
+      <div class="status-col" [attr.data-label]="'Status'">
+        <span class="status-pill" [ngClass]="m.isActive ? 'listed' : 'hidden'">
+          {{ m.isActive ? 'Active' : 'Inactive' }}
+        </span>
+        <button
+          type="button"
+          class="icon-btn"
+          (click)="toggleActive(m)"
+          [matTooltip]="m.isActive ? 'Deactivate' : 'Activate'"
+        >
+          <mat-icon>{{ m.isActive ? 'visibility_off' : 'visibility' }}</mat-icon>
+        </button>
+      </div>
+
+      <div class="action-col" [attr.data-label]="'Action'">
+        <button mat-stroked-button color="primary" class="edit-btn" type="button" (click)="editMethod(m)">
+          Edit
+        </button>
+        <button
+          type="button"
+          class="icon-btn delete-btn"
+          [disabled]="deletingId === m.id"
+          (click)="remove(m)"
+          [matTooltip]="deletingId === m.id ? 'Deleting…' : 'Delete permanently'"
+        >
+          <mat-icon [class.spinning]="deletingId === m.id">
+            {{ deletingId === m.id ? 'autorenew' : 'delete' }}
+          </mat-icon>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

@@ -25,7 +25,12 @@ import { P2pCategoryAdminComponent } from "./p2p-category-admin/p2p-category-adm
 import { P2POrderType, OrderStatus, TradeStatus, SUPPORTED_FIAT, QUICK_COINS, P2POrder, getPaymentMethodsForFiat, fiatSymbol, P2PTrade, SUPPORTED_COINS, msUntilDeadline, formatCountdown } from './model/p2p.model';
 import { P2pChatService } from './service/p2p-chat.service';
 
-type MainTab = 'market' | 'my-orders' | 'my-trades' | 'disputes' | 'categories';
+
+import { P2pPaymentMethodAdminComponent } from './p2p-payment-method-admin/p2p-payment-method-admin.component';
+import { P2pPaymentMethodAdminService } from './service/p2p-payment-method-admin.service';
+
+
+type MainTab = 'market' | 'my-orders' | 'my-trades' | 'disputes' | 'categories' | 'payment-methods';
 type MyAdsSubTab = 'listed' | 'all';
 type SortOption = 'price-asc' | 'price-desc' | 'available-desc';
 
@@ -52,6 +57,7 @@ const DISPUTES_POLL_INTERVAL_MS = 30000;
     FormsModule,
     ReactiveFormsModule,
     P2pCategoryAdminComponent,
+    P2pPaymentMethodAdminComponent,
     ChatUnreadBadgeComponent,
 ],
   templateUrl: './p2p.component.html',
@@ -61,6 +67,8 @@ export class P2pComponent implements OnInit, OnDestroy {
   private sharedService = inject(SharedService);
   private categoryService = inject(P2pCategoryService);
   private chatService = inject(P2pChatService);
+    private paymentMethodAdminService = inject(P2pPaymentMethodAdminService);
+
 
   readonly P2POrderType = P2POrderType;
   readonly OrderStatus = OrderStatus;
@@ -122,9 +130,11 @@ export class P2pComponent implements OnInit, OnDestroy {
 
   orders: P2POrder[] = [];
   ordersLoading = false;
+  dynamicPaymentMethods: any;
 
   get paymentMethodOptions(): string[] {
-    return getPaymentMethodsForFiat(this.filterForm.getRawValue().fiatCurrency);
+    const fiat = this.filterForm.getRawValue().fiatCurrency;
+    return this.dynamicPaymentMethods[(fiat || 'NGN').toUpperCase()] || getPaymentMethodsForFiat(fiat);
   }
 
   get fiatSymbol(): string {
@@ -207,6 +217,13 @@ export class P2pComponent implements OnInit, OnDestroy {
       this.loadOrders();
     });
 
+
+        this.paymentMethodAdminService.methods$.subscribe(() => {
+      this.dynamicPaymentMethods = this.paymentMethodAdminService.methodsByFiat();
+    });
+    this.paymentMethodAdminService.refresh().subscribe({ error: () => {} }); // falls back to static list
+
+
     this.loadDisputes();
   }
 
@@ -281,12 +298,21 @@ export class P2pComponent implements OnInit, OnDestroy {
     });
   }
 
-  selectTab(tab: MainTab): void {
+   selectTab(tab: MainTab): void {
     this.activeTab = tab;
     if (tab === 'market' && this.orders.length === 0) this.loadOrders();
     if (tab === 'my-orders') this.loadMyOrders();
     if (tab === 'my-trades') this.loadMyTrades();
     if (tab === 'disputes') this.loadDisputes();
+    if (tab === 'payment-methods') this.loadPaymentMethods();
+    if (tab === 'categories') this.loadCategories();
+    // 'payment-methods' and 'categories' load themselves in their own components
+  }
+  loadPaymentMethods() {
+    throw new Error('Method not implemented.');
+  }
+  loadCategories() {
+    throw new Error('Method not implemented.');
   }
 
   // ---------------------------------------------------------------------

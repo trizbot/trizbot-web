@@ -40,12 +40,27 @@
     >
       Categories
     </button>
+
+     <button
+      class="view-tab-btn"
+      *ngIf="isAdminUser"
+      [class.active]="activeTab === 'payment-methods'"
+      (click)="selectTab('payment-methods')"
+      role="tab"
+    >
+      Payment Methods
+    </button>
   </div>
 
   <!-- CATEGORIES (admin) -->
   <ng-container *ngIf="activeTab === 'categories' && isAdminUser">
     <app-p2p-category-admin></app-p2p-category-admin>
   </ng-container>
+  
+ <ng-container *ngIf="activeTab === 'payment-methods' && isAdminUser">
+    <app-p2p-payment-method-admin></app-p2p-payment-method-admin>
+  </ng-container>
+
 
   <!-- MARKET -->
   <ng-container *ngIf="activeTab === 'market' && !isAdminUser">

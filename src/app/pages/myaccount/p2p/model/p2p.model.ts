@@ -180,6 +180,32 @@ export function getPaymentMethodsForFiat(fiat: string | null | undefined): strin
   return PAYMENT_METHODS_BY_FIAT[key] || PAYMENT_METHODS_BY_FIAT['NGN'];
 }
 
+export interface AdminPaymentMethod {
+  id: string;
+  fiatCurrency: string;
+  name: string;
+  isActive: boolean;
+  createdAt?: string;
+}
+
+export interface CreateAdminPaymentMethodReqBody {
+  fiatCurrency: string;
+  name: string;
+  isActive?: boolean;
+}
+
+export type UpdateAdminPaymentMethodReqBody = Partial<CreateAdminPaymentMethodReqBody>;
+
+export function normalizeAdminPaymentMethod(raw: any): AdminPaymentMethod {
+  return {
+    id: extractId(raw.id || raw._id),
+    fiatCurrency: (raw.fiatCurrency || 'NGN').toUpperCase(),
+    name: raw.name || raw.method || '',
+    isActive: raw.isActive ?? true,
+    createdAt: raw.createdAt ? extractDate(raw.createdAt) : undefined,
+  };
+}
+
 const FIAT_SYMBOLS: Record<string, string> = {
   NGN: '₦', USD: '$', EUR: '€', GBP: '£', GHS: 'GH₵', KES: 'KSh', ZAR: 'R',
   INR: '₹', CNY: '¥', AED: 'AED ', CAD: 'CA$', AUD: 'A$', JPY: '¥', BRL: 'R$',
@@ -447,7 +473,7 @@ export function normalizeTrade(raw: any): P2PTrade {
 
      disputeReason: raw.disputeReason || undefined,
     disputedBy: raw.disputedBy ? extractId(raw.disputedBy) : undefined,
-    
+
   };
 }
 
