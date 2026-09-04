@@ -10,16 +10,26 @@
 
   <!-- MAIN TABS -->
   <div class="view-tabs" role="tablist">
-    <button class="view-tab-btn" [class.active]="activeTab === 'market'" (click)="selectTab('market')" role="tab">
+    <button *ngIf="!isAdminUser" class="view-tab-btn" [class.active]="activeTab === 'market'" (click)="selectTab('market')" role="tab">
       Market
     </button>
-    <button class="view-tab-btn" [class.active]="activeTab === 'my-orders'" (click)="selectTab('my-orders')" role="tab">
+    <button *ngIf="!isAdminUser" class="view-tab-btn" [class.active]="activeTab === 'my-orders'" (click)="selectTab('my-orders')" role="tab">
       My Ads
     </button>
-    <button class="view-tab-btn" [class.active]="activeTab === 'my-trades'" (click)="selectTab('my-trades')" role="tab">
+    <button *ngIf="!isAdminUser" class="view-tab-btn" [class.active]="activeTab === 'my-trades'" (click)="selectTab('my-trades')" role="tab">
       My Trades
       <span class="chat-notify-dot" *ngIf="hasUnreadTradeChats"></span>
       <span class="tab-badge" *ngIf="myTradesUnseenCount > 0">{{ myTradesUnseenCount > 9 ? '9+' : myTradesUnseenCount }}</span>
+    </button>
+    <button
+      class="view-tab-btn"
+      *ngIf="isAdminUser"
+      [class.active]="activeTab === 'disputes'"
+      (click)="selectTab('disputes')"
+      role="tab"
+    >
+      Disputes
+      <span class="tab-badge" *ngIf="disputeTrades.length > 0">{{ disputeTrades.length > 9 ? '9+' : disputeTrades.length }}</span>
     </button>
     <button
       class="view-tab-btn"
@@ -38,7 +48,7 @@
   </ng-container>
 
   <!-- MARKET -->
-  <ng-container *ngIf="activeTab === 'market'">
+  <ng-container *ngIf="activeTab === 'market' && !isAdminUser">
     <div class="market-panel">
       <div class="market-top-row">
         <div class="buy-sell-toggle">
@@ -422,9 +432,6 @@
 
         <span class="status-pill" [ngClass]="trade.status.toLowerCase()">{{ trade.status }}</span>
 
-        <!-- Chat notification icon: sits right after the status pill.
-             Red dot lights up while THIS trade has an unread message from the
-             counterparty, clears itself once the chat is opened and read -->
         <button
           type="button"
           class="chat-icon-btn"
@@ -442,6 +449,112 @@
         </div>
 
         <mat-icon class="chevron">chevron_right</mat-icon>
+      </div>
+    </div>
+  </ng-container>
+
+  <!-- DISPUTES (admin) -->
+  <ng-container *ngIf="activeTab === 'disputes' && isAdminUser">
+
+    <!-- <div class="my-ads-toolbar">
+      <div>
+        <h2 class="panel-title">Disputes</h2>
+        <p class="panel-subtitle">
+          Disputed trades — review the buyer's and seller's uploaded evidence carefully before releasing funds. This action is final.
+        </p>
+      </div>
+    </div> -->
+
+    <div class="order-loading" *ngIf="disputesLoading">
+      <img src="./assets/images/loading.gif" alt="Loading..." style="width: 26px; height: 26px;" />
+    </div>
+
+    <div class="order-empty" *ngIf="!disputesLoading && disputeTrades.length === 0">
+      <span class="order-empty-title">{{disputeTrades.length }} No disputes waiting on review</span>
+      <span class="order-empty-sub">Disputed trades will show up here once both parties submit evidence.</span>
+    </div>
+
+
+    <div class="order-list" *ngIf="!disputesLoading && disputeTrades.length > 0">
+      <div
+        class="order-row trade-row dispute-row"
+        *ngFor="let trade of disputeTrades; trackBy: trackByTradeId"
+      >
+        <div class="merchant-col" (click)="openDisputeResolution(trade)">
+          <div class="merchant-avatar">
+            <span>{{ (trade.buyer.username || 'B').charAt(0).toUpperCase() }}</span>
+          </div>
+          <div class="merchant-meta">
+            <div class="merchant-name">&#64;{{ trade.buyer.username }}</div>
+            <div class="merchant-stats">
+              vs &#64;{{ trade.seller.username }} &middot; {{ trade.createdAt | date: 'medium' }}
+            </div>
+          </div>
+        </div>
+
+        <div class="price-col" [attr.data-label]="'Trade'" (click)="openDisputeResolution(trade)">
+          <span class="price-val">{{ trade.coinAmount }} {{ trade.order.coin }}</span>
+          <span class="price-currency">{{ tradeFiatSymbol(trade) }}{{ trade.fiatAmount | number: '1.2-2' }}</span>
+        </div>
+
+        <span class="status-pill" [ngClass]="trade.status.toLowerCase()" (click)="openDisputeResolution(trade)">{{ trade.status }}</span>
+
+        <button
+          type="button"
+          class="chat-icon-btn"
+          matTooltip="Chat"
+          (click)="$event.stopPropagation(); openDisputeResolution(trade)"
+        >
+          <mat-icon>chat_bubble_outline</mat-icon>
+          <app-chat-unread-badge [tradeId]="trade.id" class="chat-icon-badge"></app-chat-unread-badge>
+        </button>
+
+        <div class="action-col">
+          <button mat-stroked-button color="primary" class="trade-btn" type="button" (click)="$event.stopPropagation(); openDisputeResolution(trade)">
+            Review
+          </button>
+        </div>
+
+        <mat-icon class="chevron" (click)="openDisputeResolution(trade)">chevron_right</mat-icon>
+
+        <!-- Evidence photos uploaded by buyer & seller -->
+        <div class="dispute-evidence-row">
+          <div class="dispute-evidence-item">
+            <span class="evidence-tag">Buyer evidence</span>
+            <img
+              *ngIf="trade.disputeEvidenceBuyerUrl && looksLikeImage(trade.disputeEvidenceBuyerUrl)"
+              class="evidence-photo"
+              [src]="trade.disputeEvidenceBuyerUrl"
+              alt="Buyer evidence"
+            />
+            <a
+              *ngIf="trade.disputeEvidenceBuyerUrl && !looksLikeImage(trade.disputeEvidenceBuyerUrl)"
+              class="proof-link"
+              [href]="trade.disputeEvidenceBuyerUrl"
+              target="_blank"
+              rel="noopener"
+            >View file</a>
+            <span class="evidence-photo evidence-missing" *ngIf="!trade.disputeEvidenceBuyerUrl">No evidence</span>
+          </div>
+
+          <div class="dispute-evidence-item">
+            <span class="evidence-tag">Seller evidence</span>
+            <img
+              *ngIf="trade.disputeEvidenceSellerUrl && looksLikeImage(trade.disputeEvidenceSellerUrl)"
+              class="evidence-photo"
+              [src]="trade.disputeEvidenceSellerUrl"
+              alt="Seller evidence"
+            />
+            <a
+              *ngIf="trade.disputeEvidenceSellerUrl && !looksLikeImage(trade.disputeEvidenceSellerUrl)"
+              class="proof-link"
+              [href]="trade.disputeEvidenceSellerUrl"
+              target="_blank"
+              rel="noopener"
+            >View file</a>
+            <span class="evidence-photo evidence-missing" *ngIf="!trade.disputeEvidenceSellerUrl">No evidence</span>
+          </div>
+        </div>
       </div>
     </div>
   </ng-container>

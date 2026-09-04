@@ -13,6 +13,7 @@ import { SharedService } from '../../../shared/shared.service';
 
 import { CreateOrderDialogComponent } from './create-order-dialog/create-order-dialog.component';
 import { InitiateTradeDialogComponent } from './initiate-trade-dialog/initiate-trade-dialog.component';
+import { DisputeResolutionDialogComponent } from './dispute-resolution-dialog/dispute-resolution-dialog.component';
 import { Observable, Subscription } from 'rxjs';
 import { Trader } from '../../../../app/appstate/appstate-model';
 import { GetTraderResBody } from '../../../../app/services/auth.type';
@@ -24,7 +25,7 @@ import { P2pCategoryAdminComponent } from "./p2p-category-admin/p2p-category-adm
 import { P2POrderType, OrderStatus, TradeStatus, SUPPORTED_FIAT, QUICK_COINS, P2POrder, getPaymentMethodsForFiat, fiatSymbol, P2PTrade, SUPPORTED_COINS, msUntilDeadline, formatCountdown } from './model/p2p.model';
 import { P2pChatService } from './service/p2p-chat.service';
 
-type MainTab = 'market' | 'my-orders' | 'my-trades' | 'categories';
+type MainTab = 'market' | 'my-orders' | 'my-trades' | 'disputes' | 'categories';
 type MyAdsSubTab = 'listed' | 'all';
 type SortOption = 'price-asc' | 'price-desc' | 'available-desc';
 
@@ -38,6 +39,7 @@ const REFRESH_OPTIONS = [
 const TRADES_NOTIFICATION_POLL_INTERVAL_MS = 20000;
 const TRADES_COUNTDOWN_TICK_MS = 1000;
 const COUNTDOWN_URGENT_THRESHOLD_MS = 2 * 60 * 1000;
+const DISPUTES_POLL_INTERVAL_MS = 30000;
 
 @Component({
   selector: 'app-p2p',
@@ -162,12 +164,19 @@ export class P2pComponent implements OnInit, OnDestroy {
   private tradesCountdownTimer: ReturnType<typeof setInterval> | null = null;
 
   // ---------------------------------------------------------------------
+  // Disputes (admin) — escalated trades awaiting manual resolution
+  // ---------------------------------------------------------------------
+  disputeTrades: P2PTrade[] = [];
+  disputesLoading = false;
+  private disputesPollTimer: ReturnType<typeof setInterval> | null = null;
+
+  // ---------------------------------------------------------------------
   // Categories (admin)
   // ---------------------------------------------------------------------
   categorySymbols: string[] = [];
 
   get isAdminUser(): boolean {
-    return this.entityName === 'Admin' && !!this.isSuperAdmin;
+    return this.isSuperAdmin;
   }
 
   get coinSuggestions(): string[] {
@@ -197,12 +206,15 @@ export class P2pComponent implements OnInit, OnDestroy {
       if (!stillValid) this.filterForm.patchValue({ paymentMethod: '' });
       this.loadOrders();
     });
+
+    this.loadDisputes();
   }
 
   ngOnDestroy(): void {
     this.stopAutoRefresh();
     this.stopTradesNotificationPolling();
     this.stopTradesCountdown();
+    this.stopDisputesPolling();
     this.tradeChatUnreadSub?.unsubscribe();
   }
 
@@ -257,6 +269,10 @@ export class P2pComponent implements OnInit, OnDestroy {
           this.isAdminDashBoardType = false;
           this.isTradersDashBoardType = true;
         }
+
+        if (this.isAdminUser) {
+          this.startDisputesPolling();
+        }
       },
       error: (err) => {
         this.errorMessage = '';
@@ -270,6 +286,7 @@ export class P2pComponent implements OnInit, OnDestroy {
     if (tab === 'market' && this.orders.length === 0) this.loadOrders();
     if (tab === 'my-orders') this.loadMyOrders();
     if (tab === 'my-trades') this.loadMyTrades();
+    if (tab === 'disputes') this.loadDisputes();
   }
 
   // ---------------------------------------------------------------------
@@ -646,6 +663,57 @@ export class P2pComponent implements OnInit, OnDestroy {
   }
 
   // ---------------------------------------------------------------------
+  // Disputes (admin)
+  // ---------------------------------------------------------------------
+
+  // loadDisputes(): void {
+  //   if (!this.isAdminUser) return;
+  //   this.disputesLoading = true;
+  //   this.p2pService.listEscalatedDisputes().subscribe({
+  //     next: (res) => {
+  //       this.disputeTrades = res;
+  //       this.disputesLoading = false;
+  //     },
+  //     error: () => {
+  //       this.disputesLoading = false;
+  //     },
+  //   });
+  // }
+
+  private startDisputesPolling(): void {
+    this.stopDisputesPolling();
+    this.loadDisputes();
+    this.disputesPollTimer = setInterval(() => {
+      // Only silently refresh in the background when the tab isn't
+      // active — loadDisputes() already handles the active-tab case
+      // via selectTab(), and this avoids yanking the list while the
+      // admin is mid-review.
+      if (this.activeTab !== 'disputes') this.loadDisputes();
+    }, DISPUTES_POLL_INTERVAL_MS);
+  }
+
+  private stopDisputesPolling(): void {
+    if (this.disputesPollTimer) {
+      clearInterval(this.disputesPollTimer);
+      this.disputesPollTimer = null;
+    }
+  }
+
+  openDisputeResolution(trade: P2PTrade): void {
+    const ref = this.dialog.open(DisputeResolutionDialogComponent, {
+      width: '640px',
+      maxWidth: '95vw',
+      data: { trade },
+    });
+
+    ref.afterClosed().subscribe((resolved: P2PTrade | undefined) => {
+      if (resolved) {
+        this.disputeTrades = this.disputeTrades.filter((t) => t.id !== resolved.id);
+      }
+    });
+  }
+
+  // ---------------------------------------------------------------------
   // Payment countdown
   // ---------------------------------------------------------------------
 
@@ -709,4 +777,24 @@ export class P2pComponent implements OnInit, OnDestroy {
   isActiveTrade(trade: P2PTrade): boolean {
     return trade.status === TradeStatus.Pending || trade.status === TradeStatus.Paid;
   }
+looksLikeImage(url: string | undefined | null): boolean {
+  if (!url) return false;
+  return /\.(png|jpe?g|gif|webp)($|\?)/i.test(url) || url.startsWith('data:image/');
+}
+
+loadDisputes(): void {
+  if (!this.isAdminUser) return;
+  this.disputesLoading = true;
+  this.p2pService.listEscalatedDisputes().subscribe({
+    next: (res) => {
+      this.disputeTrades = res.filter(t => t.status === TradeStatus.Disputed);
+      this.disputesLoading = false;
+    },
+    error: () => {
+      this.disputesLoading = false;
+    },
+  });
+}
+
+
 }

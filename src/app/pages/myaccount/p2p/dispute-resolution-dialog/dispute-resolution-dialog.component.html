@@ -1,0 +1,118 @@
+<div class="dispute-dialog">
+  <header class="sheet-header">
+    <h2 class="sheet-title">Resolve dispute — {{ trade.order.coin }} trade</h2>
+    <button type="button" class="icon-btn" (click)="close()" aria-label="Close">
+      <mat-icon>close</mat-icon>
+    </button>
+  </header>
+
+  <div class="sheet-body dispute-body">
+
+    <dl class="stat-grid">
+      <div class="stat">
+        <dt>Amount</dt>
+        <dd class="num">{{ trade.coinAmount }} <span class="unit">{{ trade.order.coin }}</span></dd>
+      </div>
+      <div class="stat">
+        <dt>Fiat value</dt>
+        <dd class="num">{{ tradeFiatSymbol() }}{{ trade.fiatAmount | number: '1.2-2' }}</dd>
+      </div>
+      <div class="stat">
+        <dt>Payment method</dt>
+        <dd>{{ trade.paymentMethod }}</dd>
+      </div>
+    </dl>
+
+    <div class="party-row">
+      <div class="party-card">
+        <span class="party-label">Buyer</span>
+        <span class="party-name">&#64;{{ trade.buyer.username }}</span>
+      </div>
+      <mat-icon class="party-arrow">swap_horiz</mat-icon>
+      <div class="party-card">
+        <span class="party-label">Seller</span>
+        <span class="party-name">&#64;{{ trade.seller.username }}</span>
+      </div>
+    </div>
+
+    <section class="detail-card" *ngIf="trade.disputeReason">
+      <h3 class="detail-card-title"><mat-icon>report</mat-icon> Reported reason</h3>
+      <p class="hint">{{ trade.disputeReason }}</p>
+    </section>
+
+    <section class="detail-card" *ngIf="trade.paymentProofUrl">
+      <h3 class="detail-card-title"><mat-icon>receipt_long</mat-icon> Buyer's original payment proof</h3>
+      <img *ngIf="looksLikeImage(trade.paymentProofUrl)" class="proof-preview" [src]="trade.paymentProofUrl" alt="Payment proof" />
+      <a *ngIf="!looksLikeImage(trade.paymentProofUrl)" class="proof-link" [href]="trade.paymentProofUrl" target="_blank" rel="noopener">View payment proof</a>
+      <p class="hint muted" *ngIf="trade.paymentProofNote">{{ trade.paymentProofNote }}</p>
+    </section>
+
+    <div class="evidence-grid">
+      <section class="detail-card">
+        <h3 class="detail-card-title"><mat-icon>person</mat-icon> Buyer's evidence</h3>
+        <ng-container *ngIf="trade.disputeEvidenceBuyerUrl; else noBuyerEvidence">
+          <img *ngIf="looksLikeImage(trade.disputeEvidenceBuyerUrl)" class="proof-preview" [src]="trade.disputeEvidenceBuyerUrl" alt="Buyer evidence" />
+          <a *ngIf="!looksLikeImage(trade.disputeEvidenceBuyerUrl)" class="proof-link" [href]="trade.disputeEvidenceBuyerUrl" target="_blank" rel="noopener">View evidence</a>
+          <p class="hint muted" *ngIf="trade.disputeEvidenceBuyerNote">{{ trade.disputeEvidenceBuyerNote }}</p>
+        </ng-container>
+        <ng-template #noBuyerEvidence>
+          <p class="hint muted">No evidence submitted.</p>
+        </ng-template>
+      </section>
+
+      <section class="detail-card">
+        <h3 class="detail-card-title"><mat-icon>storefront</mat-icon> Seller's evidence</h3>
+        <ng-container *ngIf="trade.disputeEvidenceSellerUrl; else noSellerEvidence">
+          <img *ngIf="looksLikeImage(trade.disputeEvidenceSellerUrl)" class="proof-preview" [src]="trade.disputeEvidenceSellerUrl" alt="Seller evidence" />
+          <a *ngIf="!looksLikeImage(trade.disputeEvidenceSellerUrl)" class="proof-link" [href]="trade.disputeEvidenceSellerUrl" target="_blank" rel="noopener">View evidence</a>
+          <p class="hint muted" *ngIf="trade.disputeEvidenceSellerNote">{{ trade.disputeEvidenceSellerNote }}</p>
+        </ng-container>
+        <ng-template #noSellerEvidence>
+          <p class="hint muted">No evidence submitted.</p>
+        </ng-template>
+      </section>
+    </div>
+
+    <section class="detail-card" *ngIf="trade.sellerPaymentMethod as detail">
+      <h3 class="detail-card-title"><mat-icon>account_balance</mat-icon> Receiving account on record</h3>
+      <dl class="detail-list">
+        <div class="detail-row"><dt>Method</dt><dd>{{ detail.method }}</dd></div>
+        <div class="detail-row" *ngIf="detail.accountName"><dt>Account name</dt><dd>{{ detail.accountName }}</dd></div>
+        <div class="detail-row"><dt>Account number</dt><dd class="num">{{ maskedAccountNumber(detail.accountNumber) }}</dd></div>
+        <div class="detail-row" *ngIf="detail.bankName"><dt>Bank</dt><dd>{{ detail.bankName }}</dd></div>
+      </dl>
+    </section>
+
+    <section class="field-group">
+      <label class="field-label" for="adminNote">Resolution note (optional, included in the notification to both parties)</label>
+      <textarea id="adminNote" rows="3" class="text-input textarea" [(ngModel)]="adminNote" placeholder="e.g. Confirmed bank statement matches buyer's proof"></textarea>
+    </section>
+
+    <p class="field-error" *ngIf="errorMessage">{{ errorMessage }}</p>
+  </div>
+
+  <footer class="sheet-footer dispute-footer">
+    <button
+      mat-stroked-button
+      color="warn"
+      type="button"
+      class="btn danger-outline"
+      [disabled]="!!resolving"
+      (click)="resolve(DisputeResolution.RefundToSeller)"
+    >
+      <mat-icon>undo</mat-icon>
+      {{ resolving === DisputeResolution.RefundToSeller ? 'Refunding…' : 'Refund seller' }}
+    </button>
+    <button
+      mat-flat-button
+      color="primary"
+      type="button"
+      class="btn primary"
+      [disabled]="!!resolving"
+      (click)="resolve(DisputeResolution.ReleaseToBuyer)"
+    >
+      <mat-icon>check_circle</mat-icon>
+      {{ resolving === DisputeResolution.ReleaseToBuyer ? 'Releasing…' : 'Release to buyer' }}
+    </button>
+  </footer>
+</div>

@@ -17,7 +17,8 @@ import {
   MarkTradePaidReqBody,
   ReleaseTradeReqBody,
   DisputeEvidenceReqBody,
-} from '../model/p2p.model';
+ DisputeResolution, ResolveDisputeReqBody } from '../model/p2p.model'; 
+
 import { VerifyPaymentRes, PaymentVerificationStatus } from '../model/p2p.model';
 
 
@@ -239,5 +240,21 @@ escalateDispute(tradeId: string): Observable<P2PTrade> {
     .post<ApiEnvelope<any> | any>(`${this.base}/trades/${tradeId}/dispute/escalate`, {})
     .pipe(map((res) => normalizeTrade(this.unwrapOne(res))));
 }
+
+
+
+
+listEscalatedDisputes(): Observable<P2PTrade[]> {
+  return this.http
+    .get<ApiEnvelope<any[]> | any[]>(`${this.base}/admin/trades/disputes`)
+    .pipe(map((res) => this.unwrap(res).map(normalizeTrade)));
+}
+
+resolveDispute(body: ResolveDisputeReqBody): Observable<P2PTrade> {
+  return this.http
+    .post<ApiEnvelope<any> | any>(`${this.base}/admin/trades/resolve-dispute`, body)
+    .pipe(map((res) => normalizeTrade(this.unwrapOne(res))));
+}
+
 
 }

@@ -102,6 +102,11 @@ export interface P2PTrade {
   disputeEvidenceSellerNote?: string;
   disputeEscalated?: boolean;
   disputeEscalatedAt?: string;
+
+
+   disputeReason?: string;
+  disputedBy?: string;
+
 }
 
 export interface CreateOrderReqBody {
@@ -439,6 +444,10 @@ export function normalizeTrade(raw: any): P2PTrade {
     disputeEvidenceSellerNote: raw.disputeEvidenceSellerNote || undefined,
     disputeEscalated: raw.disputeEscalated ?? false,
     disputeEscalatedAt: raw.disputeEscalatedAt ? extractDate(raw.disputeEscalatedAt) : undefined,
+
+     disputeReason: raw.disputeReason || undefined,
+    disputedBy: raw.disputedBy ? extractId(raw.disputedBy) : undefined,
+    
   };
 }
 
@@ -568,4 +577,19 @@ export function myDisputeAgreementConfirmed(trade: P2PTrade): boolean {
 
 export function counterpartyDisputeAgreementConfirmed(trade: P2PTrade): boolean {
   return trade.isBuyer ? !!trade.disputeAgreementConfirmedBySeller : !!trade.disputeAgreementConfirmedByBuyer;
+}
+
+
+
+
+
+export enum DisputeResolution {
+  ReleaseToBuyer = 'ReleaseToBuyer',
+  RefundToSeller = 'RefundToSeller',
+}
+
+export interface ResolveDisputeReqBody {
+  tradeId: string;
+  resolution: DisputeResolution;
+  note?: string;
 }
