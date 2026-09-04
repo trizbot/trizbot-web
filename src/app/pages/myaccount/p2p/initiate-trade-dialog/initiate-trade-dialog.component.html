@@ -76,15 +76,6 @@
         </div>
       </section>
 
-      <!-- Ad already carries the seller's account -> always show it in full,
-           never masked, since the buyer needs the real account number to
-           send money before they even lock funds into escrow.
-
-           matchedOrderPaymentDetail is now guaranteed (by the model layer)
-           to have a non-empty method + accountNumber whenever it's truthy,
-           so this card can never render with blank fields anymore — if the
-           data isn't usable, matchedOrderPaymentDetail is undefined and the
-           warning banner below shows instead. -->
       <section class="detail-card payment-target" *ngIf="orderCarriesSellerDetails && matchedOrderPaymentDetail as detail">
         <h3 class="detail-card-title"><mat-icon>account_balance</mat-icon> You'll send payment to</h3>
 
@@ -107,25 +98,11 @@
         <p class="hint muted">Verify these details carefully before sending money — never pay an account shown outside this app.</p>
       </section>
 
-      <!-- The market listing didn't include a usable payment detail ->
-           we're re-fetching the single order, which should return it
-           fully populated. Shown briefly instead of a false "not attached"
-           warning. -->
       <div class="inline-loader" *ngIf="orderCarriesSellerDetails && sellerDetailsLoading">
         <img src="./assets/images/loading.gif" alt="Loading" width="20" height="20" />
         <span>Loading the seller's payment details&hellip;</span>
       </div>
 
-      <!-- Two distinct outcomes instead of one ambiguous banner.
-
-           'none-attached' — the refetch succeeded, but this ad genuinely
-           has no usable linked payment method. Retrying can't fix this, so
-           no retry button is shown; the buyer is told plainly and pointed
-           to support/a different ad. The Buy button stays disabled
-           (see initiateFormValid in the component).
-
-           'failed' — the refetch itself errored (network/API). This is
-           worth retrying, so the retry button is shown. -->
       <section
         class="banner warn"
         *ngIf="orderCarriesSellerDetails && !matchedOrderPaymentDetail && !sellerDetailsLoading"
@@ -149,7 +126,6 @@
         >Retry</button>
       </section>
 
-      <!-- I'm the one selling -> I need to give the buyer one of my saved accounts -->
       <section class="detail-card" *ngIf="mustSupplySellerDetails">
         <h3 class="detail-card-title"><mat-icon>account_balance</mat-icon> Your payment details (shown to the buyer)</h3>
 
@@ -173,8 +149,6 @@
         </div>
       </section>
 
-      <!-- Transaction PIN is required to start ANY trade (locks funds into
-           escrow), regardless of whether this is a Buy or Sell order -->
       <section class="field-group">
         <label class="field-label" for="initiatePin">Transaction PIN</label>
         <input
@@ -264,6 +238,10 @@
             <mat-icon>hourglass_top</mat-icon>
             {{ sellerReviewOverdue ? 'Response overdue' : sellerReviewLabel }}
           </span>
+          <span class="pill countdown" *ngIf="disputeAgreementReached && !disputeReleaseExpired" [class.urgent]="disputeReleaseUrgent">
+            <mat-icon>hourglass_top</mat-icon>
+            Release window: {{ disputeReleaseLabel }}
+          </span>
         </div>
 
         <p class="hint muted" *ngIf="trade.status === TradeStatus.Pending && !isPaymentExpired">
@@ -271,7 +249,6 @@
           seller until either a release or a dispute — nobody can act unilaterally once it expires.
         </p>
 
-        <!-- Payment window has run out client-side; wait for server state -->
         <div class="banner warn" *ngIf="trade.status === TradeStatus.Pending && isPaymentExpired">
           <mat-icon>timer_off</mat-icon>
           <span>The payment window has ended. This trade should auto-cancel shortly — refresh to see the latest status.</span>
@@ -295,7 +272,7 @@
           </div>
         </dl>
 
- 
+
         <section class="detail-card payment-target" *ngIf="resolvedPaymentDetail as detail; else noPaymentDetail">
           <h3 class="detail-card-title"><mat-icon>account_balance</mat-icon> Payment goes to</h3>
           <dl class="detail-list">
@@ -319,17 +296,8 @@
           <p class="hint muted" *ngIf="trade.isBuyer">Verify these details carefully before sending money — never pay an account shown outside this app.</p>
         </section>
 
-       <ng-template #noPaymentDetail>
-          <!-- <div class="banner warn">
-            <mat-icon>error_outline</mat-icon>
-            <span>Payment details aren't showing yet. Refresh, or contact support if this persists before sending any money.</span>
-            <button mat-stroked-button type="button" class="btn tiny-btn" [disabled]="refreshingTrade" (click)="refreshTrade()">
-              {{ refreshingTrade ? 'Refreshing…' : 'Refresh' }}
-            </button>
-          </div> -->
-        </ng-template>
+       <ng-template #noPaymentDetail></ng-template>
 
-        <!-- Shared status context once payment has been marked, visible to both sides -->
         <section class="detail-card" *ngIf="trade.status === TradeStatus.Paid">
           <h3 class="detail-card-title">
             <mat-icon>hourglass_top</mat-icon>
@@ -347,14 +315,11 @@
           </p>
         </section>
 
-        <!-- Automatic payment verification / auto-release progress, shown to
-             both sides while it's running. -->
         <div class="banner info" *ngIf="showAutoVerificationBanner">
           <mat-icon>{{ verificationStatus === 'failed' || verificationStatus === 'timed-out' ? 'info' : 'autorenew' }}</mat-icon>
           <span>{{ verificationStatusLabel }}</span>
         </div>
 
-        <!-- ---- BUYER (in this trade): mark as paid + attach evidence ---- -->
         <ng-container *ngIf="canMarkPaid">
           <div class="banner">
             <mat-icon>info</mat-icon>
@@ -399,7 +364,6 @@
           </section>
         </ng-container>
 
-        <!-- Buyer can back out only before marking paid -->
         <button
           mat-stroked-button
           color="warn"
@@ -410,7 +374,6 @@
           (click)="cancelTrade()"
         >{{ cancelling ? 'Cancelling…' : 'Cancel trade' }}</button>
 
-        <!-- ---- SELLER (in this trade): review evidence + release funds ---- -->
         <ng-container *ngIf="!trade.isBuyer && trade.status === TradeStatus.Paid">
           <section class="detail-card">
             <h3 class="detail-card-title"><mat-icon>receipt_long</mat-icon> Payment evidence from the buyer</h3>
@@ -420,9 +383,6 @@
             <p class="hint muted" *ngIf="trade.paidAt">Marked paid {{ trade.paidAt | date: 'medium' }}</p>
           </section>
 
-          <!-- Manual release stays available as a fallback while auto-release
-               is pending/unavailable, and hides once verification has taken
-               over so the seller can't double-release. -->
           <ng-container *ngIf="canManuallyRelease">
             <div class="banner">
               <mat-icon>warning</mat-icon>
@@ -480,9 +440,6 @@
             <button mat-stroked-button color="warn" type="button" class="btn danger-outline" (click)="toggleDisputeForm()">
               <mat-icon>report</mat-icon> dispute
             </button>
-            <!-- <button mat-stroked-button type="button" class="btn secondary" (click)="contactSupport()">
-              <mat-icon>support_agent</mat-icon> Contact support
-            </button> -->
           </div>
 
           <div class="field-group tight" *ngIf="showDisputeForm">
@@ -506,9 +463,140 @@
           </div>
         </section>
 
-        <div class="footer-note" *ngIf="trade.status === TradeStatus.Disputed">
-          <mat-icon>gavel</mat-icon><span>This trade is under dispute. Support will contact both parties.</span>
-        </div>
+        <!-- ==================================================================
+             DISPUTE RESOLUTION
+             1) Negotiate in the Chat tab.
+             2) Both sides confirm the agreement below.
+             3) Fixed 15-minute window for the seller to release funds.
+             4) If it lapses, both sides upload evidence -> escalate to admin.
+        =================================================================== -->
+        <section class="detail-card" *ngIf="trade.status === TradeStatus.Disputed">
+          <h3 class="detail-card-title"><mat-icon>gavel</mat-icon> Dispute in progress</h3>
+
+          <p class="hint muted" *ngIf="!disputeAgreementReached && !trade.disputeEscalated">
+            Use the Chat tab to work things out with the other party. Once you've both reached an agreement,
+            confirm it below — the seller then has a fixed {{ disputeReleaseWindowMinutes }} minutes to release the funds.
+          </p>
+
+          <!-- Step 1: both sides confirm they've reached an agreement -->
+          <ng-container *ngIf="!disputeAgreementReached && !trade.disputeEscalated">
+            <div class="status-row">
+              <span class="pill" [ngClass]="myDisputeAgreementConfirmed ? 'completed' : 'pending'">
+                You: {{ myDisputeAgreementConfirmed ? 'Agreed' : 'Not yet agreed' }}
+              </span>
+              <span class="pill" [ngClass]="counterpartyDisputeAgreementConfirmed ? 'completed' : 'pending'">
+                {{ counterpartyName() }}: {{ counterpartyDisputeAgreementConfirmed ? 'Agreed' : 'Not yet agreed' }}
+              </span>
+            </div>
+
+            <button
+              mat-flat-button
+              color="primary"
+              type="button"
+              class="btn primary full"
+              *ngIf="canConfirmDisputeAgreement"
+              [disabled]="confirmingDisputeAgreement"
+              (click)="confirmDisputeAgreement()"
+            >{{ confirmingDisputeAgreement ? 'Confirming…' : 'We\'ve reached an agreement' }}</button>
+
+            <p class="hint muted" *ngIf="myDisputeAgreementConfirmed && !disputeAgreementReached">
+              Waiting for {{ counterpartyName() }} to confirm too.
+            </p>
+          </ng-container>
+
+          <!-- Step 2: fixed 15-minute release window, seller-only -->
+          <ng-container *ngIf="disputeAgreementReached && !disputeReleaseExpired && !trade.disputeEscalated">
+            <p class="hint muted">
+              {{ trade.isBuyer
+                ? 'Both sides agreed. The seller has ' + disputeReleaseWindowMinutes + ' minutes to release the funds before this gets escalated to admin.'
+                : 'You have ' + disputeReleaseWindowMinutes + ' minutes to release the funds now that both sides have agreed. If the window lapses, both of you will be asked to upload evidence for admin review.' }}
+            </p>
+
+            <ng-container *ngIf="canReleaseDisputedFunds">
+              <section class="field-group">
+                <label class="field-label" for="disputeReleasePin">Transaction PIN</label>
+                <input
+                  id="disputeReleasePin"
+                  type="password"
+                  inputmode="numeric"
+                  maxlength="6"
+                  autocomplete="off"
+                  class="pin-input"
+                  [(ngModel)]="releasePin"
+                  [disabled]="releasePinLocked"
+                  placeholder="&bull; &bull; &bull; &bull;"
+                />
+                <p class="field-error" *ngIf="releasePinError">{{ releasePinError }}</p>
+              </section>
+
+              <button
+                mat-flat-button
+                color="primary"
+                type="button"
+                class="btn primary full"
+                [disabled]="releasing || !releasePinValid || releasePinLocked"
+                (click)="confirmReleaseFunds()"
+              >{{ releasing ? 'Releasing…' : 'Release funds now' }}</button>
+            </ng-container>
+          </ng-container>
+
+          <!-- Step 3: window lapsed without a release -> both sides upload evidence -->
+          <ng-container *ngIf="showDisputeEvidencePrompt">
+            <div class="banner warn">
+              <mat-icon>error_outline</mat-icon>
+              <span>The {{ disputeReleaseWindowMinutes }}-minute release window has passed. Please upload evidence of the transaction so support can review and resolve this.</span>
+            </div>
+
+            <div class="status-row">
+              <span class="pill" [ngClass]="myDisputeEvidenceSubmitted ? 'completed' : 'pending'">
+                You: {{ myDisputeEvidenceSubmitted ? 'Evidence submitted' : 'Evidence needed' }}
+              </span>
+              <span class="pill" [ngClass]="counterpartyDisputeEvidenceSubmitted ? 'completed' : 'pending'">
+                {{ counterpartyName() }}: {{ counterpartyDisputeEvidenceSubmitted ? 'Evidence submitted' : 'Evidence needed' }}
+              </span>
+            </div>
+
+            <section class="field-group tight" *ngIf="!myDisputeEvidenceSubmitted">
+              <label class="field-label" for="disputeEvidenceFile">Upload evidence (screenshot)</label>
+              <input id="disputeEvidenceFile" type="file" accept="image/*" class="file-input" (change)="onDisputeEvidenceFileSelected($event)" />
+            </section>
+            <section class="field-group tight" *ngIf="!myDisputeEvidenceSubmitted">
+              <label class="field-label" for="disputeEvidenceUrl">Or paste a link to your evidence</label>
+              <input id="disputeEvidenceUrl" type="text" inputmode="url" class="text-input" [(ngModel)]="disputeEvidenceUrl" placeholder="https://..." />
+            </section>
+            <img *ngIf="disputeEvidenceUrl && !myDisputeEvidenceSubmitted" class="proof-preview" [src]="disputeEvidenceUrl" alt="Dispute evidence preview" />
+            <section class="field-group tight" *ngIf="!myDisputeEvidenceSubmitted">
+              <label class="field-label" for="disputeEvidenceNote">Note (optional)</label>
+              <input id="disputeEvidenceNote" type="text" class="text-input" [(ngModel)]="disputeEvidenceNote" placeholder="Anything support should know" />
+            </section>
+            <p class="field-error" *ngIf="disputeEvidenceFileError">{{ disputeEvidenceFileError }}</p>
+
+            <button
+              mat-flat-button
+              color="primary"
+              type="button"
+              class="btn primary full"
+              *ngIf="!myDisputeEvidenceSubmitted"
+              [disabled]="submittingDisputeEvidence"
+              (click)="submitDisputeEvidence()"
+            >{{ submittingDisputeEvidence ? 'Submitting…' : 'Submit evidence' }}</button>
+
+            <button
+              mat-stroked-button
+              type="button"
+              class="btn secondary full"
+              *ngIf="myDisputeEvidenceSubmitted && !bothDisputeEvidenceSubmitted"
+              [disabled]="escalatingDispute"
+              (click)="escalateDispute()"
+            >{{ escalatingDispute ? 'Escalating…' : 'Escalate to admin now' }}</button>
+          </ng-container>
+
+          <div class="footer-note" *ngIf="trade.disputeEscalated">
+            <mat-icon>support_agent</mat-icon>
+            <span>Escalated to admin{{ trade.disputeEscalatedAt ? ' ' + (trade.disputeEscalatedAt | date: 'medium') : '' }}. Support will contact both parties.</span>
+          </div>
+        </section>
+
       </div>
     </ng-container>
 

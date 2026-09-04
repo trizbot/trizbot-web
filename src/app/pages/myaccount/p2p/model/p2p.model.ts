@@ -37,8 +37,7 @@ export interface UpdateOrderReqBody {
   minLimit?: number;
   maxLimit?: number;
   paymentMethods?: string[];
-  /** References into the trader's saved payment methods — no raw account
-   *  details are ever sent per-ad any more. */
+
   paymentMethodIds?: string[];
   paymentDetails?: string[];
   terms?: string;
@@ -57,7 +56,6 @@ export interface P2POrder {
   minLimit: number;
   maxLimit: number;
   paymentMethods: string[];
-  /** IDs the ad points to. */
   paymentMethodIds?: string[];
   paymentDetails?: string[];
 
@@ -80,8 +78,7 @@ export interface P2PTrade {
   coinAmount: number;
   fiatAmount: number;
   paymentMethod: string;
-  /** The one saved payment method actually locked in for this trade
-   *  (the seller's receiving account, whichever side supplied it). */
+  
   sellerPaymentMethod?: UserPaymentMethod;
   status: TradeStatus;
   paymentDeadline?: string;
@@ -91,6 +88,20 @@ export interface P2PTrade {
   paidAt?: string;
   releasedAt?: string;
   autoReleaseEligible?: boolean;
+
+  
+  disputeAgreementConfirmedByBuyer?: boolean;
+ 
+  disputeAgreementConfirmedBySeller?: boolean;
+  
+  disputeAgreementReachedAt?: string;
+  
+  disputeEvidenceBuyerUrl?: string;
+  disputeEvidenceBuyerNote?: string;
+  disputeEvidenceSellerUrl?: string;
+  disputeEvidenceSellerNote?: string;
+  disputeEscalated?: boolean;
+  disputeEscalatedAt?: string;
 }
 
 export interface CreateOrderReqBody {
@@ -120,15 +131,12 @@ export interface InitiateTradeReqBody {
   coinAmount: number;
   paymentMethod?: string;
   transactionPin?: string;
-  /** When I'm the one selling (i.e. the ad was a Buy ad), this is the ID
-   *  of MY saved payment method the buyer should pay into. */
+ 
   paymentMethodId?: string;
 }
 
 export const PAYMENT_WINDOW_OPTIONS: number[] = [15, 30, 45];
 
-// SUPPORTED_COINS is now a fallback only — the live list comes from
-// P2pCategoryService.getCategorySymbols(), managed by admins.
 export const SUPPORTED_COINS: string[] = ['USDT', 'BTC'];
 export const QUICK_COINS: string[] = ['USDT', 'BTC'];
 
@@ -196,40 +204,12 @@ function placeholderName(id?: string): string {
   return id ? `Trader ${id.slice(-6).toUpperCase()}` : 'Merchant';
 }
 
-/**
- * A payment detail is only useful to show/trade against if it actually
- * carries a method name AND an account number. Previously the code treated
- * "an object exists" as "resolved", which let a blank-fielded object render
- * an empty card (and, worse, leave the Buy button enabled). Everything
- * downstream (component getters, template) should gate on this instead of
- * on truthiness of the object alone.
- */
+
 export function isCompletePaymentMethod(detail: UserPaymentMethod | null | undefined): detail is UserPaymentMethod {
   return !!detail && !!String(detail.method || '').trim() && !!String(detail.accountNumber || '').trim();
 }
 
-/**
- * FIX: the backend stores/returns the seller's payment info as a flattened
- * string in `paymentDetails` (it never reliably sends back a structured
- * `paymentMethodDetails` array). The template renders `detail.method` /
- * `detail.accountName` / `detail.accountNumber`, so those fields were
- * rendering blank whenever the raw string didn't match one exact separator
- * pattern.
- *
- * This now tries several real-world formats people actually save data in,
- * in order of specificity:
- *
- *   1. JSON object string                → {"method":"...","accountName":"...","accountNumber":"..."}
- *   2. "Method: Name - Number"           → colon then dash (original format)
- *   3. "Method - Name - Number"          → all dash-separated
- *   4. "Method: Number"                  → colon only, no separate name
- *   5. anything else                     → whole string treated as the method,
- *                                           name/number left blank (caller
- *                                           should treat this as incomplete)
- *
- * Exported so components can call it defensively on an order/trade object
- * even when that object didn't come through normalizeOrder().
- */
+
 export function parsePaymentDetailString(
   raw: string | UserPaymentMethod,
   fiatCurrency: string,
@@ -244,7 +224,6 @@ export function parsePaymentDetailString(
     isDefault: false,
   };
 
-  // Already a structured object (some payloads mix shapes) — normalize and pass through.
   if (raw && typeof raw === 'object') {
     return {
       ...fallback,
@@ -303,9 +282,7 @@ export function parsePaymentDetailString(
     };
   }
   if (dashParts.length === 2) {
-    // Ambiguous: could be "Method - Number" (no name) — treat the second
-    // part as the account number since that's the field that actually
-    // matters for sending money.
+
     return {
       id: id || '',
       method: dashParts[0].trim(),
@@ -329,23 +306,11 @@ export function parsePaymentDetailString(
     };
   }
 
-  // 5. Nothing recognizable — surface the raw text as the method so support
-  // can see what was actually stored, but leave accountNumber blank so
-  // isCompletePaymentMethod() correctly flags this as unusable rather than
-  // silently rendering a blank-looking card.
+ 
   return { ...fallback, method: trimmed };
 }
 
-/**
- * Builds the structured `paymentMethodDetails` array a Sell ad needs for
- * display, preferring a real structured array from the backend if one is
- * ever added, and otherwise falling back to parsing the flattened
- * `paymentDetails` strings that are already being saved today.
- *
- * Incomplete entries (missing method or account number after parsing) are
- * filtered out here so callers never have to special-case them — a filtered
- * list simply "has no attached account" from their point of view.
- */
+
 export function buildPaymentMethodDetails(
   existing: UserPaymentMethod[] | undefined,
   flatDetails: string[] | undefined,
@@ -424,11 +389,7 @@ export function normalizeOrder(raw: any): P2POrder {
     paymentMethods: raw.paymentMethods || [],
     paymentMethodIds: (raw.paymentMethodIds || []).map(extractId),
     paymentDetails: raw.paymentDetails || [],
-    // FIX: was `(raw.paymentMethodDetails || []).map(normalizePaymentMethod)`,
-    // which is always empty because the backend never reliably populates
-    // that field. Now falls back to robustly parsing the flattened
-    // `paymentDetails` strings, and drops any entry that still comes out
-    // incomplete instead of letting it render blank.
+   
     paymentMethodDetails: resolvePaymentMethodDetails(raw),
     terms: raw.terms,
     paymentWindowMinutes: raw.paymentWindowMinutes,
@@ -457,9 +418,7 @@ export function normalizeTrade(raw: any): P2PTrade {
     coinAmount: raw.coinAmount,
     fiatAmount: raw.fiatAmount,
     paymentMethod: raw.paymentMethod,
-    // FIX: same completeness gate applies to a trade's locked-in seller
-    // payment method — only keep it if it's actually usable, otherwise let
-    // the component fall back to the order's resolved details.
+   
     sellerPaymentMethod: isCompletePaymentMethod(parsedSellerPaymentMethod) ? parsedSellerPaymentMethod : undefined,
     status: raw.status,
     paymentDeadline: raw.paymentDeadline ? extractDate(raw.paymentDeadline) : undefined,
@@ -469,6 +428,17 @@ export function normalizeTrade(raw: any): P2PTrade {
     paidAt: raw.paidAt ? extractDate(raw.paidAt) : undefined,
     releasedAt: raw.releasedAt ? extractDate(raw.releasedAt) : undefined,
     autoReleaseEligible: raw.autoReleaseEligible ?? undefined,
+
+    // ---- Dispute resolution ----
+    disputeAgreementConfirmedByBuyer: raw.disputeAgreementConfirmedByBuyer ?? false,
+    disputeAgreementConfirmedBySeller: raw.disputeAgreementConfirmedBySeller ?? false,
+    disputeAgreementReachedAt: raw.disputeAgreementReachedAt ? extractDate(raw.disputeAgreementReachedAt) : undefined,
+    disputeEvidenceBuyerUrl: raw.disputeEvidenceBuyerUrl || undefined,
+    disputeEvidenceBuyerNote: raw.disputeEvidenceBuyerNote || undefined,
+    disputeEvidenceSellerUrl: raw.disputeEvidenceSellerUrl || undefined,
+    disputeEvidenceSellerNote: raw.disputeEvidenceSellerNote || undefined,
+    disputeEscalated: raw.disputeEscalated ?? false,
+    disputeEscalatedAt: raw.disputeEscalatedAt ? extractDate(raw.disputeEscalatedAt) : undefined,
   };
 }
 
@@ -479,6 +449,13 @@ export interface MarkTradePaidReqBody {
 
 export interface ReleaseTradeReqBody {
   transactionPin?: string;
+}
+
+/** Payload for uploading dispute evidence (either side, once the fixed
+ *  15-minute post-agreement release window has lapsed without a release). */
+export interface DisputeEvidenceReqBody {
+  evidenceUrl: string;
+  note?: string;
 }
 
 export function canMarkPaid(trade: P2PTrade): boolean {
@@ -531,4 +508,64 @@ export type PaymentVerificationStatus = 'pending' | 'verifying' | 'verified' | '
 export interface VerifyPaymentRes {
   status: PaymentVerificationStatus;
   trade?: P2PTrade;
+}
+
+// =============================================================================
+// Dispute resolution — chat-negotiated agreement + fixed 15-minute release
+// =============================================================================
+
+/** Constant, non-configurable window: once both parties confirm they've
+ *  reached an agreement in the dispute chat, the seller has exactly this
+ *  long to release funds before both sides are asked for evidence. */
+export const DISPUTE_AGREEMENT_RELEASE_WINDOW_MS = 15 * 60 * 1000;
+
+export function disputeAgreementReached(trade: P2PTrade): boolean {
+  return !!trade.disputeAgreementReachedAt;
+}
+
+export function disputeReleaseDeadlineMs(trade: P2PTrade): number | null {
+  if (!trade.disputeAgreementReachedAt) return null;
+  return new Date(trade.disputeAgreementReachedAt).getTime() + DISPUTE_AGREEMENT_RELEASE_WINDOW_MS;
+}
+
+export function msUntilDisputeReleaseDeadline(trade: P2PTrade, nowMs: number = Date.now()): number {
+  const deadline = disputeReleaseDeadlineMs(trade);
+  if (deadline == null) return 0;
+  return deadline - nowMs;
+}
+
+/** True once the agreed 15-minute window has actually run out. Only
+ *  meaningful for a Disputed trade where both sides already agreed. */
+export function isDisputeReleaseWindowExpired(trade: P2PTrade, nowMs: number = Date.now()): boolean {
+  if (trade.status !== TradeStatus.Disputed) return false;
+  const deadline = disputeReleaseDeadlineMs(trade);
+  if (deadline == null) return false;
+  return nowMs >= deadline;
+}
+
+/** Seller can release directly out of a Disputed trade only inside the
+ *  fixed 15-minute window that opens once BOTH sides confirm they've
+ *  reached an agreement in the dispute chat, and only while that window
+ *  hasn't lapsed yet. */
+export function canReleaseDisputedFunds(trade: P2PTrade, nowMs: number = Date.now()): boolean {
+  if (trade.isBuyer) return false;
+  if (trade.status !== TradeStatus.Disputed) return false;
+  if (!disputeAgreementReached(trade)) return false;
+  return !isDisputeReleaseWindowExpired(trade, nowMs);
+}
+
+export function hasSubmittedDisputeEvidence(trade: P2PTrade): boolean {
+  return trade.isBuyer ? !!trade.disputeEvidenceBuyerUrl : !!trade.disputeEvidenceSellerUrl;
+}
+
+export function counterpartyHasSubmittedDisputeEvidence(trade: P2PTrade): boolean {
+  return trade.isBuyer ? !!trade.disputeEvidenceSellerUrl : !!trade.disputeEvidenceBuyerUrl;
+}
+
+export function myDisputeAgreementConfirmed(trade: P2PTrade): boolean {
+  return trade.isBuyer ? !!trade.disputeAgreementConfirmedByBuyer : !!trade.disputeAgreementConfirmedBySeller;
+}
+
+export function counterpartyDisputeAgreementConfirmed(trade: P2PTrade): boolean {
+  return trade.isBuyer ? !!trade.disputeAgreementConfirmedBySeller : !!trade.disputeAgreementConfirmedByBuyer;
 }

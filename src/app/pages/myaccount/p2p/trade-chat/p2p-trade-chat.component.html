@@ -8,9 +8,12 @@
 >
   <div class="trade-chat-header">
     <div class="header-identity">
-      <div class="header-avatar">{{counterpartyUsername.charAt(0).toUpperCase() }}</div>
+      <div class="header-avatar-wrap">
+        <div class="header-avatar">{{ counterpartyUsername.charAt(0).toUpperCase() }}</div>
+        <app-chat-unread-badge [tradeId]="trade.id" class="header-avatar-badge"></app-chat-unread-badge>
+      </div>
       <div class="header-text">
-        <span class="trade-chat-title">{{ counterpartyUsername}}</span>
+        <span class="trade-chat-title">{{ counterpartyUsername }}</span>
         <span class="header-status">
           <span class="presence-dot" [class.online]="counterpartyOnline"></span>
           <ng-container *ngIf="counterpartyTyping; else presenceLabel">typing…</ng-container>
@@ -45,10 +48,8 @@
       <div class="chat-day-divider"><span>{{ group.dateLabel }}</span></div>
 
       <ng-container *ngFor="let msg of group.messages; trackBy: trackByMessageId">
-        <!-- System / audit-trail message (trade created, marked paid, released, etc.) -->
         <div class="chat-system-msg" *ngIf="msg.isSystem">{{ msg.text }}</div>
 
-        <!-- Regular chat bubble -->
         <div class="chat-bubble-row" *ngIf="!msg.isSystem" [class.mine]="msg.isMine">
           <div class="chat-avatar" *ngIf="!msg.isMine">
             <img *ngIf="msg.sender.avatarUrl" [src]="msg.sender.avatarUrl" alt="" />
@@ -122,21 +123,22 @@
     <button type="button" class="icon-btn attach-btn" matTooltip="Attach evidence (up to {{ maxEvidenceLabel }})" (click)="openFilePicker()">
       <mat-icon>image</mat-icon>
     </button>
-    <input #fileInput type="file" accept="image/*" hidden (change)="onFileSelected($event)" />
+    <input #fileInput class="file-input-hidden" type="file" accept="image/*" hidden (change)="onFileSelected($event)" />
 
-    <button type="button" class="icon-btn emoji-btn" matTooltip="Emoji" (click)="toggleEmojiPicker()">
-      <mat-icon>mood</mat-icon>
-    </button>
-
-    <input
-      type="text"
-      class="chat-input"
-      placeholder="Type a message..."
-      [maxlength]="maxMessageLength"
-      [(ngModel)]="draft"
-      (ngModelChange)="onDraftChange()"
-      (keyup.enter)="sendDraft()"
-    />
+    <div class="chat-input-wrap">
+      <input
+        type="text"
+        class="chat-input"
+        placeholder="Type a message..."
+        [maxlength]="maxMessageLength"
+        [(ngModel)]="draft"
+        (ngModelChange)="onDraftChange()"
+        (keyup.enter)="sendDraft()"
+      />
+      <button type="button" class="icon-btn emoji-btn" matTooltip="Emoji" (click)="toggleEmojiPicker()">
+        <mat-icon>mood</mat-icon>
+      </button>
+    </div>
 
     <button type="button" class="icon-btn send-btn" [disabled]="!draft.trim()" (click)="sendDraft()">
       <mat-icon>send</mat-icon>

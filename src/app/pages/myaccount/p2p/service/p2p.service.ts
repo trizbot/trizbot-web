@@ -1,10 +1,23 @@
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 
-import { Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { Observable, throwError } from 'rxjs';
+import { catchError, map } from 'rxjs/operators';
 import { environment } from '../../../../../environments/environment';
-import { ListOrdersParams, P2POrder, normalizeOrder, CreateOrderReqBody, UpdateOrderReqBody, P2PTrade, normalizeTrade, InitiateTradeReqBody, ExchangeRateRes, MarkTradePaidReqBody, ReleaseTradeReqBody } from '../model/p2p.model';
+import {
+  ListOrdersParams,
+  P2POrder,
+  normalizeOrder,
+  CreateOrderReqBody,
+  UpdateOrderReqBody,
+  P2PTrade,
+  normalizeTrade,
+  InitiateTradeReqBody,
+  ExchangeRateRes,
+  MarkTradePaidReqBody,
+  ReleaseTradeReqBody,
+  DisputeEvidenceReqBody,
+} from '../model/p2p.model';
 import { VerifyPaymentRes, PaymentVerificationStatus } from '../model/p2p.model';
 
 
@@ -38,7 +51,7 @@ export class P2pService {
       .pipe(map((res) => this.unwrap(res).map(normalizeOrder)));
   }
 
-  
+
   getOrder(id: string): Observable<P2POrder> {
     return this.http
       .get<ApiEnvelope<any> | any>(`${this.base}/orders/${id}`)
@@ -51,7 +64,6 @@ export class P2pService {
       .pipe(map((res) => normalizeOrder(this.unwrapOne(res))));
   }
 
-  /** Edit an existing ad (price, amounts, limits, payment methods/details, terms, window). */
   updateOrder(orderId: string, payload: UpdateOrderReqBody): Observable<P2POrder> {
     return this.http
       .patch<ApiEnvelope<any> | any>(`${this.base}/orders/${orderId}`, payload)
@@ -116,12 +128,6 @@ deleteOrder(orderId: string): Observable<void> {
       .pipe(map((res) => normalizeTrade(this.unwrapOne(res))));
   }
 
-  // releaseTrade(tradeId: string, transactionPin: string): Observable<P2PTrade> {
-  //   return this.http
-  //     .post<ApiEnvelope<any> | any>(`${this.base}/trades/release`, { tradeId, transactionPin })
-  //     .pipe(map((res) => normalizeTrade(this.unwrapOne(res))));
-  // }
-
   disputeTrade(tradeId: string, reason: string): Observable<P2PTrade> {
     return this.http
       .post<ApiEnvelope<any> | any>(`${this.base}/trades/dispute`, { tradeId, reason })
@@ -182,18 +188,6 @@ cancelTrade(tradeId: string): Observable<P2PTrade> {
 }
 
 
-
-
-
-
-
-
-
-
-
-
-// ...
-
 verifyPayment(tradeId: string): Observable<VerifyPaymentRes> {
   return this.http
     .get<ApiEnvelope<{ status: PaymentVerificationStatus; trade?: any }> | { status: PaymentVerificationStatus; trade?: any }>(
@@ -216,5 +210,34 @@ autoReleaseTrade(tradeId: string): Observable<P2PTrade> {
     .pipe(map((res) => normalizeTrade(this.unwrapOne(res))));
 }
 
+// ---------------------------------------------------------------------
+// Dispute resolution — chat-negotiated agreement + fixed 15-minute release
+// ---------------------------------------------------------------------
+
+
+confirmDisputeAgreement(tradeId: string): Observable<P2PTrade> {
+
+  return this.http
+    .post<ApiEnvelope<any> | any>(`${this.base}/trades/${tradeId}/dispute/agree`, {})
+    .pipe(
+      map((res) => normalizeTrade(this.unwrapOne(res))),
+      catchError((err: HttpErrorResponse) => {
+        return throwError(() => err);
+      }),
+    );
+}
+
+uploadDisputeEvidence(tradeId: string, body: DisputeEvidenceReqBody): Observable<P2PTrade> {
+  return this.http
+    .post<ApiEnvelope<any> | any>(`${this.base}/trades/${tradeId}/dispute/evidence`, body)
+    .pipe(map((res) => normalizeTrade(this.unwrapOne(res))));
+}
+
+/** Escalates the dispute to admin for manual review. */
+escalateDispute(tradeId: string): Observable<P2PTrade> {
+  return this.http
+    .post<ApiEnvelope<any> | any>(`${this.base}/trades/${tradeId}/dispute/escalate`, {})
+    .pipe(map((res) => normalizeTrade(this.unwrapOne(res))));
+}
 
 }

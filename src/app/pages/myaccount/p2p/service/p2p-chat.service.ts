@@ -4,6 +4,7 @@ import {
   BehaviorSubject,
   EMPTY,
   Observable,
+  of,
   Subject,
   throwError,
 } from 'rxjs';
@@ -481,7 +482,7 @@ export class P2pChatService {
       },
 
       isSystem: false,
-
+    readAt: null,
       createdAt:
         serverTimestamp(),
     };
@@ -589,14 +590,6 @@ export class P2pChatService {
       safeName
     );
 
-    /*
-     * IMPORTANT:
-     *
-     * This must be an UNSIGNED Cloudinary upload preset.
-     *
-     * Never put the Cloudinary API secret
-     * in this Angular application.
-     */
     formData.append(
       'upload_preset',
       environment.cloudinaryPreset
@@ -638,7 +631,7 @@ export class P2pChatService {
       },
 
       isSystem: false,
-
+  readAt: null,
       createdAt:
         serverTimestamp(),
     };
@@ -921,49 +914,7 @@ export class P2pChatService {
     }
   }
 
-  private async listenToTyping(
-    tradeId: string
-  ): Promise<void> {
-    if (!this.currentUser) {
-      return;
-    }
-
-    const q = query(
-      collection(
-        firebaseDb,
-        this.collectionName,
-        tradeId,
-        this.presenceCollection
-      ),
-      where(
-        'typing',
-        '==',
-        true
-      )
-    );
-
-    this.unsubscribeTyping =
-      onSnapshot(
-        q,
-        (snapshot) => {
-          const someoneTyping =
-            snapshot.docs.some(
-              (item) =>
-                item.id !==
-                this.currentUser?.uid
-            );
-
-          this.typingSubject.next(
-            someoneTyping
-          );
-        },
-        () => {
-          this.typingSubject.next(
-            false
-          );
-        }
-      );
-  }
+  
 
   private async setTyping(
     tradeId: string,
@@ -1008,87 +959,75 @@ export class P2pChatService {
   // Presence
   // ---------------------------------------------------------
 
-  private async listenToPresence(
-    tradeId: string
-  ): Promise<void> {
-    const q = query(
-      collection(
-        firebaseDb,
-        this.collectionName,
-        tradeId,
-        this.presenceCollection
-      ),
-      where(
-        'online',
-        '==',
-        true
-      )
-    );
+private async listenToPresence(tradeId: string): Promise<void> {
+  
+  const myUid = this.currentUser?.uid;
 
-    this.unsubscribePresence =
-      onSnapshot(
-        q,
-        (snapshot) => {
-          const otherUserOnline =
-            snapshot.docs.some(
-              (item) =>
-                item.id !==
-                this.currentUser?.uid
-            );
+  const q = query(
+    collection(firebaseDb, this.collectionName, tradeId, this.presenceCollection),
+    where('online', '==', true)
+  );
 
-          this.presenceSubject.next(
-            otherUserOnline
-          );
-        },
-        () => {
-          this.presenceSubject.next(
-            false
-          );
-        }
-      );
-  }
-
-  private async setMyPresence(
-    online: boolean
-  ): Promise<void> {
-    if (
-      !this.currentUser ||
-      !this.activeTradeId
-    ) {
-      return;
+  this.unsubscribePresence = onSnapshot(
+    q,
+    (snapshot) => {
+      const otherUserOnline = snapshot.docs.some((item) => item.id !== myUid);
+      this.presenceSubject.next(otherUserOnline);
+    },
+    () => {
+      this.presenceSubject.next(false);
     }
+  );
+}
 
-    const ref =
-      this.presenceRef(
-        this.activeTradeId,
-        this.currentUser.uid
-      );
-
-    await setDoc(
-      ref,
-      {
-        uid:
-          this.currentUser.uid,
-
-        userId:
-          this.getCurrentUserId(),
-
-        username:
-          this.getCurrentUsername(),
-
-        online,
-
-        typing: false,
-
-        updatedAt:
-          serverTimestamp(),
-      },
-      {
-        merge: true,
-      }
-    );
+private async setMyPresence(online: boolean): Promise<void> {
+  if (!this.currentUser || !this.activeTradeId) {
+    return;
   }
 
+  const ref = this.presenceRef(this.activeTradeId, this.currentUser.uid);
+
+  await setDoc(
+    ref,
+    {
+      uid: this.currentUser.uid,
+      userId: this.getCurrentUserId(),
+      username: this.getCurrentUsername(),
+      online,
+      typing: false,
+      updatedAt: serverTimestamp(),
+    },
+    { merge: true }
+  );
+}
+
+// ---------------------------------------------------------
+// Typing
+// ---------------------------------------------------------
+
+private async listenToTyping(tradeId: string): Promise<void> {
+  if (!this.currentUser) {
+    return;
+  }
+
+  const myUid = this.currentUser.uid;
+
+  const q = query(
+    collection(firebaseDb, this.collectionName, tradeId, this.presenceCollection),
+    where('typing', '==', true)
+  );
+
+  this.unsubscribeTyping = onSnapshot(
+    q,
+    (snapshot) => {
+      const someoneTyping = snapshot.docs.some((item) => item.id !== myUid);
+      this.typingSubject.next(someoneTyping);
+    },
+    () => {
+      this.typingSubject.next(false);
+    }
+  );
+}
   // ---------------------------------------------------------
   // Observables
   // ---------------------------------------------------------
@@ -1224,17 +1163,7 @@ export class P2pChatService {
   // ---------------------------------------------------------
 
   private getCurrentUserId(): string {
-    /*
-     * IMPORTANT:
-     *
-     * Replace this with your actual
-     * authenticated TrizBot user ID.
-     *
-     * Firebase Anonymous Authentication
-     * gives us a Firebase UID, but it does
-     * not automatically know your application's
-     * user ID.
-     */
+    
 
     const trade: any =
       this.currentTrade;
@@ -1315,4 +1244,84 @@ export class P2pChatService {
       'Seller'
     );
   }
+
+
+
+
+
+
+async ensureAuthenticated(): Promise<void> {
+  if (this.currentUser) return;
+
+  try {
+    const credential = await signInAnonymously(firebaseAuth);
+    this.currentUser = credential.user;
+  } catch (error) {
+    // console.error('Firebase authentication failed:', error);
+    throw error;
+  }
+}
+
+
+getUnreadCount(tradeId: string): Observable<number> {
+  return new Observable<number>((subscriber) => {
+    let unsub: Unsubscribe | null = null;
+    let cancelled = false;
+
+    this.ensureAuthenticated()
+      .then(() => {
+        if (cancelled) return;
+
+        const q = query(this.messagesRef(tradeId), where('readAt', '==', null));
+
+        unsub = onSnapshot(
+          q,
+          (snapshot) => {
+            const myUid = this.currentUser?.uid;
+            const unread = snapshot.docs.filter((docSnap) => {
+              const data = docSnap.data() as FirebaseChatMessage;
+              return data.sender?.id !== myUid && !data.isSystem;
+            }).length;
+            subscriber.next(unread);
+          },
+          (error) => {
+            // console.error('Unread count listener failed:', error);
+            subscriber.next(0);
+          }
+        );
+      })
+      .catch((error) => {
+        // console.error('Unable to authenticate for unread count:', error);
+        subscriber.next(0);
+      });
+
+    return () => {
+      cancelled = true;
+      if (unsub) unsub();
+    };
+  });
+}
+
+
+getUnreadCountForTrades(tradeIds: string[]): Observable<number> {
+  if (tradeIds.length === 0) return of(0);
+
+  const counts = new Map<string, number>();
+  const combined = new BehaviorSubject<number>(0);
+  const subs = tradeIds.map((id) =>
+    this.getUnreadCount(id).subscribe((count) => {
+      counts.set(id, count);
+      combined.next(Array.from(counts.values()).reduce((a, b) => a + b, 0));
+    })
+  );
+
+  return new Observable<number>((subscriber) => {
+    const inner = combined.subscribe((v) => subscriber.next(v));
+    return () => {
+      inner.unsubscribe();
+      subs.forEach((s) => s.unsubscribe());
+    };
+  });
+}
+
 }

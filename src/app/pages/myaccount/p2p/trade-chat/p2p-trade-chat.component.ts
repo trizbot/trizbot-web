@@ -28,6 +28,7 @@ import {
   MAX_EVIDENCE_BYTES,
 } from '../model/p2p-chat.model';
 import { ConnectionState, P2pChatService } from '../service/p2p-chat.service';
+import { ChatUnreadBadgeComponent } from './chat-unread-badge.component'; // adjust path
 
 const TYPING_STOP_DELAY_MS = 2000;
 const NEAR_BOTTOM_PX = 120;
@@ -37,7 +38,7 @@ const MAX_MESSAGE_LENGTH = 1000;
 @Component({
   selector: 'app-p2p-trade-chat',
   standalone: true,
-  imports: [CommonModule, FormsModule, MaterialModule],
+  imports: [CommonModule, FormsModule, MaterialModule, ChatUnreadBadgeComponent],
   templateUrl: './p2p-trade-chat.component.html',
   styleUrls: ['./p2p-trade-chat.component.scss'],
 })
@@ -64,6 +65,7 @@ export class P2pTradeChatComponent implements OnInit, OnChanges, OnDestroy, Afte
   showEmojiPicker = false;
   isDragging = false;
 
+  /** True/false only once the presence listener has actually reported a value. */
   counterpartyTyping = false;
   counterpartyOnline = false;
   connectionState: ConnectionState = 'disconnected';
@@ -83,160 +85,84 @@ export class P2pTradeChatComponent implements OnInit, OnChanges, OnDestroy, Afte
 
   constructor(private chatService: P2pChatService) {}
 
+  // -----------------------------------------------------------------
+  // NOTE: initialize() below is the single entry point for auth +
+  // connect + all subscriptions. ngOnInit only calls initialize() —
+  // it used to ALSO call connect()/subscribe() directly first, which
+  // raced against initialize() and could attach the presence listener
+  // before this.currentUser was set in the service, causing your own
+  // presence doc to be misread as "the other person" (i.e. you'd see
+  // yourself shown as online instead of the counterparty). Do not
+  // re-add a second connect()/subscribe() block here.
+  // -----------------------------------------------------------------
   ngOnInit(): void {
-    this.loadHistory();
-    this.chatService.connect(this.trade.id);
-
-    this.subs.add(this.chatService.messages$.subscribe((msg) => this.onIncoming(msg)));
-    this.subs.add(this.chatService.counterpartyTyping$.subscribe((t) => (this.counterpartyTyping = t)));
-    this.subs.add(this.chatService.counterpartyOnline$.subscribe((o) => (this.counterpartyOnline = o)));
-    this.subs.add(this.chatService.connectionState.subscribe((s) => (this.connectionState = s)));
-    this.subs.add(this.chatService.counterpartyReadUpTo$.subscribe((readAt) => this.applyReadReceipt(readAt)));
-    this.subs.add(
-      this.typingStop$.pipe(debounceTime(TYPING_STOP_DELAY_MS)).subscribe(() => this.chatService.notifyTyping(false))
-    );
     this.initialize();
   }
 
-
-
   async initialize(): Promise<void> {
-  try {
-    this.loading = true;
-
-    await this.chatService.initialize(
-      this.trade
-    );
-
-    this.loadHistory();
-
-    await this.chatService.connect(
-      this.trade.id,
-      this.trade
-    );
-
-    this.subs.add(
-      this.chatService.messages$
-        .subscribe((msg) =>
-          this.onIncoming(msg)
-        )
-    );
-
-    this.subs.add(
-      this.chatService.counterpartyTyping$
-        .subscribe(
-          (typing) =>
-            (this.counterpartyTyping =
-              typing)
-        )
-    );
-
-    this.subs.add(
-      this.chatService.counterpartyOnline$
-        .subscribe(
-          (online) =>
-            (this.counterpartyOnline =
-              online)
-        )
-    );
-
-    this.subs.add(
-      this.chatService.connectionState
-        .subscribe(
-          (state) =>
-            (this.connectionState =
-              state)
-        )
-    );
-
-    this.subs.add(
-      this.chatService
-        .counterpartyReadUpTo$
-        .subscribe((readAt) =>
-          this.applyReadReceipt(
-            readAt
-          )
-        )
-    );
-
-    this.subs.add(
-      this.typingStop$
-        .pipe(
-          debounceTime(
-            TYPING_STOP_DELAY_MS
-          )
-        )
-        .subscribe(() =>
-          this.chatService.notifyTyping(
-            false
-          )
-        )
-    );
-  } catch (error) {
-    console.error(
-      'Unable to initialize Firebase chat:',
-      error
-    );
-
-    this.loading = false;
-
-    this.loadError =
-      'Unable to connect to chat. Please try again.';
-  }
-}
-
-
-  async ngOnChanges(
-  changes: SimpleChanges
-): Promise<void> {
-  if (
-    changes['trade'] &&
-    !changes['trade'].firstChange
-  ) {
-    const prevId =
-      changes['trade']
-        .previousValue?.id;
-
-    const currId =
-      changes['trade']
-        .currentValue?.id;
-
-    if (
-      prevId &&
-      currId &&
-      prevId !== currId
-    ) {
-      this.messages = [];
-
-      this.hasMoreHistory = true;
-
+    try {
       this.loading = true;
 
-      try {
-        await this.chatService.connect(
-          currId,
-          this.trade
-        );
+      await this.chatService.initialize(this.trade);
 
-        await this.loadHistory();
-      } catch (error) {
-        console.error(
-          'Unable to switch Firebase chat room:',
-          error
-        );
+      await this.chatService.connect(this.trade.id, this.trade);
 
-        this.loadError =
-          'Unable to connect to this chat.';
+      await this.loadHistory();
+
+      this.subs.add(this.chatService.messages$.subscribe((msg) => this.onIncoming(msg)));
+
+      this.subs.add(
+        this.chatService.counterpartyTyping$.subscribe((typing) => (this.counterpartyTyping = typing))
+      );
+
+      this.subs.add(
+        this.chatService.counterpartyOnline$.subscribe((online) => (this.counterpartyOnline = online))
+      );
+
+      this.subs.add(this.chatService.connectionState.subscribe((state) => (this.connectionState = state)));
+
+      this.subs.add(
+        this.chatService.counterpartyReadUpTo$.subscribe((readAt) => this.applyReadReceipt(readAt))
+      );
+
+      this.subs.add(
+        this.typingStop$
+          .pipe(debounceTime(TYPING_STOP_DELAY_MS))
+          .subscribe(() => this.chatService.notifyTyping(false))
+      );
+    } catch (error) {
+      console.error('Unable to initialize Firebase chat:', error);
+      this.loading = false;
+      this.loadError = 'Unable to connect to chat. Please try again.';
+    }
+  }
+
+  async ngOnChanges(changes: SimpleChanges): Promise<void> {
+    if (changes['trade'] && !changes['trade'].firstChange) {
+      const prevId = changes['trade'].previousValue?.id;
+      const currId = changes['trade'].currentValue?.id;
+
+      if (prevId && currId && prevId !== currId) {
+        this.messages = [];
+        this.hasMoreHistory = true;
+        this.loading = true;
+
+        try {
+          await this.chatService.connect(currId, this.trade);
+          await this.loadHistory();
+        } catch (error) {
+          console.error('Unable to switch Firebase chat room:', error);
+          this.loadError = 'Unable to connect to this chat.';
+        }
       }
     }
   }
-}
 
-ngOnDestroy(): void {
-  this.subs.unsubscribe();
-  this.chatService.disconnect();
-  this.revokeAllObjectUrls();
-}
+  ngOnDestroy(): void {
+    this.subs.unsubscribe();
+    this.chatService.disconnect();
+    this.revokeAllObjectUrls();
+  }
 
   ngAfterViewChecked(): void {
     if (this.shouldAutoScroll && this.messages.length !== this.lastRenderedCount) {
@@ -249,94 +175,58 @@ ngOnDestroy(): void {
   // Loading + grouping
   // -----------------------------------------------------------------
 
- private async loadHistory(): Promise<void> {
-  this.loading = true;
-  this.loadError = '';
+  private async loadHistory(): Promise<void> {
+    this.loading = true;
+    this.loadError = '';
 
-  try {
-    const messages =
-      await this.chatService.getMessages(
-        this.trade.id
-      );
-
-    this.messages = messages;
-
-    this.loading = false;
-
-    this.hasMoreHistory =
-      messages.length >= 100;
-
-    this.markReadIfNeeded();
-  } catch (error) {
-    console.error(
-      'Chat history error:',
-      error
-    );
-
-    this.loading = false;
-
-    this.loadError =
-      'Could not load chat history.';
+    try {
+      const messages = await this.chatService.getMessages(this.trade.id);
+      this.messages = messages;
+      this.loading = false;
+      this.hasMoreHistory = messages.length >= 100;
+      this.markReadIfNeeded();
+    } catch (error) {
+      console.error('Chat history error:', error);
+      this.loading = false;
+      this.loadError = 'Could not load chat history.';
+    }
   }
-}
 
   async loadOlder(): Promise<void> {
-  if (
-    this.loadingOlder ||
-    !this.hasMoreHistory ||
-    this.messages.length === 0
-  ) {
-    return;
-  }
-
-  const el =
-    this.threadEl?.nativeElement;
-
-  const prevScrollHeight =
-    el?.scrollHeight ?? 0;
-
-  this.loadingOlder = true;
-
-  const oldest =
-    this.messages[0]?.createdAt;
-
-  try {
-    const older =
-      await this.chatService.getMessages(
-        this.trade.id,
-        oldest
-      );
-
-    if (older.length === 0) {
-      this.hasMoreHistory = false;
+    if (this.loadingOlder || !this.hasMoreHistory || this.messages.length === 0) {
       return;
     }
 
-    this.messages = [
-      ...older,
-      ...this.messages,
-    ];
+    const el = this.threadEl?.nativeElement;
+    const prevScrollHeight = el?.scrollHeight ?? 0;
 
-    queueMicrotask(() => {
-      if (el) {
-        el.scrollTop =
-          el.scrollHeight -
-          prevScrollHeight;
+    this.loadingOlder = true;
+
+    const oldest = this.messages[0]?.createdAt;
+
+    try {
+      const older = await this.chatService.getMessages(this.trade.id, oldest);
+
+      if (older.length === 0) {
+        this.hasMoreHistory = false;
+        return;
       }
-    });
 
-    this.hasMoreHistory =
-      older.length >= 50;
-  } catch (error) {
-    console.error(
-      'Unable to load older messages:',
-      error
-    );
-  } finally {
-    this.loadingOlder = false;
+      this.messages = [...older, ...this.messages];
+
+      queueMicrotask(() => {
+        if (el) {
+          el.scrollTop = el.scrollHeight - prevScrollHeight;
+        }
+      });
+
+      this.hasMoreHistory = older.length >= 50;
+    } catch (error) {
+      console.error('Unable to load older messages:', error);
+    } finally {
+      this.loadingOlder = false;
+    }
   }
-}
-
 
   get groupedMessages() {
     return groupMessagesByDay(this.messages);
@@ -347,7 +237,6 @@ ngOnDestroy(): void {
   // -----------------------------------------------------------------
 
   private onIncoming(msg: ChatMessage): void {
-    // Reconcile against an optimistic message already rendered locally.
     const optimisticIdx = msg.clientId
       ? this.messages.findIndex((m) => m.clientId === msg.clientId && m.pending)
       : -1;
@@ -364,7 +253,6 @@ ngOnDestroy(): void {
     this.markReadIfNeeded();
   }
 
-  /** Real-time double-check-mark update: counterparty just read our messages. */
   private applyReadReceipt(readAt: string): void {
     const readAtMs = new Date(readAt).getTime();
     this.messages = this.messages.map((m) =>
@@ -394,29 +282,19 @@ ngOnDestroy(): void {
     this.scrollAnchor?.nativeElement?.scrollIntoView({ block: 'end' });
   }
 
- private markReadIfNeeded(): void {
-  const hasUnread =
-    this.messages.some(
-      (message) =>
-        !message.isMine &&
-        !message.readAt
-    );
+  private markReadIfNeeded(): void {
+    const hasUnread = this.messages.some((message) => !message.isMine && !message.readAt);
 
-  if (!hasUnread) {
-    return;
-  }
+    if (!hasUnread) {
+      return;
+    }
 
-  this.chatService
-    .markRead(this.trade.id)
-    .catch((error) => {
-      console.error(
-        'Unable to mark chat as read:',
-        error
-      );
+    this.chatService.markRead(this.trade.id).catch((error) => {
+      console.error('Unable to mark chat as read:', error);
     });
 
-  this.chatService.notifyRead();
-}
+    this.chatService.notifyRead();
+  }
 
   // -----------------------------------------------------------------
   // Composing
@@ -469,51 +347,25 @@ ngOnDestroy(): void {
     }
   }
 
+  private pushOptimisticTextAndSend(text: string): void {
+    const clientId = this.nextClientId();
 
- private pushOptimisticTextAndSend(
-  text: string
-): void {
-  const clientId =
-    this.nextClientId();
-
-  const optimistic =
-    this.buildOptimisticMessage(
-      clientId,
-      {
-        type:
-          ChatMessageType.Text,
-        text,
-      }
-    );
-
-  this.appendOptimistic(
-    optimistic
-  );
-
-  this.chatService
-    .sendText(
-      this.trade.id,
+    const optimistic = this.buildOptimisticMessage(clientId, {
+      type: ChatMessageType.Text,
       text,
-      clientId
-    )
-    .subscribe({
-      next: (saved) => {
-        this.reconcileOptimistic(
-          clientId,
-          {
-            ...saved,
-            clientId,
-          }
-        );
-      },
+    });
 
+    this.appendOptimistic(optimistic);
+
+    this.chatService.sendText(this.trade.id, text, clientId).subscribe({
+      next: (saved) => {
+        this.reconcileOptimistic(clientId, { ...saved, clientId });
+      },
       error: () => {
-        this.failOptimistic(
-          clientId
-        );
+        this.failOptimistic(clientId);
       },
     });
-}
+  }
 
   // -----------------------------------------------------------------
   // Evidence / image attachment — drag & drop, paste, and file picker,
@@ -587,61 +439,30 @@ ngOnDestroy(): void {
     this.pushOptimisticImageAndSend(file);
   }
 
- private pushOptimisticImageAndSend(
-  file: File
-): void {
-  const clientId =
-    this.nextClientId();
+  private pushOptimisticImageAndSend(file: File): void {
+    const clientId = this.nextClientId();
+    const previewUrl = URL.createObjectURL(file);
 
-  const previewUrl =
-    URL.createObjectURL(file);
-
-  const optimistic =
-    this.buildOptimisticMessage(
-      clientId,
-      {
-        type:
-          ChatMessageType.Image,
-
-        imageUrl:
-          previewUrl,
-
-        imageBytes:
-          file.size,
-
-        file,
-
-        progress: 0,
-      }
-    );
-
-  this.appendOptimistic(
-    optimistic
-  );
-
-  this.chatService
-    .sendImageFile(
-      this.trade.id,
+    const optimistic = this.buildOptimisticMessage(clientId, {
+      type: ChatMessageType.Image,
+      imageUrl: previewUrl,
+      imageBytes: file.size,
       file,
-      clientId
-    )
-    .subscribe({
+      progress: 0,
+    });
+
+    this.appendOptimistic(optimistic);
+
+    this.chatService.sendImageFile(this.trade.id, file, clientId).subscribe({
       next: (update) => {
-        const idx =
-          this.messages.findIndex(
-            (m) =>
-              m.clientId ===
-              clientId
-          );
+        const idx = this.messages.findIndex((m) => m.clientId === clientId);
 
         if (idx < 0) {
           return;
         }
 
         if (update.message) {
-          URL.revokeObjectURL(
-            previewUrl
-          );
+          URL.revokeObjectURL(previewUrl);
 
           this.messages[idx] = {
             ...update.message,
@@ -649,29 +470,21 @@ ngOnDestroy(): void {
             file: undefined,
           };
 
-          this.messages = [
-            ...this.messages,
-          ];
+          this.messages = [...this.messages];
         } else {
           this.messages[idx] = {
             ...this.messages[idx],
-            progress:
-              update.progress,
+            progress: update.progress,
           };
 
-          this.messages = [
-            ...this.messages,
-          ];
+          this.messages = [...this.messages];
         }
       },
-
       error: () => {
-        this.failOptimistic(
-          clientId
-        );
+        this.failOptimistic(clientId);
       },
     });
-}
+  }
 
   openLightbox(url?: string): void {
     if (url) this.lightboxUrl = url;
@@ -680,8 +493,6 @@ ngOnDestroy(): void {
   closeLightbox(): void {
     this.lightboxUrl = null;
   }
-
-
 
   private nextClientId(): string {
     return `local-${Date.now()}-${this.clientIdSeq++}`;
@@ -736,18 +547,13 @@ ngOnDestroy(): void {
     return msg.clientId || msg.id;
   }
 
-
-
-
-get counterpartyUsername(): string {
- 
-  const t = this.trade as any;
-  return (
-    t.counterpartyUsername ||
-    t.counterparty?.username ||
-    (this.trade.isBuyer ? t.sellerUsername || t.seller?.username : t.buyerUsername || t.buyer?.username) ||
-    'Counterparty'
-  );
-}
-
+  get counterpartyUsername(): string {
+    const t = this.trade as any;
+    return (
+      t.counterpartyUsername ||
+      t.counterparty?.username ||
+      (this.trade.isBuyer ? t.sellerUsername || t.seller?.username : t.buyerUsername || t.buyer?.username) ||
+      'Counterparty'
+    );
+  }
 }

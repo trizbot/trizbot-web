@@ -24,6 +24,16 @@ import {
   getPaymentMethodsForFiat,
   msUntilDeadline,
   buildPaymentMethodDetails,
+  // ---- Dispute resolution ----
+  DISPUTE_AGREEMENT_RELEASE_WINDOW_MS,
+  disputeAgreementReached,
+  msUntilDisputeReleaseDeadline,
+  isDisputeReleaseWindowExpired,
+  canReleaseDisputedFunds,
+  myDisputeAgreementConfirmed,
+  counterpartyDisputeAgreementConfirmed,
+  hasSubmittedDisputeEvidence,
+  counterpartyHasSubmittedDisputeEvidence,
 } from '../model/p2p.model';
 import { P2pTradeChatComponent } from '../trade-chat/p2p-trade-chat.component';
 
@@ -46,14 +56,6 @@ const VERIFICATION_POLL_INTERVAL_MS = 5000;
 const VERIFICATION_POLL_TIMEOUT_MS = 10 * 60 * 1000;
 
 // --- Payment-detail resolution retry tuning -----------------------------
-// The seller's payment method is sometimes snapshotted onto the trade
-// asynchronously (e.g. right after creation, or only fully populated once
-// the order's nested payment details are attached server-side). A single
-// getTrade() call made the instant the dialog opens can land just before
-// that write finishes and come back with nothing usable, even though the
-// data exists moments later. Retrying a few times with a short delay before
-// giving up avoids flashing the "not showing yet" banner for a transient
-// race instead of a genuine missing-data case.
 const PAYMENT_DETAIL_RETRY_MAX = 4;
 const PAYMENT_DETAIL_RETRY_DELAY_MS = 1500;
 
@@ -97,10 +99,7 @@ export class InitiateTradeDialogComponent implements OnInit, OnDestroy {
   mySavedMethodsLoading = false;
   selectedPaymentMethodId = '';
 
-  // True while we're re-fetching the single order to pick up payment
-  // details that weren't included on the (lighter) list/market payload.
   sellerDetailsLoading = false;
-  /** Why the seller's payment detail is still unresolved, if it is. */
   sellerDetailsError: SellerDetailsError = null;
   private sellerDetailsRefetchAttempted = false;
 
@@ -121,10 +120,6 @@ export class InitiateTradeDialogComponent implements OnInit, OnDestroy {
   cancelling = false;
   refreshingTrade = false;
 
-  // True while we're auto-retrying getTrade() to resolve the payment
-  // detail after opening the dialog (see PAYMENT_DETAIL_RETRY_* above).
-  // The template shows a loader instead of the "not showing yet" banner
-  // while this is true.
   paymentDetailRetrying = false;
   private paymentDetailRetryAttempt = 0;
   private paymentDetailRetryTimer: ReturnType<typeof setTimeout> | null = null;
@@ -156,6 +151,17 @@ export class InitiateTradeDialogComponent implements OnInit, OnDestroy {
   private verificationPollTimer: ReturnType<typeof setInterval> | null = null;
   private verificationPollStartedAt = 0;
 
+  // ---- Dispute resolution state ------------------------------------------
+  // Chat-negotiated agreement -> fixed 15-minute release window -> otherwise
+  // both sides upload evidence -> escalate to admin.
+  readonly disputeReleaseWindowMinutes = DISPUTE_AGREEMENT_RELEASE_WINDOW_MS / 60000;
+  confirmingDisputeAgreement = false;
+  disputeEvidenceUrl = '';
+  disputeEvidenceNote = '';
+  disputeEvidenceFileError = '';
+  submittingDisputeEvidence = false;
+  escalatingDispute = false;
+
   constructor(
     private dialogRef: MatDialogRef<InitiateTradeDialogComponent>,
     private p2pService: P2pService,
@@ -171,18 +177,10 @@ export class InitiateTradeDialogComponent implements OnInit, OnDestroy {
       this.mode = 'detail';
       this.trade = this.data.trade;
 
-      // If we're opening a trade that's already marked paid and is waiting
-      // on verification, resume polling instead of leaving it stuck.
       if (this.trade.status === TradeStatus.Paid && this.trade.autoReleaseEligible) {
         this.startVerificationPolling();
       }
 
-      // FIX: previously called refreshTrade() once and, if that single
-      // response still didn't carry a usable payment detail, left the user
-      // staring at the "not showing yet" banner even when the backend was
-      // just about to finish snapshotting it. Now retries a few times with
-      // a short delay (see PAYMENT_DETAIL_RETRY_* constants) before
-      // conceding and showing the banner with a manual retry option.
       if (!this.resolvedPaymentDetail) {
         this.beginPaymentDetailRetry();
       }
@@ -196,14 +194,8 @@ export class InitiateTradeDialogComponent implements OnInit, OnDestroy {
         this.loadMySavedMethods();
       } else if (this.orderCarriesSellerDetails) {
         if (this.matchedOrderPaymentDetail) {
-          // Market payload already carried a usable seller account — nothing to fetch.
           this.sellerDetailsError = null;
         } else {
-          // The order came back without a usable payment detail — either the
-          // list payload just didn't include it, or it genuinely doesn't
-          // exist. Re-fetch the single order, which should return the fully
-          // populated form; refreshOrderPaymentDetails() below decides which
-          // of those two cases we're actually in.
           this.refreshOrderPaymentDetails();
         }
       }
@@ -251,9 +243,6 @@ export class InitiateTradeDialogComponent implements OnInit, OnDestroy {
 
   private get resolvedOrderPaymentDetails(): UserPaymentMethod[] {
     if (!this.order) return [];
-    // buildPaymentMethodDetails() already filters out incomplete entries,
-    // so anything that comes back here is guaranteed to have a method and
-    // an account number.
     return buildPaymentMethodDetails(
       this.order.paymentMethodDetails,
       this.order.paymentDetails,
@@ -262,15 +251,6 @@ export class InitiateTradeDialogComponent implements OnInit, OnDestroy {
     );
   }
 
-  /**
-   * FIX: previously this returned `details[0]` (or a match) as soon as the
-   * array was non-empty, even if that entry's fields were blank — which is
-   * exactly what produced the empty "You'll send payment to" card. Now the
-   * source array is already filtered to complete entries only, so anything
-   * returned here is guaranteed renderable. If nothing complete exists,
-   * this correctly returns undefined and the "none-attached" banner shows
-   * instead of a blank card.
-   */
   get matchedOrderPaymentDetail(): UserPaymentMethod | undefined {
     const details = this.resolvedOrderPaymentDetails;
     if (!details.length) return undefined;
@@ -358,11 +338,6 @@ export class InitiateTradeDialogComponent implements OnInit, OnDestroy {
     return formatCountdown(Math.max(0, this.initiatePinLockedUntil - this.nowTick));
   }
 
-  /**
-   * The Buy/Sell button stays disabled until we have a confirmed payment
-   * target (or have confirmed there genuinely isn't one, in which case it
-   * should never enable).
-   */
   get initiateFormValid(): boolean {
     if (!this.amountValid || !this.paymentMethod || !this.pinValid) return false;
     if (this.initiatePinLocked) return false;
@@ -374,19 +349,6 @@ export class InitiateTradeDialogComponent implements OnInit, OnDestroy {
     return true;
   }
 
-  /**
-   * The specific saved payment method that should be locked onto the trade
-   * being created, regardless of which side supplies it.
-   *
-   *  - Buying against a Sell ad: it's the seller's account we resolved
-   *    above (`matchedOrderPaymentDetail`).
-   *  - Selling into a Buy ad: it's the account I picked from my own saved
-   *    methods (`selectedPaymentMethodId`).
-   *
-   * This is what actually gets sent to the backend so the payment target
-   * is snapshotted onto the trade record at creation time, instead of
-   * being re-derived later from the (possibly since-changed) order.
-   */
   private get resolvedTradePaymentMethodId(): string | undefined {
     if (this.mustSupplySellerDetails) {
       return this.selectedPaymentMethodId || undefined;
@@ -397,16 +359,6 @@ export class InitiateTradeDialogComponent implements OnInit, OnDestroy {
     return undefined;
   }
 
-  /**
-   * The full payment-method object matching resolvedTradePaymentMethodId,
-   * used only to optimistically render the "Payment goes to" card the
-   * instant a trade is created — before any refetch. This is a client-side
-   * convenience, not a substitute for the backend persisting it: if the
-   * dialog is reopened later (e.g. after reload), only what the server
-   * actually stored on the trade will be shown (which is why the retry
-   * logic below exists — the server-side write can lag behind this
-   * optimistic value).
-   */
   private get resolvedTradePaymentMethodDetail(): UserPaymentMethod | undefined {
     if (this.mustSupplySellerDetails) {
       const detail = this.mySavedMethods.find((m) => m.id === this.selectedPaymentMethodId);
@@ -428,10 +380,6 @@ export class InitiateTradeDialogComponent implements OnInit, OnDestroy {
     this.submitting = true;
     this.errorMessage = '';
 
-    // Keep a reference before the async call — `this.matchedOrderPaymentDetail`
-    // etc. are derived getters and stay valid, but capturing the object now
-    // makes the optimistic-merge intent explicit and immune to any state
-    // change while the request is in flight.
     const optimisticDetail = this.resolvedTradePaymentMethodDetail;
 
     this.p2pService
@@ -439,10 +387,6 @@ export class InitiateTradeDialogComponent implements OnInit, OnDestroy {
         orderId: this.order.id,
         coinAmount: this.coinAmount as number,
         paymentMethod: this.paymentMethod,
-        // Sent for both directions so the backend can resolve and persist
-        // the correct payment target on the trade record — this is what
-        // makes "Payment goes to" show up reliably in the trade-detail view
-        // instead of falling back to the "not showing yet" banner.
         paymentMethodId: this.resolvedTradePaymentMethodId,
         transactionPin: this.transactionPin,
       })
@@ -453,15 +397,6 @@ export class InitiateTradeDialogComponent implements OnInit, OnDestroy {
           this.initiatePinAttempts = 0;
           this.sharedService.showToast({ title: 'Trade started. Check the payment window below.' });
 
-          // If the server response doesn't (yet) carry a complete
-          // `sellerPaymentMethod` — e.g. the snapshot write is still in
-          // flight — patch in what we already resolved locally so the
-          // buyer/seller isn't shown a blank "not showing yet" banner
-          // immediately after starting the trade. This is optimistic
-          // display only; it does not persist anything, and a later
-          // refresh will reflect whatever the server actually has stored
-          // (the retry loop in ngOnInit covers that case if this dialog
-          // instance gets reopened before the write lands).
           const finalTrade: P2PTrade = isCompletePaymentMethod(trade.sellerPaymentMethod)
             ? trade
             : optimisticDetail
@@ -606,23 +541,6 @@ export class InitiateTradeDialogComponent implements OnInit, OnDestroy {
   // TRADE DETAIL — payment details (full display, gated on completeness)
   // =======================================================================
 
-  /**
-   * Same defensive resolution as `resolvedOrderPaymentDetails` above, but
-   * for a trade already in progress: prefer the account actually locked to
-   * the trade record (`trade.sellerPaymentMethod`), then fall back to the
-   * order's resolved details. Both paths are already filtered to complete
-   * entries, so this never renders a blank-fielded card — if nothing usable
-   * exists, this returns undefined and the template's "Payment details
-   * aren't showing yet" fallback banner is shown instead (after the retry
-   * loop in ngOnInit / beginPaymentDetailRetry has had a chance to catch a
-   * delayed snapshot write).
-   *
-   * NOTE: the order-based fallback re-derives the seller's account from the
-   * *current* state of the ad, which the seller could have edited or
-   * deleted since the trade started, and is structurally unavailable for
-   * trades where I supplied my own saved method (Buy-type orders) — for
-   * those, `trade.sellerPaymentMethod` is the only source of truth.
-   */
   get resolvedPaymentDetail(): UserPaymentMethod | undefined {
     if (!this.trade) return undefined;
     if (isCompletePaymentMethod(this.trade.sellerPaymentMethod)) return this.trade.sellerPaymentMethod;
@@ -727,7 +645,6 @@ export class InitiateTradeDialogComponent implements OnInit, OnDestroy {
     });
   }
 
-  /** Manual retry, wired to the "Refresh" button in the warning banner. */
   retryPaymentDetail(): void {
     if (this.refreshingTrade || this.paymentDetailRetrying) return;
     this.beginPaymentDetailRetry();
@@ -745,8 +662,6 @@ export class InitiateTradeDialogComponent implements OnInit, OnDestroy {
     return !!this.trade && canReleaseFunds(this.trade);
   }
 
-  /** Manual release stays available as a fallback while we wait on
-   *  auto-verification, or for trades that aren't auto-release eligible. */
   get canManuallyRelease(): boolean {
     return this.canReleaseFunds && this.verificationStatus !== 'verified' && !this.autoReleaseInFlight;
   }
@@ -826,8 +741,6 @@ export class InitiateTradeDialogComponent implements OnInit, OnDestroy {
           this.showPaidForm = false;
           this.sharedService.showToast({ title: 'Marked as paid. Waiting for the seller to confirm.' });
 
-          // Kick off auto-verification so we can auto-release the moment
-          // the backend confirms the payment genuinely landed.
           if (updated.autoReleaseEligible) {
             this.startVerificationPolling();
           }
@@ -849,7 +762,6 @@ export class InitiateTradeDialogComponent implements OnInit, OnDestroy {
     this.verificationPollStartedAt = Date.now();
 
     this.verificationPollTimer = setInterval(() => this.pollVerification(), VERIFICATION_POLL_INTERVAL_MS);
-    // Fire the first check immediately instead of waiting a full interval.
     this.pollVerification();
   }
 
@@ -866,8 +778,6 @@ export class InitiateTradeDialogComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // Stop trying to auto-verify a trade that already moved on
-    // (released, cancelled, disputed) via some other path.
     if (this.trade.status !== TradeStatus.Paid) {
       this.stopVerificationPolling();
       return;
@@ -946,10 +856,12 @@ export class InitiateTradeDialogComponent implements OnInit, OnDestroy {
     return this.verificationStatus !== 'idle' && this.trade?.status === TradeStatus.Paid;
   }
 
-  // ---- Manual release (fallback path) --------------------------------
+  // ---- Manual release (fallback path, also used for the disputed-release
+  //      button below — same PIN flow, same backend endpoint) ------------
 
   confirmReleaseFunds(): void {
     if (!this.trade || this.releasing) return;
+    if (!this.canManuallyRelease && !this.canReleaseDisputedFunds) return;
 
     this.releasePinError = '';
     if (this.releasePinLocked) {
@@ -1073,6 +985,192 @@ export class InitiateTradeDialogComponent implements OnInit, OnDestroy {
       this.copiedField = field;
       if (this.copiedResetTimer) clearTimeout(this.copiedResetTimer);
       this.copiedResetTimer = setTimeout(() => (this.copiedField = null), 1500);
+    });
+  }
+
+  // =======================================================================
+  // DISPUTE RESOLUTION — chat-negotiated agreement + fixed 15-minute
+  // release window, falling back to an evidence-upload escalation to admin.
+  // =======================================================================
+
+  /** True once BOTH parties have confirmed, via the dispute chat flow,
+   *  that they agree to a resolution. Anchors the 15-minute release window. */
+  get disputeAgreementReached(): boolean {
+    return !!this.trade && disputeAgreementReached(this.trade);
+  }
+
+  get myDisputeAgreementConfirmed(): boolean {
+    return !!this.trade && myDisputeAgreementConfirmed(this.trade);
+  }
+
+  get counterpartyDisputeAgreementConfirmed(): boolean {
+    return !!this.trade && counterpartyDisputeAgreementConfirmed(this.trade);
+  }
+
+  get canConfirmDisputeAgreement(): boolean {
+    return (
+      !!this.trade &&
+      this.trade.status === TradeStatus.Disputed &&
+      !this.myDisputeAgreementConfirmed &&
+      !this.disputeAgreementReached
+    );
+  }
+
+  get disputeReleaseMsLeft(): number {
+    if (!this.trade) return 0;
+    return msUntilDisputeReleaseDeadline(this.trade, this.nowTick);
+  }
+
+  get disputeReleaseLabel(): string {
+    if (!this.disputeAgreementReached) return '';
+    return formatCountdown(Math.max(0, this.disputeReleaseMsLeft));
+  }
+
+  get disputeReleaseUrgent(): boolean {
+    return this.disputeAgreementReached && this.disputeReleaseMsLeft > 0 && this.disputeReleaseMsLeft <= 2 * 60 * 1000;
+  }
+
+  /** True once the fixed 15-minute window has actually lapsed without the
+   *  seller releasing funds — this is the trigger for the evidence prompt. */
+  get disputeReleaseExpired(): boolean {
+    return !!this.trade && isDisputeReleaseWindowExpired(this.trade, this.nowTick);
+  }
+
+  /** Seller-only: can release directly out of the dispute while the fixed
+   *  15-minute post-agreement window is still open. */
+  get canReleaseDisputedFunds(): boolean {
+    return !!this.trade && canReleaseDisputedFunds(this.trade, this.nowTick);
+  }
+
+  get showDisputeEvidencePrompt(): boolean {
+    return (
+      !!this.trade &&
+      this.trade.status === TradeStatus.Disputed &&
+      this.disputeAgreementReached &&
+      this.disputeReleaseExpired &&
+      !this.trade.disputeEscalated
+    );
+  }
+
+  get myDisputeEvidenceSubmitted(): boolean {
+    return !!this.trade && hasSubmittedDisputeEvidence(this.trade);
+  }
+
+  get counterpartyDisputeEvidenceSubmitted(): boolean {
+    return !!this.trade && counterpartyHasSubmittedDisputeEvidence(this.trade);
+  }
+
+  get bothDisputeEvidenceSubmitted(): boolean {
+    return this.myDisputeEvidenceSubmitted && this.counterpartyDisputeEvidenceSubmitted;
+  }
+
+
+  confirmDisputeAgreement(): void {
+    if (!this.trade || this.confirmingDisputeAgreement) return;
+    if (!this.canConfirmDisputeAgreement) return;
+
+    this.confirmingDisputeAgreement = true;
+    this.p2pService.confirmDisputeAgreement(this.trade.id).subscribe({
+      next: (updated) => {
+        this.confirmingDisputeAgreement = false;
+        this.trade = updated;
+        if (this.disputeAgreementReached) {
+          this.sharedService.showToast({
+            title: `Both parties agreed. The seller has ${this.disputeReleaseWindowMinutes} minutes to release the funds.`,
+          });
+        } else {
+          this.sharedService.showToast({ title: 'Your agreement was recorded. Waiting on the other party.' });
+        }
+      },
+      error: (err) => {
+        this.confirmingDisputeAgreement = false;
+        const message = err?.error?.message || 'Could not record your agreement right now.';
+        this.sharedService.showToast({ title: Array.isArray(message) ? message.join(', ') : message });
+      },
+    });
+  }
+
+  onDisputeEvidenceFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      this.disputeEvidenceFileError = 'Please choose an image file.';
+      return;
+    }
+    if (file.size > MAX_PROOF_FILE_BYTES) {
+      this.disputeEvidenceFileError = 'Image is too large (max 4MB).';
+      return;
+    }
+
+    this.disputeEvidenceFileError = '';
+    const reader = new FileReader();
+    reader.onload = () => {
+      this.disputeEvidenceUrl = reader.result as string;
+    };
+    reader.onerror = () => {
+      this.disputeEvidenceFileError = 'Could not read that file, please try again.';
+    };
+    reader.readAsDataURL(file);
+  }
+
+  /** Called once the 15-minute post-agreement window has lapsed without a
+   *  release, by either side, to upload their evidence of the transaction. */
+  submitDisputeEvidence(): void {
+    if (!this.trade || this.submittingDisputeEvidence) return;
+    if (this.myDisputeEvidenceSubmitted) return;
+    if (!this.disputeEvidenceUrl.trim()) {
+      this.disputeEvidenceFileError = 'Attach a screenshot or paste a link to your evidence.';
+      return;
+    }
+
+    this.submittingDisputeEvidence = true;
+    this.p2pService
+      .uploadDisputeEvidence(this.trade.id, {
+        evidenceUrl: this.disputeEvidenceUrl.trim(),
+        note: this.disputeEvidenceNote.trim() || undefined,
+      })
+      .subscribe({
+        next: (updated) => {
+          this.submittingDisputeEvidence = false;
+          this.trade = updated;
+          this.disputeEvidenceUrl = '';
+          this.disputeEvidenceNote = '';
+          this.sharedService.showToast({ title: 'Evidence submitted.' });
+
+          // Once both sides have submitted evidence, escalate automatically
+          // so support isn't left waiting on either party to click a
+          // separate button.
+          if (this.bothDisputeEvidenceSubmitted && !this.trade.disputeEscalated) {
+            this.escalateDispute();
+          }
+        },
+        error: (err) => {
+          this.submittingDisputeEvidence = false;
+          const message = err?.error?.message || 'Could not submit your evidence right now.';
+          this.disputeEvidenceFileError = Array.isArray(message) ? message.join(', ') : message;
+        },
+      });
+  }
+
+  /** Manual escalation trigger — either party can push this the moment
+   *  they've submitted their own evidence, without waiting on the other
+   *  side. Also called automatically once both sides have evidence in. */
+  escalateDispute(): void {
+    if (!this.trade || this.escalatingDispute || this.trade.disputeEscalated) return;
+    this.escalatingDispute = true;
+    this.p2pService.escalateDispute(this.trade.id).subscribe({
+      next: (updated) => {
+        this.escalatingDispute = false;
+        this.trade = updated;
+        this.sharedService.showToast({ title: 'Escalated to admin. Support will review the evidence from both sides.' });
+      },
+      error: (err) => {
+        this.escalatingDispute = false;
+        const message = err?.error?.message || 'Could not escalate this dispute right now.';
+        this.sharedService.showToast({ title: Array.isArray(message) ? message.join(', ') : message });
+      },
     });
   }
 }

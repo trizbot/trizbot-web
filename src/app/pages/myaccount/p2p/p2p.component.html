@@ -18,6 +18,7 @@
     </button>
     <button class="view-tab-btn" [class.active]="activeTab === 'my-trades'" (click)="selectTab('my-trades')" role="tab">
       My Trades
+      <span class="chat-notify-dot" *ngIf="hasUnreadTradeChats"></span>
       <span class="tab-badge" *ngIf="myTradesUnseenCount > 0">{{ myTradesUnseenCount > 9 ? '9+' : myTradesUnseenCount }}</span>
     </button>
     <button
@@ -420,6 +421,19 @@
         </span>
 
         <span class="status-pill" [ngClass]="trade.status.toLowerCase()">{{ trade.status }}</span>
+
+        <!-- Chat notification icon: sits right after the status pill.
+             Red dot lights up while THIS trade has an unread message from the
+             counterparty, clears itself once the chat is opened and read -->
+        <button
+          type="button"
+          class="chat-icon-btn"
+          matTooltip="Chat"
+          (click)="$event.stopPropagation(); openTrade(trade)"
+        >
+          <mat-icon>chat_bubble_outline</mat-icon>
+          <app-chat-unread-badge [tradeId]="trade.id" class="chat-icon-badge"></app-chat-unread-badge>
+        </button>
 
         <div class="action-col">
           <button mat-stroked-button color="primary" class="trade-btn" type="button" (click)="$event.stopPropagation(); openTrade(trade)">

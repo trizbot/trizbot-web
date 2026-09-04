@@ -130,17 +130,17 @@ export function groupMessagesByDay(
 }
 
 export const CHAT_QUICK_REPLIES_BUYER: string[] = [
-  "I've sent the payment, please check.",
-  'Payment sent, waiting for your confirmation.',
-  'Could you confirm you received it?',
-  'One moment, sending payment now.',
+  'Payment sent, please check.',
+  'Waiting for your confirmation.',
+  'Did you receive it?',
+  'Sending payment now.',
 ];
 
 export const CHAT_QUICK_REPLIES_SELLER: string[] = [
-  "I've received your payment, releasing now.",
-  'Please send a screenshot of the payment.',
-  "I haven't received it yet, please double-check.",
-  'Give me a few minutes to verify.',
+  'Received, releasing now.',
+  'Please send payment screenshot.',
+  "Haven't received it yet.",
+  'Give me a few minutes.',
 ];
 
 export const CHAT_QUICK_EMOJIS: string[] = [

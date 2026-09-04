@@ -13,14 +13,16 @@ import { SharedService } from '../../../shared/shared.service';
 
 import { CreateOrderDialogComponent } from './create-order-dialog/create-order-dialog.component';
 import { InitiateTradeDialogComponent } from './initiate-trade-dialog/initiate-trade-dialog.component';
-import { Observable } from 'rxjs';
+import { Observable, Subscription } from 'rxjs';
 import { Trader } from '../../../../app/appstate/appstate-model';
 import { GetTraderResBody } from '../../../../app/services/auth.type';
 import { TraderService } from '../../../../app/appstate/trader.service';
 import { P2pCategoryService } from './service/p2p-category.service';
 import { P2pService } from './service/p2p.service';
+import { ChatUnreadBadgeComponent } from './trade-chat/chat-unread-badge.component'; // adjust path
 import { P2pCategoryAdminComponent } from "./p2p-category-admin/p2p-category-admin.component";
 import { P2POrderType, OrderStatus, TradeStatus, SUPPORTED_FIAT, QUICK_COINS, P2POrder, getPaymentMethodsForFiat, fiatSymbol, P2PTrade, SUPPORTED_COINS, msUntilDeadline, formatCountdown } from './model/p2p.model';
+import { P2pChatService } from './service/p2p-chat.service';
 
 type MainTab = 'market' | 'my-orders' | 'my-trades' | 'categories';
 type MyAdsSubTab = 'listed' | 'all';
@@ -47,7 +49,8 @@ const COUNTDOWN_URGENT_THRESHOLD_MS = 2 * 60 * 1000;
     MatTabsModule,
     FormsModule,
     ReactiveFormsModule,
-    P2pCategoryAdminComponent
+    P2pCategoryAdminComponent,
+    ChatUnreadBadgeComponent,
 ],
   templateUrl: './p2p.component.html',
   styleUrls: ['./p2p.component.scss'],
@@ -55,6 +58,7 @@ const COUNTDOWN_URGENT_THRESHOLD_MS = 2 * 60 * 1000;
 export class P2pComponent implements OnInit, OnDestroy {
   private sharedService = inject(SharedService);
   private categoryService = inject(P2pCategoryService);
+  private chatService = inject(P2pChatService);
 
   readonly P2POrderType = P2POrderType;
   readonly OrderStatus = OrderStatus;
@@ -150,6 +154,10 @@ export class P2pComponent implements OnInit, OnDestroy {
   myTradesUnseenCount = 0;
   private tradesNotificationPollTimer: ReturnType<typeof setInterval> | null = null;
 
+  /** Red dot on the "My Trades" tab — true while any trade has an unread chat message. */
+  hasUnreadTradeChats = false;
+  private tradeChatUnreadSub: Subscription | null = null;
+
   private nowTick = Date.now();
   private tradesCountdownTimer: ReturnType<typeof setInterval> | null = null;
 
@@ -195,6 +203,7 @@ export class P2pComponent implements OnInit, OnDestroy {
     this.stopAutoRefresh();
     this.stopTradesNotificationPolling();
     this.stopTradesCountdown();
+    this.tradeChatUnreadSub?.unsubscribe();
   }
 
   getCurrentTrader() {
@@ -563,11 +572,33 @@ export class P2pComponent implements OnInit, OnDestroy {
         );
         this.myTradesLoading = false;
         this.markTradesSeen();
+        this.watchTradeChatUnread();
       },
       error: () => {
         this.myTradesLoading = false;
       },
     });
+  }
+
+
+  private watchTradeChatUnread(): void {
+    this.tradeChatUnreadSub?.unsubscribe();
+
+    const tradeIds = this.myTrades
+      .filter((t) => this.isActiveTrade(t) || t.status === TradeStatus.Paid)
+      .map((t) => t.id);
+
+    if (tradeIds.length === 0) {
+      this.hasUnreadTradeChats = false;
+      return;
+    }
+
+    this.tradeChatUnreadSub = this.chatService
+      .getUnreadCountForTrades(tradeIds)
+      .subscribe({
+        next: (count) => (this.hasUnreadTradeChats = count > 0),
+        error: () => (this.hasUnreadTradeChats = false),
+      });
   }
 
   private markTradesSeen(): void {

@@ -903,3 +903,94 @@
   0%, 100% { opacity: 1; }
   50% { opacity: 0.6; }
 }
+
+
+.chat-icon-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  border-radius: 50%;
+  cursor: pointer;
+  color: rgba(0, 0, 0, 0.6);
+
+  &:hover {
+    background: rgba(0, 0, 0, 0.04);
+  }
+}
+
+.chat-icon-badge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+}
+
+
+.view-tab-btn {
+  position: relative; // anchor for the dot
+}
+
+.chat-notify-dot {
+  position: absolute;
+  top: 2px;
+  right: -8px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ff4d4f;
+  border: 1.5px solid #fff; // separates it from the tab-badge pill if both show at once
+}
+
+
+
+.view-tab-btn {
+  position: relative;
+}
+
+.chat-notify-dot {
+  position: absolute;
+  top: 2px;
+  right: -8px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ff4d4f;
+  border: 1.5px solid #fff;
+}
+
+// Chat icon sitting between the status pill and the View button on each trade row
+.chat-icon-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  margin: 0 4px;
+  border: none;
+  background: transparent;
+  border-radius: 50%;
+  cursor: pointer;
+  color: rgba(0, 0, 0, 0.55);
+  flex-shrink: 0;
+
+  &:hover {
+    background: rgba(0, 0, 0, 0.05);
+  }
+
+  mat-icon {
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+  }
+}
+
+.chat-icon-badge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+}

@@ -1,5 +1,3 @@
-// p2p-trade-chat.component.scss
-
 :host {
   --tc-bg: #ffffff;
   --tc-surface: #ffffff;
@@ -54,6 +52,12 @@
   min-width: 0;
 }
 
+.header-avatar-wrap {
+  position: relative;
+  display: inline-flex;
+  flex-shrink: 0;
+}
+
 .header-avatar {
   width: 36px;
   height: 36px;
@@ -67,6 +71,12 @@
   font-weight: 600;
   font-size: 14px;
   border: 1px solid var(--tc-border);
+}
+
+.header-avatar-badge {
+  position: absolute;
+  top: -1px;
+  right: -1px;
 }
 
 .header-text {
@@ -491,27 +501,38 @@
 .trade-chat-composer {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 10px 12px;
-  padding-bottom: calc(10px + env(safe-area-inset-bottom));
+  gap: 8px;
+  padding: 12px 14px;
+  padding-bottom: calc(12px + env(safe-area-inset-bottom));
   background: var(--tc-surface);
   border-top: 1px solid var(--tc-border);
   flex-shrink: 0;
   position: relative;
 }
 
+// Fallback in case a global stylesheet ever un-hides file inputs
+.file-input-hidden {
+  display: none !important;
+  position: absolute;
+  width: 0;
+  height: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
 .icon-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
+  width: 38px;
+  height: 38px;
   border-radius: 50%;
   background: transparent;
   border: none;
   color: var(--tc-text-secondary);
   cursor: pointer;
   flex-shrink: 0;
+  transition: background 0.15s ease, color 0.15s ease;
 
   &:hover {
     background: var(--tc-surface-alt);
@@ -535,24 +556,43 @@
   }
 }
 
+// The widened, more prominent typing area — input + emoji button share
+// this flexible container so the input itself stretches to fill the row
+.chat-input-wrap {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  background: var(--tc-surface-alt);
+  border: 1.5px solid var(--tc-border);
+  border-radius: 24px;
+  padding: 2px 4px 2px 16px;
+  transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+
+  &:focus-within {
+    border-color: var(--tc-accent);
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(247, 166, 0, 0.12);
+  }
+
+  .icon-btn.emoji-btn {
+    width: 34px;
+    height: 34px;
+  }
+}
+
 .chat-input {
   flex: 1;
   min-width: 0;
-  background: var(--tc-surface-alt);
-  border: 1px solid var(--tc-border);
-  border-radius: 20px;
-  padding: 9px 14px;
+  background: transparent;
+  border: none;
+  padding: 11px 4px;
   color: var(--tc-text);
-  font-size: 14px;
+  font-size: 14.5px;
   outline: none;
 
   &::placeholder {
     color: var(--tc-text-muted);
-  }
-
-  &:focus {
-    border-color: var(--tc-accent);
-    background: #fff;
   }
 }
 
@@ -571,7 +611,8 @@
   gap: 4px;
   max-height: 160px;
   overflow-y: auto;
-  box-shadow: 0 -2px 10px rgba(30, 35, 41, 0.08);
+  box-shadow: 0 -4px 16px rgba(30, 35, 41, 0.12);
+  z-index: 10;
 
   button {
     background: none;
@@ -706,6 +747,42 @@
   .trade-chat-composer {
     padding: 8px 10px;
     padding-bottom: calc(8px + env(safe-area-inset-bottom));
+    gap: 6px;
+  }
+
+  .icon-btn {
+    width: 34px;
+    height: 34px;
+
+    mat-icon {
+      font-size: 20px;
+      width: 20px;
+      height: 20px;
+    }
+  }
+
+  .chat-input-wrap {
+    padding: 2px 3px 2px 12px;
+    border-radius: 22px;
+
+    .icon-btn.emoji-btn {
+      width: 32px;
+      height: 32px;
+    }
+  }
+
+  .chat-input {
+    font-size: 16px; // prevents iOS auto-zoom on focus
+    padding: 9px 4px;
+  }
+
+  .emoji-picker {
+    grid-template-columns: repeat(6, 1fr);
+  }
+}
+
+@media (max-width: 360px) {
+  .trade-chat-composer {
     gap: 4px;
   }
 
@@ -714,12 +791,7 @@
     height: 32px;
   }
 
-  .chat-input {
-    font-size: 16px; // prevents iOS auto-zoom on focus
-    padding: 8px 12px;
-  }
-
-  .emoji-picker {
-    grid-template-columns: repeat(6, 1fr);
+  .chat-input-wrap {
+    padding-left: 10px;
   }
 }
