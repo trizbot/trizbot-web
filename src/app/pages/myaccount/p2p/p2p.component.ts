@@ -130,11 +130,13 @@ export class P2pComponent implements OnInit, OnDestroy {
 
   orders: P2POrder[] = [];
   ordersLoading = false;
-  dynamicPaymentMethods: any;
+ dynamicPaymentMethods: Record<string, string[]> = {};
 
-  get paymentMethodOptions(): string[] {
-    const fiat = this.filterForm.getRawValue().fiatCurrency;
-    return this.dynamicPaymentMethods[(fiat || 'NGN').toUpperCase()] || getPaymentMethodsForFiat(fiat);
+get paymentMethodOptions(): string[] {
+    const fiat = (this.filterForm.getRawValue().fiatCurrency || 'NGN').toUpperCase();
+    return this.dynamicPaymentMethods[fiat]?.length
+      ? this.dynamicPaymentMethods[fiat]
+      : getPaymentMethodsForFiat(fiat);
   }
 
   get fiatSymbol(): string {
@@ -304,16 +306,10 @@ export class P2pComponent implements OnInit, OnDestroy {
     if (tab === 'my-orders') this.loadMyOrders();
     if (tab === 'my-trades') this.loadMyTrades();
     if (tab === 'disputes') this.loadDisputes();
-    if (tab === 'payment-methods') this.loadPaymentMethods();
-    if (tab === 'categories') this.loadCategories();
+   
     // 'payment-methods' and 'categories' load themselves in their own components
   }
-  loadPaymentMethods() {
-    throw new Error('Method not implemented.');
-  }
-  loadCategories() {
-    throw new Error('Method not implemented.');
-  }
+
 
   // ---------------------------------------------------------------------
   // Market
