@@ -32,15 +32,20 @@
   display: block;
   font-family: var(--font-ui);
   color: var(--text);
+  -webkit-text-size-adjust: 100%;
 }
 
-* {
+*,
+*::before,
+*::after {
   box-sizing: border-box;
+  min-width: 0;
 }
 
 // ---------------------------------------------------------------------------
 // Sheet shell
-// Mobile: true full-height bottom sheet.
+// Mobile (default, <640px): true full-height bottom sheet, no horizontal
+// scroll possible anywhere inside it.
 // Desktop (≥640px): centered modal card, capped width, internal scroll.
 // ---------------------------------------------------------------------------
 .sheet {
@@ -50,7 +55,8 @@
   height: 100%;
   max-height: 100dvh;
   background: var(--paper);
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: hidden;
 
   @media (min-width: 640px) {
     max-width: 480px;
@@ -67,7 +73,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 14px 12px;
+  padding: 14px 8px;
   padding-top: max(14px, env(safe-area-inset-top));
   background: var(--ink);
   color: #f4f3ef;
@@ -77,28 +83,34 @@
 
   @media (min-width: 640px) {
     padding-top: 14px;
+    padding-left: 12px;
+    padding-right: 12px;
     border-radius: var(--radius-lg) var(--radius-lg) 0 0;
   }
 }
 
 .sheet-title {
   flex: 1;
+  min-width: 0;
   margin: 0;
   text-align: center;
-  font-size: 16px;
+  font-size: clamp(14.5px, 4.2vw, 16px);
   font-weight: 600;
   letter-spacing: -0.01em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .header-spacer {
-  width: 40px;
-  flex: 0 0 40px;
+  width: 44px;
+  flex: 0 0 44px;
 }
 
 .icon-btn {
-  width: 40px;
-  height: 40px;
-  flex: 0 0 40px;
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -108,6 +120,7 @@
   color: inherit;
   cursor: pointer;
   transition: background 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
 
   &:hover,
   &:focus-visible {
@@ -123,8 +136,14 @@
 .sheet-body {
   flex: 1 1 auto;
   overflow-y: auto;
-  padding: 20px 20px calc(20px + env(safe-area-inset-bottom));
+  overflow-x: hidden;
+  padding: 18px 16px calc(18px + env(safe-area-inset-bottom));
   -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+
+  @media (min-width: 400px) {
+    padding: 20px 20px calc(20px + env(safe-area-inset-bottom));
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -143,12 +162,19 @@
   background: var(--paper-raised);
   color: var(--text-muted);
   font-family: inherit;
-  font-size: 14px;
+  font-size: 13.5px;
   font-weight: 600;
-  padding: 12px 8px;
+  padding: 12px 6px;
+  min-height: 44px;
   border-radius: var(--radius-md);
   cursor: pointer;
   transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+
+  @media (min-width: 400px) {
+    font-size: 14px;
+    padding: 12px 8px;
+  }
 
   &:focus-visible {
     outline: 2px solid var(--ink);
@@ -181,10 +207,21 @@
   margin: 20px 0;
 }
 
+// Two-up rows (asset/currency, min/max limit) stay side-by-side down to
+// small phones, but collapse to a single column below ~360px where two
+// bordered Material fields with prefixes/suffixes would otherwise clip.
 .field-row.two-up {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 12px;
+  gap: 10px;
+
+  @media (min-width: 400px) {
+    gap: 12px;
+  }
+
+  @media (max-width: 359px) {
+    grid-template-columns: 1fr;
+  }
 }
 
 .field-group {
@@ -195,6 +232,7 @@
   display: flex;
   align-items: baseline;
   justify-content: space-between;
+  gap: 8px;
   font-size: 13px;
   font-weight: 600;
   color: var(--text);
@@ -205,6 +243,7 @@
   font-size: 12px;
   font-weight: 400;
   color: var(--text-muted);
+  flex: 0 0 auto;
 }
 
 .hint {
@@ -239,16 +278,40 @@
   font-variant-numeric: tabular-nums;
 }
 
-.prefix,
-.suffix {
+.prefix {
   color: var(--text-muted);
   font-size: 13px;
+  flex: 0 0 auto;
+}
+
+// Currency/asset suffix strings (e.g. "NGN / BTC") can run long on narrow
+// screens; cap their width and truncate instead of pushing the field wider
+// than its container.
+.suffix {
+  color: var(--text-muted);
+  font-size: 12.5px;
+  max-width: 92px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: right;
+
+  @media (min-width: 400px) {
+    font-size: 13px;
+    max-width: none;
+  }
 }
 
 // Tighten Angular Material's default outline field chrome to sit flush
-// with the rest of this form rather than floating as its own card.
+// with the rest of this form rather than floating as its own card, and
+// guard against any internal overflow on very narrow viewports.
 ::ng-deep .sheet .mat-mdc-form-field {
+  width: 100%;
   font-family: var(--font-ui);
+
+  .mat-mdc-text-field-wrapper {
+    max-width: 100%;
+  }
 
   .mdc-notched-outline__leading,
   .mdc-notched-outline__notch,
@@ -261,6 +324,11 @@
   &.mat-focused .mdc-notched-outline__trailing {
     border-color: var(--ink);
   }
+
+  input,
+  textarea {
+    font-size: 16px; // prevents iOS Safari auto-zoom on focus
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -270,7 +338,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  flex-wrap: wrap;
+  gap: 8px 12px;
   margin-top: 8px;
   padding: 10px 12px;
   background: var(--accent-soft);
@@ -281,13 +350,16 @@
 
 .rate-figures {
   display: flex;
-  gap: 18px;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  min-width: 0;
 }
 
 .rate-figure {
   display: flex;
   flex-direction: column;
   gap: 2px;
+  min-width: 0;
 
   &.muted .rate-figure-value {
     color: var(--text-muted);
@@ -308,7 +380,8 @@
   appearance: none;
   border: none;
   background: none;
-  padding: 0;
+  padding: 6px 0;
+  margin: -6px 0;
   color: var(--accent);
   font-family: inherit;
   font-size: 12.5px;
@@ -317,9 +390,16 @@
   white-space: nowrap;
   text-decoration: underline;
   text-underline-offset: 2px;
+  -webkit-tap-highlight-color: transparent;
 
   &:hover {
     color: #8a6218;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--ink);
+    outline-offset: 2px;
+    border-radius: 2px;
   }
 }
 
@@ -344,6 +424,7 @@
   margin: 6px 0 0;
   font-size: 12.5px;
   color: var(--danger);
+  line-height: 1.4;
 }
 
 // ---------------------------------------------------------------------------
@@ -371,6 +452,7 @@
 
   strong {
     font-weight: 600;
+    word-break: break-word;
   }
 
   &.warn {
@@ -433,6 +515,7 @@
   border-radius: var(--radius-md);
   cursor: pointer;
   transition: border-color 0.15s ease, background 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
 
   &.selected {
     border-color: var(--sell);
@@ -464,17 +547,22 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 8px;
 }
 
 .account-pick-method {
   font-size: 13.5px;
   font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .account-pick-check {
   font-size: 18px;
   width: 18px;
   height: 18px;
+  flex: 0 0 auto;
   color: var(--line-strong);
   transition: color 0.15s ease;
 
@@ -483,15 +571,27 @@
   }
 }
 
+// Account name/number rows: labels can wrap onto their own line on very
+// narrow screens rather than compressing the value into ellipsis, since
+// account numbers are meaningful data that shouldn't be hidden.
 .account-pick-row {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
-  gap: 12px;
+  gap: 4px 12px;
   font-size: 12.5px;
   color: var(--text-muted);
 
+  span:first-child {
+    flex: 1 1 auto;
+  }
+
   span:last-child {
     color: var(--text);
+    font-weight: 500;
+    word-break: break-word;
+    text-align: right;
+    margin-left: auto;
   }
 }
 
@@ -500,10 +600,15 @@
 // ---------------------------------------------------------------------------
 .sheet-footer {
   flex: 0 0 auto;
-  padding: 14px 20px;
+  padding: 14px 16px;
   padding-bottom: max(14px, env(safe-area-inset-bottom));
   background: var(--paper-raised);
   border-top: 1px solid var(--line);
+
+  @media (min-width: 400px) {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
 
   @media (min-width: 640px) {
     border-radius: 0 0 var(--radius-lg) var(--radius-lg);
@@ -515,6 +620,7 @@
   border: none;
   border-radius: var(--radius-md);
   padding: 15px 16px;
+  min-height: 48px;
   font-family: inherit;
   font-size: 15px;
   font-weight: 600;
@@ -522,6 +628,7 @@
   background: var(--buy);
   cursor: pointer;
   transition: background 0.15s ease, opacity 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
 
   &.sell {
     background: var(--sell);

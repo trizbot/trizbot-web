@@ -12,7 +12,7 @@
   <div class="sheet-body">
 
     <!-- Buy / Sell segmented control -->
-    <div class="segmented" *ngIf="!isEditMode" role="tablist">
+    <div class="segmented" *ngIf="!isEditMode" role="tablist" aria-label="Ad type">
       <button
         type="button"
         role="tab"
@@ -32,7 +32,7 @@
     </div>
 
     <div class="banner" *ngIf="isEditMode">
-      <mat-icon>lock</mat-icon>
+      <mat-icon aria-hidden="true">lock</mat-icon>
       <span>Editing your {{ data.order?.type }} ad for <strong>{{ data.order?.coin }}/{{ data.order?.fiatCurrency }}</strong>. Asset and currency are locked once an ad is live.</span>
     </div>
 
@@ -73,12 +73,13 @@
           formControlName="pricePerUnit"
           placeholder="0.00"
           class="mono-input"
+          [attr.aria-describedby]="priceError ? 'price-error' : null"
         />
-        <span matSuffix class="suffix">{{ form.value.fiatCurrency }} / {{ form.value.coin }}</span>
+        <span matSuffix class="suffix" [title]="form.value.fiatCurrency + ' / ' + form.value.coin">{{ form.value.fiatCurrency }} / {{ form.value.coin }}</span>
       </mat-form-field>
 
       <div class="info-strip" *ngIf="marketRateLoading">
-        <span class="dot pulsing"></span>
+        <span class="dot pulsing" aria-hidden="true"></span>
         <span>Fetching current market rate&hellip;</span>
       </div>
 
@@ -97,7 +98,7 @@
       </div>
 
       <p class="field-error" *ngIf="!marketRateLoading && marketRateError">{{ marketRateError }}</p>
-      <p class="field-error" *ngIf="priceError">{{ priceError }}</p>
+      <p class="field-error" id="price-error" role="alert" *ngIf="priceError">{{ priceError }}</p>
     </section>
 
     <div class="divider"></div>
@@ -115,7 +116,7 @@
           placeholder="0.00"
           class="mono-input"
         />
-        <span matSuffix class="suffix">{{ form.value.coin }}</span>
+        <span matSuffix class="suffix" [title]="form.value.coin">{{ form.value.coin }}</span>
       </mat-form-field>
     </section>
 
@@ -159,7 +160,7 @@
         <span>Auto from amount &times; price: <strong class="num">{{ fiatSymbol }}{{ computedMaxLimit | number: '1.0-2' }}</strong></span>
         <button type="button" class="text-link" (click)="resetMaxLimitToAuto()">Use this</button>
       </div>
-      <p class="field-error" *ngIf="limitError">{{ limitError }}</p>
+      <p class="field-error" role="alert" *ngIf="limitError">{{ limitError }}</p>
     </section>
 
     <div class="divider"></div>
@@ -173,7 +174,7 @@
           <mat-option *ngFor="let method of paymentMethodOptions" [value]="method">{{ method }}</mat-option>
         </mat-select>
       </mat-form-field>
-      <p class="field-error" *ngIf="paymentMethodsError">{{ paymentMethodsError }}</p>
+      <p class="field-error" role="alert" *ngIf="paymentMethodsError">{{ paymentMethodsError }}</p>
     </section>
 
     <!-- SELL ads: pick saved receiving accounts -->
@@ -184,12 +185,12 @@
       <app-payment-methods-manager (methodsChanged)="onMethodsChanged($event)"></app-payment-methods-manager>
 
       <div class="empty-state" *ngIf="eligibleSavedMethods.length === 0">
-        <mat-icon>account_balance_wallet</mat-icon>
+        <mat-icon aria-hidden="true">account_balance_wallet</mat-icon>
         <span class="empty-title">No saved {{ form.value.fiatCurrency }} payment methods yet</span>
         <span class="empty-sub">Add one above, then select it here.</span>
       </div>
 
-      <div class="account-list" *ngIf="eligibleSavedMethods.length > 0">
+      <div class="account-list" *ngIf="eligibleSavedMethods.length > 0" role="group" aria-label="Saved receiving accounts">
         <label
           class="account-pick"
           *ngFor="let m of eligibleSavedMethods"
@@ -204,7 +205,7 @@
           <span class="account-pick-body">
             <span class="account-pick-top">
               <span class="account-pick-method">{{ m.method }}</span>
-              <mat-icon class="account-pick-check">check_circle</mat-icon>
+              <mat-icon class="account-pick-check" aria-hidden="true">check_circle</mat-icon>
             </span>
             <span class="account-pick-row"><span>Account name</span><span>{{ m.accountName }}</span></span>
             <span class="account-pick-row"><span>Account number</span><span class="num">{{ m.accountNumber }}</span></span>
@@ -212,7 +213,7 @@
         </label>
       </div>
 
-      <p class="field-error" *ngIf="paymentMethodIdsError">{{ paymentMethodIdsError }}</p>
+      <p class="field-error" role="alert" *ngIf="paymentMethodIdsError">{{ paymentMethodIdsError }}</p>
     </section>
 
     <div class="divider"></div>
@@ -257,14 +258,14 @@
         />
       </mat-form-field>
       <p class="hint lock-hint" *ngIf="!isEditMode">
-        <mat-icon>lock</mat-icon>
+        <mat-icon aria-hidden="true">lock</mat-icon>
         <span>Your coin moves into escrow the moment this ad goes live.</span>
       </p>
       <p class="hint" *ngIf="isEditMode">Only needed if you're increasing the escrowed amount.</p>
     </section>
 
-    <div class="banner warn" *ngIf="errorMessage">
-      <mat-icon>error_outline</mat-icon>
+    <div class="banner warn" role="alert" *ngIf="errorMessage">
+      <mat-icon aria-hidden="true">error_outline</mat-icon>
       <span>{{ errorMessage }}</span>
     </div>
   </div>
