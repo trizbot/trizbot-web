@@ -93,9 +93,9 @@ export class WalletBalanceComponent implements OnInit, OnDestroy {
   // ---------------------------------------------------------------------
   // Admin dashboard: subscription / course stats
   // ---------------------------------------------------------------------
-  signalStats: SubscriptionStats = { totalSubscribers: 0, totalAmount: 0, buyPriceCount: 0, sellPriceCount: 0, byPlan: [] };
-  arbitrageScannerStats: SubscriptionStats = { totalSubscribers: 0, totalAmount: 0, buyPriceCount: 0, sellPriceCount: 0, byPlan: [] };
-  adminCourseStats: AdminCourseStats = { totalSales: 0, totalAmount: 0 };
+  signalStats: SubscriptionStats = { totalSubscribers: 0, totalAmount: 0, buyPriceCount: 0, sellPriceCount: 0, byPlan: [] ,arbitradePlanBreakdown:[]};
+  arbitrageScannerStats: SubscriptionStats = { totalSubscribers: 0, totalAmount: 0, buyPriceCount: 0, sellPriceCount: 0, byPlan: [],arbitradePlanBreakdown:[] };
+  adminCourseStats: AdminCourseStats = { totalSales: 0, totalAmount: 0,totalWeeklyCoursePurchase:0};
 
   entityName: string;
   isSuperAdmin: boolean;
@@ -158,19 +158,7 @@ export class WalletBalanceComponent implements OnInit, OnDestroy {
 
   private arbBootstrapped = false;
 
-  /**
-   * Single source of truth for arbitrage access.
-   *
-   * A trader can view arbitrage data if EITHER:
-   *  - the backend's legacy per-trader flag (`arbitradeStatus`) is true, or
-   *  - they hold an active arbitrage subscription
-   *    (`hasActiveArbitrageSubscription`).
-   *
-   * Previously this was inverted (`!this.arbitradeStatus` returned `true`),
-   * which meant unsubscribed traders could see everything and subscribed
-   * traders could not. That bug is fixed here: unsubscribed traders now
-   * get NO access until a subscription (or the legacy flag) is active.
-   */
+ 
   get canViewArbitrage(): boolean {
     return !!this.arbitradeStatus || this.hasActiveArbitrageSubscription;
   }
@@ -235,13 +223,8 @@ export class WalletBalanceComponent implements OnInit, OnDestroy {
   }
 
   getWeeklyStatistics() {
-    // Only used for totalActiveUsers now. totalWeeklyFunds / totalWeeklyProfits
-    // used to be recomputed here from the raw trader list (all-time
-    // trader.depositBalance / trader.profit, no course data at all), which
-    // silently overwrote the correct backend numbers below in a race. That
-    // client-side recompute has been removed — the backend response is the
-    // single source of truth for both fields, and already folds in course
-    // coursePrice/platformFee.
+   
+    
     this.traderService.getAllTraders({ page: 1, limit: 100001 }).subscribe({
       next: (res: any) => {
         this.totalActiveUsers = 0;

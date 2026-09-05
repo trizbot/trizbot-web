@@ -654,17 +654,17 @@
         <div class="bb-metric-card compact">
           <div class="bb-metric-top">
             <span class="bb-metric-icon up"><i class="bi bi-bar-chart"></i></span>
-            <span class="bb-metric-label">Course weekly total</span>
+            <span class="bb-metric-label">Course weekly Purchase</span>
           </div>
-          <div class="bb-metric-value up">&#36;{{ adminCourseStats.totalAmount || 0.0 | number: '1.2-2' }}</div>
+          <div class="bb-metric-value up">&#36;{{ adminCourseStats.totalWeeklyCoursePurchase || 0.0 | number: '1.2-2' }}</div>
         </div>
 
         <div class="bb-metric-card compact">
           <div class="bb-metric-top">
             <span class="bb-metric-icon up"><i class="bi bi-bar-chart"></i></span>
-            <span class="bb-metric-label">Course + stake weekly total</span>
+            <span class="bb-metric-label">Total Course Purchases</span>
           </div>
-          <div class="bb-metric-value up">&#36;{{ adminCourseStats.totalAmount + totalWeeklyProfits || 0.0 | number: '1.2-2' }}</div>
+          <div class="bb-metric-value up">&#36;{{ adminCourseStats.totalAmount || 0.0 | number: '1.2-2' }}</div>
         </div>
 
       </div>
@@ -702,7 +702,7 @@
         <div class="bb-metric-card compact">
           <div class="bb-metric-top">
             <span class="bb-metric-icon"><i class="bi bi-mortarboard-fill"></i></span>
-            <span class="bb-metric-label">Admin course sales</span>
+            <span class="bb-metric-label">All Course Purchases</span>
           </div>
           <div class="bb-metric-value">{{ adminCourseStats.totalSales || 0 }}</div>
         </div>
@@ -759,7 +759,7 @@
           <div class="bb-plan-breakdown-col">
             <h5 class="bb-plan-breakdown-heading"><i class="bi bi-lightning-charge-fill"></i> Arbitrage</h5>
 
-            <div class="bb-plan-table-scroll" *ngIf="arbitrageScannerStats.byPlan?.length; else noArbitragePlans">
+            <div class="bb-plan-table-scroll" *ngIf="arbitrageScannerStats.arbitradePlanBreakdown?.length; else noArbitragePlans">
               <table class="bb-plan-table">
                 <thead>
                   <tr>
@@ -769,7 +769,7 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <tr *ngFor="let plan of arbitrageScannerStats.byPlan">
+                  <tr *ngFor="let plan of arbitrageScannerStats.arbitradePlanBreakdown">
                     <td><span class="bb-plan-name">{{ plan.plan }}</span></td>
                     <td><span class="bb-plan-subs">{{ plan.subscribers }} subs</span></td>
                     <td><span class="bb-plan-amount">&#36;{{ plan.amount | number: '1.2-2' }}</span></td>

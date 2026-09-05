@@ -24,17 +24,24 @@ export type SubscriptionPlanStat = {
   amount: number;
   plan: string; // 'Daily' | 'Weekly' | 'Monthly'
 };
+export type ArbitradePlanBreakdownStat = {
+  subscribers: number;
+  amount: number;
+  plan: string; // 'Daily' | 'Weekly' | 'Monthly'
+};
 
 export type SubscriptionStats = {
   totalSubscribers: number;
   totalAmount: number;
   byPlan: SubscriptionPlanStat[];
+  arbitradePlanBreakdown: ArbitradePlanBreakdownStat[];
   buyPriceCount:number,sellPriceCount:number,
 };
 
 export type AdminCourseStats = {
   totalSales: number;
   totalAmount: number;
+  totalWeeklyCoursePurchase: number;
 };
 
 export type GetWeeklyStatisticsResBody = {
