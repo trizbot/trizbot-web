@@ -44,7 +44,7 @@ export class LoginComponent {
       },
       
       error:(err)=>{
-        const message = err?.error.message|| err?.error?.message || 'An unexpected error occurred.';
+        const message = err?.error.message|| err?.error?.message || 'Unable to sign in at the moment. Please check your internet and try again.';
         this.errorMessage = message;
       this.loading=false;
       }
