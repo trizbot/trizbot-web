@@ -204,25 +204,18 @@
                 <span class="price-val">&#36;{{ activePriceFor(o) | number: '1.2-6' }}</span>
               </div>
               <div class="opp-leg">
+
+  
+              <span class="leg-badge" [ngClass]="isActiveBuyLeg(o) ? 'sell' : 'buy'">
+                    {{ isActiveBuyLeg(o) ? 'SELL' : 'BUY' }}
+                  </span>
                 <span class="counterparty-dot" [style.background]="counterpartyColor(o)"></span>
                 <span class="counterparty-name">{{ counterpartyLabel(o) }}</span>
                 <span class="price-val muted">&#36;{{ counterpartyPriceFor(o) | number: '1.2-6' }}</span>
               </div>
             </div>
 
-            <div class="opp-card-bottom">
-              <span class="profit-cell">Est. profit &#36;{{ o.estimatedProfit | number: '1.2-2' }}</span>
-              <button
-                mat-flat-button
-                type="button"
-                class="fw-bold trade-btn"
-                [style.background]="activeConfig.colorPrimary"
-                [style.color]="activeConfig.textOnPrimary"
-                (click)="openTradeDialog(o)"
-              >
-                Trade
-              </button>
-            </div>
+           
           </ng-container>
 
           <ng-template #lockedCardContent>

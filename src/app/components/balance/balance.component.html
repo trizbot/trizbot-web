@@ -258,16 +258,19 @@
                       <span class="bb-price-val">&#36;{{ activePriceFor(o) | number: '1.2-6' }}</span>
                     </div>
                     <div class="bb-opp-leg">
+
+                     <span class="leg-badge" [ngClass]="isActiveBuyLeg(o) ? 'sell' : 'buy'">
+                    {{ isActiveBuyLeg(o) ? 'SELL' : 'BUY' }}
+                  </span>
+
+                  
                       <span class="bb-counterparty-dot" [style.background]="counterpartyColor(o)"></span>
                       <span class="bb-counterparty-name">{{ counterpartyLabel(o) }}</span>
                       <span class="bb-price-val muted">&#36;{{ counterpartyPriceFor(o) | number: '1.2-6' }}</span>
                     </div>
                   </div>
 
-                  <div class="bb-opp-card-bottom">
-                    <span class="bb-profit-cell">Est. profit &#36;{{ o.estimatedProfit | number: '1.2-2' }}</span>
-                    <button type="button" class="bb-trade-btn" (click)="openTradeDialog(o)">Trade</button>
-                  </div>
+                 
                 </div>
               </div>
 
